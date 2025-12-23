@@ -1,3 +1,8 @@
+<!-- 
+    APEX EXECUTIVE PORTAL - VERSION 1.0 (FROZEN STATE)
+    Status: Production Ready / MVP
+    Features: Firebase Auth, Firestore DB, Cart System, SPA Routing
+-->
 <!DOCTYPE html>
 <html lang="de" class="scroll-smooth">
 <head>
@@ -147,63 +152,87 @@
                     <!-- Package 1: Starter -->
                     <div class="group border border-gray-200 p-8 rounded-sm bg-white relative transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-brand-gold/50 cursor-pointer">
                         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-100 text-gray-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full transition-colors group-hover:bg-brand-gold group-hover:text-white">High Potential</div>
+                        
                         <h3 class="font-serif text-xl text-brand-dark mb-2 group-hover:text-brand-gold transition-colors">Young Professional</h3>
                         <p class="text-gray-500 text-sm mb-6 h-10">Für Absolventen & Berufseinsteiger (0-5 Jahre). Der perfekte Start.</p>
                         <div class="text-3xl font-serif text-brand-dark mb-6">€249 <span class="text-sm font-sans text-gray-400 font-normal">/ Paket</span></div>
+                        
                         <ul class="space-y-4 mb-8 text-sm text-gray-600">
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Profi-CV Erstellung</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Fokus auf Potenziale & Skills</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Anschreiben-Template (Editierbar)</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> ATS-Keyword Optimierung</li>
                         </ul>
+
                         <div class="space-y-3">
-                            <button onclick="app.addToCart('Young Professional CV', 249)" class="w-full border border-brand-dark text-brand-dark py-3 uppercase tracking-widest text-xs font-bold transition-all duration-300 group-hover:bg-brand-dark group-hover:text-white">Auswählen</button>
-                            <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark transition underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                            <button onclick="app.addToCart('Young Professional CV', 249)" class="w-full border border-brand-dark text-brand-dark py-3 uppercase tracking-widest text-xs font-bold transition-all duration-300 group-hover:bg-brand-dark group-hover:text-white">
+                                Auswählen
+                            </button>
+                            <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark transition underline decoration-1 underline-offset-4">
+                                Details & Vergleich
+                            </button>
                         </div>
                     </div>
 
                     <!-- Package 2: Professional -->
                     <div class="group border-2 border-brand-gold p-8 rounded-sm shadow-xl relative transform md:-translate-y-4 bg-white text-brand-dark transition-all duration-300 hover:shadow-2xl hover:-translate-y-6 cursor-pointer">
                         <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-[10px] font-bold px-3 py-1 uppercase tracking-wide group-hover:bg-brand-dark group-hover:text-brand-gold transition-colors">Popular</div>
+                        
                         <h3 class="font-serif text-xl text-brand-dark mb-2 group-hover:text-brand-gold transition-colors">Senior Professional</h3>
                         <p class="text-gray-500 text-sm mb-6 h-10">Für Experten, Projektleiter & Manager mit Erfolgsbilanz (5+ Jahre).</p>
                         <div class="text-3xl font-serif text-brand-dark mb-6">€490 <span class="text-sm font-sans text-gray-400 font-normal">/ Paket</span></div>
+                        
                         <ul class="space-y-4 mb-8 text-sm text-gray-600">
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Alles aus "Young Professional"</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Erarbeitung Ihrer USP</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> LinkedIn Profil Update</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Anschreiben (Individuell)</li>
                         </ul>
+
                         <div class="space-y-3">
-                            <button onclick="app.addToCart('Senior Professional CV', 490)" class="w-full border border-brand-dark text-brand-dark py-3 uppercase tracking-widest text-xs font-bold transition-all duration-300 group-hover:bg-brand-dark group-hover:text-white">Auswählen</button>
-                            <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark transition underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                            <button onclick="app.addToCart('Senior Professional CV', 490)" class="w-full border border-brand-dark text-brand-dark py-3 uppercase tracking-widest text-xs font-bold transition-all duration-300 group-hover:bg-brand-dark group-hover:text-white">
+                                Auswählen
+                            </button>
+                            <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark transition underline decoration-1 underline-offset-4">
+                                Details & Vergleich
+                            </button>
                         </div>
                     </div>
 
                     <!-- Package 3: Executive -->
                     <div class="group border border-gray-200 p-8 rounded-sm bg-brand-dark text-white relative transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-brand-gold cursor-pointer">
                         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full z-10 transition-colors group-hover:bg-white group-hover:text-brand-dark">Board Level</div>
+                        
                         <h3 class="font-serif text-xl text-white mb-2 group-hover:text-brand-gold transition-colors">Executive C-Suite</h3>
                         <p class="text-gray-400 text-sm mb-6 h-10">Für C-Level, VPs und Board Members. Strategische Positionierung.</p>
                         <div class="text-3xl font-serif text-white mb-6">€990 <span class="text-sm font-sans text-gray-500 font-normal">/ Paket</span></div>
+                        
                         <ul class="space-y-4 mb-8 text-sm text-gray-300">
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Komplettes Executive Rebranding</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Board-Bio & Pitch Deck</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Intro zu 2 Headhuntern</li>
                             <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-3"></i> Unbegrenzte Revisionen</li>
                         </ul>
+
                         <div class="space-y-3">
-                            <button onclick="app.addToCart('Executive C-Suite CV', 990)" class="w-full border border-white text-white py-3 uppercase tracking-widest text-xs font-bold transition-all duration-300 group-hover:bg-white group-hover:text-brand-dark">Auswählen</button>
-                            <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                            <button onclick="app.addToCart('Executive C-Suite CV', 990)" class="w-full border border-white text-white py-3 uppercase tracking-widest text-xs font-bold transition-all duration-300 group-hover:bg-white group-hover:text-brand-dark">
+                                Auswählen
+                            </button>
+                            <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition underline decoration-1 underline-offset-4">
+                                Details & Vergleich
+                            </button>
                         </div>
                     </div>
+
                 </div>
             </div>
         </section>
 
-        <!-- Coach Matching Portal -->
+        <!-- Coach Matching Portal with NEW CONCEPT EXPLANATION -->
         <section id="coaches" class="py-24 bg-brand-light border-t border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Mentoring Concept Section -->
                 <div class="mb-20">
                     <div class="text-center mb-12">
                         <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Executive Sparring</span>
@@ -215,19 +244,31 @@
 
                     <div class="grid md:grid-cols-3 gap-8">
                         <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center hover:shadow-md transition">
-                            <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-user-tie text-2xl"></i></div>
+                            <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4">
+                                <i class="fas fa-user-tie text-2xl"></i>
+                            </div>
                             <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Peer-to-Peer</h3>
-                            <p class="text-sm text-gray-600 leading-relaxed">Keine Theoretiker, sondern Führungskräfte mit aktueller Budgetverantwortung.</p>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                Sprechen Sie mit jemandem, der Ihren Job heute schon macht. Keine Theoretiker, sondern Führungskräfte mit aktueller Budgetverantwortung.
+                            </p>
                         </div>
                         <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center hover:shadow-md transition">
-                            <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-video text-2xl"></i></div>
+                            <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4">
+                                <i class="fas fa-video text-2xl"></i>
+                            </div>
                             <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Das Format</h3>
-                            <p class="text-sm text-gray-600 leading-relaxed">60 Minuten Video-Session über unsere verschlüsselte Plattform.</p>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                60 Minuten Video-Session über unsere verschlüsselte Plattform. Fokus auf Ad-hoc Problemlösung, Strategie-Validierung oder Politik-Beratung.
+                            </p>
                         </div>
                         <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center hover:shadow-md transition">
-                            <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-lock text-2xl"></i></div>
+                            <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4">
+                                <i class="fas fa-lock text-2xl"></i>
+                            </div>
                             <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Diskretion</h3>
-                            <p class="text-sm text-gray-600 leading-relaxed">Ideal, um heikle Themen sicher zu besprechen.</p>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                Ihr Interesse an einem Sparring bleibt geheim. Ideal, um heikle Themen (Wechselabsichten, Konflikte im Board) sicher zu besprechen.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -247,22 +288,55 @@
                         </select>
                     </div>
                 </div>
-                <div id="coach-grid" class="grid md:grid-cols-3 gap-8"></div>
+
+                <div id="coach-grid" class="grid md:grid-cols-3 gap-8">
+                    <!-- Coaches injected by JS -->
+                </div>
             </div>
         </section>
 
         <!-- Process Section -->
         <section id="process" class="py-24 bg-brand-dark text-white relative">
+            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div class="text-center mb-16">
                     <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Der Ablauf</span>
                     <h2 class="font-serif text-4xl mb-4">Der Weg zum Ziel</h2>
+                    <div class="w-24 h-1 bg-brand-gold mx-auto"></div>
                 </div>
+
                 <div class="grid md:grid-cols-4 gap-8">
-                    <div class="text-center group"><div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">1</span></div><h4 class="font-bold mb-2">Auswahl</h4><p class="text-sm text-gray-400">Wählen Sie Ihr Paket.</p></div>
-                    <div class="text-center group"><div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">2</span></div><h4 class="font-bold mb-2">Briefing</h4><p class="text-sm text-gray-400">Upload & Analyse.</p></div>
-                    <div class="text-center group"><div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">3</span></div><h4 class="font-bold mb-2">Umsetzung</h4><p class="text-sm text-gray-400">Arbeit der Experten.</p></div>
-                    <div class="text-center group"><div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">4</span></div><h4 class="font-bold mb-2">Lieferung</h4><p class="text-sm text-gray-400">Finale Dokumente.</p></div>
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300">
+                            <span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">1</span>
+                        </div>
+                        <h4 class="font-bold mb-2">Auswahl</h4>
+                        <p class="text-sm text-gray-400">Wählen Sie Ihr Paket oder Ihren Mentor passend zur Karrierestufe.</p>
+                    </div>
+
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300">
+                            <span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">2</span>
+                        </div>
+                        <h4 class="font-bold mb-2">Briefing</h4>
+                        <p class="text-sm text-gray-400">Nach dem Checkout erhalten Sie Zugang zum Secure-Upload für Ihre Dokumente.</p>
+                    </div>
+
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300">
+                            <span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">3</span>
+                        </div>
+                        <h4 class="font-bold mb-2">Umsetzung</h4>
+                        <p class="text-sm text-gray-400">Unsere Experten erstellen Ihre Unterlagen oder wir terminieren das Mentoring.</p>
+                    </div>
+
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 group-hover:bg-brand-gold transition duration-300">
+                            <span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">4</span>
+                        </div>
+                        <h4 class="font-bold mb-2">Lieferung</h4>
+                        <p class="text-sm text-gray-400">Sie erhalten die fertigen Dokumente oder führen das Strategiegespräch.</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -274,16 +348,91 @@
                     <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Häufige Fragen</span>
                     <h2 class="font-serif text-3xl text-brand-dark">Wichtige Hinweise & Exclusions</h2>
                 </div>
+
                 <div class="space-y-4">
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq1')"><button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition"><span class="font-bold text-brand-dark text-sm">Garantieren Sie einen Job?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i></button><div id="faq1" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100">Nein. Wir schulden eine Dienstleistung, keinen Erfolg.</div></div></div>
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq2')"><button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition"><span class="font-bold text-brand-dark text-sm">Rechtsberatung?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i></button><div id="faq2" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100">Nein. Keine Prüfung von Arbeitsverträgen.</div></div></div>
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq3')"><button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition"><span class="font-bold text-brand-dark text-sm">Wettbewerb & Compliance?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i></button><div id="faq3" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100">Ja. Mentoren dürfen keine Wettbewerber beraten. Ebenso ist eine Beratung ausgeschlossen, wenn Sie sich aktiv beim aktuellen Arbeitgeber des Mentors bewerben.</div></div></div>
+                    <!-- FAQ Item 1 -->
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq1')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
+                            <span class="font-bold text-brand-dark text-sm">Garantieren Sie einen Job oder eine Beförderung?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq1" class="faq-content bg-gray-50/50">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                                Nein. Wir garantieren die Optimierung Ihrer Unterlagen und Ihrer Strategie nach höchsten Marktstandards ("Enabling"). Die Entscheidung über eine Einstellung liegt jedoch immer beim Unternehmen. Rechtlich schulden wir eine Dienstleistung, keinen Erfolg im Sinne einer Anstellung.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 2 -->
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq2')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
+                            <span class="font-bold text-brand-dark text-sm">Sind Sie Headhunter oder Personalvermittler?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq2" class="faq-content bg-gray-50/50">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                                Wir arbeiten ausschließlich im Auftrag des Kandidaten (Sie), nicht im Auftrag von Unternehmen. Das garantiert Ihnen 100% Loyalität und Unabhängigkeit. Im "Executive C-Suite"-Paket nutzen wir jedoch unser persönliches Netzwerk für diskrete Intros, sofern passend.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 3 -->
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq3')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
+                            <span class="font-bold text-brand-dark text-sm">Prüfen Sie Arbeitsverträge rechtlich?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq3" class="faq-content bg-gray-50/50">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                                Nein. Unsere Beratung bezieht sich auf strategische und taktische Karriereplanung (Verhandlungstaktik, Marktwert). Wir bieten keine Rechtsberatung. Für die Prüfung von Verträgen empfehlen wir spezialisierte Fachanwälte für Arbeitsrecht.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item: Compliance -->
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq-compliance')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
+                            <span class="font-bold text-brand-dark text-sm">Gibt es Einschränkungen bei der Mentoren-Wahl? (Compliance)</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-compliance" class="faq-content bg-gray-50/50">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                                Ja. Da unsere Mentoren in aktiven Führungspositionen sind, gelten strikte Compliance-Regeln. Ein Mentor darf keine Personen beraten, die bei direkten Wettbewerbern tätig sind. <strong>Ebenso ist eine Beratung ausgeschlossen, wenn Sie sich aktiv beim aktuellen Arbeitgeber des Mentors bewerben</strong>, um Interessenskonflikte zu vermeiden. Dies wird im Matching-Prozess (Compliance-Check) geprüft.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 4 -->
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq4')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
+                            <span class="font-bold text-brand-dark text-sm">Sind die Kosten steuerlich absetzbar?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq4" class="faq-content bg-gray-50/50">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                                In der Regel ja. Da es sich um berufliche Weiterbildung und Bewerbungskosten handelt, können diese meist als Werbungskosten geltend gemacht werden. Bitte konsultieren Sie hierzu Ihren Steuerberater. Sie erhalten von uns eine ordnungsgemäße Rechnung mit ausgewiesener MwSt.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 5 -->
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq5')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
+                            <span class="font-bold text-brand-dark text-sm">Wie schnell ist die Umsetzung?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq5" class="faq-content bg-gray-50/50">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                                Mentoring-Sessions sind oft innerhalb von 48h buchbar. Für CV-Pakete benötigen wir nach vollständigem Briefing ca. 5-7 Werktage für den ersten Entwurf. Express-Service (48h) ist auf Anfrage gegen Aufpreis möglich.
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
     </div>
 
-    <!-- VIEW: JOURNAL / INSIGHTS -->
+    <!-- VIEW: JOURNAL / INSIGHTS (NEW) -->
     <div id="view-journal" class="hidden fade-in min-h-screen bg-gray-50">
         <header class="bg-brand-dark text-white py-20 relative overflow-hidden">
             <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
@@ -293,19 +442,52 @@
                 <p class="text-gray-400 text-sm max-w-2xl mx-auto">Marktanalysen, Strategien und Insider-Wissen für die moderne Führungskraft.</p>
             </div>
         </header>
+
         <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-3 gap-8">
+                <!-- Article 1 -->
                 <div class="bg-white rounded-sm shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition group cursor-pointer">
-                    <div class="h-48 bg-gray-200 relative overflow-hidden"><img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"><div class="absolute top-4 left-4 bg-brand-gold text-brand-dark text-[10px] font-bold px-2 py-1 uppercase">Leadership</div></div>
-                    <div class="p-6"><h3 class="font-serif text-lg font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition">Boardroom Dynamics</h3><p class="text-sm text-gray-500 mb-4 line-clamp-3">Warum Fachwissen im Vorstand nur die Eintrittskarte ist.</p></div>
+                    <div class="h-48 bg-gray-200 relative overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
+                        <div class="absolute top-4 left-4 bg-brand-gold text-brand-dark text-[10px] font-bold px-2 py-1 uppercase">Leadership</div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-serif text-lg font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition">Boardroom Dynamics: Die ungeschriebenen Gesetze</h3>
+                        <p class="text-sm text-gray-500 mb-4 line-clamp-3">
+                            Warum Fachwissen im Vorstand nur die Eintrittskarte ist und wie politische Allianzen wirklich geschmiedet werden. Ein Erfahrungsbericht.
+                        </p>
+                        <span class="text-xs text-brand-gold font-bold uppercase tracking-widest">Artikel lesen &rarr;</span>
+                    </div>
                 </div>
+
+                <!-- Article 2 -->
                 <div class="bg-white rounded-sm shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition group cursor-pointer">
-                    <div class="h-48 bg-gray-200 relative overflow-hidden"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"><div class="absolute top-4 left-4 bg-brand-dark text-white text-[10px] font-bold px-2 py-1 uppercase">Career</div></div>
-                    <div class="p-6"><h3 class="font-serif text-lg font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition">Der Lebenslauf ab 200k</h3><p class="text-sm text-gray-500 mb-4 line-clamp-3">Auf C-Level zählen nur noch P&L Verantwortung.</p></div>
+                    <div class="h-48 bg-gray-200 relative overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
+                        <div class="absolute top-4 left-4 bg-brand-dark text-white text-[10px] font-bold px-2 py-1 uppercase">Career</div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-serif text-lg font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition">Der Lebenslauf ab 200k Jahresgehalt</h3>
+                        <p class="text-sm text-gray-500 mb-4 line-clamp-3">
+                            Vergessen Sie Aufgabenlisten. Auf C-Level zählen nur noch P&L Verantwortung, Transformation und Skalierung. Worauf Headhunter achten.
+                        </p>
+                        <span class="text-xs text-brand-gold font-bold uppercase tracking-widest">Artikel lesen &rarr;</span>
+                    </div>
                 </div>
+
+                <!-- Article 3 -->
                 <div class="bg-white rounded-sm shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition group cursor-pointer">
-                    <div class="h-48 bg-gray-200 relative overflow-hidden"><img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"><div class="absolute top-4 left-4 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 uppercase">Trends</div></div>
-                    <div class="p-6"><h3 class="font-serif text-lg font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition">AI im Management</h3><p class="text-sm text-gray-500 mb-4 line-clamp-3">Wie KI die Rolle des CIOs verändert.</p></div>
+                    <div class="h-48 bg-gray-200 relative overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
+                        <div class="absolute top-4 left-4 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 uppercase">Trends</div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-serif text-lg font-bold text-brand-dark mb-2 group-hover:text-brand-gold transition">AI im Management: Gefahr oder Chance?</h3>
+                        <p class="text-sm text-gray-500 mb-4 line-clamp-3">
+                            Wie KI die Rolle des CIOs verändert und warum technologische Kompetenz jetzt für jeden CEO zur Pflicht wird.
+                        </p>
+                        <span class="text-xs text-brand-gold font-bold uppercase tracking-widest">Artikel lesen &rarr;</span>
+                    </div>
                 </div>
             </div>
         </section>
@@ -313,129 +495,480 @@
 
     <!-- VIEW: ABOUT US -->
     <div id="view-about" class="hidden fade-in min-h-screen">
+        <!-- About Hero -->
         <header class="bg-brand-dark text-white relative py-20">
             <div class="absolute inset-0 bg-brand-gold/5"></div>
-            <div class="max-w-4xl mx-auto px-4 text-center relative z-10">
+            <div class="relative z-10 max-w-4xl mx-auto px-4 text-center">
                 <span class="text-brand-gold uppercase tracking-[0.2em] text-xs font-bold block mb-4">Über APEX Executive</span>
                 <h1 class="font-serif text-4xl md:text-5xl mb-6">Exzellenz ist keine Handlung,<br>sondern eine Haltung.</h1>
+                <p class="text-gray-400 text-lg font-light leading-relaxed">
+                    Warum wir angetreten sind, um den Markt für Executive Search und Coaching zu verändern.
+                </p>
             </div>
         </header>
+
+        <!-- About Content -->
         <section class="py-20 bg-white">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- The Founder Story -->
                 <div class="grid md:grid-cols-2 gap-12 items-center mb-24">
-                    <div class="relative"><div class="absolute inset-0 bg-brand-gold/10 transform translate-x-4 translate-y-4"></div><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" class="relative z-10 w-full rounded-sm shadow-xl grayscale hover:grayscale-0 transition duration-700"></div>
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-brand-gold/10 transform translate-x-4 translate-y-4"></div>
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Founder" class="relative z-10 w-full rounded-sm shadow-xl grayscale hover:grayscale-0 transition duration-700">
+                    </div>
                     <div>
                         <h3 class="font-serif text-2xl text-brand-dark mb-4">Vom CIO zum Enabler</h3>
-                        <p class="text-gray-600 leading-relaxed mb-4">"Als CIO habe ich hunderte Bewerbungen gesehen... Die Idee zu APEX entstand aus dem Bedürfnis, eine Brücke zu bauen."</p>
-                        <div class="border-l-4 border-brand-gold pl-4 py-2 bg-gray-50"><p class="text-sm italic text-gray-800 font-serif">"Unser Ziel ist es, Ihnen nicht nur einen Job zu verschaffen, sondern eine Karriere-Strategie."</p></div>
+                        <p class="text-gray-600 leading-relaxed mb-4">
+                            "Als CIO habe ich hunderte Bewerbungen gesehen und unzählige Berater erlebt. Das Problem: Die meisten Dienstleister verstehen die Sprache des C-Levels nicht."
+                        </p>
+                        <p class="text-gray-600 leading-relaxed mb-6">
+                            Die Idee zu APEX entstand aus dem Bedürfnis, eine Brücke zu bauen. Zwischen ambitionierten Talenten und der Realität in den Vorstandsetagen. Wir sind keine HR-Theoretiker. Wir sind Praktiker, die wissen, wie Entscheidungen hinter verschlossenen Türen fallen.
+                        </p>
+                        <div class="border-l-4 border-brand-gold pl-4 py-2 bg-gray-50">
+                            <p class="text-sm italic text-gray-800 font-serif">"Unser Ziel ist es, Ihnen nicht nur einen Job zu verschaffen, sondern eine Karriere-Strategie."</p>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Values Grid -->
                 <div class="grid md:grid-cols-3 gap-8 text-center">
-                    <div class="p-6"><i class="fas fa-handshake text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Integrität</h4><p class="text-sm text-gray-500">Wir versprechen keine Wunder, sondern harte Arbeit.</p></div>
-                    <div class="p-6"><i class="fas fa-chess-queen text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Strategie</h4><p class="text-sm text-gray-500">Ein CV ist ein Verkaufsprospekt.</p></div>
-                    <div class="p-6"><i class="fas fa-network-wired text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Netzwerk</h4><p class="text-sm text-gray-500">Zugang zu einem Kreis von Entscheidern.</p></div>
+                    <div class="p-6">
+                        <i class="fas fa-handshake text-brand-gold text-4xl mb-4"></i>
+                        <h4 class="font-bold text-brand-dark mb-2">Integrität</h4>
+                        <p class="text-sm text-gray-500">Wir versprechen keine Wunder, sondern harte Arbeit an Ihrer Positionierung. Ehrliches Feedback ist unser höchstes Gut.</p>
+                    </div>
+                    <div class="p-6">
+                        <i class="fas fa-chess-queen text-brand-gold text-4xl mb-4"></i>
+                        <h4 class="font-bold text-brand-dark mb-2">Strategie</h4>
+                        <p class="text-sm text-gray-500">Ein CV ist kein Lebenslauf, sondern ein Verkaufsprospekt. Wir denken wie Marketer und handeln wie Headhunter.</p>
+                    </div>
+                    <div class="p-6">
+                        <i class="fas fa-network-wired text-brand-gold text-4xl mb-4"></i>
+                        <h4 class="font-bold text-brand-dark mb-2">Netzwerk</h4>
+                        <p class="text-sm text-gray-500">APEX ist mehr als eine Dienstleistung. Es ist der Zugang zu einem Kreis von Entscheidern, die sich gegenseitig stützen.</p>
+                    </div>
                 </div>
-                <div class="mt-20 text-center"><button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="bg-brand-dark text-white px-8 py-4 uppercase tracking-widest text-xs font-bold hover:bg-brand-gold hover:text-brand-dark transition">Zurück zu den Angeboten</button></div>
+
+                <!-- CTA -->
+                <div class="mt-20 text-center">
+                    <h3 class="font-serif text-2xl text-brand-dark mb-6">Bereit für den nächsten Schritt?</h3>
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="bg-brand-dark text-white px-8 py-4 uppercase tracking-widest text-xs font-bold hover:bg-brand-gold hover:text-brand-dark transition">
+                        Zurück zu den Angeboten
+                    </button>
+                </div>
+
             </div>
         </section>
     </div>
 
-    <!-- VIEW: PACKAGE DETAILS -->
+    <!-- VIEW: PACKAGE DETAILS (NEW) -->
     <div id="view-package-details" class="hidden fade-in min-h-screen bg-gray-50">
         <header class="bg-brand-dark text-white py-16">
-            <div class="max-w-7xl mx-auto px-4 text-center">
-                <h1 class="font-serif text-3xl md:text-4xl">Leistungsübersicht</h1>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <span class="text-brand-gold uppercase tracking-[0.2em] text-xs font-bold block mb-4">Leistungsübersicht</span>
+                <h1 class="font-serif text-3xl md:text-4xl">Der APEX Standard im Detail</h1>
             </div>
         </header>
-        <section class="max-w-7xl mx-auto px-4 py-12 -mt-10 relative z-10">
-            <div class="bg-white rounded-sm shadow-xl overflow-hidden p-8">
-                <table class="w-full text-left text-sm border-collapse">
-                    <thead><tr class="border-b"><th class="p-4">Feature</th><th class="p-4 text-center">Starter</th><th class="p-4 text-center text-brand-gold">Pro</th><th class="p-4 text-center bg-brand-dark text-white">Exec</th></tr></thead>
-                    <tbody>
-                        <tr class="border-b"><td class="p-4">CV Erstellung</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">✓</td></tr>
-                        <tr class="border-b"><td class="p-4">Strategie-Call</td><td class="p-4 text-center">-</td><td class="p-4 text-center">30 Min</td><td class="p-4 text-center">60 Min</td></tr>
-                        <tr><td class="p-4">Headhunter Intro</td><td class="p-4 text-center">-</td><td class="p-4 text-center">-</td><td class="p-4 text-center">✓</td></tr>
-                    </tbody>
-                </table>
-                <div class="mt-8 text-center"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold">Zurück</button></div>
+
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 -mt-10 relative z-10">
+            <div class="bg-white rounded-sm shadow-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200">
+                                <th class="p-6 font-serif text-brand-dark text-lg w-1/4 sticky left-0 bg-gray-50 z-20">Features</th>
+                                <th class="p-6 text-center w-1/4">
+                                    <div class="font-bold text-brand-dark uppercase tracking-wide text-xs mb-1">Young Professional</div>
+                                    <div class="text-gray-500 font-serif text-xl">€249</div>
+                                </th>
+                                <th class="p-6 text-center w-1/4 bg-brand-gold/5 border-x border-brand-gold/20 relative">
+                                    <div class="absolute top-0 left-0 w-full h-1 bg-brand-gold"></div>
+                                    <div class="font-bold text-brand-dark uppercase tracking-wide text-xs mb-1">Senior Professional</div>
+                                    <div class="text-brand-gold font-serif text-xl">€490</div>
+                                </th>
+                                <th class="p-6 text-center w-1/4 bg-brand-dark text-white">
+                                    <div class="font-bold text-brand-gold uppercase tracking-wide text-xs mb-1">Executive C-Suite</div>
+                                    <div class="text-white font-serif text-xl">€990</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <!-- Section: Basics -->
+                            <tr class="bg-gray-50/50"><td colspan="4" class="p-3 px-6 text-xs uppercase tracking-widest font-bold text-gray-400">Dokumente & Erstellung</td></tr>
+                            
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-4 px-6 font-medium text-gray-700 sticky left-0 bg-white">CV Neuerstellung (DE/EN)</td>
+                                <td class="p-4 text-center text-green-600"><i class="fas fa-check"></i></td>
+                                <td class="p-4 text-center text-green-600 bg-brand-gold/5 border-x border-brand-gold/10"><i class="fas fa-check"></i></td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-dark"><i class="fas fa-check"></i></td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-4 px-6 font-medium text-gray-700 sticky left-0 bg-white">Anschreiben</td>
+                                <td class="p-4 text-center text-gray-500">Template (Editierbar)</td>
+                                <td class="p-4 text-center text-green-600 bg-brand-gold/5 border-x border-brand-gold/10">Individuell verfasst</td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-dark">Executive Bio / Pitch Deck</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-4 px-6 font-medium text-gray-700 sticky left-0 bg-white">LinkedIn Optimierung</td>
+                                <td class="p-4 text-center text-gray-400"><i class="fas fa-minus"></i></td>
+                                <td class="p-4 text-center text-green-600 bg-brand-gold/5 border-x border-brand-gold/10"><i class="fas fa-check"></i></td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-dark"><i class="fas fa-check"></i> (Full Rebrand)</td>
+                            </tr>
+
+                            <!-- Section: Strategy -->
+                            <tr class="bg-gray-50/50"><td colspan="4" class="p-3 px-6 text-xs uppercase tracking-widest font-bold text-gray-400">Strategie & Service</td></tr>
+
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-4 px-6 font-medium text-gray-700 sticky left-0 bg-white">ATS-Keyword Optimierung</td>
+                                <td class="p-4 text-center text-green-600"><i class="fas fa-check"></i></td>
+                                <td class="p-4 text-center text-green-600 bg-brand-gold/5 border-x border-brand-gold/10"><i class="fas fa-check"></i></td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-dark"><i class="fas fa-check"></i> (Premium Search)</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-4 px-6 font-medium text-gray-700 sticky left-0 bg-white">USP & Storytelling Workshop</td>
+                                <td class="p-4 text-center text-gray-400"><i class="fas fa-minus"></i></td>
+                                <td class="p-4 text-center text-green-600 bg-brand-gold/5 border-x border-brand-gold/10">30 Min. Call</td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-dark">60 Min. Strategie-Session</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-4 px-6 font-medium text-gray-700 sticky left-0 bg-white">Korrekturschleifen</td>
+                                <td class="p-4 text-center text-gray-600">1 Runde</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5 border-x border-brand-gold/10">2 Runden</td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-dark">Unbegrenzt</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-4 px-6 font-medium text-gray-700 sticky left-0 bg-white">Headhunter Intro</td>
+                                <td class="p-4 text-center text-gray-400"><i class="fas fa-minus"></i></td>
+                                <td class="p-4 text-center text-gray-400 bg-brand-gold/5 border-x border-brand-gold/10"><i class="fas fa-minus"></i></td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-dark"><i class="fas fa-check"></i> (Top-Tier Netzwerk)</td>
+                            </tr>
+                            
+                            <!-- Actions -->
+                            <tr class="bg-gray-100">
+                                <td class="p-6 sticky left-0 bg-gray-100"></td>
+                                <td class="p-6 text-center">
+                                    <button onclick="app.addToCart('Young Professional CV', 249)" class="w-full border border-brand-dark text-brand-dark py-2 uppercase tracking-widest text-[10px] font-bold hover:bg-brand-dark hover:text-white transition">
+                                        Auswählen
+                                    </button>
+                                </td>
+                                <td class="p-6 text-center bg-brand-gold/10 border-x border-brand-gold/20">
+                                    <button onclick="app.addToCart('Senior Professional CV', 490)" class="w-full bg-brand-gold text-brand-dark py-2 uppercase tracking-widest text-[10px] font-bold hover:shadow-lg transition">
+                                        Auswählen
+                                    </button>
+                                </td>
+                                <td class="p-6 text-center bg-brand-dark">
+                                    <button onclick="app.addToCart('Executive C-Suite CV', 990)" class="w-full border border-white text-white py-2 uppercase tracking-widest text-[10px] font-bold hover:bg-white hover:text-brand-dark transition">
+                                        Auswählen
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="text-gray-500 hover:text-brand-dark transition text-xs font-bold flex items-center justify-center mx-auto">
+                    <i class="fas fa-arrow-left mr-2"></i> Zurück zur Übersicht
+                </button>
             </div>
         </section>
     </div>
 
     <!-- VIEW: IMPRESSUM -->
     <div id="view-impressum" class="hidden fade-in min-h-screen bg-white">
-        <div class="max-w-4xl mx-auto px-4 py-20">
-            <h1 class="font-serif text-3xl mb-8">Impressum</h1>
-            <p>Angaben gemäß § 5 TMG<br>APEX Executive GmbH<br>Musterstraße 1, Berlin</p>
-            <div class="mt-8"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold">Zurück</button></div>
-        </div>
-    </div>
-
-    <!-- VIEW: LOGIN (SECURE) -->
-    <div id="view-login" class="hidden min-h-[80vh] flex items-center justify-center bg-brand-light fade-in">
-        <div class="bg-white p-12 rounded-sm shadow-2xl w-full max-w-md border-t-4 border-brand-gold">
-            <div class="text-center mb-8">
-                <i class="fas fa-mountain text-brand-gold text-3xl mb-4"></i>
-                <h2 class="font-serif text-2xl text-brand-dark">Login</h2>
-            </div>
-            <form onsubmit="app.handleLogin(); return false;" class="space-y-6">
-                <div><label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">E-Mail</label><input type="email" id="login-email" class="w-full bg-gray-50 border border-gray-300 p-4"></div>
-                <div><label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Passwort</label><input type="password" id="login-password" class="w-full bg-gray-50 border border-gray-300 p-4"></div>
-                <button type="button" onclick="app.handleLogin()" class="w-full gold-gradient text-brand-dark font-bold py-4 uppercase tracking-widest text-xs hover:shadow-lg transition">Anmelden</button>
-            </form>
-            <p id="login-message" class="text-red-500 text-xs mt-4 text-center"></p>
-        </div>
-    </div>
-
-    <!-- VIEW: DASHBOARD (FULL) -->
-    <div id="view-dashboard" class="hidden fade-in flex-grow bg-gray-50">
-        <div class="bg-brand-dark text-white py-12">
-            <div class="max-w-7xl mx-auto px-4 flex justify-between items-end">
-                <div><h1 class="font-serif text-3xl mb-2">Guten Tag, <span id="dash-username">Stefan</span></h1><p class="text-brand-gold text-sm uppercase tracking-widest">Premium Member</p></div>
-                <button onclick="app.handleLogout()" class="text-xs text-gray-400 hover:text-white uppercase tracking-widest border border-white/20 px-4 py-2">Abmelden</button>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-8">
-                <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-200">
-                    <h3 class="font-serif text-lg text-brand-dark font-bold mb-4">Executive CV Rebrand</h3>
-                    <div class="w-full bg-gray-100 h-2 mb-4 rounded-full overflow-hidden"><div class="bg-brand-gold h-full w-2/3"></div></div>
-                    <div class="space-y-2 text-sm text-gray-600"><div class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-3"></i> Analyse abgeschlossen</div><div class="flex items-center font-bold text-brand-dark"><i class="fas fa-spinner fa-spin text-brand-gold mr-3"></i> Entwurf in Arbeit</div></div>
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <h1 class="font-serif text-3xl text-brand-dark mb-8">Impressum</h1>
+            <div class="space-y-6 text-sm text-gray-600">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h2 class="font-bold text-brand-dark mb-2 text-lg">Angaben gemäß § 5 TMG</h2>
+                        <p class="leading-relaxed">
+                            <strong>APEX Executive GmbH</strong><br>
+                            Musterstraße 1<br>
+                            10115 Berlin<br>
+                            Deutschland
+                        </p>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-brand-dark mb-2 text-lg">Kontakt</h2>
+                        <p class="leading-relaxed">
+                            Telefon: +49 (0) 30 12345678<br>
+                            E-Mail: kontakt@apex-executive.de
+                        </p>
+                    </div>
                 </div>
+
+                <div class="pt-6 border-t border-gray-100">
+                    <h2 class="font-bold text-brand-dark mb-2">Vertretungsberechtigte Geschäftsführer</h2>
+                    <p>Max Mustermann, Erika Musterfrau</p>
+                </div>
+
+                <div class="pt-6 border-t border-gray-100">
+                    <h2 class="font-bold text-brand-dark mb-2">Registereintrag</h2>
+                    <p>Eintragung im Handelsregister.<br>
+                    Registergericht: Amtsgericht Berlin-Charlottenburg<br>
+                    Registernummer: HRB 123456</p>
+                </div>
+
+                <div class="pt-6 border-t border-gray-100">
+                    <h2 class="font-bold text-brand-dark mb-2">Umsatzsteuer-ID</h2>
+                    <p>Umsatzsteuer-Identifikationsnummer gemäß §27 a Umsatzsteuergesetz:<br>
+                    DE 123 456 789</p>
+                </div>
+
+                <div class="pt-10 border-t border-gray-100">
+                    <h2 class="font-bold text-brand-dark mb-4">Haftungsausschluss (Disclaimer)</h2>
+                    
+                    <h3 class="font-bold text-xs uppercase tracking-wide mb-2 mt-4">Haftung für Inhalte</h3>
+                    <p class="mb-4">Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>
+                    
+                    <h3 class="font-bold text-xs uppercase tracking-wide mb-2 mt-4">Haftung für Links</h3>
+                    <p class="mb-4">Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.</p>
+                    
+                    <h3 class="font-bold text-xs uppercase tracking-wide mb-2 mt-4">Urheberrecht</h3>
+                    <p>Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.</p>
+                </div>
+            </div>
+            
+            <div class="mt-12">
+                <button onclick="app.navigateTo('home')" class="text-brand-gold hover:text-brand-dark transition text-sm font-bold flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Zurück zur Startseite
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: MEMBER DASHBOARD (FULL) -->
+    <div id="view-dashboard" class="hidden fade-in flex-grow bg-gray-50">
+        <!-- Dashboard Header -->
+        <div class="bg-brand-dark text-white py-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h1 class="font-serif text-3xl mb-2">Guten Tag, <span id="dash-username">Stefan</span></h1>
+                        <p class="text-brand-gold text-sm uppercase tracking-widest">Premium Member seit 2024</p>
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <div class="bg-white/10 px-6 py-3 rounded-sm text-center hidden md:block">
+                            <span class="block text-xl font-bold">1</span>
+                            <span class="text-[10px] uppercase text-gray-400">Aktive Projekte</span>
+                        </div>
+                        <div class="bg-white/10 px-6 py-3 rounded-sm text-center hidden md:block">
+                            <span class="block text-xl font-bold">2</span>
+                            <span class="text-[10px] uppercase text-gray-400">Offene Credits</span>
+                        </div>
+                        <button onclick="app.handleLogout()" class="text-xs text-gray-400 hover:text-white uppercase tracking-widest ml-4 border border-white/20 px-4 py-2 rounded-sm hover:border-white transition">
+                            Abmelden
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Projects -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Current Project -->
+                <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="font-serif text-lg text-brand-dark font-bold">Executive CV Rebrand</h3>
+                            <p class="text-gray-500 text-sm">Auftragsnummer #APX-9281</p>
+                        </div>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full">In Bearbeitung</span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-gray-100 h-2 mb-6 rounded-full overflow-hidden">
+                        <div class="bg-brand-gold h-full w-2/3"></div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                            <span>Analyse Ihrer alten Dokumente</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                            <span>Headhunter-Audit & Strategie-Call</span>
+                        </div>
+                        <div class="flex items-center text-sm text-brand-dark font-bold">
+                            <i class="fas fa-spinner fa-spin text-brand-gold mr-3"></i>
+                            <span>Erstellung des ersten Entwurfs (Deadline: 26.10.)</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-400">
+                            <i class="far fa-circle mr-3"></i>
+                            <span>Finalisierung & LinkedIn Update</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secure Upload -->
                 <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-200">
                     <h3 class="font-serif text-lg text-brand-dark font-bold mb-4">Secure Data Vault</h3>
-                    <div class="border-2 border-dashed border-gray-300 p-8 text-center bg-gray-50"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i><p class="text-sm">Dokumente hier ablegen</p></div>
+                    <div class="border-2 border-dashed border-gray-300 rounded-sm p-8 text-center hover:border-brand-gold transition cursor-pointer bg-gray-50">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-sm text-gray-600">Dokumente hier ablegen oder klicken zum Hochladen</p>
+                        <p class="text-xs text-gray-400 mt-1">(PDF, DOCX - Max 50MB - Ende-zu-Ende verschlüsselt)</p>
+                    </div>
+                    
+                    <div class="mt-6 space-y-2">
+                        <div class="flex justify-between items-center text-sm p-3 bg-gray-50 rounded-sm">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-pdf text-red-500 mr-3"></i>
+                                <span>Alter_Lebenslauf_2023.pdf</span>
+                            </div>
+                            <span class="text-xs text-green-600 font-bold">Hochgeladen</span>
+                        </div>
+                    </div>
                 </div>
+
             </div>
+
+            <!-- Right Column: Mentoring & Quick Actions -->
             <div class="space-y-8">
-                <div class="bg-brand-dark text-white p-8 rounded-sm shadow-lg">
+                
+                <!-- Next Session -->
+                <div class="bg-brand-dark text-white p-8 rounded-sm shadow-lg relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-gold/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
                     <h3 class="font-serif text-lg font-bold mb-6">Nächste Session</h3>
-                    <div class="space-y-2 text-sm text-gray-300 mb-6"><div class="flex items-center"><i class="far fa-calendar mr-3"></i> 24. Oktober 2024</div><div class="flex items-center"><i class="far fa-clock mr-3"></i> 14:00 Uhr</div></div>
-                    <button class="w-full bg-white/10 text-white py-2 text-xs uppercase font-bold">Link kopieren</button>
+                    
+                    <div class="flex items-center mb-4">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-12 h-12 rounded-full border-2 border-brand-gold mr-4">
+                        <div>
+                            <div class="font-bold">Dr. Markus T.</div>
+                            <div class="text-xs text-gray-400">CIO Strategy Call</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2 text-sm text-gray-300 mb-6">
+                        <div class="flex items-center"><i class="far fa-calendar mr-3 w-4"></i> 24. Oktober 2024</div>
+                        <div class="flex items-center"><i class="far fa-clock mr-3 w-4"></i> 14:00 - 15:00 Uhr</div>
+                    </div>
+
+                    <button class="w-full bg-white/10 hover:bg-brand-gold hover:text-black transition text-white py-2 text-xs uppercase tracking-widest font-bold">
+                        Meeting Link kopieren
+                    </button>
                 </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Quick Links</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="#" class="flex items-center hover:text-brand-gold transition"><i class="fas fa-plus-circle w-6 text-gray-300"></i> Neue Session buchen</a></li>
+                        <li><a href="#" class="flex items-center hover:text-brand-gold transition"><i class="fas fa-file-invoice w-6 text-gray-300"></i> Rechnungen einsehen</a></li>
+                        <li><a href="#" class="flex items-center hover:text-brand-gold transition"><i class="fas fa-cog w-6 text-gray-300"></i> Profil & Passwort</a></li>
+                    </ul>
+                </div>
+
             </div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer id="contact" class="bg-white pt-20 pb-10 border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 flex justify-between text-xs text-gray-500 uppercase">
-            <span>&copy; 2024 APEX Executive</span>
-            <div class="space-x-4"><a href="#" onclick="app.navigateTo('impressum')">Impressum</a><a href="#">AGB</a></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-16 mb-16">
+            <div>
+                <div class="flex items-center space-x-3 mb-6">
+                     <i class="fas fa-mountain text-brand-dark text-xl"></i>
+                     <span class="font-serif text-xl tracking-widest text-brand-dark">APEX</span>
+                </div>
+                <p class="text-gray-500 mb-8 max-w-sm">
+                    Die Plattform für Karriereentwicklung. Von Professionals für Professionals.
+                </p>
+                <div class="flex gap-4">
+                    <a href="#" class="text-gray-400 hover:text-brand-dark"><i class="fab fa-linkedin text-xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-brand-dark"><i class="fab fa-instagram text-xl"></i></a>
+                </div>
+            </div>
+            <div>
+                <h3 class="font-serif text-2xl mb-6 text-brand-dark">Newsletter</h3>
+                <form class="flex gap-2">
+                    <input type="email" placeholder="E-Mail Adresse" class="w-full bg-gray-50 border-b border-gray-300 p-3 focus:border-brand-gold outline-none transition">
+                    <button type="button" class="bg-brand-dark text-white font-bold py-3 px-6 uppercase tracking-widest text-xs hover:bg-brand-accent transition">
+                        Join
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between text-xs text-gray-400 uppercase tracking-wide">
+            <p>&copy; 2024 APEX Executive GmbH.</p>
+             <div class="flex space-x-6 mt-4 md:mt-0">
+                <a href="#" onclick="app.navigateTo('impressum')" class="hover:text-brand-dark">Impressum</a>
+                <a href="#faq" onclick="app.navigateTo('home'); app.scrollToSection('faq')" class="hover:text-brand-dark">FAQ</a>
+                <a href="#" class="hover:text-brand-dark">AGB</a>
+            </div>
         </div>
     </footer>
 
-    <!-- Modals -->
-    <div id="cart-overlay" class="fixed inset-0 z-[60] hidden"><div class="absolute inset-0 bg-black/50" onclick="app.toggleCart()"></div><div id="cart-sidebar" class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col"><div class="p-6 border-b flex justify-between"><h3 class="font-serif text-xl">Portfolio</h3><button onclick="app.toggleCart()">X</button></div><div id="cart-items" class="flex-grow p-6"></div><div class="p-6 border-t"><span id="cart-total" class="font-serif text-2xl block mb-4">€0</span><button onclick="app.checkout()" class="w-full bg-brand-dark text-white py-4 font-bold">Zur Kasse</button></div></div></div>
-    <div id="modal-checkout" class="fixed inset-0 z-[80] hidden flex items-center justify-center"><div class="bg-white p-8 rounded shadow-2xl max-w-md text-center"><h3 class="font-serif text-2xl mb-4">Vielen Dank!</h3><button onclick="document.getElementById('modal-checkout').classList.add('hidden')" class="bg-brand-dark text-white px-6 py-2">Schließen</button></div></div>
-    <div id="toast" class="fixed bottom-5 right-5 bg-brand-dark text-white px-6 py-4 rounded shadow-lg transform translate-y-20 transition-transform duration-300 z-[70]">Hinzugefügt</div>
+    <!-- CART SIDEBAR / OVERLAY -->
+    <div id="cart-overlay" class="fixed inset-0 z-[60] hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="app.toggleCart()"></div>
+        
+        <!-- Sidebar -->
+        <div id="cart-sidebar" class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-brand-dark text-white">
+                <h3 class="font-serif text-xl tracking-wide">Ihr Portfolio</h3>
+                <button onclick="app.toggleCart()" class="text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div id="cart-items" class="flex-grow p-6 overflow-y-auto space-y-4">
+                <!-- Cart items injected here -->
+                <div class="text-center text-gray-400 mt-10">
+                    <i class="fas fa-briefcase text-4xl mb-3 opacity-20"></i>
+                    <p>Noch keine Leistungen ausgewählt.</p>
+                </div>
+            </div>
 
-    <!-- LOGIC -->
+            <div class="p-6 bg-gray-50 border-t border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-gray-600 font-bold uppercase text-xs tracking-widest">Gesamtsumme (Netto)</span>
+                    <span id="cart-total" class="font-serif text-2xl text-brand-dark">€0</span>
+                </div>
+                <button onclick="app.checkout()" class="w-full gold-gradient text-brand-dark font-bold py-4 uppercase tracking-widest text-xs hover:shadow-lg transition">
+                    Zur Kasse gehen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHECKOUT MODAL -->
+    <div id="modal-checkout" class="fixed inset-0 z-[80] hidden flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="document.getElementById('modal-checkout').classList.add('hidden')"></div>
+        <div class="bg-white p-8 rounded-sm shadow-2xl w-full max-w-md relative z-10 text-center transform transition-all scale-100">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 text-2xl">
+                <i class="fas fa-check"></i>
+            </div>
+            <h3 class="font-serif text-2xl text-brand-dark mb-2">Vielen Dank!</h3>
+            <p class="text-gray-500 text-sm mb-6">Ihre Anfrage wurde erfolgreich übermittelt. Dies ist eine Demo-Umgebung – es findet keine echte Abbuchung statt.</p>
+            <button onclick="document.getElementById('modal-checkout').classList.add('hidden')" class="w-full bg-brand-dark text-white font-bold py-3 uppercase tracking-widest text-xs hover:bg-brand-accent transition">
+                Zurück zur Seite
+            </button>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-brand-dark text-white px-6 py-4 rounded shadow-lg transform translate-y-20 transition-transform duration-300 z-[70] flex items-center border-l-4 border-brand-gold">
+        <i class="fas fa-check-circle text-brand-gold mr-3"></i>
+        <div>
+            <h4 class="font-bold text-sm">Hinzugefügt</h4>
+            <p class="text-xs text-gray-400">Leistung im Portfolio gespeichert.</p>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION LOGIC (FIREBASE INTEGRATED) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBZ970mA7-2pJzhbxyFjjmzO97YKZhrSmU",
             authDomain: "apex-executive.firebaseapp.com",
@@ -446,18 +979,22 @@
             measurementId: "G-8K4T9MXEZ8"
         };
 
+        // Initialize Firebase
         let auth, db;
         try {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-        } catch(e) {
-            console.warn("Firebase Config Error", e);
+            console.log("Firebase initialized");
+        } catch (e) {
+            console.warn("Firebase Config Error:", e);
         }
 
+        // --- APP STATE & LOGIC ---
         window.app = {
             cart: [],
             coaches: [
+                // Fallback Data (Simulation)
                 { name: "Dr. Markus T.", role: "CIO @ DAX30", industry: "tech", image: "https://randomuser.me/api/portraits/men/32.jpg" },
                 { name: "Sarah L.", role: "VP Sales", industry: "tech", image: "https://randomuser.me/api/portraits/women/44.jpg" },
                 { name: "Johannes B.", role: "CFO", industry: "finance", image: "https://randomuser.me/api/portraits/men/85.jpg" },
@@ -467,14 +1004,17 @@
             ],
 
             navigateTo: (viewId) => {
-                ['view-home', 'view-login', 'view-dashboard', 'view-about', 'view-impressum', 'view-journal', 'view-package-details'].forEach(id => {
-                    document.getElementById(id)?.classList.add('hidden');
+                const views = ['view-home', 'view-login', 'view-dashboard', 'view-about', 'view-impressum', 'view-journal', 'view-package-details'];
+                views.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.classList.add('hidden');
                 });
                 
-                document.getElementById('view-' + viewId).classList.remove('hidden');
+                const target = document.getElementById('view-' + viewId);
+                if(target) target.classList.remove('hidden');
                 
                 const navLinks = document.getElementById('nav-links');
-                if(viewId === 'home' || viewId === 'journal' || viewId === 'about' || viewId === 'impressum') {
+                if(viewId === 'home' || viewId === 'about' || viewId === 'journal' || viewId === 'impressum' || viewId === 'package-details') {
                     navLinks.classList.remove('hidden');
                     navLinks.classList.add('md:flex');
                 } else {
@@ -519,19 +1059,27 @@
             },
 
             updateCartUI: () => {
-                document.getElementById('cart-count').innerText = app.cart.length;
-                document.getElementById('cart-count').classList.toggle('hidden', app.cart.length === 0);
+                const badge = document.getElementById('cart-count');
+                if(badge) {
+                    badge.innerText = app.cart.length;
+                    badge.classList.toggle('hidden', app.cart.length === 0);
+                }
+
+                const container = document.getElementById('cart-items');
+                const totalDisplay = document.getElementById('cart-total');
                 
-                const list = document.getElementById('cart-items');
-                const total = app.cart.reduce((sum, item) => sum + item.price, 0);
-                
-                list.innerHTML = app.cart.length ? app.cart.map(i => `
-                    <div class="flex justify-between p-4 border-b">
-                        <span>${i.title}</span>
-                        <div class="flex gap-4"><span>€${i.price}</span><button onclick="app.removeFromCart(${i.id})" class="text-red-500 font-bold">X</button></div>
-                    </div>`).join('') : '<p class="text-center mt-10 text-gray-400">Leer</p>';
-                
-                document.getElementById('cart-total').innerText = '€' + total;
+                if (app.cart.length === 0) {
+                    container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fas fa-briefcase text-4xl mb-3 opacity-20"></i><p>Portfolio leer</p></div>`;
+                    totalDisplay.innerText = "€0";
+                    return;
+                }
+
+                let total = 0;
+                container.innerHTML = app.cart.map(item => {
+                    total += item.price;
+                    return `<div class="flex justify-between p-4 border-b"><div>${item.title}</div><button onclick="app.removeFromCart(${item.id})" class="text-red-500">X</button></div>`;
+                }).join('');
+                totalDisplay.innerText = "€" + total.toLocaleString();
             },
 
             checkout: () => {
@@ -550,14 +1098,13 @@
             handleLogin: async () => {
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
-                const msg = document.getElementById('login-message');
-                msg.innerText = "";
 
                 if (auth) {
                     try {
                         await signInWithEmailAndPassword(auth, email, password);
+                        // Redirect happens in onAuthStateChanged listener
                     } catch (error) {
-                        msg.innerText = "Login fehlgeschlagen: " + error.code;
+                        alert("Login Fehler: " + error.code + " - " + error.message);
                         console.error(error);
                     }
                 } else {
