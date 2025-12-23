@@ -40,11 +40,9 @@
         .hero-pattern {
             background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
-        /* Fade transition for views */
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        /* FAQ Animation */
         .faq-content { transition: max-height 0.3s ease-out; max-height: 0; overflow: hidden; }
         .faq-open .faq-content { max-height: 500px; }
         .faq-open i { transform: rotate(180deg); }
@@ -57,7 +55,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-24 items-center">
                 <!-- LOGO -->
-                <div class="flex items-center space-x-3 group cursor-pointer" onclick="navigateTo('home')">
+                <div class="flex items-center space-x-3 group cursor-pointer" onclick="app.navigateTo('home')">
                     <div class="relative w-10 h-10 flex items-center justify-center border border-brand-gold rounded-sm transform group-hover:rotate-45 transition duration-500">
                         <i class="fas fa-mountain text-brand-gold text-lg transform group-hover:-rotate-45 transition duration-500"></i>
                     </div>
@@ -69,27 +67,27 @@
 
                 <!-- Desktop Nav -->
                 <div id="nav-links" class="hidden md:flex space-x-8 text-xs uppercase tracking-widest font-bold text-gray-400">
-                    <a href="#cv-packages" onclick="navigateTo('home'); scrollToSection('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold cursor-pointer">CV-Manufaktur</a>
-                    <a href="#coaches" onclick="navigateTo('home'); scrollToSection('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold cursor-pointer">Mentoren</a>
-                    <a href="#" onclick="navigateTo('journal')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold cursor-pointer">Insights</a>
-                    <a href="#" onclick="navigateTo('about')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold cursor-pointer">Über uns</a>
+                    <button onclick="app.handleNavClick('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">CV-Manufaktur</button>
+                    <button onclick="app.handleNavClick('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Mentoren</button>
+                    <button onclick="app.navigateTo('journal')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Insights</button>
+                    <button onclick="app.navigateTo('about')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Über uns</button>
                 </div>
                 
                 <div class="flex items-center space-x-6">
                     <!-- Cart Trigger -->
-                    <button onclick="toggleCart()" class="relative text-white hover:text-brand-gold transition group flex items-center gap-2">
+                    <button onclick="app.toggleCart()" class="relative text-white hover:text-brand-gold transition group flex items-center gap-2">
                         <i class="fas fa-briefcase text-lg group-hover:scale-110 transition-transform"></i>
                         <span class="hidden md:inline text-[10px] uppercase tracking-widest font-bold">Portfolio</span>
                         <span id="cart-count" class="absolute -top-2 -right-2 bg-brand-gold text-brand-dark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden shadow-md">0</span>
                     </button>
                     
                     <div class="hidden md:block">
-                        <!-- Login Button (Dynamic) -->
-                        <button id="nav-login-btn" onclick="navigateTo('login')" class="border border-brand-gold/30 text-brand-gold px-6 py-2 rounded-sm font-bold text-xs uppercase hover:bg-brand-gold hover:text-brand-dark transition duration-300">
+                        <!-- Login Button -->
+                        <button id="nav-login-btn" onclick="app.navigateTo('login')" class="border border-brand-gold/30 text-brand-gold px-6 py-2 rounded-sm font-bold text-xs uppercase hover:bg-brand-gold hover:text-brand-dark transition duration-300">
                             Login
                         </button>
                         <!-- User Profile (Hidden by default) -->
-                        <div id="nav-user-profile" class="hidden flex items-center gap-3 cursor-pointer" onclick="navigateTo('dashboard')">
+                        <div id="nav-user-profile" class="hidden flex items-center gap-3 cursor-pointer" onclick="app.navigateTo('dashboard')">
                             <div class="text-right hidden lg:block">
                                 <span class="block text-xs text-white font-bold" id="user-name-display">User</span>
                                 <span class="block text-[10px] text-brand-gold uppercase tracking-wider">Dashboard</span>
@@ -121,10 +119,10 @@
                         Wir demokratisieren Executive-Qualität. Egal ob Sie ins C-Level aufsteigen oder Ihre Karriere erst starten – wir erstellen Unterlagen, die Türen öffnen.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-5">
-                        <button onclick="scrollToSection('cv-packages')" class="gold-gradient text-brand-dark font-bold py-4 px-10 rounded-sm hover:shadow-lg hover:shadow-brand-gold/20 transform hover:-translate-y-1 transition text-center uppercase tracking-wider text-sm">
+                        <button onclick="app.handleNavClick('cv-packages')" class="gold-gradient text-brand-dark font-bold py-4 px-10 rounded-sm hover:shadow-lg hover:shadow-brand-gold/20 transform hover:-translate-y-1 transition text-center uppercase tracking-wider text-sm">
                             Zu den CV Paketen
                         </button>
-                        <button onclick="scrollToSection('coaches')" class="group flex items-center text-white py-4 px-8 rounded-sm hover:text-brand-gold transition text-center uppercase tracking-wider text-sm">
+                        <button onclick="app.handleNavClick('coaches')" class="group flex items-center text-white py-4 px-8 rounded-sm hover:text-brand-gold transition text-center uppercase tracking-wider text-sm">
                             <span>Mentoren ansehen</span>
                             <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition"></i>
                         </button>
@@ -348,7 +346,7 @@
 
                 <div class="space-y-4">
                     <!-- FAQ Item 1 -->
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="toggleFaq('faq1')">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq1')">
                         <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark text-sm">Garantieren Sie einen Job oder eine Beförderung?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
@@ -361,7 +359,7 @@
                     </div>
 
                     <!-- FAQ Item 2 -->
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="toggleFaq('faq2')">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq2')">
                         <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark text-sm">Sind Sie Headhunter oder Personalvermittler?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
@@ -374,7 +372,7 @@
                     </div>
 
                     <!-- FAQ Item 3 -->
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="toggleFaq('faq3')">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq3')">
                         <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark text-sm">Prüfen Sie Arbeitsverträge rechtlich?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
@@ -387,7 +385,7 @@
                     </div>
 
                     <!-- FAQ Item: Compliance -->
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="toggleFaq('faq-compliance')">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq-compliance')">
                         <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark text-sm">Gibt es Einschränkungen bei der Mentoren-Wahl? (Compliance)</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
@@ -400,7 +398,7 @@
                     </div>
 
                     <!-- FAQ Item 4 -->
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="toggleFaq('faq4')">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq4')">
                         <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark text-sm">Sind die Kosten steuerlich absetzbar?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
@@ -413,7 +411,7 @@
                     </div>
 
                     <!-- FAQ Item 5 -->
-                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="toggleFaq('faq5')">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq5')">
                         <button class="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark text-sm">Wie schnell ist die Umsetzung?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
@@ -550,7 +548,7 @@
                 <!-- CTA -->
                 <div class="mt-20 text-center">
                     <h3 class="font-serif text-2xl text-brand-dark mb-6">Bereit für den nächsten Schritt?</h3>
-                    <button onclick="navigateTo('home'); scrollToSection('cv-packages')" class="bg-brand-dark text-white px-8 py-4 uppercase tracking-widest text-xs font-bold hover:bg-brand-gold hover:text-brand-dark transition">
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="bg-brand-dark text-white px-8 py-4 uppercase tracking-widest text-xs font-bold hover:bg-brand-gold hover:text-brand-dark transition">
                         Zurück zu den Angeboten
                     </button>
                 </div>
@@ -737,7 +735,7 @@
         </div>
     </div>
 
-    <!-- VIEW: MEMBER DASHBOARD (RESTORED & DETAILED) -->
+    <!-- VIEW: MEMBER DASHBOARD (FULL VERSION RESTORED) -->
     <div id="view-dashboard" class="hidden fade-in flex-grow bg-gray-50">
         <!-- Dashboard Header -->
         <div class="bg-brand-dark text-white py-12">
@@ -748,11 +746,15 @@
                         <p class="text-brand-gold text-sm uppercase tracking-widest">Premium Member seit 2024</p>
                     </div>
                     <div class="flex gap-4 items-center">
-                         <div class="bg-white/10 px-6 py-3 rounded-sm text-center">
+                        <div class="bg-white/10 px-6 py-3 rounded-sm text-center hidden md:block">
                             <span class="block text-xl font-bold">1</span>
                             <span class="text-[10px] uppercase text-gray-400">Aktive Projekte</span>
                         </div>
-                        <button onclick="app.handleLogout()" class="text-xs text-gray-400 hover:text-white uppercase tracking-widest ml-4">
+                        <div class="bg-white/10 px-6 py-3 rounded-sm text-center hidden md:block">
+                            <span class="block text-xl font-bold">2</span>
+                            <span class="text-[10px] uppercase text-gray-400">Offene Credits</span>
+                        </div>
+                        <button onclick="app.handleLogout()" class="text-xs text-gray-400 hover:text-white uppercase tracking-widest ml-4 border border-white/20 px-4 py-2 rounded-sm hover:border-white transition">
                             Abmelden
                         </button>
                     </div>
@@ -955,7 +957,7 @@
         </div>
     </div>
 
-    <!-- MAIN APPLICATION LOGIC (FIREBASE READY) -->
+    <!-- MAIN APPLICATION LOGIC (FIREBASE INTEGRATED) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
@@ -972,7 +974,7 @@
             measurementId: "G-8K4T9MXEZ8"
         };
 
-        // Initialize
+        // Initialize Firebase
         let auth, db;
         try {
             const app = initializeApp(firebaseConfig);
@@ -980,13 +982,14 @@
             db = getFirestore(app);
             console.log("Firebase initialized");
         } catch (e) {
-            console.warn("Firebase Config Error:", e);
+            console.warn("Firebase Config Error - Falling back to local mode", e);
         }
 
         // --- APP STATE & LOGIC ---
         window.app = {
             cart: [],
             coaches: [
+                // Fallback Data (Simulation)
                 { name: "Dr. Markus T.", role: "CIO @ DAX30", industry: "tech", image: "https://randomuser.me/api/portraits/men/32.jpg" },
                 { name: "Sarah L.", role: "VP Sales", industry: "tech", image: "https://randomuser.me/api/portraits/women/44.jpg" },
                 { name: "Johannes B.", role: "CFO", industry: "finance", image: "https://randomuser.me/api/portraits/men/85.jpg" },
@@ -996,8 +999,10 @@
             ],
 
             navigateTo: (viewId) => {
-                ['view-home', 'view-login', 'view-dashboard', 'view-about', 'view-impressum', 'view-journal', 'view-package-details'].forEach(id => {
-                    document.getElementById(id)?.classList.add('hidden');
+                const views = ['view-home', 'view-login', 'view-dashboard', 'view-about', 'view-impressum', 'view-journal', 'view-package-details'];
+                views.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.classList.add('hidden');
                 });
                 
                 const target = document.getElementById('view-' + viewId);
@@ -1015,9 +1020,24 @@
             },
 
             scrollToSection: (id) => {
-                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                // Ensure home view is visible before scrolling
+                if(document.getElementById('view-home').classList.contains('hidden')) {
+                    app.navigateTo('home');
+                    setTimeout(() => {
+                        const el = document.getElementById(id);
+                        if(el) el.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                } else {
+                    const el = document.getElementById(id);
+                    if(el) el.scrollIntoView({ behavior: 'smooth' });
+                }
             },
 
+            handleNavClick: (sectionId) => {
+                app.scrollToSection(sectionId);
+            },
+
+            // AUTHENTICATION
             handleLogin: async () => {
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
@@ -1030,22 +1050,31 @@
                         alert("Login Fehler: " + error.message);
                     }
                 } else {
-                    // Fallback Simulation if Firebase fails
+                    // Fallback Simulation
+                    document.getElementById('nav-login-btn').classList.add('hidden');
+                    document.getElementById('nav-user-profile').classList.remove('hidden');
                     app.navigateTo('dashboard');
                 }
             },
 
             handleLogout: async () => {
-                if(auth) await signOut(auth);
-                document.getElementById('nav-login-btn').classList.remove('hidden');
-                document.getElementById('nav-user-profile').classList.add('hidden');
-                app.navigateTo('home');
+                if(auth) {
+                    await signOut(auth);
+                } else {
+                    document.getElementById('nav-login-btn').classList.remove('hidden');
+                    document.getElementById('nav-user-profile').classList.add('hidden');
+                    app.navigateTo('home');
+                }
             },
 
+            // CART & UI
             addToCart: (title, price) => {
                 app.cart.push({ title, price, id: Date.now() });
                 app.updateCartUI();
                 app.showToast();
+                // Optional: Open cart automatically
+                const sidebar = document.getElementById('cart-sidebar');
+                if(sidebar.classList.contains('translate-x-full')) app.toggleCart();
             },
 
             removeFromCart: (id) => {
@@ -1108,6 +1137,18 @@
                 app.updateCartUI();
             },
 
+            // FAQ
+            toggleFaq: (id) => {
+                const element = document.getElementById(id).parentElement;
+                if(element.classList.contains('faq-open')) {
+                    element.classList.remove('faq-open');
+                } else {
+                    document.querySelectorAll('.faq-open').forEach(el => el.classList.remove('faq-open'));
+                    element.classList.add('faq-open');
+                }
+            },
+
+            // DATA LOADING
             filterCoaches: () => {
                 const filter = document.getElementById('industry-filter')?.value || 'all';
                 const grid = document.getElementById('coach-grid');
@@ -1119,10 +1160,11 @@
                     <div class="group bg-white rounded-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:border-brand-gold/30 transition-all duration-300">
                         <div class="relative h-24 bg-brand-dark overflow-hidden">
                             <div class="absolute inset-0 bg-brand-gold/10"></div>
+                            <div class="absolute bottom-0 left-0 w-full h-1 bg-brand-gold transform scale-x-0 group-hover:scale-x-100 transition duration-500 origin-left"></div>
                         </div>
                         <div class="px-6 pb-6 relative">
                             <div class="-mt-12 mb-4">
-                                <img src="${coach.image}" class="w-20 h-20 rounded-sm object-cover border-4 border-white shadow-md">
+                                <img src="${coach.image}" alt="${coach.name}" class="w-20 h-20 rounded-sm object-cover border-4 border-white shadow-md">
                             </div>
                             <div>
                                 <h4 class="font-serif text-lg text-brand-dark font-bold">${coach.name}</h4>
@@ -1147,18 +1189,44 @@
                     document.getElementById('nav-user-profile').classList.remove('hidden');
                     document.getElementById('dash-username').innerText = user.email.split('@')[0];
                     document.getElementById('user-name-display').innerText = user.email.split('@')[0];
+                    
+                    // Auto-redirect only if on login page
+                    if(!document.getElementById('view-login').classList.contains('hidden')) {
+                        app.navigateTo('dashboard');
+                    }
                 } else {
                     console.log("Logged out");
                     document.getElementById('nav-login-btn').classList.remove('hidden');
                     document.getElementById('nav-user-profile').classList.add('hidden');
+                    // Redirect to home if on dashboard
+                    if(!document.getElementById('view-dashboard').classList.contains('hidden')) {
+                        app.navigateTo('home');
+                    }
                 }
             });
         }
 
-        // DB Fetch Logic could go here (currently using fallback data for stability)
+        // DB Fetch Logic (Optional)
+        async function fetchCoachesFromDB() {
+            if(!db) return; 
+            try {
+                const querySnapshot = await getDocs(collection(db, "coaches"));
+                const dbCoaches = [];
+                querySnapshot.forEach((doc) => {
+                    dbCoaches.push(doc.data());
+                });
+                if(dbCoaches.length > 0) {
+                    app.coaches = dbCoaches;
+                    app.filterCoaches();
+                }
+            } catch(e) {
+                console.log("Using local data fallback");
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             app.filterCoaches();
+            fetchCoachesFromDB();
         });
 
     </script>
