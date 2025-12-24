@@ -34,7 +34,6 @@
         .hero-pattern { background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
         .faq-content { transition: max-height 0.4s ease-out; max-height: 0; overflow: hidden; }
         .faq-open .faq-content { max-height: 500px; }
         .faq-open i { transform: rotate(180deg); }
@@ -46,7 +45,6 @@
     <nav class="bg-brand-dark text-white sticky top-0 z-50 shadow-xl border-b border-white/5">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-24 items-center">
-                <!-- Logo -->
                 <div class="flex items-center space-x-3 group cursor-pointer" onclick="app.navigateTo('home')">
                     <div class="relative w-10 h-10 flex items-center justify-center border border-brand-gold rounded-sm transform group-hover:rotate-45 transition duration-500">
                         <i class="fas fa-mountain text-brand-gold text-lg transform group-hover:-rotate-45 transition duration-500"></i>
@@ -57,7 +55,6 @@
                     </div>
                 </div>
 
-                <!-- Desktop Menu -->
                 <div id="nav-links" class="hidden md:flex space-x-8 text-xs uppercase tracking-widest font-bold text-gray-400">
                     <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">CV-Manufaktur</button>
                     <button onclick="app.navigateTo('home'); app.scrollToSection('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Mentoren</button>
@@ -65,9 +62,7 @@
                     <button onclick="app.navigateTo('about')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Über uns</button>
                 </div>
                 
-                <!-- User Actions -->
                 <div class="flex items-center space-x-6">
-                    <!-- Cart -->
                     <button onclick="app.toggleCart()" class="relative text-white hover:text-brand-gold transition group flex items-center gap-2">
                         <i class="fas fa-briefcase text-lg group-hover:scale-110 transition-transform"></i>
                         <span class="hidden md:inline text-[10px] uppercase tracking-widest font-bold">Portfolio</span>
@@ -75,21 +70,18 @@
                     </button>
                     
                     <div class="hidden md:block">
-                        <!-- Login Button -->
                         <button id="nav-login-btn" onclick="app.navigateTo('login')" class="border border-brand-gold/30 text-brand-gold px-6 py-2 rounded-sm font-bold text-xs uppercase hover:bg-brand-gold hover:text-brand-dark transition duration-300">
                             Login
                         </button>
-                        <!-- User Profile (Hidden initially) -->
                         <div id="nav-user-profile" class="hidden flex items-center gap-3 cursor-pointer" onclick="app.navigateTo('dashboard')">
                             <div class="text-right hidden lg:block">
                                 <span class="block text-xs text-white font-bold" id="user-name-display">User</span>
                                 <span class="block text-[10px] text-brand-gold uppercase tracking-wider">Dashboard</span>
                             </div>
-                            <img src="https://randomuser.me/api/portraits/men/46.jpg" class="w-10 h-10 rounded-full border-2 border-brand-gold object-cover">
+                            <img src="https://randomuser.me/api/portraits/men/46.jpg" class="w-10 h-10 rounded-full border-2 border-brand-gold">
                         </div>
                     </div>
 
-                    <!-- Mobile Menu Trigger -->
                     <button onclick="app.toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none">
                         <i class="fas fa-bars"></i>
                     </button>
@@ -97,7 +89,6 @@
             </div>
         </div>
 
-        <!-- Mobile Menu Overlay -->
         <div id="mobile-menu" class="hidden md:hidden absolute top-24 left-0 w-full bg-brand-dark border-b border-white/10 shadow-xl py-6 px-4 flex-col space-y-4 z-40">
             <button onclick="app.navigateTo('home'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Home</button>
             <button onclick="app.navigateTo('journal'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Insights</button>
@@ -108,7 +99,6 @@
 
     <!-- === VIEW 1: LANDING PAGE === -->
     <div id="view-home" class="fade-in">
-        <!-- Hero -->
         <header class="bg-brand-dark text-white relative overflow-hidden hero-pattern">
             <div class="absolute inset-0 bg-gradient-to-br from-brand-dark via-brand-dark/95 to-brand-accent/90 z-10"></div>
             <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 grid md:grid-cols-12 gap-12 items-center">
@@ -126,7 +116,6 @@
             </div>
         </header>
 
-        <!-- CV Packages -->
         <section id="cv-packages" class="py-24 bg-white relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
@@ -134,8 +123,7 @@
                     <h2 class="font-serif text-4xl text-brand-dark mb-4">Unterlagen für jede Karrierestufe</h2>
                 </div>
                 <div class="grid md:grid-cols-3 gap-8 items-start">
-                    <!-- Starter -->
-                    <div class="group border border-gray-200 p-8 rounded-sm bg-white hover:shadow-2xl transition duration-300 cursor-pointer relative">
+                    <div class="group border border-gray-200 p-8 rounded-sm bg-white hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer relative">
                         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-100 text-gray-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">High Potential</div>
                         <h3 class="font-serif text-xl text-brand-dark mb-2">Young Professional</h3>
                         <div class="text-3xl font-serif text-brand-dark mb-6">€249 <span class="text-sm font-sans text-gray-400 font-normal">/ Paket</span></div>
@@ -149,8 +137,7 @@
                             <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
                         </div>
                     </div>
-                    <!-- Pro -->
-                    <div class="group border-2 border-brand-gold p-8 rounded-sm shadow-xl bg-white relative transform md:-translate-y-4 transition duration-300">
+                    <div class="group border-2 border-brand-gold p-8 rounded-sm shadow-xl bg-white relative transform md:-translate-y-4 hover:shadow-2xl hover:-translate-y-6 transition-all duration-300 cursor-pointer">
                         <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-[10px] font-bold px-3 py-1 uppercase tracking-wide">Popular</div>
                         <h3 class="font-serif text-xl text-brand-dark mb-2">Senior Professional</h3>
                         <div class="text-3xl font-serif text-brand-dark mb-6">€490 <span class="text-sm font-sans text-gray-400 font-normal">/ Paket</span></div>
@@ -164,8 +151,7 @@
                             <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
                         </div>
                     </div>
-                    <!-- Executive -->
-                    <div class="group border border-gray-200 p-8 rounded-sm bg-brand-dark text-white relative hover:shadow-2xl transition duration-300 hover:border-brand-gold">
+                    <div class="group border border-gray-200 p-8 rounded-sm bg-brand-dark text-white relative hover:shadow-2xl hover:-translate-y-2 hover:border-brand-gold transition-all duration-300 cursor-pointer">
                         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">Board Level</div>
                         <h3 class="font-serif text-xl text-white mb-2">Executive C-Suite</h3>
                         <div class="text-3xl font-serif text-white mb-6">€990 <span class="text-sm font-sans text-gray-500 font-normal">/ Paket</span></div>
@@ -237,7 +223,6 @@
             </div>
         </section>
 
-        <!-- FAQ (FULL TEXT) -->
         <section id="faq" class="py-24 bg-gray-50 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -334,8 +319,8 @@
                         <tr><td class="p-4">Headhunter Intro</td><td class="p-4 text-center">-</td><td class="p-4 text-center">-</td><td class="p-4 text-center">✓</td></tr>
                     </tbody>
                 </table>
-                <div class="mt-8 text-center"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold underline">Zurück</button></div>
             </div>
+            <div class="mt-8 text-center"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold underline">Zurück</button></div>
         </section>
     </div>
 
@@ -386,7 +371,6 @@
                 <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-200">
                     <h3 class="font-serif text-lg text-brand-dark font-bold mb-4">Secure Data Vault</h3>
                     <div class="border-2 border-dashed border-gray-300 p-8 text-center bg-gray-50"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i><p class="text-sm">Dokumente hier ablegen</p></div>
-                    <div class="mt-4 p-3 bg-gray-50 flex justify-between items-center text-sm rounded"><div class="flex items-center gap-2"><i class="fas fa-file-pdf text-red-500"></i> Alter_CV_2023.pdf</div><span class="text-green-600 text-xs font-bold">OK</span></div>
                 </div>
             </div>
             <div class="space-y-8">
@@ -407,7 +391,7 @@
     <!-- Footer -->
     <footer id="contact" class="bg-white pt-20 pb-10 border-t border-gray-200 mt-auto">
         <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between text-xs text-gray-500 uppercase">
-            <div class="mb-4 md:mb-0"><span>&copy; 2024 APEX Executive GmbH | v1.5</span></div>
+            <div class="mb-4 md:mb-0"><span>&copy; 2024 APEX Executive GmbH</span></div>
             <div class="space-x-4"><a href="#" onclick="app.navigateTo('impressum')">Impressum</a><a href="#faq" onclick="app.navigateTo('home'); app.scrollToSection('faq')">FAQ</a><a href="#">AGB</a></div>
         </div>
     </footer>
@@ -444,12 +428,12 @@
         window.app = {
             cart: [],
             coaches: [
-                { id: "101", name: "Dr. Markus T.", role: "CIO @ DAX30", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/men/32.jpg", bio: "15 Jahre Erfahrung als CIO in der Automobilindustrie.", expertise: ["Digital Transformation", "Leadership"], stats: "20+ Jahre Erfahrung" },
-                { id: "102", name: "Sarah L.", role: "VP Sales", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/women/44.jpg", bio: "Skalierung von Vertriebsteams im SaaS-Umfeld.", expertise: ["Sales Strategy", "Scaling"], stats: "100M+ Revenue" },
-                { id: "103", name: "Johannes B.", role: "CFO", industry: "finance", price: 400, image: "https://randomuser.me/api/portraits/men/85.jpg", bio: "Fokus auf M&A und Restrukturierung.", expertise: ["M&A", "Finance"], stats: "15 Transaktionen" },
-                { id: "104", name: "Elena R.", role: "COO", industry: "automotive", price: 380, image: "https://randomuser.me/api/portraits/women/68.jpg", bio: "Operative Exzellenz in globalen Konzernen.", expertise: ["Operations", "Lean Mgmt"], stats: "Global Teams" },
-                { id: "105", name: "Christian K.", role: "Ex-CTO", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/men/22.jpg", bio: "Tech-Strategie für High-Growth Startups.", expertise: ["Tech Strategy", "Agile"], stats: "2 Exits" },
-                { id: "106", name: "Petra M.", role: "CHRO", industry: "finance", price: 350, image: "https://randomuser.me/api/portraits/women/33.jpg", bio: "Strategisches HR-Management.", expertise: ["HR Strategy", "Culture"], stats: "30 Jahre Exp" },
+                { id: "101", name: "Dr. Markus T.", role: "CIO @ DAX30", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/men/32.jpg", bio: "15 Jahre Erfahrung als CIO in der Automobilindustrie. Spezialisiert auf Digitale Transformation.", expertise: ["Digital Transformation", "Leadership", "Board Politics"], stats: "20+ Jahre Erfahrung" },
+                { id: "102", name: "Sarah L.", role: "VP Sales", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/women/44.jpg", bio: "Skalierung von Vertriebsteams im SaaS-Umfeld von Series A bis IPO.", expertise: ["Sales Strategy", "Team Scaling", "Negotiation"], stats: "100M+ Revenue" },
+                { id: "103", name: "Johannes B.", role: "CFO", industry: "finance", price: 400, image: "https://randomuser.me/api/portraits/men/85.jpg", bio: "Fokus auf M&A und Restrukturierung im gehobenen Mittelstand.", expertise: ["M&A", "Finance", "Restructuring"], stats: "15 Transaktionen" },
+                { id: "104", name: "Elena R.", role: "COO", industry: "automotive", price: 380, image: "https://randomuser.me/api/portraits/women/68.jpg", bio: "Operative Exzellenz und Supply Chain Optimierung.", expertise: ["Operations", "Supply Chain", "Lean Mgmt"], stats: "Global Teams" },
+                { id: "105", name: "Christian K.", role: "Ex-CTO", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/men/22.jpg", bio: "Tech-Strategie und Produktentwicklung für High-Growth Startups.", expertise: ["Tech Strategy", "Product", "Agile"], stats: "2 Exits" },
+                { id: "106", name: "Petra M.", role: "CHRO", industry: "finance", price: 350, image: "https://randomuser.me/api/portraits/women/33.jpg", bio: "Strategisches HR-Management und Talententwicklung.", expertise: ["HR Strategy", "Talent Mgmt", "Culture"], stats: "30 Jahre Exp" },
                 { id: "107", name: "Thomas W.", role: "CEO @ Mittelstand", industry: "automotive", price: 450, image: "https://randomuser.me/api/portraits/men/45.jpg", bio: "Führung von Familienunternehmen.", expertise: ["Succession", "Family Business"], stats: "500 MA" },
                 { id: "108", name: "Julia K.", role: "CMO", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/women/65.jpg", bio: "Markenaufbau im B2B-Umfeld.", expertise: ["Brand", "Growth"], stats: "Global Brand" },
                 { id: "109", name: "Michael R.", role: "General Counsel", industry: "finance", price: 400, image: "https://randomuser.me/api/portraits/men/11.jpg", bio: "Rechtliche Strategie und Compliance.", expertise: ["Legal", "Compliance"], stats: "DAX Konzern" }
@@ -618,23 +602,33 @@
                 const coach = app.coaches.find(c => c.id == id);
                 if(!coach) return;
                 
+                // Safe handling for expertise
+                let expertiseList = coach.expertise;
+                if (!Array.isArray(expertiseList)) {
+                    if (typeof expertiseList === 'string') {
+                        expertiseList = expertiseList.split(',').map(s => s.trim());
+                    } else {
+                        expertiseList = ["Strategy", "Leadership"];
+                    }
+                }
+
                 const container = document.getElementById('coach-detail-content');
                 container.innerHTML = `
                     <div class="flex flex-col md:flex-row gap-12 items-start">
                         <div class="w-full md:w-1/3">
                             <img src="${coach.image}" class="w-full rounded-sm shadow-xl border-4 border-white object-cover">
                             <div class="mt-6 p-6 bg-gray-50 border border-gray-100 rounded-sm text-center">
-                                <span class="block text-2xl font-serif text-brand-dark mb-2">€${coach.price}</span>
+                                <span class="block text-2xl font-serif text-brand-dark mb-2">€${coach.price || 350}</span>
                                 <span class="text-xs text-gray-500 uppercase tracking-widest block mb-6">pro Stunde</span>
-                                <button onclick="app.addToCart('Session: ${coach.name}', ${coach.price})" class="w-full bg-brand-gold text-brand-dark font-bold py-3 uppercase tracking-widest text-xs hover:shadow-lg transition">Jetzt Buchen</button>
+                                <button onclick="app.addToCart('Session: ${coach.name}', ${coach.price || 350})" class="w-full bg-brand-gold text-brand-dark font-bold py-3 uppercase tracking-widest text-xs hover:shadow-lg transition">Jetzt Buchen</button>
                             </div>
                         </div>
                         <div class="w-full md:w-2/3">
                             <h1 class="font-serif text-4xl text-brand-dark mb-2">${coach.name}</h1>
                             <p class="text-brand-gold font-bold uppercase tracking-widest text-sm mb-8">${coach.role}</p>
-                            <div class="prose max-w-none text-gray-600 leading-relaxed mb-8"><p class="mb-4">${coach.bio || "Erfahrener Executive Mentor mit nachweisbarem Track Record."}</p></div>
+                            <div class="prose max-w-none text-gray-600 leading-relaxed mb-8"><p class="mb-4">${coach.bio || "Erfahrener Executive Mentor mit nachweisbarem Track Record in der Transformation von Organisationen und der Entwicklung von High-Performance Teams."}</p></div>
                             <div class="grid grid-cols-2 gap-6 mb-8">
-                                <div><h4 class="font-bold text-brand-dark text-xs uppercase tracking-widest mb-3">Expertise</h4><div class="flex flex-wrap gap-2">${(coach.expertise || ["Strategy", "Leadership"]).map(e => `<span class="bg-brand-dark text-white px-3 py-1 text-[10px] uppercase tracking-wide rounded-sm">${e}</span>`).join('')}</div></div>
+                                <div><h4 class="font-bold text-brand-dark text-xs uppercase tracking-widest mb-3">Expertise</h4><div class="flex flex-wrap gap-2">${expertiseList.map(e => `<span class="bg-brand-dark text-white px-3 py-1 text-[10px] uppercase tracking-wide rounded-sm">${e}</span>`).join('')}</div></div>
                                 <div><h4 class="font-bold text-brand-dark text-xs uppercase tracking-widest mb-3">Erfahrung</h4><p class="text-sm text-gray-600">${coach.stats || "15+ Jahre C-Level Erfahrung"}</p></div>
                             </div>
                         </div>
@@ -686,7 +680,7 @@
             try {
                 const snap = await getDocs(collection(db, "coaches"));
                 const data = [];
-                snap.forEach(d => data.push({id: d.id, ...d.data()})); // FIXED: Include ID
+                snap.forEach(d => data.push({id: d.id, ...d.data()}));
                 if(data.length > 0) {
                     app.coaches = data;
                     app.filterCoaches();
