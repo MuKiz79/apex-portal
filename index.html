@@ -34,7 +34,6 @@
         .hero-pattern { background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
         .faq-content { transition: max-height 0.4s ease-out; max-height: 0; overflow: hidden; }
         .faq-open .faq-content { max-height: 500px; }
         .faq-open i { transform: rotate(180deg); }
@@ -46,7 +45,6 @@
     <nav class="bg-brand-dark text-white sticky top-0 z-50 shadow-xl border-b border-white/5">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-24 items-center">
-                <!-- Logo -->
                 <div class="flex items-center space-x-3 group cursor-pointer" onclick="app.navigateTo('home')">
                     <div class="relative w-10 h-10 flex items-center justify-center border border-brand-gold rounded-sm transform group-hover:rotate-45 transition duration-500">
                         <i class="fas fa-mountain text-brand-gold text-lg transform group-hover:-rotate-45 transition duration-500"></i>
@@ -57,7 +55,6 @@
                     </div>
                 </div>
 
-                <!-- Desktop Menu -->
                 <div id="nav-links" class="hidden md:flex space-x-8 text-xs uppercase tracking-widest font-bold text-gray-400">
                     <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">CV-Manufaktur</button>
                     <button onclick="app.navigateTo('home'); app.scrollToSection('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Mentoren</button>
@@ -65,9 +62,7 @@
                     <button onclick="app.navigateTo('about')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Über uns</button>
                 </div>
                 
-                <!-- User Actions -->
                 <div class="flex items-center space-x-6">
-                    <!-- Cart -->
                     <button onclick="app.toggleCart()" class="relative text-white hover:text-brand-gold transition group flex items-center gap-2">
                         <i class="fas fa-briefcase text-lg group-hover:scale-110 transition-transform"></i>
                         <span class="hidden md:inline text-[10px] uppercase tracking-widest font-bold">Portfolio</span>
@@ -75,21 +70,18 @@
                     </button>
                     
                     <div class="hidden md:block">
-                        <!-- Login Button -->
                         <button id="nav-login-btn" onclick="app.navigateTo('login')" class="border border-brand-gold/30 text-brand-gold px-6 py-2 rounded-sm font-bold text-xs uppercase hover:bg-brand-gold hover:text-brand-dark transition duration-300">
                             Login
                         </button>
-                        <!-- User Profile (Hidden initially) -->
                         <div id="nav-user-profile" class="hidden flex items-center gap-3 cursor-pointer" onclick="app.navigateTo('dashboard')">
                             <div class="text-right hidden lg:block">
                                 <span class="block text-xs text-white font-bold" id="user-name-display">User</span>
                                 <span class="block text-[10px] text-brand-gold uppercase tracking-wider">Dashboard</span>
                             </div>
-                            <img src="https://randomuser.me/api/portraits/men/46.jpg" class="w-10 h-10 rounded-full border-2 border-brand-gold">
+                            <img src="https://randomuser.me/api/portraits/men/46.jpg" class="w-10 h-10 rounded-full border-2 border-brand-gold object-cover">
                         </div>
                     </div>
 
-                    <!-- Mobile Menu Trigger -->
                     <button onclick="app.toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none">
                         <i class="fas fa-bars"></i>
                     </button>
@@ -97,7 +89,6 @@
             </div>
         </div>
 
-        <!-- Mobile Menu Overlay -->
         <div id="mobile-menu" class="hidden md:hidden absolute top-24 left-0 w-full bg-brand-dark border-b border-white/10 shadow-xl py-6 px-4 flex-col space-y-4 z-40">
             <button onclick="app.navigateTo('home'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Home</button>
             <button onclick="app.navigateTo('journal'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Insights</button>
@@ -108,9 +99,9 @@
 
     <!-- === VIEW 1: LANDING PAGE === -->
     <div id="view-home" class="fade-in">
-        <!-- Hero -->
         <header class="bg-brand-dark text-white relative overflow-hidden hero-pattern">
             <div class="absolute inset-0 bg-gradient-to-br from-brand-dark via-brand-dark/95 to-brand-accent/90 z-10"></div>
+            <div class="absolute top-0 right-0 w-1/3 h-full bg-brand-gold/5 transform skew-x-12 z-10"></div>
             <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 grid md:grid-cols-12 gap-12 items-center">
                 <div class="md:col-span-7">
                     <div class="inline-block border-l-2 border-brand-gold pl-4 mb-6">
@@ -126,7 +117,6 @@
             </div>
         </header>
 
-        <!-- CV Packages (INTERACTIVE AGAIN) -->
         <section id="cv-packages" class="py-24 bg-white relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
@@ -134,8 +124,6 @@
                     <h2 class="font-serif text-4xl text-brand-dark mb-4">Unterlagen für jede Karrierestufe</h2>
                 </div>
                 <div class="grid md:grid-cols-3 gap-8 items-start">
-                    
-                    <!-- Starter (Interactive) -->
                     <div class="group border border-gray-200 p-8 rounded-sm bg-white hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer relative">
                         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-100 text-gray-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">High Potential</div>
                         <h3 class="font-serif text-xl text-brand-dark mb-2">Young Professional</h3>
@@ -150,8 +138,6 @@
                             <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
                         </div>
                     </div>
-
-                    <!-- Pro (Interactive & Highlighted) -->
                     <div class="group border-2 border-brand-gold p-8 rounded-sm shadow-xl bg-white relative transform md:-translate-y-4 hover:shadow-2xl hover:-translate-y-6 transition-all duration-300 cursor-pointer">
                         <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-[10px] font-bold px-3 py-1 uppercase tracking-wide">Popular</div>
                         <h3 class="font-serif text-xl text-brand-dark mb-2">Senior Professional</h3>
@@ -166,8 +152,6 @@
                             <button onclick="app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
                         </div>
                     </div>
-
-                    <!-- Executive (Interactive & Dark) -->
                     <div class="group border border-gray-200 p-8 rounded-sm bg-brand-dark text-white relative hover:shadow-2xl hover:-translate-y-2 hover:border-brand-gold transition-all duration-300 cursor-pointer">
                         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">Board Level</div>
                         <h3 class="font-serif text-xl text-white mb-2">Executive C-Suite</h3>
@@ -186,7 +170,6 @@
             </div>
         </section>
 
-        <!-- Coaches (RESTORED INFO CARDS) -->
         <section id="coaches" class="py-24 bg-brand-light border-t border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="mb-20 text-center">
@@ -199,17 +182,17 @@
                     <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center">
                         <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-user-tie text-2xl"></i></div>
                         <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Peer-to-Peer</h3>
-                        <p class="text-sm text-gray-600 leading-relaxed">Sprechen Sie mit jemandem, der Ihren Job heute schon macht. Keine Theoretiker, sondern Führungskräfte mit aktueller Budgetverantwortung.</p>
+                        <p class="text-sm text-gray-600 leading-relaxed">Sprechen Sie mit jemandem, der Ihren Job heute schon macht. Keine Theoretiker.</p>
                     </div>
                     <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center">
                         <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-video text-2xl"></i></div>
                         <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Das Format</h3>
-                        <p class="text-sm text-gray-600 leading-relaxed">60 Minuten Video-Session über unsere verschlüsselte Plattform. Fokus auf Ad-hoc Problemlösung oder Strategie-Validierung.</p>
+                        <p class="text-sm text-gray-600 leading-relaxed">60 Minuten Video-Session über unsere verschlüsselte Plattform. Fokus auf Ad-hoc Problemlösung.</p>
                     </div>
                     <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center">
                         <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-lock text-2xl"></i></div>
                         <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Diskretion</h3>
-                        <p class="text-sm text-gray-600 leading-relaxed">Ihr Interesse bleibt geheim. Ideal, um heikle Themen (Wechselabsichten, Konflikte im Board) sicher zu besprechen.</p>
+                        <p class="text-sm text-gray-600 leading-relaxed">Ihr Interesse bleibt geheim. Ideal, um heikle Themen sicher zu besprechen.</p>
                     </div>
                 </div>
 
@@ -226,7 +209,6 @@
             </div>
         </section>
 
-        <!-- Process -->
         <section id="process" class="py-24 bg-brand-dark text-white relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div class="text-center mb-16">
@@ -246,7 +228,7 @@
         <section id="faq" class="py-24 bg-gray-50 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
-                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Häufige Fragen</span>
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">FAQ</span>
                     <h2 class="font-serif text-3xl text-brand-dark">Wichtige Hinweise & Exclusions</h2>
                 </div>
                 <div class="space-y-4">
@@ -261,7 +243,15 @@
         </section>
     </div>
 
-    <!-- === VIEW: JOURNAL / INSIGHTS === -->
+    <!-- === VIEW: COACH DETAIL === -->
+    <div id="view-coach-detail" class="hidden fade-in min-h-screen bg-white">
+        <div class="max-w-4xl mx-auto px-4 py-16">
+            <button onclick="app.navigateTo('home'); app.scrollToSection('coaches')" class="mb-8 text-xs font-bold uppercase tracking-widest text-brand-gold hover:text-brand-dark transition">&larr; Zurück zu Mentoren</button>
+            <div id="coach-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- === VIEW: JOURNAL === -->
     <div id="view-journal" class="hidden fade-in min-h-screen bg-gray-50">
         <header class="bg-brand-dark text-white py-20 relative overflow-hidden">
             <div class="max-w-7xl mx-auto px-4 relative z-10 text-center">
@@ -271,9 +261,7 @@
             </div>
         </header>
         <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div id="journal-grid" class="grid md:grid-cols-3 gap-8">
-                <!-- Articles injected by JS -->
-            </div>
+            <div id="journal-grid" class="grid md:grid-cols-3 gap-8"></div>
         </section>
     </div>
 
@@ -285,15 +273,12 @@
         </div>
     </div>
 
-    <!-- === VIEW: ABOUT US === -->
+    <!-- === VIEW: ABOUT === -->
     <div id="view-about" class="hidden fade-in min-h-screen">
         <header class="bg-brand-dark text-white relative py-20">
             <div class="max-w-4xl mx-auto px-4 text-center">
-                <span class="text-brand-gold uppercase tracking-[0.2em] text-xs font-bold block mb-4">Über APEX Executive</span>
-                <h1 class="font-serif text-4xl md:text-5xl mb-6">Exzellenz ist keine Handlung,<br>sondern eine Haltung.</h1>
-                <p class="text-gray-400 text-lg font-light leading-relaxed">
-                    Warum wir angetreten sind, um den Markt für Executive Search und Coaching zu verändern.
-                </p>
+                <span class="text-brand-gold uppercase tracking-[0.2em] text-xs font-bold block mb-4">Über APEX</span>
+                <h1 class="font-serif text-4xl">Exzellenz als Haltung.</h1>
             </div>
         </header>
         <section class="py-20 bg-white">
@@ -302,16 +287,15 @@
                     <div class="relative"><div class="absolute inset-0 bg-brand-gold/10 transform translate-x-4 translate-y-4"></div><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Founder" class="relative z-10 w-full rounded-sm shadow-xl grayscale hover:grayscale-0 transition duration-700"></div>
                     <div>
                         <h3 class="font-serif text-2xl text-brand-dark mb-4">Vom CIO zum Enabler</h3>
-                        <p class="text-gray-600 leading-relaxed mb-4">"Als CIO habe ich hunderte Bewerbungen gesehen. Das Problem: Die meisten Dienstleister verstehen die Sprache des C-Levels nicht." Die Idee zu APEX entstand aus dem Bedürfnis, eine Brücke zu bauen.</p>
+                        <p class="text-gray-600 leading-relaxed mb-4">"Als CIO habe ich hunderte Bewerbungen gesehen... Die Idee zu APEX entstand aus dem Bedürfnis, eine Brücke zu bauen."</p>
                         <div class="border-l-4 border-brand-gold pl-4 py-2 bg-gray-50"><p class="text-sm italic text-gray-800 font-serif">"Unser Ziel ist es, Ihnen nicht nur einen Job zu verschaffen, sondern eine Karriere-Strategie."</p></div>
                     </div>
                 </div>
                 <div class="grid md:grid-cols-3 gap-8 text-center">
-                    <div class="p-6"><i class="fas fa-handshake text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Integrität</h4><p class="text-sm text-gray-500">Wir versprechen keine Wunder, sondern harte Arbeit an Ihrer Positionierung.</p></div>
-                    <div class="p-6"><i class="fas fa-chess-queen text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Strategie</h4><p class="text-sm text-gray-500">Ein CV ist kein Lebenslauf, sondern ein Verkaufsprospekt.</p></div>
-                    <div class="p-6"><i class="fas fa-network-wired text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Netzwerk</h4><p class="text-sm text-gray-500">Zugang zu einem Kreis von Entscheidern, die sich gegenseitig stützen.</p></div>
+                    <div class="p-6"><i class="fas fa-handshake text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Integrität</h4><p class="text-sm text-gray-500">Wir versprechen keine Wunder, sondern harte Arbeit.</p></div>
+                    <div class="p-6"><i class="fas fa-chess-queen text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Strategie</h4><p class="text-sm text-gray-500">Ein CV ist ein Verkaufsprospekt.</p></div>
+                    <div class="p-6"><i class="fas fa-network-wired text-brand-gold text-4xl mb-4"></i><h4 class="font-bold text-brand-dark mb-2">Netzwerk</h4><p class="text-sm text-gray-500">Zugang zu einem Kreis von Entscheidern.</p></div>
                 </div>
-                <div class="mt-20 text-center"><button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="bg-brand-dark text-white px-8 py-4 uppercase tracking-widest text-xs font-bold hover:bg-brand-gold hover:text-brand-dark transition">Zurück zu den Angeboten</button></div>
             </div>
         </section>
     </div>
@@ -332,7 +316,6 @@
                         <tr class="border-b"><td class="p-4">CV Erstellung (DE/EN)</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">✓</td></tr>
                         <tr class="border-b"><td class="p-4">Anschreiben</td><td class="p-4 text-center">Template</td><td class="p-4 text-center">Individuell</td><td class="p-4 text-center">Bio / Pitch</td></tr>
                         <tr class="border-b"><td class="p-4">LinkedIn Optimierung</td><td class="p-4 text-center">-</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">Full Rebrand</td></tr>
-                        
                         <tr class="bg-gray-50/50"><td colspan="4" class="p-3 font-bold text-xs uppercase tracking-widest text-gray-500">Strategie</td></tr>
                         <tr class="border-b"><td class="p-4">Strategie-Call</td><td class="p-4 text-center">-</td><td class="p-4 text-center">30 Min</td><td class="p-4 text-center">60 Min</td></tr>
                         <tr><td class="p-4">Headhunter Intro</td><td class="p-4 text-center">-</td><td class="p-4 text-center">-</td><td class="p-4 text-center">✓</td></tr>
@@ -354,7 +337,6 @@
                 <p><strong>Umsatzsteuer-ID</strong><br>DE 123 456 789</p>
                 <hr class="my-6">
                 <p><strong>Haftung für Inhalte</strong><br>Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich...</p>
-                <p><strong>Haftung für Links</strong><br>Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben...</p>
             </div>
             <div class="mt-8"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold">Zurück zur Startseite</button></div>
         </div>
@@ -363,11 +345,8 @@
     <!-- === VIEW: LOGIN === -->
     <div id="view-login" class="hidden min-h-[80vh] flex items-center justify-center bg-brand-light fade-in">
         <div class="bg-white p-12 rounded-sm shadow-2xl w-full max-w-md border-t-4 border-brand-gold">
-            <div class="text-center mb-8">
-                <i class="fas fa-mountain text-brand-gold text-3xl mb-4"></i>
-                <h2 class="font-serif text-2xl text-brand-dark">Mitglieder Login</h2>
-            </div>
-            <form onsubmit="return false;" class="space-y-6">
+            <div class="text-center mb-8"><i class="fas fa-mountain text-brand-gold text-3xl mb-4"></i><h2 class="font-serif text-2xl text-brand-dark">Mitglieder Login</h2></div>
+            <form onsubmit="app.handleLogin(); return false;" class="space-y-6">
                 <div><label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">E-Mail</label><input type="email" id="login-email" class="w-full bg-gray-50 border border-gray-300 p-4 outline-none focus:border-brand-gold text-brand-dark"></div>
                 <div><label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Passwort</label><input type="password" id="login-password" class="w-full bg-gray-50 border border-gray-300 p-4 outline-none focus:border-brand-gold text-brand-dark"></div>
                 <button type="button" onclick="app.handleLogin()" class="w-full gold-gradient text-brand-dark font-bold py-4 uppercase tracking-widest text-xs hover:shadow-lg transition">Anmelden</button>
@@ -394,27 +373,13 @@
                 <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-200">
                     <h3 class="font-serif text-lg text-brand-dark font-bold mb-4">Secure Data Vault</h3>
                     <div class="border-2 border-dashed border-gray-300 p-8 text-center bg-gray-50"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i><p class="text-sm">Dokumente hier ablegen</p></div>
-                    <div class="mt-4 p-3 bg-gray-50 flex justify-between items-center text-sm rounded"><div class="flex items-center gap-2"><i class="fas fa-file-pdf text-red-500"></i> Alter_CV_2023.pdf</div><span class="text-green-600 text-xs font-bold">OK</span></div>
                 </div>
             </div>
             <div class="space-y-8">
-                <div class="bg-brand-dark text-white p-8 rounded-sm shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-gold/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                <div class="bg-brand-dark text-white p-8 rounded-sm shadow-lg">
                     <h3 class="font-serif text-lg font-bold mb-6">Nächste Session</h3>
-                    <div class="flex items-center mb-4"><img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-12 h-12 rounded-full border-2 border-brand-gold mr-4"><div><div class="font-bold">Dr. Markus T.</div><div class="text-xs text-gray-400">CIO Strategy Call</div></div></div>
-                    <div class="space-y-2 text-sm text-gray-300 mb-6">
-                        <div class="flex items-center"><i class="far fa-calendar mr-3"></i> 24. Oktober 2024</div>
-                        <div class="flex items-center"><i class="far fa-clock mr-3"></i> 14:00 - 15:00 Uhr</div>
-                    </div>
-                    <button class="w-full bg-white/10 hover:bg-brand-gold hover:text-black transition text-white py-2 text-xs uppercase tracking-widest font-bold">Meeting Link kopieren</button>
-                </div>
-                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
-                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Quick Links</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="#" class="flex items-center hover:text-brand-gold transition"><i class="fas fa-plus-circle w-6 text-gray-300"></i> Neue Session buchen</a></li>
-                        <li><a href="#" class="flex items-center hover:text-brand-gold transition"><i class="fas fa-file-invoice w-6 text-gray-300"></i> Rechnungen einsehen</a></li>
-                        <li><a href="#" class="flex items-center hover:text-brand-gold transition"><i class="fas fa-cog w-6 text-gray-300"></i> Profil & Passwort</a></li>
-                    </ul>
+                    <div class="space-y-2 text-sm text-gray-300 mb-6"><div class="flex items-center"><i class="far fa-calendar mr-3"></i> 24. Oktober 2024</div><div class="flex items-center"><i class="far fa-clock mr-3"></i> 14:00 Uhr</div></div>
+                    <button class="w-full bg-white/10 text-white py-2 text-xs uppercase font-bold">Link kopieren</button>
                 </div>
             </div>
         </div>
@@ -428,7 +393,7 @@
         </div>
     </footer>
 
-    <!-- Modals & Overlays -->
+    <!-- Modals -->
     <div id="cart-overlay" class="fixed inset-0 z-[60] hidden"><div class="absolute inset-0 bg-black/50" onclick="app.toggleCart()"></div><div id="cart-sidebar" class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col"><div class="p-6 border-b flex justify-between"><h3 class="font-serif text-xl">Portfolio</h3><button onclick="app.toggleCart()">X</button></div><div id="cart-items" class="flex-grow p-6"></div><div class="p-6 border-t"><span id="cart-total" class="font-serif text-2xl block mb-4">€0</span><button onclick="app.checkout()" class="w-full bg-brand-dark text-white py-4 font-bold">Zur Kasse</button></div></div></div>
     <div id="modal-checkout" class="fixed inset-0 z-[80] hidden flex items-center justify-center"><div class="bg-white p-8 rounded shadow-2xl max-w-md text-center"><h3 class="font-serif text-2xl mb-4">Vielen Dank!</h3><button onclick="document.getElementById('modal-checkout').classList.add('hidden')" class="bg-brand-dark text-white px-6 py-2">Schließen</button></div></div>
     <div id="toast" class="fixed bottom-5 right-5 bg-brand-dark text-white px-6 py-4 rounded shadow-lg transform translate-y-20 transition-transform duration-300 z-[70]">Hinzugefügt</div>
@@ -460,15 +425,14 @@
         window.app = {
             cart: [],
             coaches: [
-                { name: "Dr. Markus T.", role: "CIO @ DAX30", industry: "tech", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-                { name: "Sarah L.", role: "VP Sales", industry: "tech", image: "https://randomuser.me/api/portraits/women/44.jpg" },
-                { name: "Johannes B.", role: "CFO", industry: "finance", image: "https://randomuser.me/api/portraits/men/85.jpg" },
-                { name: "Elena R.", role: "COO", industry: "automotive", image: "https://randomuser.me/api/portraits/women/68.jpg" },
-                { name: "Christian K.", role: "Ex-CTO", industry: "tech", image: "https://randomuser.me/api/portraits/men/22.jpg" },
-                { name: "Petra M.", role: "CHRO", industry: "finance", image: "https://randomuser.me/api/portraits/women/33.jpg" }
+                { id: 101, name: "Dr. Markus T.", role: "CIO @ DAX30", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/men/32.jpg", bio: "15 Jahre Erfahrung als CIO. Spezialisiert auf Digitale Transformation.", expertise: ["Digital Transformation", "Leadership", "Board Politics"], stats: "20+ Jahre Erfahrung" },
+                { id: 102, name: "Sarah L.", role: "VP Sales", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/women/44.jpg", bio: "Skalierung von Vertriebsteams im SaaS-Umfeld von Series A bis IPO.", expertise: ["Sales Strategy", "Team Scaling", "Negotiation"], stats: "100M+ Revenue" },
+                { id: 103, name: "Johannes B.", role: "CFO", industry: "finance", price: 400, image: "https://randomuser.me/api/portraits/men/85.jpg", bio: "Fokus auf M&A und Restrukturierung im gehobenen Mittelstand.", expertise: ["M&A", "Finance", "Restructuring"], stats: "15 Transaktionen" },
+                { id: 104, name: "Elena R.", role: "COO", industry: "automotive", price: 380, image: "https://randomuser.me/api/portraits/women/68.jpg", bio: "Operative Exzellenz und Supply Chain Optimierung.", expertise: ["Operations", "Supply Chain", "Lean Mgmt"], stats: "Global Teams" },
+                { id: 105, name: "Christian K.", role: "Ex-CTO", industry: "tech", price: 350, image: "https://randomuser.me/api/portraits/men/22.jpg", bio: "Tech-Strategie und Produktentwicklung für High-Growth Startups.", expertise: ["Tech Strategy", "Product", "Agile"], stats: "2 Exits" },
+                { id: 106, name: "Petra M.", role: "CHRO", industry: "finance", price: 350, image: "https://randomuser.me/api/portraits/women/33.jpg", bio: "Strategisches HR-Management und Talententwicklung.", expertise: ["HR Strategy", "Talent Mgmt", "Culture"], stats: "30 Jahre Exp" }
             ],
 
-            // *** ARTICLE DATA ***
             articles: [
                 {
                     id: 1,
@@ -476,17 +440,7 @@
                     title: "Boardroom Dynamics: Die ungeschriebenen Gesetze",
                     preview: "Warum Fachwissen im Vorstand nur die Eintrittskarte ist.",
                     image: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=800",
-                    content: `
-                        <h3 class="text-2xl font-serif mb-4">Die unsichtbare Agenda</h3>
-                        <p class="mb-4 text-gray-600">Im Vorstandssaal gelten eigene Regeln. Fachkompetenz wird vorausgesetzt, aber Entscheidungen fallen oft durch Koalitionen, die lange vor dem Meeting geschmiedet wurden.</p>
-                        <p class="mb-4 text-gray-600">Wer neu ins C-Level aufsteigt, macht oft den Fehler, sich auf Argumente zu verlassen. Erfahrene Führungskräfte wissen: Politik ist kein Schimpfwort, sondern ein Werkzeug.</p>
-                        <h4 class="text-lg font-bold mt-6 mb-2">Die 3 Säulen der Macht</h4>
-                        <ul class="list-disc pl-5 text-gray-600 space-y-2">
-                            <li>Allianzen schmieden bevor die Krise kommt.</li>
-                            <li>Die Sprache der Finanzen fließend beherrschen.</li>
-                            <li>Sichtbarkeit nach außen als Schutzschild nutzen.</li>
-                        </ul>
-                    `
+                    content: `<h3 class="text-2xl font-serif mb-4">Die unsichtbare Agenda</h3><p class="mb-4 text-gray-600">Im Vorstandssaal gelten eigene Regeln. Fachkompetenz wird vorausgesetzt, aber Entscheidungen fallen oft durch Koalitionen.</p><p class="mb-4 text-gray-600">Wer neu ins C-Level aufsteigt, macht oft den Fehler, sich auf Argumente zu verlassen. Erfahrene Führungskräfte wissen: Politik ist ein Werkzeug.</p>`
                 },
                 {
                     id: 2,
@@ -494,12 +448,7 @@
                     title: "Der Lebenslauf ab 200k Jahresgehalt",
                     preview: "Auf C-Level zählen nur noch P&L Verantwortung und Transformation.",
                     image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800",
-                    content: `
-                        <h3 class="text-2xl font-serif mb-4">Strategie statt Historie</h3>
-                        <p class="mb-4 text-gray-600">Ein Standard-Lebenslauf listet Aufgaben auf. Ein Executive-CV erzählt eine Geschichte von Transformation und Wertschöpfung.</p>
-                        <p class="mb-4 text-gray-600">Headhunter scannen nach Zahlen: Wieviel Budget? Wieviel Personal? Welcher Umsatzwachstum?</p>
-                        <p class="mb-4 text-gray-600">Wir zeigen Ihnen, wie Sie Ihre Erfolge quantifizieren und als skalierbares Asset präsentieren.</p>
-                    `
+                    content: `<h3 class="text-2xl font-serif mb-4">Strategie statt Historie</h3><p class="mb-4 text-gray-600">Ein Standard-Lebenslauf listet Aufgaben auf. Ein Executive-CV erzählt eine Geschichte von Transformation und Wertschöpfung.</p>`
                 },
                 {
                     id: 3,
@@ -507,24 +456,18 @@
                     title: "AI im Management: Gefahr oder Chance?",
                     preview: "Wie KI die Rolle des CIOs verändert.",
                     image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=800",
-                    content: `
-                        <h3 class="text-2xl font-serif mb-4">Der Co-Pilot im Cockpit</h3>
-                        <p class="mb-4 text-gray-600">Künstliche Intelligenz ersetzt keine Führungskräfte. Aber Führungskräfte, die KI nutzen, werden diejenigen ersetzen, die es nicht tun.</p>
-                        <p class="mb-4 text-gray-600">Die Fähigkeit, KI strategisch einzusetzen, wird zur Kernkompetenz im C-Level. Es geht nicht um Programmierung, sondern um die Vision, wie Technologie Geschäftsmodelle disruptiert.</p>
-                    `
+                    content: `<h3 class="text-2xl font-serif mb-4">Der Co-Pilot im Cockpit</h3><p class="mb-4 text-gray-600">Künstliche Intelligenz ersetzt keine Führungskräfte. Aber Führungskräfte, die KI nutzen, werden diejenigen ersetzen, die es nicht tun.</p>`
                 }
             ],
 
             navigateTo: (viewId) => {
-                ['view-home', 'view-login', 'view-dashboard', 'view-about', 'view-impressum', 'view-journal', 'view-package-details', 'view-article-detail'].forEach(id => {
+                ['view-home', 'view-login', 'view-dashboard', 'view-about', 'view-impressum', 'view-journal', 'view-package-details', 'view-article-detail', 'view-coach-detail'].forEach(id => {
                     document.getElementById(id)?.classList.add('hidden');
                 });
-                
-                const target = document.getElementById('view-' + viewId);
-                if(target) target.classList.remove('hidden');
+                document.getElementById('view-' + viewId).classList.remove('hidden');
                 
                 const navLinks = document.getElementById('nav-links');
-                if(viewId === 'home' || viewId === 'about' || viewId === 'journal' || viewId === 'impressum' || viewId === 'package-details' || viewId === 'view-article-detail') {
+                if(['home', 'about', 'journal', 'impressum', 'package-details', 'article-detail', 'coach-detail'].includes(viewId)) {
                     navLinks.classList.remove('hidden');
                     navLinks.classList.add('md:flex');
                 } else {
@@ -626,10 +569,54 @@
                 if(!grid) return;
                 const list = filter === 'all' ? app.coaches : app.coaches.filter(c => c.industry === filter);
                 grid.innerHTML = list.map(c => `
-                    <div class="bg-white p-6 border rounded-sm hover:shadow-lg transition">
-                        <div class="flex items-center mb-4"><img src="${c.image}" class="w-16 h-16 rounded-full border-2 border-brand-gold mr-4"><div><h4 class="font-bold">${c.name}</h4><p class="text-xs text-brand-gold uppercase">${c.role}</p></div></div>
-                        <button onclick="app.addToCart('Session: ${c.name}', 350)" class="w-full border border-brand-dark text-brand-dark py-2 text-xs font-bold hover:bg-brand-dark hover:text-white transition">Buchen</button>
+                    <div class="group bg-white rounded-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:border-brand-gold/30 transition-all duration-300 cursor-pointer">
+                        <div class="relative h-24 bg-brand-dark overflow-hidden">
+                            <div class="absolute inset-0 bg-brand-gold/10"></div>
+                        </div>
+                        <div class="px-6 pb-6 relative">
+                            <div class="-mt-12 mb-4">
+                                <img src="${c.image}" alt="${c.name}" class="w-20 h-20 rounded-sm object-cover border-4 border-white shadow-md object-cover">
+                            </div>
+                            <div onclick="app.openCoachDetail(${c.id})">
+                                <h4 class="font-serif text-lg text-brand-dark font-bold hover:text-brand-gold transition">${c.name}</h4>
+                                <p class="text-xs text-brand-gold font-bold uppercase tracking-widest mt-1">${c.role}</p>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                                <div class="text-xs text-gray-400 font-bold uppercase tracking-wide">€${c.price || 350} / Std</div>
+                                <div class="flex gap-2">
+                                    <button onclick="app.openCoachDetail(${c.id})" class="text-gray-400 hover:text-brand-dark transition"><i class="far fa-eye text-lg"></i></button>
+                                    <button onclick="app.addToCart('Session: ${c.name}', ${c.price || 350})" class="text-brand-dark hover:text-brand-gold transition"><i class="fas fa-plus-circle text-lg"></i></button>
+                                </div>
+                            </div>
+                        </div>
                     </div>`).join('');
+            },
+
+            openCoachDetail: (id) => {
+                const coach = app.coaches.find(c => c.id === id);
+                if(!coach) return;
+                const container = document.getElementById('coach-detail-content');
+                container.innerHTML = `
+                    <div class="flex flex-col md:flex-row gap-12 items-start">
+                        <div class="w-full md:w-1/3">
+                            <img src="${coach.image}" class="w-full rounded-sm shadow-xl border-4 border-white object-cover">
+                            <div class="mt-6 p-6 bg-gray-50 border border-gray-100 rounded-sm text-center">
+                                <span class="block text-2xl font-serif text-brand-dark mb-2">€${coach.price}</span>
+                                <span class="text-xs text-gray-500 uppercase tracking-widest block mb-6">pro Stunde</span>
+                                <button onclick="app.addToCart('Session: ${coach.name}', ${coach.price})" class="w-full bg-brand-gold text-brand-dark font-bold py-3 uppercase tracking-widest text-xs hover:shadow-lg transition">Jetzt Buchen</button>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-2/3">
+                            <h1 class="font-serif text-4xl text-brand-dark mb-2">${coach.name}</h1>
+                            <p class="text-brand-gold font-bold uppercase tracking-widest text-sm mb-8">${coach.role}</p>
+                            <div class="prose max-w-none text-gray-600 leading-relaxed mb-8"><p class="mb-4">${coach.bio || "Erfahrener Executive Mentor."}</p></div>
+                            <div class="grid grid-cols-2 gap-6 mb-8">
+                                <div><h4 class="font-bold text-brand-dark text-xs uppercase tracking-widest mb-3">Expertise</h4><div class="flex flex-wrap gap-2">${(coach.expertise || ["Strategy"]).map(e => `<span class="bg-brand-dark text-white px-3 py-1 text-[10px] uppercase tracking-wide rounded-sm">${e}</span>`).join('')}</div></div>
+                                <div><h4 class="font-bold text-brand-dark text-xs uppercase tracking-widest mb-3">Erfahrung</h4><p class="text-sm text-gray-600">${coach.stats || "15+ Jahre"}</p></div>
+                            </div>
+                        </div>
+                    </div>`;
+                app.navigateTo('coach-detail');
             },
 
             renderArticles: () => {
@@ -676,14 +663,13 @@
             try {
                 const snap = await getDocs(collection(db, "coaches"));
                 const data = [];
-                snap.forEach(d => data.push(d.data()));
+                snap.forEach(d => data.push({id: d.id, ...d.data()})); // FIXED: Include ID
                 if(data.length > 0) {
                     app.coaches = data;
                     app.filterCoaches();
                 }
             } catch(e) { console.log("DB Offline/Empty"); }
 
-            // DB ARTICLES LOAD
             try {
                 const aSnap = await getDocs(collection(db, "articles"));
                 const aData = [];
