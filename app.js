@@ -132,7 +132,7 @@ export function toggleAuthMode(isLoginMode) {
     document.getElementById('auth-error')?.classList.add('hidden');
 }
 
-export async function handleAuth(isLoginMode, state) {
+export async function handleAuth(isLoginMode, state, navigateTo) {
     const errorDiv = document.getElementById('auth-error');
     const successDiv = document.getElementById('auth-success');
 
@@ -157,6 +157,9 @@ export async function handleAuth(isLoginMode, state) {
                 state.user = { email, uid: "demo-user" };
                 updateAuthUI(state);
                 showToast('✅ Erfolgreich angemeldet (Demo-Modus)');
+                if(navigateTo) {
+                    setTimeout(() => navigateTo('dashboard'), 500);
+                }
                 return;
             }
 
@@ -168,6 +171,11 @@ export async function handleAuth(isLoginMode, state) {
             }
 
             showToast('✅ Erfolgreich angemeldet');
+
+            // Nach erfolgreichem Login zum Dashboard navigieren
+            if(navigateTo) {
+                setTimeout(() => navigateTo('dashboard'), 500);
+            }
 
         } else {
             // REGISTRATION
