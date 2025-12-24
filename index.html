@@ -714,7 +714,7 @@
                 window.app.state.isLoginMode = (mode === 'login');
                 App.toggleAuthMode(window.app.state.isLoginMode);
             },
-            handleAuth: () => App.handleAuth(window.app.state.isLoginMode, window.app.state),
+            handleAuth: () => App.handleAuth(window.app.state.isLoginMode, window.app.state, Core.navigateTo),
             handleLogout: () => App.handleLogout(window.app.state, Core.navigateTo),
             resetAuthToLogin: () => {
                 window.app.state.isLoginMode = true;
