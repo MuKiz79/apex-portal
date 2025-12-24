@@ -54,8 +54,34 @@
             <div class="flex justify-between h-24 items-center">
                 <!-- Logo -->
                 <div class="flex items-center space-x-3 group cursor-pointer" onclick="app.navigateTo('home')" tabindex="0" role="button" aria-label="Zur Startseite">
-                    <div class="relative w-10 h-10 flex items-center justify-center border border-brand-gold rounded-sm transform group-hover:rotate-45 transition duration-500">
-                        <i class="fas fa-mountain text-brand-gold text-lg transform group-hover:-rotate-45 transition duration-500" aria-hidden="true"></i>
+                    <div class="relative w-10 h-10 flex items-center justify-center border border-brand-gold rounded-sm transform group-hover:rotate-45 transition duration-500 overflow-hidden">
+                        <svg class="w-6 h-6 transform group-hover:-rotate-45 transition duration-500" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <!-- Berggipfel - Detailliert -->
+                            <!-- Hauptgipfel -->
+                            <path d="M20 5 L30 22 L10 22 Z" fill="#C6A87C" stroke="#C6A87C" stroke-width="0.5" stroke-linejoin="miter"/>
+
+                            <!-- Schatten/Tiefe links -->
+                            <path d="M20 5 L10 22 L15 22 L20 12 Z" fill="#A68B67" opacity="0.6"/>
+
+                            <!-- Highlight rechts -->
+                            <path d="M20 5 L20 12 L25 22 L30 22 Z" fill="#E2D1B3" opacity="0.4"/>
+
+                            <!-- Schneekappe -->
+                            <path d="M20 5 L17 10 L23 10 Z" fill="#F5F5F5" opacity="0.9"/>
+
+                            <!-- Zweiter Gipfel (links, kleiner) -->
+                            <path d="M12 15 L18 22 L6 22 Z" fill="#C6A87C" opacity="0.7" stroke="#C6A87C" stroke-width="0.3"/>
+
+                            <!-- Dritter Gipfel (rechts, kleiner) -->
+                            <path d="M28 15 L34 22 L22 22 Z" fill="#C6A87C" opacity="0.7" stroke="#C6A87C" stroke-width="0.3"/>
+
+                            <!-- Basis/Boden -->
+                            <rect x="5" y="22" width="30" height="1" fill="#C6A87C" opacity="0.3"/>
+
+                            <!-- Feine Konturen für Schärfe -->
+                            <path d="M20 5 L30 22" stroke="#0B1120" stroke-width="0.3" opacity="0.2"/>
+                            <path d="M20 5 L10 22" stroke="#0B1120" stroke-width="0.3" opacity="0.2"/>
+                        </svg>
                     </div>
                     <div class="flex flex-col">
                         <span class="font-serif text-2xl tracking-widest leading-none text-white">APEX</span>
@@ -548,6 +574,39 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Admin: Über uns Bild verwalten -->
+                <div class="bg-gradient-to-br from-brand-gold/10 to-brand-dark/5 p-6 rounded-sm shadow-sm border-2 border-brand-gold/30">
+                    <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-brand-gold" aria-hidden="true"></i>
+                        Admin: "Über uns" Bild
+                    </h3>
+                    <p class="text-xs text-gray-600 mb-4">Bild für die "Über uns" Seite verwalten.</p>
+
+                    <div class="space-y-3">
+                        <!-- Option 1: URL eingeben -->
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-2">Option 1: Bild-URL eingeben</label>
+                            <input type="url" id="about-image-url" placeholder="https://example.com/image.jpg" class="w-full text-xs p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                            <button onclick="app.updateAboutImage(document.getElementById('about-image-url').value)" class="w-full mt-2 bg-brand-gold text-brand-dark text-xs font-bold py-2 uppercase hover:shadow-lg transition">
+                                <i class="fas fa-link mr-1" aria-hidden="true"></i>
+                                URL Speichern
+                            </button>
+                        </div>
+
+                        <div class="text-center text-xs text-gray-400">- ODER -</div>
+
+                        <!-- Option 2: Bild hochladen -->
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-2">Option 2: Bild hochladen</label>
+                            <label for="about-image-upload" class="w-full bg-brand-dark text-white text-xs font-bold py-2 uppercase cursor-pointer hover:bg-opacity-90 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                                Datei wählen & hochladen
+                            </label>
+                            <input type="file" id="about-image-upload" accept="image/*" class="hidden" onchange="if(this.files[0]) app.uploadAboutImage(this.files[0])">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -572,7 +631,7 @@
                 <div class="grid md:grid-cols-2 gap-12 items-center mb-24 text-left">
                     <div class="relative">
                         <div class="absolute inset-0 bg-brand-gold/10 transform translate-x-4 translate-y-4"></div>
-                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Gründer" class="relative z-10 w-full rounded-sm shadow-xl grayscale hover:grayscale-0 transition duration-700" loading="lazy">
+                        <img id="about-founder-image" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Gründer" class="relative z-10 w-full rounded-sm shadow-xl grayscale hover:grayscale-0 transition duration-700" loading="lazy">
                     </div>
                     <div>
                         <h3 class="font-serif text-2xl text-brand-dark mb-4">Vom CIO zum Enabler</h3>
@@ -743,7 +802,12 @@
             openCoachDetail: (id) => App.openCoachDetail(window.app.state, id, Core.navigateTo),
             renderArticles: () => App.renderArticles(window.app.state),
             openArticle: (id) => App.openArticle(window.app.state, id, Core.navigateTo),
-            initData: () => App.initData(window.app.state)
+            initData: () => App.initData(window.app.state),
+
+            // About Section
+            loadAboutImage: () => App.loadAboutImage(),
+            updateAboutImage: (url) => App.updateAboutImage(url),
+            uploadAboutImage: (file) => App.uploadAboutImage(file)
         };
 
         // Initialize Firebase auth observer
@@ -777,6 +841,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             app.initData();
             app.updateCartUI();
+            app.loadAboutImage(); // Load dynamic "Über uns" image
             console.log('✅ APEX Executive Platform loaded successfully');
         });
     </script>
