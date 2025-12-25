@@ -4,7 +4,7 @@
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage } from './core.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
 
@@ -864,4 +864,84 @@ export function openArticle(state, id, navigateTo) {
     contentArea.innerHTML = '<span class="text-brand-gold font-bold uppercase text-xs">' + cat + '</span><h1 class="font-serif text-3xl my-4">' + title + '</h1><img src="' + article.image + '" class="w-full h-64 object-cover mb-8 rounded" alt="' + title + '" loading="lazy"><div class="prose text-gray-700 leading-relaxed">' + article.content + '</div><button onclick="app.navigateTo(\'journal\')" class="mt-8 text-brand-gold font-bold hover:underline inline-flex items-center gap-2"><i class="fas fa-arrow-left" aria-hidden="true"></i>Zurück zu Insights</button>';
 
     navigateTo('article-detail');
+}
+
+// ========== ABOUT SECTION - DYNAMIC IMAGE ==========
+
+// Load "Über uns" image from Firestore
+export async function loadAboutImage() {
+    try {
+        if (!db) {
+            console.warn('Firestore not available, using default image');
+            return;
+        }
+
+        const docRef = doc(db, 'settings', 'about');
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const imageUrl = data.imageUrl;
+
+            if (imageUrl) {
+                const imgElement = document.getElementById('about-founder-image');
+                if (imgElement) {
+                    imgElement.src = imageUrl;
+                    console.log('✅ About image loaded from Firestore');
+                }
+            }
+        } else {
+            console.log('No about image in Firestore, using default');
+        }
+    } catch (error) {
+        console.error('Error loading about image:', error);
+    }
+}
+
+// Update "Über uns" image in Firestore (Admin function)
+export async function updateAboutImage(imageUrl) {
+    try {
+        if (!db) {
+            throw new Error('Firestore not available');
+        }
+
+        await setDoc(doc(db, 'settings', 'about'), {
+            imageUrl: imageUrl,
+            updatedAt: new Date()
+        });
+
+        showToast('✅ Über uns Bild aktualisiert');
+        loadAboutImage();
+    } catch (error) {
+        console.error('Error updating about image:', error);
+        showToast('❌ Fehler beim Aktualisieren des Bildes', 'error');
+    }
+}
+
+// Upload image to Firebase Storage and update Firestore
+export async function uploadAboutImage(file) {
+    try {
+        if (!storage) {
+            throw new Error('Firebase Storage not available');
+        }
+
+        if (!file || !file.type.startsWith('image/')) {
+            throw new Error('Bitte wählen Sie eine Bilddatei aus');
+        }
+
+        showToast('⏳ Bild wird hochgeladen...', 'info');
+
+        const timestamp = new Date().getTime();
+        const storageRef = ref(storage, 'about/founder-' + timestamp + '.jpg');
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        await updateAboutImage(downloadURL);
+
+        return downloadURL;
+    } catch (error) {
+        console.error('Error uploading about image:', error);
+        showToast('❌ ' + error.message, 'error');
+        throw error;
+    }
 }
