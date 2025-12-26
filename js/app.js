@@ -770,8 +770,10 @@ function updateDashboardStats(orders) {
 }
 
 export function renderOrders(orders) {
+    console.log('🎨 renderOrders called with', orders.length, 'orders:', orders);
     const container = document.getElementById('orders-list');
     const badge = document.getElementById('order-count-badge');
+    console.log('🎨 Container found:', !!container, 'Badge found:', !!badge);
 
     if (!container) return;
 
