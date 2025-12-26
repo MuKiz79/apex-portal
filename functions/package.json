@@ -1,0 +1,20 @@
+{
+  "name": "apex-executive-functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions for APEX Executive",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0",
+    "stripe": "^14.10.0",
+    "nodemailer": "^6.9.8",
+    "pdfkit": "^0.15.0"
+  },
+  "private": true
+}

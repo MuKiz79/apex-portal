@@ -662,23 +662,79 @@ export async function loadUserOrders(state) {
         return;
     }
 
+    const container = document.getElementById('orders-list');
+    if (container) {
+        container.innerHTML = `
+            <div class="p-8 text-center">
+                <div class="loader mx-auto mb-3"></div>
+                <p class="text-sm text-gray-500">Bestellungen werden geladen...</p>
+            </div>
+        `;
+    }
+
     try {
-        const ordersQuery = query(
+        // Versuche zuerst mit userId
+        let ordersQuery = query(
             collection(db, "orders"),
-            where("userId", "==", state.user.uid),
-            orderBy("date", "desc")
+            where("userId", "==", state.user.uid)
         );
 
-        const snapshot = await getDocs(ordersQuery);
+        let snapshot = await getDocs(ordersQuery);
+
+        // Falls keine Bestellungen gefunden, versuche auch mit customerEmail
+        if (snapshot.empty && state.user.email) {
+            ordersQuery = query(
+                collection(db, "orders"),
+                where("customerEmail", "==", state.user.email)
+            );
+            snapshot = await getDocs(ordersQuery);
+        }
+
         const orders = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
 
+        // Sortiere nach Datum (client-side, um Index-Probleme zu vermeiden)
+        orders.sort((a, b) => {
+            const dateA = a.date?.seconds || 0;
+            const dateB = b.date?.seconds || 0;
+            return dateB - dateA;
+        });
+
         renderOrders(orders);
+
+        // Update Dashboard Stats
+        updateDashboardStats(orders);
+
     } catch (e) {
         console.error('Failed to load orders:', e);
         renderOrders([]);
+    }
+}
+
+function updateDashboardStats(orders) {
+    // Update order count in stats
+    const orderCountEl = document.getElementById('stat-orders-count');
+    if (orderCountEl) {
+        orderCountEl.textContent = orders.length;
+    }
+
+    // Count documents (placeholder - would need real document count)
+    const docCountEl = document.getElementById('stat-documents-count');
+    if (docCountEl) {
+        const docCount = orders.filter(o => o.items?.some(i =>
+            i.title?.toLowerCase().includes('cv') ||
+            i.title?.toLowerCase().includes('lebenslauf')
+        )).length;
+        docCountEl.textContent = docCount;
+    }
+
+    // Count appointments
+    const appointmentCountEl = document.getElementById('stat-appointments-count');
+    if (appointmentCountEl) {
+        const appointmentCount = orders.filter(o => o.appointment?.datetime).length;
+        appointmentCountEl.textContent = appointmentCount;
     }
 }
 
@@ -689,20 +745,169 @@ export function renderOrders(orders) {
     if (!container) return;
 
     if (orders.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-gray-500"><i class="fas fa-inbox text-4xl mb-3 text-gray-300" aria-hidden="true"></i><p class="text-sm">Noch keine Bestellungen</p><button onclick="app.navigateToSection('home', 'cv-packages')" class="mt-4 text-brand-gold font-bold text-xs uppercase hover:underline">Pakete ansehen</button></div>`;
+        container.innerHTML = `
+            <div class="p-12 text-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shopping-bag text-2xl text-gray-400" aria-hidden="true"></i>
+                </div>
+                <h3 class="font-bold text-gray-700 mb-2">Noch keine Bestellungen</h3>
+                <p class="text-sm text-gray-500 mb-4">Entdecken Sie unsere Premium-Services</p>
+                <button onclick="app.navigateToSection('home', 'cv-packages')" class="btn-primary">
+                    <i class="fas fa-arrow-right mr-2"></i>Pakete ansehen
+                </button>
+            </div>
+        `;
         if (badge) badge.textContent = '0';
         return;
     }
 
     container.innerHTML = orders.map(order => {
-        const date = order.date?.seconds ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE') : 'Unbekannt';
+        const date = order.date?.seconds
+            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            })
+            : 'Unbekannt';
         const hasCoach = hasCoachSession(order);
         const hasAppointment = order.appointment?.datetime;
+        const shortOrderId = 'APEX-' + (order.stripeSessionId?.slice(-8) || order.id.slice(-8)).toUpperCase();
+        const statusInfo = getOrderStatusInfo(order.status || 'confirmed');
 
-        return `<div class="border-b pb-4 mb-4 last:border-0"><div class="flex justify-between items-start"><div class="flex-1"><h4 class="font-bold text-sm mb-1">${order.items.map(i => sanitizeHTML(i.title)).join(', ')}</h4><p class="text-xs text-gray-500">${date}</p></div><div class="text-right"><span class="font-serif text-lg block">€${order.total || 0}</span><span class="inline-block text-xs px-2 py-1 rounded ${order.status === 'completed' ? 'bg-green-100 text-green-700' : order.status === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}">${getOrderStatusText(order.status || 'processing')}</span></div></div>${hasCoach && !hasAppointment ? `<button onclick="app.showAppointmentCalendar('${order.id}')" class="mt-3 text-brand-gold text-xs font-bold hover:underline flex items-center gap-1"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Termin buchen</button>` : hasAppointment ? `<div class="mt-3 bg-green-50 border border-green-200 px-3 py-2 rounded text-xs"><i class="fas fa-check-circle text-green-600 mr-1" aria-hidden="true"></i><strong>Termin gebucht:</strong> ${new Date(order.appointment.datetime).toLocaleString('de-DE', {weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'})}</div>` : ''}</div>`;
+        return `
+            <div class="p-5 hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
+                <!-- Order Header -->
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <span class="text-xs text-gray-400 font-mono">${shortOrderId}</span>
+                        <h4 class="font-bold text-brand-dark mt-1">${order.items?.map(i => sanitizeHTML(i.title)).join(', ') || 'Bestellung'}</h4>
+                        <p class="text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt mr-1"></i>${date}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-serif text-xl text-brand-dark block">€${(order.total || 0).toFixed(2)}</span>
+                    </div>
+                </div>
+
+                <!-- Status Timeline -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Bestellstatus</span>
+                        <span class="status-badge ${statusInfo.class}">
+                            <i class="${statusInfo.icon}"></i>
+                            ${statusInfo.text}
+                        </span>
+                    </div>
+
+                    <!-- Progress Steps -->
+                    <div class="flex items-center gap-1">
+                        ${renderOrderProgress(order.status || 'confirmed')}
+                    </div>
+
+                    <!-- Status Description -->
+                    <p class="text-xs text-gray-500 mt-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        ${statusInfo.description}
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                ${hasCoach && !hasAppointment ? `
+                    <button onclick="app.showAppointmentCalendar('${order.id}')" class="w-full bg-brand-gold/10 text-brand-dark font-bold text-sm py-3 px-4 rounded-lg hover:bg-brand-gold/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-calendar-alt"></i>
+                        Coach-Termin buchen
+                    </button>
+                ` : hasAppointment ? `
+                    <div class="bg-green-50 border border-green-200 px-4 py-3 rounded-lg flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-green-600"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-green-600 font-bold uppercase">Termin gebucht</span>
+                            <p class="text-sm text-gray-700 font-medium">${new Date(order.appointment.datetime).toLocaleString('de-DE', {
+                                weekday: 'long',
+                                day: '2-digit',
+                                month: 'long',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })} Uhr</p>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
     }).join('');
 
     if (badge) badge.textContent = orders.length.toString();
+}
+
+function renderOrderProgress(status) {
+    const steps = [
+        { key: 'confirmed', label: 'Bestätigt', icon: 'fa-check' },
+        { key: 'processing', label: 'In Bearbeitung', icon: 'fa-cog' },
+        { key: 'review', label: 'Qualitätsprüfung', icon: 'fa-search' },
+        { key: 'completed', label: 'Abgeschlossen', icon: 'fa-flag-checkered' }
+    ];
+
+    const statusOrder = ['confirmed', 'processing', 'review', 'completed'];
+    const currentIndex = statusOrder.indexOf(status);
+
+    return steps.map((step, index) => {
+        const isCompleted = index <= currentIndex;
+        const isCurrent = index === currentIndex;
+
+        return `
+            <div class="flex-1 flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                    isCompleted
+                        ? 'bg-brand-gold text-brand-dark'
+                        : 'bg-gray-200 text-gray-400'
+                } ${isCurrent ? 'ring-2 ring-brand-gold ring-offset-2' : ''}">
+                    <i class="fas ${step.icon}"></i>
+                </div>
+                <span class="text-[10px] mt-1 text-center ${isCompleted ? 'text-brand-dark font-medium' : 'text-gray-400'}">${step.label}</span>
+            </div>
+            ${index < steps.length - 1 ? `
+                <div class="flex-1 h-0.5 ${index < currentIndex ? 'bg-brand-gold' : 'bg-gray-200'} mt-4"></div>
+            ` : ''}
+        `;
+    }).join('');
+}
+
+function getOrderStatusInfo(status) {
+    const statusMap = {
+        'confirmed': {
+            text: 'Bestätigt',
+            class: 'paid',
+            icon: 'fas fa-check-circle',
+            description: 'Ihre Bestellung wurde bestätigt und wird in Kürze bearbeitet.'
+        },
+        'processing': {
+            text: 'In Bearbeitung',
+            class: 'processing',
+            icon: 'fas fa-cog fa-spin',
+            description: 'Unsere Experten arbeiten an Ihrem Auftrag.'
+        },
+        'review': {
+            text: 'Qualitätsprüfung',
+            class: 'processing',
+            icon: 'fas fa-search',
+            description: 'Ihr Dokument wird einer abschließenden Qualitätsprüfung unterzogen.'
+        },
+        'completed': {
+            text: 'Abgeschlossen',
+            class: 'paid',
+            icon: 'fas fa-flag-checkered',
+            description: 'Ihr Auftrag wurde erfolgreich abgeschlossen. Dokumente finden Sie im Vault.'
+        },
+        'cancelled': {
+            text: 'Storniert',
+            class: 'pending',
+            icon: 'fas fa-times-circle',
+            description: 'Diese Bestellung wurde storniert.'
+        }
+    };
+
+    return statusMap[status] || statusMap['confirmed'];
 }
 
 export function hasCoachSession(order) {
