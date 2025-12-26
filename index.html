@@ -41,7 +41,6 @@
     <link href="css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-brand-light text-brand-dark font-sans antialiased relative flex flex-col min-h-screen">
-<body class="bg-brand-light text-brand-dark font-sans antialiased relative flex flex-col min-h-screen">
 
     <!-- Skip to Main Content (Accessibility) -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-brand-gold text-brand-dark px-4 py-2 rounded-sm z-[100] font-bold">
@@ -111,19 +110,57 @@
                     </div>
 
                     <!-- Mobile Menu Trigger -->
-                    <button onclick="app.toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none" aria-label="Menü öffnen">
-                        <i class="fas fa-bars" aria-hidden="true"></i>
+                    <button id="mobile-menu-btn" onclick="app.toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none p-2 hover:bg-white/10 rounded transition" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobile-menu">
+                        <i id="mobile-menu-icon" class="fas fa-bars transition-transform duration-300" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Mobile Menu Overlay -->
-        <div id="mobile-menu" class="hidden md:hidden absolute top-24 left-0 w-full bg-brand-dark border-b border-white/10 shadow-xl py-6 px-4 flex-col space-y-4 z-40">
-            <button onclick="app.navigateTo('home'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Home</button>
-            <button onclick="app.navigateTo('journal'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Insights</button>
-            <button onclick="app.navigateTo('about'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Über uns</button>
-            <button onclick="app.navigateTo('login'); app.toggleMobileMenu()" class="text-left text-brand-gold font-bold uppercase tracking-widest text-xs pt-2">Mitglieder Login</button>
+        <div id="mobile-menu" class="hidden md:hidden fixed inset-0 top-24 bg-brand-dark/98 backdrop-blur-sm z-40 overflow-y-auto" role="dialog" aria-modal="true" aria-label="Hauptmenü">
+            <div class="max-w-md mx-auto px-6 py-8 space-y-2">
+                <!-- Navigation Links -->
+                <button onclick="app.navigateTo('home'); app.toggleMobileMenu()" class="w-full text-left text-white font-serif text-xl py-4 border-b border-white/10 flex items-center justify-between group hover:text-brand-gold transition">
+                    <span>Home</span>
+                    <i class="fas fa-chevron-right text-sm text-gray-500 group-hover:text-brand-gold group-hover:translate-x-1 transition-all" aria-hidden="true"></i>
+                </button>
+                <button onclick="app.scrollToSection('cv-packages'); app.toggleMobileMenu()" class="w-full text-left text-white font-serif text-xl py-4 border-b border-white/10 flex items-center justify-between group hover:text-brand-gold transition">
+                    <span>CV-Manufaktur</span>
+                    <i class="fas fa-chevron-right text-sm text-gray-500 group-hover:text-brand-gold group-hover:translate-x-1 transition-all" aria-hidden="true"></i>
+                </button>
+                <button onclick="app.scrollToSection('coaches'); app.toggleMobileMenu()" class="w-full text-left text-white font-serif text-xl py-4 border-b border-white/10 flex items-center justify-between group hover:text-brand-gold transition">
+                    <span>Mentoring</span>
+                    <i class="fas fa-chevron-right text-sm text-gray-500 group-hover:text-brand-gold group-hover:translate-x-1 transition-all" aria-hidden="true"></i>
+                </button>
+                <button onclick="app.navigateTo('journal'); app.toggleMobileMenu()" class="w-full text-left text-white font-serif text-xl py-4 border-b border-white/10 flex items-center justify-between group hover:text-brand-gold transition">
+                    <span>Journal</span>
+                    <i class="fas fa-chevron-right text-sm text-gray-500 group-hover:text-brand-gold group-hover:translate-x-1 transition-all" aria-hidden="true"></i>
+                </button>
+                <button onclick="app.navigateTo('about'); app.toggleMobileMenu()" class="w-full text-left text-white font-serif text-xl py-4 border-b border-white/10 flex items-center justify-between group hover:text-brand-gold transition">
+                    <span>Über uns</span>
+                    <i class="fas fa-chevron-right text-sm text-gray-500 group-hover:text-brand-gold group-hover:translate-x-1 transition-all" aria-hidden="true"></i>
+                </button>
+
+                <!-- CTA Buttons -->
+                <div class="pt-6 space-y-3">
+                    <button onclick="app.navigateTo('login'); app.toggleMobileMenu()" class="w-full bg-brand-gold text-brand-dark py-4 font-bold uppercase text-sm tracking-wider rounded-sm hover:bg-white transition">
+                        <i class="fas fa-user mr-2" aria-hidden="true"></i>
+                        Mitglieder Login
+                    </button>
+                    <button onclick="app.toggleCart(); app.toggleMobileMenu()" class="w-full border-2 border-brand-gold text-brand-gold py-4 font-bold uppercase text-sm tracking-wider rounded-sm hover:bg-brand-gold hover:text-brand-dark transition flex items-center justify-center">
+                        <i class="fas fa-shopping-bag mr-2" aria-hidden="true"></i>
+                        Warenkorb
+                        <span id="mobile-cart-count" class="ml-2 bg-white text-brand-dark w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold hidden">0</span>
+                    </button>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="pt-8 text-center text-gray-400 text-sm">
+                    <p class="mb-2">Fragen? Kontaktieren Sie uns</p>
+                    <a href="mailto:info@apex-executive.de" class="text-brand-gold hover:underline">info@apex-executive.de</a>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -475,7 +512,36 @@
                         </div>
                     </div>
 
-                    <div id="coach-grid" class="grid md:grid-cols-3 gap-8"></div>
+                    <div id="coach-grid" class="grid md:grid-cols-3 gap-8">
+                        <!-- Loading Skeletons (werden durch JS ersetzt) -->
+                        <div class="skeleton-coach bg-white rounded-sm overflow-hidden shadow-lg">
+                            <div class="skeleton h-64 w-full"></div>
+                            <div class="p-6 space-y-3">
+                                <div class="skeleton h-6 w-3/4"></div>
+                                <div class="skeleton h-4 w-1/2"></div>
+                                <div class="skeleton h-4 w-full"></div>
+                                <div class="skeleton h-4 w-5/6"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-coach bg-white rounded-sm overflow-hidden shadow-lg">
+                            <div class="skeleton h-64 w-full"></div>
+                            <div class="p-6 space-y-3">
+                                <div class="skeleton h-6 w-3/4"></div>
+                                <div class="skeleton h-4 w-1/2"></div>
+                                <div class="skeleton h-4 w-full"></div>
+                                <div class="skeleton h-4 w-5/6"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-coach bg-white rounded-sm overflow-hidden shadow-lg">
+                            <div class="skeleton h-64 w-full"></div>
+                            <div class="p-6 space-y-3">
+                                <div class="skeleton h-6 w-3/4"></div>
+                                <div class="skeleton h-4 w-1/2"></div>
+                                <div class="skeleton h-4 w-full"></div>
+                                <div class="skeleton h-4 w-5/6"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Combined Journey: From Booking to Session -->
@@ -2105,10 +2171,73 @@
 
     </main>
 
-    <footer class="bg-white pt-10 pb-6 border-t mt-auto text-center text-xs text-gray-500">
-        &copy; 2024 APEX Executive GmbH |
-        <button onclick="app.navigateTo('impressum')" class="hover:text-brand-gold underline">Impressum</button> |
-        v3.4 (Enhanced Dashboard)
+    <footer class="bg-brand-dark text-white mt-auto">
+        <!-- Trust Badges -->
+        <div class="border-b border-white/10">
+            <div class="max-w-6xl mx-auto px-4 py-10">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-lock text-brand-gold text-lg" aria-hidden="true"></i>
+                        </div>
+                        <div class="text-sm font-bold mb-1">SSL Verschlüsselt</div>
+                        <div class="text-xs text-gray-400">Sichere Datenübertragung</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-shield-alt text-brand-gold text-lg" aria-hidden="true"></i>
+                        </div>
+                        <div class="text-sm font-bold mb-1">DSGVO Konform</div>
+                        <div class="text-xs text-gray-400">Datenschutz garantiert</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-user-secret text-brand-gold text-lg" aria-hidden="true"></i>
+                        </div>
+                        <div class="text-sm font-bold mb-1">100% Vertraulich</div>
+                        <div class="text-xs text-gray-400">NDA auf Wunsch</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-credit-card text-brand-gold text-lg" aria-hidden="true"></i>
+                        </div>
+                        <div class="text-sm font-bold mb-1">Sichere Zahlung</div>
+                        <div class="text-xs text-gray-400">Stripe & PayPal</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Links -->
+        <div class="max-w-6xl mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 border border-brand-gold rounded-sm flex items-center justify-center">
+                        <span class="font-serif text-brand-gold text-sm font-bold">A</span>
+                    </div>
+                    <span class="font-serif text-lg">APEX Executive</span>
+                </div>
+                <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
+                    <button onclick="app.navigateTo('about')" class="hover:text-brand-gold transition">Über uns</button>
+                    <button onclick="app.navigateTo('impressum')" class="hover:text-brand-gold transition">Impressum</button>
+                    <button onclick="app.navigateTo('impressum')" class="hover:text-brand-gold transition">Datenschutz</button>
+                    <button onclick="app.navigateTo('impressum')" class="hover:text-brand-gold transition">AGB</button>
+                </div>
+                <div class="flex gap-4">
+                    <a href="#" class="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-brand-gold hover:text-brand-dark transition" aria-label="LinkedIn">
+                        <i class="fab fa-linkedin-in" aria-hidden="true"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-brand-gold hover:text-brand-dark transition" aria-label="Instagram">
+                        <i class="fab fa-instagram" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Copyright -->
+        <div class="border-t border-white/10 py-4 text-center text-xs text-gray-500">
+            &copy; 2024 APEX Executive GmbH. Alle Rechte vorbehalten.
+        </div>
     </footer>
 
     <!-- Modals -->

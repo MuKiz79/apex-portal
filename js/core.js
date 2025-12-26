@@ -194,10 +194,29 @@ export function navigateToSection(viewId, sectionId) {
 
 export function toggleMobileMenu() {
     const menu = document.getElementById('mobile-menu');
+    const btn = document.getElementById('mobile-menu-btn');
+    const icon = document.getElementById('mobile-menu-icon');
     if(!menu) return;
 
-    menu.classList.toggle('hidden');
-    menu.classList.toggle('flex');
+    const isOpen = !menu.classList.contains('hidden');
+
+    if (isOpen) {
+        // Schließen
+        menu.classList.add('hidden');
+        btn?.setAttribute('aria-expanded', 'false');
+        btn?.setAttribute('aria-label', 'Menü öffnen');
+        icon?.classList.remove('fa-times');
+        icon?.classList.add('fa-bars');
+        document.body.style.overflow = '';
+    } else {
+        // Öffnen
+        menu.classList.remove('hidden');
+        btn?.setAttribute('aria-expanded', 'true');
+        btn?.setAttribute('aria-label', 'Menü schließen');
+        icon?.classList.remove('fa-bars');
+        icon?.classList.add('fa-times');
+        document.body.style.overflow = 'hidden'; // Verhindert Scrollen im Hintergrund
+    }
 }
 
 export function openPackageDetail() {
