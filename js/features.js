@@ -468,22 +468,44 @@ export async function loadUserOrders(state) {
         return;
     }
 
+    console.log('🔍 Loading orders for user:', state.user.uid, 'Email:', state.user.email);
+
     try {
-        const ordersQuery = query(
+        // Versuche zuerst mit userId (ohne orderBy um Index-Probleme zu vermeiden)
+        let ordersQuery = query(
             collection(db, "orders"),
-            where("userId", "==", state.user.uid),
-            orderBy("date", "desc")
+            where("userId", "==", state.user.uid)
         );
 
-        const snapshot = await getDocs(ordersQuery);
+        let snapshot = await getDocs(ordersQuery);
+        console.log('📦 Orders found by userId:', snapshot.size);
+
+        // Falls keine Bestellungen gefunden, versuche auch mit customerEmail
+        if (snapshot.empty && state.user.email) {
+            console.log('🔍 Trying with customerEmail:', state.user.email);
+            ordersQuery = query(
+                collection(db, "orders"),
+                where("customerEmail", "==", state.user.email)
+            );
+            snapshot = await getDocs(ordersQuery);
+            console.log('📦 Orders found by email:', snapshot.size);
+        }
+
         const orders = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
 
+        // Client-side Sortierung nach Datum
+        orders.sort((a, b) => {
+            const dateA = a.date?.seconds || 0;
+            const dateB = b.date?.seconds || 0;
+            return dateB - dateA;
+        });
+
         renderOrders(orders);
     } catch (e) {
-        console.error('Failed to load orders:', e);
+        console.error('❌ Failed to load orders:', e);
         renderOrders([]);
     }
 }
