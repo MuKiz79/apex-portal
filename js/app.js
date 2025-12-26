@@ -1113,13 +1113,77 @@ function clearAvailabilityForm() {
 export async function loadAvailability(state) {
     if (!db || !state.user) return;
 
+    const container = document.getElementById('upcoming-appointments');
+    if (!container) return;
+
     try {
         const availDoc = await getDoc(doc(db, "availability", state.user.uid));
         if (availDoc.exists()) {
             const data = availDoc.data();
-            // Could display saved availability if needed
-            console.log('Saved availability:', data);
+            const slots = data.slots || [];
+
+            if (slots.length > 0) {
+                // Filter nur zukünftige Termine
+                const now = new Date();
+                const futureSlots = slots.filter(slot => new Date(slot.datetime) >= now);
+
+                if (futureSlots.length > 0) {
+                    container.innerHTML = `
+                        <div class="space-y-3">
+                            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
+                                <i class="fas fa-clock text-brand-gold mr-2"></i>
+                                Ihre Wunschtermine
+                            </h3>
+                            ${futureSlots.map((slot, index) => {
+                                const date = new Date(slot.datetime);
+                                const dateStr = date.toLocaleDateString('de-DE', {
+                                    weekday: 'long',
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
+                                const timeStr = date.toLocaleTimeString('de-DE', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                return `
+                                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div class="w-10 h-10 bg-brand-gold/20 rounded-lg flex items-center justify-center">
+                                            <span class="text-brand-gold font-bold">${index + 1}</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-medium text-gray-900">${dateStr}</div>
+                                            <div class="text-sm text-gray-500">${timeStr} Uhr</div>
+                                        </div>
+                                        <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium">
+                                            Wartet auf Bestätigung
+                                        </span>
+                                    </div>
+                                `;
+                            }).join('')}
+                            ${data.notes ? `
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Hinweis:</strong> ${data.notes}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    return;
+                }
+            }
         }
+
+        // Empty state wenn keine Termine
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-calendar-alt text-2xl text-gray-400"></i>
+                </div>
+                <h3 class="font-bold text-gray-700 mb-2">Keine anstehenden Termine</h3>
+                <p class="text-sm text-gray-500">Geben Sie unten Ihre Wunschtermine an</p>
+            </div>
+        `;
     } catch (e) {
         console.error('Failed to load availability:', e);
     }
@@ -1955,14 +2019,15 @@ function showPaymentSuccessModal(sessionId, checkoutType = 'guest', navigateTo =
 
 // ========== DASHBOARD TAB SYSTEM ==========
 
-export function switchDashboardTab(tabName) {
+export function switchDashboardTab(tabName, state) {
     // Get all tabs and tab contents
     const tabs = document.querySelectorAll('.dashboard-tab');
     const contents = document.querySelectorAll('.dashboard-tab-content');
 
-    // Remove active class from all tabs
+    // Update all tabs - remove active styling, add inactive styling
     tabs.forEach(tab => {
-        tab.classList.remove('active');
+        tab.classList.remove('active', 'text-white', 'border-brand-gold');
+        tab.classList.add('text-white/50', 'border-transparent');
     });
 
     // Hide all tab contents
@@ -1973,7 +2038,8 @@ export function switchDashboardTab(tabName) {
     // Find and activate the clicked tab
     const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
     if (activeTab) {
-        activeTab.classList.add('active');
+        activeTab.classList.add('active', 'text-white', 'border-brand-gold');
+        activeTab.classList.remove('text-white/50', 'border-transparent');
     }
 
     // Show the selected tab content
@@ -1982,6 +2048,11 @@ export function switchDashboardTab(tabName) {
         activeContent.classList.remove('hidden');
         // Add animation class
         activeContent.classList.add('tab-content');
+    }
+
+    // Load data for specific tabs
+    if (tabName === 'appointments' && state) {
+        loadAvailability(state);
     }
 }
 

@@ -1170,22 +1170,22 @@
                 </div>
 
                 <!-- Tab Navigation -->
-                <div class="mt-8 flex gap-1 overflow-x-auto pb-2">
-                    <button onclick="app.switchDashboardTab('orders')" class="dashboard-tab active flex items-center gap-2 px-5 py-3 text-sm font-bold rounded-t-lg transition" data-tab="orders">
+                <div class="mt-8 flex border-b border-white/20">
+                    <button onclick="app.switchDashboardTab('orders')" class="dashboard-tab active flex items-center gap-2 px-4 py-3 text-sm font-medium text-white border-b-2 border-brand-gold whitespace-nowrap" data-tab="orders">
                         <i class="fas fa-shopping-bag" aria-hidden="true"></i>
-                        <span class="hidden sm:inline">Bestellungen</span>
+                        <span>Bestellungen</span>
                     </button>
-                    <button onclick="app.switchDashboardTab('documents')" class="dashboard-tab flex items-center gap-2 px-5 py-3 text-sm font-bold rounded-t-lg transition" data-tab="documents">
+                    <button onclick="app.switchDashboardTab('documents')" class="dashboard-tab flex items-center gap-2 px-4 py-3 text-sm font-medium text-white/50 hover:text-white/80 border-b-2 border-transparent whitespace-nowrap" data-tab="documents">
                         <i class="fas fa-folder" aria-hidden="true"></i>
-                        <span class="hidden sm:inline">Dokumente</span>
+                        <span>Dokumente</span>
                     </button>
-                    <button onclick="app.switchDashboardTab('appointments')" class="dashboard-tab flex items-center gap-2 px-5 py-3 text-sm font-bold rounded-t-lg transition" data-tab="appointments">
+                    <button onclick="app.switchDashboardTab('appointments')" class="dashboard-tab flex items-center gap-2 px-4 py-3 text-sm font-medium text-white/50 hover:text-white/80 border-b-2 border-transparent whitespace-nowrap" data-tab="appointments">
                         <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-                        <span class="hidden sm:inline">Termine</span>
+                        <span>Termine</span>
                     </button>
-                    <button onclick="app.switchDashboardTab('profile')" class="dashboard-tab flex items-center gap-2 px-5 py-3 text-sm font-bold rounded-t-lg transition" data-tab="profile">
+                    <button onclick="app.switchDashboardTab('profile')" class="dashboard-tab flex items-center gap-2 px-4 py-3 text-sm font-medium text-white/50 hover:text-white/80 border-b-2 border-transparent whitespace-nowrap" data-tab="profile">
                         <i class="fas fa-user-cog" aria-hidden="true"></i>
-                        <span class="hidden sm:inline">Profil</span>
+                        <span>Profil</span>
                     </button>
                 </div>
             </div>
@@ -2764,7 +2764,7 @@
             showAppointmentCalendar: (orderId) => App.showAppointmentCalendar(orderId),
             bookAppointment: (orderId, datetime) => App.bookAppointment(window.app.state, orderId, datetime),
             handleFileUpload: (input) => App.handleFileUpload(window.app.state, input),
-            switchDashboardTab: (tabName) => App.switchDashboardTab(tabName),
+            switchDashboardTab: (tabName) => App.switchDashboardTab(tabName, window.app.state),
             saveProfile: () => App.saveProfile(window.app.state),
             changePassword: () => App.changePassword(window.app.state),
 
