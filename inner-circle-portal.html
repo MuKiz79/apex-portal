@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inner Circle Portal - APEX Executive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #0B1120, #151B2E, #0B1120);
+            min-height: 100vh;
+        }
+
+        .font-serif { font-family: 'Playfair Display', serif; }
+
+        .brand-gold { color: #C9A96E; }
+        .bg-brand-gold { background-color: #C9A96E; }
+        .brand-dark { color: #1a1a1a; }
+        .bg-brand-dark { background-color: #1a1a1a; }
+
+        .tab-active {
+            border-bottom: 2px solid #C9A96E;
+            color: #C9A96E;
+        }
+
+        .hover-lift {
+            transition: transform 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- Header -->
+    <nav class="bg-brand-dark/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-8">
+                    <a href="/index.html" class="font-serif text-2xl text-white hover:text-brand-gold transition">
+                        APEX <span class="brand-gold">Executive</span>
+                    </a>
+                    <div class="hidden md:flex items-center gap-1 bg-brand-gold/10 px-3 py-1 rounded-full">
+                        <i class="fas fa-lock text-xs brand-gold"></i>
+                        <span class="text-xs text-brand-gold font-bold uppercase tracking-wider">Inner Circle</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="text-sm font-bold" id="member-name">Loading...</p>
+                            <p class="text-xs text-gray-400" id="member-number">#0000</p>
+                        </div>
+                        <div class="w-10 h-10 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-brand-gold"></i>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-gray-400 hover:text-white text-sm">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Tabs Navigation -->
+        <div class="flex gap-8 border-b border-gray-800 mb-8">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-active pb-4 px-2 text-sm uppercase tracking-wider font-bold transition">
+                <i class="fas fa-th-large mr-2"></i>Dashboard
+            </button>
+            <button onclick="switchTab('headhunters')" id="tab-headhunters" class="pb-4 px-2 text-sm uppercase tracking-wider font-bold text-gray-400 hover:text-brand-gold transition">
+                <i class="fas fa-handshake mr-2"></i>Headhunter DB
+            </button>
+            <button onclick="switchTab('opportunities')" id="tab-opportunities" class="pb-4 px-2 text-sm uppercase tracking-wider font-bold text-gray-400 hover:text-brand-gold transition">
+                <i class="fas fa-briefcase mr-2"></i>Opportunities
+            </button>
+            <button onclick="switchTab('forum')" id="tab-forum" class="pb-4 px-2 text-sm uppercase tracking-wider font-bold text-gray-400 hover:text-brand-gold transition">
+                <i class="fas fa-comments mr-2"></i>Forum
+            </button>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="tab-content">
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
+                <!-- Stats Cards -->
+                <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-4">
+                        <i class="fas fa-eye-slash text-3xl brand-gold"></i>
+                        <span class="text-xs uppercase tracking-wider text-gray-500">Live</span>
+                    </div>
+                    <p class="text-3xl font-bold mb-1" id="opportunities-count">0</p>
+                    <p class="text-sm text-gray-400">Hidden Opportunities</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-4">
+                        <i class="fas fa-handshake text-3xl brand-gold"></i>
+                        <span class="text-xs uppercase tracking-wider text-gray-500">Database</span>
+                    </div>
+                    <p class="text-3xl font-bold mb-1" id="headhunters-count">0</p>
+                    <p class="text-sm text-gray-400">Headhunter Profiles</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-4">
+                        <i class="fas fa-star text-3xl brand-gold"></i>
+                        <span class="text-xs uppercase tracking-wider text-gray-500">Your Level</span>
+                    </div>
+                    <p class="text-3xl font-bold mb-1" id="member-level">Explorer</p>
+                    <p class="text-sm text-gray-400"><span id="member-karma">0</span> Karma Points</p>
+                </div>
+            </div>
+
+            <!-- Recent Opportunities -->
+            <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 mb-8">
+                <h3 class="font-serif text-2xl mb-6 flex items-center justify-between">
+                    <span>Neueste Opportunities</span>
+                    <button onclick="switchTab('opportunities')" class="text-sm brand-gold hover:text-white">
+                        Alle anzeigen <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </h3>
+                <div id="recent-opportunities">
+                    <p class="text-gray-500 text-center py-8">Laden...</p>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6">
+                <h3 class="font-serif text-2xl mb-6">Community Activity</h3>
+                <div id="activity-feed">
+                    <p class="text-gray-500 text-center py-8">Laden...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HEADHUNTERS VIEW -->
+        <div id="view-headhunters" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-serif text-3xl">Headhunter Database</h2>
+                <button onclick="showAddHeadhunterModal()" class="bg-brand-gold text-brand-dark px-6 py-3 rounded font-bold text-sm hover:bg-white transition">
+                    <i class="fas fa-plus mr-2"></i>Headhunter hinzufügen
+                </button>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 mb-6">
+                <div class="grid md:grid-cols-3 gap-4">
+                    <input type="text" id="search-headhunters" placeholder="Suche nach Firma..." class="bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                    <select id="filter-region" class="bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                        <option value="">Alle Regionen</option>
+                        <option value="DACH">DACH</option>
+                        <option value="EU">EU</option>
+                        <option value="Global">Global</option>
+                    </select>
+                    <select id="filter-rating" class="bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                        <option value="">Alle Bewertungen</option>
+                        <option value="4">4+ Sterne</option>
+                        <option value="3">3+ Sterne</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Headhunters List -->
+            <div id="headhunters-list">
+                <p class="text-gray-500 text-center py-12">Laden...</p>
+            </div>
+        </div>
+
+        <!-- OPPORTUNITIES VIEW -->
+        <div id="view-opportunities" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-serif text-3xl">Hidden Opportunities</h2>
+                <button onclick="showShareOpportunityModal()" class="bg-brand-gold text-brand-dark px-6 py-3 rounded font-bold text-sm hover:bg-white transition">
+                    <i class="fas fa-plus mr-2"></i>Opportunity teilen
+                </button>
+            </div>
+
+            <!-- Filter -->
+            <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 mb-6">
+                <div class="grid md:grid-cols-4 gap-4">
+                    <select id="filter-status" class="bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded">
+                        <option value="">Alle Status</option>
+                        <option value="🟢 Live">🟢 Live</option>
+                        <option value="🟡 Bestätigt">🟡 Bestätigt</option>
+                        <option value="🔴 Unbestätigt">🔴 Unbestätigt</option>
+                    </select>
+                    <select id="filter-level" class="bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded">
+                        <option value="">Alle Levels</option>
+                        <option value="C-Level">C-Level</option>
+                        <option value="VP">VP</option>
+                        <option value="Director">Director</option>
+                        <option value="Board">Board/Beirat</option>
+                    </select>
+                    <select id="filter-industry" class="bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded">
+                        <option value="">Alle Industries</option>
+                        <option value="Tech">Tech</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Automotive">Automotive</option>
+                        <option value="Consulting">Consulting</option>
+                    </select>
+                    <input type="text" id="search-opportunities" placeholder="Suche..." class="bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded">
+                </div>
+            </div>
+
+            <!-- Opportunities List -->
+            <div id="opportunities-list">
+                <p class="text-gray-500 text-center py-12">Laden...</p>
+            </div>
+        </div>
+
+        <!-- FORUM VIEW -->
+        <div id="view-forum" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-serif text-3xl">Community Forum</h2>
+                <button onclick="showCreatePostModal()" class="bg-brand-gold text-brand-dark px-6 py-3 rounded font-bold text-sm hover:bg-white transition">
+                    <i class="fas fa-plus mr-2"></i>Neuer Post
+                </button>
+            </div>
+
+            <!-- Categories -->
+            <div class="flex gap-3 mb-6 overflow-x-auto pb-2">
+                <button onclick="filterForum('all')" class="category-filter category-active px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">
+                    Alle
+                </button>
+                <button onclick="filterForum('Strategy')" class="category-filter px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">
+                    Strategy
+                </button>
+                <button onclick="filterForum('Headhunter Intel')" class="category-filter px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">
+                    Headhunter Intel
+                </button>
+                <button onclick="filterForum('Salary Negotiation')" class="category-filter px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">
+                    Salary Negotiation
+                </button>
+                <button onclick="filterForum('Career Advice')" class="category-filter px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">
+                    Career Advice
+                </button>
+            </div>
+
+            <!-- Forum Posts -->
+            <div id="forum-posts">
+                <p class="text-gray-500 text-center py-12">Laden...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Add Headhunter Modal -->
+    <div id="modal-add-headhunter" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                <h3 class="font-serif text-2xl">Headhunter hinzufügen</h3>
+                <button onclick="closeModal('add-headhunter')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="form-add-headhunter" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Firma/Name *</label>
+                    <input type="text" name="firmName" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Region</label>
+                        <select name="region" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                            <option value="DACH">DACH</option>
+                            <option value="EU">EU</option>
+                            <option value="Global">Global</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Spezialisierung</label>
+                        <select name="specialization" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                            <option value="C-Level">C-Level</option>
+                            <option value="Tech">Tech</option>
+                            <option value="Finance">Finance</option>
+                            <option value="General Management">General Management</option>
+                            <option value="Sales & Marketing">Sales & Marketing</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Website (optional)</label>
+                    <input type="url" name="website" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Notizen (optional)</label>
+                    <textarea name="notes" rows="3" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-brand-gold text-brand-dark py-3 rounded font-bold hover:bg-white transition">
+                    Headhunter hinzufügen
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Review Modal -->
+    <div id="modal-add-review" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                <h3 class="font-serif text-2xl">Review hinzufügen</h3>
+                <button onclick="closeModal('add-review')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="form-add-review" class="p-6 space-y-4">
+                <input type="hidden" name="headhunterId" id="review-headhunter-id">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Bewertung *</label>
+                    <div class="flex gap-2">
+                        <button type="button" class="star-rating" data-rating="1">
+                            <i class="fas fa-star text-3xl text-gray-600 hover:text-brand-gold transition"></i>
+                        </button>
+                        <button type="button" class="star-rating" data-rating="2">
+                            <i class="fas fa-star text-3xl text-gray-600 hover:text-brand-gold transition"></i>
+                        </button>
+                        <button type="button" class="star-rating" data-rating="3">
+                            <i class="fas fa-star text-3xl text-gray-600 hover:text-brand-gold transition"></i>
+                        </button>
+                        <button type="button" class="star-rating" data-rating="4">
+                            <i class="fas fa-star text-3xl text-gray-600 hover:text-brand-gold transition"></i>
+                        </button>
+                        <button type="button" class="star-rating" data-rating="5">
+                            <i class="fas fa-star text-3xl text-gray-600 hover:text-brand-gold transition"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" name="rating" id="selected-rating" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Position vermittelt?</label>
+                    <select name="placementSuccess" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                        <option value="yes">Ja</option>
+                        <option value="no">Nein</option>
+                        <option value="ongoing">Noch im Prozess</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Ihre Erfahrung *</label>
+                    <textarea name="reviewText" required rows="5" placeholder="Beschreiben Sie Ihre Erfahrung mit diesem Headhunter..." class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold"></textarea>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Kommunikation (1-5)</label>
+                        <input type="number" name="communicationRating" min="1" max="5" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Professionalität (1-5)</label>
+                        <input type="number" name="professionalismRating" min="1" max="5" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-brand-gold text-brand-dark py-3 rounded font-bold hover:bg-white transition">
+                    Review absenden (+5 Karma)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Forum Post Modal -->
+    <div id="modal-create-post" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                <h3 class="font-serif text-2xl">Neuer Forum Post</h3>
+                <button onclick="closeModal('create-post')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="form-create-post" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Kategorie *</label>
+                    <select name="category" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                        <option value="Strategy">Strategy</option>
+                        <option value="Headhunter Intel">Headhunter Intel</option>
+                        <option value="Salary Negotiation">Salary Negotiation</option>
+                        <option value="Career Advice">Career Advice</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Titel *</label>
+                    <input type="text" name="title" required placeholder="Kurzer, aussagekräftiger Titel" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Inhalt *</label>
+                    <textarea name="content" required rows="8" placeholder="Teilen Sie Ihre Gedanken, Fragen oder Erfahrungen..." class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-brand-gold text-brand-dark py-3 rounded font-bold hover:bg-white transition">
+                    Post veröffentlichen (+3 Karma)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Share Opportunity Modal -->
+    <div id="modal-share-opportunity" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                <h3 class="font-serif text-2xl">Opportunity teilen</h3>
+                <button onclick="closeModal('share-opportunity')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="form-share-opportunity" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Position Titel *</label>
+                    <input type="text" name="title" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Unternehmen (optional)</label>
+                        <input type="text" name="company" placeholder="Kann vertraulich bleiben" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Standort *</label>
+                        <input type="text" name="location" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Level *</label>
+                        <select name="level" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                            <option value="C-Level">C-Level</option>
+                            <option value="VP">VP</option>
+                            <option value="Director">Director</option>
+                            <option value="Board">Board/Beirat</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Industry *</label>
+                        <select name="industry" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                            <option value="Tech">Tech</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Automotive">Automotive</option>
+                            <option value="Consulting">Consulting</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Status *</label>
+                        <select name="status" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                            <option value="🟢 Live">🟢 Live</option>
+                            <option value="🟡 Bestätigt">🟡 Bestätigt</option>
+                            <option value="🔴 Unbestätigt">🔴 Unbestätigt</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Beschreibung *</label>
+                    <textarea name="description" required rows="5" placeholder="Vakanz-Details, Anforderungen, Gehaltsspanne..." class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Kontakt Headhunter (optional)</label>
+                    <input type="text" name="contactHeadhunter" placeholder="Z.B. Max Mustermann (ABC Search)" class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-brand-gold">
+                </div>
+                <button type="submit" class="w-full bg-brand-gold text-brand-dark py-3 rounded font-bold hover:bg-white transition">
+                    Opportunity teilen (+10 Karma)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, increment, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZ970mA7-2pJzhbxyFjjmzO97YKZhrSmU",
+            authDomain: "apex-executive.firebaseapp.com",
+            projectId: "apex-executive",
+            storageBucket: "apex-executive.firebasestorage.app",
+            messagingSenderId: "525553082138",
+            appId: "1:525553082138:web:84d1437b2e150f5fb316a3",
+            measurementId: "G-8K4T9MXEZ8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+
+        // App Check
+        try {
+            const appCheck = initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider('6LcJXzcsAAAAAFROW8bD5BTJV4Lx3_CjzzelPWua'),
+                isTokenAutoRefreshEnabled: true
+            });
+        } catch(e) {
+            console.warn("App Check failed:", e);
+        }
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let currentMemberData = null;
+        let allHeadhunters = [];
+        let allReviews = [];
+
+        // Check if user is authenticated and is a member
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // Check if user is in members collection
+            try {
+                const memberDoc = await getDoc(doc(db, 'members', user.uid));
+                if (!memberDoc.exists()) {
+                    alert('Sie sind noch kein freigeschaltetes Inner Circle Member.');
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                currentUser = user;
+                currentMemberData = memberDoc.data();
+
+                document.getElementById('member-name').textContent = currentMemberData.name;
+                document.getElementById('member-number').textContent = `#${String(currentMemberData.memberNumber).padStart(4, '0')}`;
+                document.getElementById('member-karma').textContent = currentMemberData.karma || 0;
+                document.getElementById('member-level').textContent = getMemberLevel(currentMemberData.karma || 0);
+
+                // Load dashboard data
+                loadDashboard();
+            } catch (error) {
+                console.error('Error checking membership:', error);
+                alert('Fehler beim Laden Ihrer Mitgliedschaft.');
+                window.location.href = '/index.html';
+            }
+        });
+
+        function getMemberLevel(karma) {
+            if (karma >= 501) return 'Elite';
+            if (karma >= 201) return 'Insider';
+            if (karma >= 51) return 'Contributor';
+            return 'Explorer';
+        }
+
+        async function loadDashboard() {
+            // Load opportunities count
+            const oppsSnapshot = await getDocs(collection(db, 'opportunities'));
+            document.getElementById('opportunities-count').textContent = oppsSnapshot.size;
+
+            // Load headhunters count
+            const hhSnapshot = await getDocs(collection(db, 'headhunters'));
+            document.getElementById('headhunters-count').textContent = hhSnapshot.size;
+
+            // Load recent opportunities (last 5)
+            const recentOppsQuery = query(
+                collection(db, 'opportunities'),
+                orderBy('createdAt', 'desc'),
+                limit(5)
+            );
+            const recentOpps = await getDocs(recentOppsQuery);
+
+            let oppsHTML = '';
+            if (recentOpps.empty) {
+                oppsHTML = '<p class="text-gray-500 text-center py-4">Noch keine Opportunities geteilt.</p>';
+            } else {
+                recentOpps.forEach((doc) => {
+                    const opp = doc.data();
+                    oppsHTML += `
+                        <div class="border-b border-gray-800 py-4 last:border-0">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="font-bold">${opp.title}</p>
+                                    <p class="text-sm text-gray-400">${opp.company || 'Vertraulich'} • ${opp.location}</p>
+                                    <div class="flex items-center gap-3 mt-2">
+                                        <span class="text-xs">${opp.status}</span>
+                                        <span class="text-xs text-gray-500">${opp.level}</span>
+                                    </div>
+                                </div>
+                                <button onclick="viewOpportunity('${doc.id}')" class="text-brand-gold hover:text-white text-sm">
+                                    Details <i class="fas fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('recent-opportunities').innerHTML = oppsHTML;
+
+            // Activity feed placeholder
+            document.getElementById('activity-feed').innerHTML = '<p class="text-gray-500 text-center py-4">Activity Feed kommt bald...</p>';
+        }
+
+        // Tab switching
+        window.switchTab = function(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('tab-active', 'brand-gold');
+                btn.classList.add('text-gray-400');
+            });
+
+            // Show selected tab
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+
+            // Add active class to selected tab button
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.add('tab-active', 'brand-gold');
+            activeBtn.classList.remove('text-gray-400');
+
+            // Load data for specific tabs
+            if (tabName === 'headhunters') loadHeadhunters();
+            if (tabName === 'opportunities') loadOpportunities();
+            if (tabName === 'forum') loadForum();
+        };
+
+        // ========== HEADHUNTERS FUNCTIONS ==========
+
+        window.loadHeadhunters = async function() {
+            try {
+                const listDiv = document.getElementById('headhunters-list');
+                listDiv.innerHTML = '<p class="text-gray-500 text-center py-12">Lade Headhunter...</p>';
+
+                // Load headhunters
+                const hhSnapshot = await getDocs(collection(db, 'headhunters'));
+                allHeadhunters = hhSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+                // Load all reviews
+                const reviewsSnapshot = await getDocs(collection(db, 'headhunter_reviews'));
+                allReviews = reviewsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+                displayHeadhunters(allHeadhunters);
+            } catch(e) {
+                console.error('Error loading headhunters:', e);
+                document.getElementById('headhunters-list').innerHTML = '<p class="text-red-500 text-center py-12">Fehler beim Laden</p>';
+            }
+        };
+
+        function displayHeadhunters(headhunters) {
+            const listDiv = document.getElementById('headhunters-list');
+
+            if(headhunters.length === 0) {
+                listDiv.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-handshake text-5xl text-gray-700 mb-4"></i>
+                        <p class="text-gray-500">Noch keine Headhunter in der Database.</p>
+                        <p class="text-sm text-gray-600 mt-2">Seien Sie der Erste und fügen Sie einen hinzu!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="space-y-4">';
+            headhunters.forEach(hh => {
+                const reviews = allReviews.filter(r => r.headhunterId === hh.id);
+                const avgRating = reviews.length > 0
+                    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+                    : 'N/A';
+
+                const stars = reviews.length > 0 ? renderStars(parseFloat(avgRating)) : '<span class="text-gray-600 text-sm">Noch keine Bewertung</span>';
+
+                html += `
+                    <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 hover-lift">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-serif text-xl mb-2">${hh.firmName}</h3>
+                                <div class="flex items-center gap-3 text-sm text-gray-400">
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>${hh.region}</span>
+                                    <span><i class="fas fa-briefcase mr-1"></i>${hh.specialization}</span>
+                                </div>
+                                ${hh.website ? `<a href="${hh.website}" target="_blank" class="text-brand-gold text-sm hover:text-white mt-2 inline-block"><i class="fas fa-external-link-alt mr-1"></i>Website</a>` : ''}
+                            </div>
+                            <div class="text-right">
+                                <div class="mb-2">${stars}</div>
+                                <p class="text-xs text-gray-500">${reviews.length} Review${reviews.length !== 1 ? 's' : ''}</p>
+                            </div>
+                        </div>
+                        ${hh.notes ? `<p class="text-sm text-gray-400 mb-4">${hh.notes}</p>` : ''}
+                        <div class="flex gap-3">
+                            <button onclick="showReviews('${hh.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm transition">
+                                <i class="fas fa-comments mr-2"></i>Reviews anzeigen
+                            </button>
+                            <button onclick="showAddReviewModal('${hh.id}')" class="flex-1 bg-brand-gold hover:bg-white text-brand-dark px-4 py-2 rounded text-sm font-bold transition">
+                                <i class="fas fa-star mr-2"></i>Review schreiben
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            listDiv.innerHTML = html;
+        }
+
+        function renderStars(rating) {
+            let stars = '';
+            for(let i = 1; i <= 5; i++) {
+                if(i <= rating) {
+                    stars += '<i class="fas fa-star brand-gold"></i>';
+                } else if(i - 0.5 <= rating) {
+                    stars += '<i class="fas fa-star-half-alt brand-gold"></i>';
+                } else {
+                    stars += '<i class="far fa-star text-gray-600"></i>';
+                }
+            }
+            return `<span class="text-sm">${stars} ${rating}</span>`;
+        }
+
+        window.showReviews = function(headhunterId) {
+            const hh = allHeadhunters.find(h => h.id === headhunterId);
+            const reviews = allReviews.filter(r => r.headhunterId === headhunterId);
+
+            let html = `
+                <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="this.remove()">
+                    <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                        <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-serif text-2xl">${hh.firmName}</h3>
+                                <p class="text-sm text-gray-400 mt-1">${reviews.length} Review${reviews.length !== 1 ? 's' : ''}</p>
+                            </div>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="p-6 space-y-4">
+            `;
+
+            if(reviews.length === 0) {
+                html += '<p class="text-gray-500 text-center py-8">Noch keine Reviews vorhanden.</p>';
+            } else {
+                reviews.forEach(review => {
+                    const placement = review.placementSuccess === 'yes' ? '✅ Position vermittelt'
+                        : review.placementSuccess === 'ongoing' ? '⏳ Im Prozess'
+                        : '❌ Keine Vermittlung';
+
+                    html += `
+                        <div class="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    ${renderStars(review.rating)}
+                                    <p class="text-xs text-gray-500 mt-1">${new Date(review.createdAt.seconds * 1000).toLocaleDateString('de-DE')}</p>
+                                </div>
+                                <span class="text-xs px-3 py-1 rounded-full ${review.placementSuccess === 'yes' ? 'bg-green-500/20 text-green-400' : review.placementSuccess === 'ongoing' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">
+                                    ${placement}
+                                </span>
+                            </div>
+                            <p class="text-gray-300 leading-relaxed mb-3">${review.reviewText}</p>
+                            ${review.communicationRating || review.professionalismRating ? `
+                                <div class="flex gap-4 text-xs text-gray-500 pt-3 border-t border-gray-800">
+                                    ${review.communicationRating ? `<span>Kommunikation: ${review.communicationRating}/5</span>` : ''}
+                                    ${review.professionalismRating ? `<span>Professionalität: ${review.professionalismRating}/5</span>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+        };
+
+        // Search & Filter for Headhunters
+        document.getElementById('search-headhunters')?.addEventListener('input', filterHeadhunters);
+        document.getElementById('filter-region')?.addEventListener('change', filterHeadhunters);
+        document.getElementById('filter-rating')?.addEventListener('change', filterHeadhunters);
+
+        function filterHeadhunters() {
+            const search = document.getElementById('search-headhunters').value.toLowerCase();
+            const region = document.getElementById('filter-region').value;
+            const minRating = parseFloat(document.getElementById('filter-rating').value) || 0;
+
+            let filtered = allHeadhunters.filter(hh => {
+                const matchSearch = hh.firmName.toLowerCase().includes(search);
+                const matchRegion = !region || hh.region === region;
+
+                const reviews = allReviews.filter(r => r.headhunterId === hh.id);
+                const avgRating = reviews.length > 0
+                    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                    : 0;
+                const matchRating = avgRating >= minRating;
+
+                return matchSearch && matchRegion && matchRating;
+            });
+
+            displayHeadhunters(filtered);
+        }
+
+        // Modal functions
+        window.showAddHeadhunterModal = function() {
+            document.getElementById('modal-add-headhunter').classList.remove('hidden');
+        };
+
+        window.showAddReviewModal = function(headhunterId) {
+            document.getElementById('review-headhunter-id').value = headhunterId;
+            document.getElementById('selected-rating').value = '';
+            document.querySelectorAll('.star-rating i').forEach(star => {
+                star.classList.remove('text-brand-gold');
+                star.classList.add('text-gray-600');
+            });
+            document.getElementById('modal-add-review').classList.remove('hidden');
+        };
+
+        window.closeModal = function(modalName) {
+            document.getElementById(`modal-${modalName}`).classList.add('hidden');
+        };
+
+        // Star rating interaction
+        document.querySelectorAll('.star-rating').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const rating = parseInt(this.dataset.rating);
+                document.getElementById('selected-rating').value = rating;
+
+                // Update star display
+                document.querySelectorAll('.star-rating').forEach((star, idx) => {
+                    const starIcon = star.querySelector('i');
+                    if(idx < rating) {
+                        starIcon.classList.remove('text-gray-600');
+                        starIcon.classList.add('text-brand-gold');
+                    } else {
+                        starIcon.classList.add('text-gray-600');
+                        starIcon.classList.remove('text-brand-gold');
+                    }
+                });
+            });
+        });
+
+        // Form: Add Headhunter
+        document.getElementById('form-add-headhunter').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            try {
+                await addDoc(collection(db, 'headhunters'), {
+                    firmName: formData.get('firmName'),
+                    region: formData.get('region'),
+                    specialization: formData.get('specialization'),
+                    website: formData.get('website') || '',
+                    notes: formData.get('notes') || '',
+                    addedBy: currentUser.uid,
+                    addedAt: new Date()
+                });
+
+                alert('✅ Headhunter erfolgreich hinzugefügt!');
+                closeModal('add-headhunter');
+                this.reset();
+                loadHeadhunters();
+            } catch(error) {
+                console.error('Error adding headhunter:', error);
+                alert('❌ Fehler beim Hinzufügen');
+            }
+        });
+
+        // Form: Add Review
+        document.getElementById('form-add-review').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const rating = parseInt(document.getElementById('selected-rating').value);
+
+            if(!rating) {
+                alert('Bitte wählen Sie eine Bewertung aus!');
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'headhunter_reviews'), {
+                    headhunterId: formData.get('headhunterId'),
+                    reviewerId: currentUser.uid,
+                    rating: rating,
+                    placementSuccess: formData.get('placementSuccess'),
+                    reviewText: formData.get('reviewText'),
+                    communicationRating: parseInt(formData.get('communicationRating')) || null,
+                    professionalismRating: parseInt(formData.get('professionalismRating')) || null,
+                    createdAt: new Date()
+                });
+
+                // Award karma (+5 for review)
+                await updateDoc(doc(db, 'members', currentUser.uid), {
+                    karma: increment(5)
+                });
+
+                // Update local karma display
+                const newKarma = (currentMemberData.karma || 0) + 5;
+                currentMemberData.karma = newKarma;
+                document.getElementById('member-karma').textContent = newKarma;
+                document.getElementById('member-level').textContent = getMemberLevel(newKarma);
+
+                alert('✅ Review erfolgreich hinzugefügt! +5 Karma');
+                closeModal('add-review');
+                this.reset();
+                loadHeadhunters();
+            } catch(error) {
+                console.error('Error adding review:', error);
+                alert('❌ Fehler beim Hinzufügen der Review');
+            }
+        });
+
+        // ========== OPPORTUNITIES FUNCTIONS ==========
+
+        let allOpportunities = [];
+
+        window.loadOpportunities = async function() {
+            try {
+                const listDiv = document.getElementById('opportunities-list');
+                listDiv.innerHTML = '<p class="text-gray-500 text-center py-12">Lade Opportunities...</p>';
+
+                const oppsQuery = query(
+                    collection(db, 'opportunities'),
+                    orderBy('createdAt', 'desc')
+                );
+                const oppsSnapshot = await getDocs(oppsQuery);
+                allOpportunities = oppsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+                displayOpportunities(allOpportunities);
+            } catch(e) {
+                console.error('Error loading opportunities:', e);
+                document.getElementById('opportunities-list').innerHTML = '<p class="text-red-500 text-center py-12">Fehler beim Laden</p>';
+            }
+        };
+
+        function displayOpportunities(opportunities) {
+            const listDiv = document.getElementById('opportunities-list');
+
+            if(opportunities.length === 0) {
+                listDiv.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-eye-slash text-5xl text-gray-700 mb-4"></i>
+                        <p class="text-gray-500">Noch keine Opportunities geteilt.</p>
+                        <p class="text-sm text-gray-600 mt-2">Seien Sie der Erste und teilen Sie eine exklusive Vakanz!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="space-y-4">';
+            opportunities.forEach(opp => {
+                const createdDate = opp.createdAt && opp.createdAt.seconds
+                    ? new Date(opp.createdAt.seconds * 1000).toLocaleDateString('de-DE')
+                    : 'Unbekannt';
+
+                const statusColor = opp.status === '🟢 Live' ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                    : opp.status === '🟡 Bestätigt' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                    : 'bg-red-500/20 text-red-400 border-red-500/30';
+
+                html += `
+                    <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 hover-lift">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <h3 class="font-serif text-xl mb-2">${opp.title}</h3>
+                                <div class="flex items-center gap-3 text-sm text-gray-400 mb-2">
+                                    <span><i class="fas fa-building mr-1"></i>${opp.company || 'Vertraulich'}</span>
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>${opp.location}</span>
+                                </div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-xs px-3 py-1 rounded-full border ${statusColor}">
+                                        ${opp.status}
+                                    </span>
+                                    <span class="text-xs px-3 py-1 rounded-full bg-gray-800 text-gray-400">
+                                        ${opp.level}
+                                    </span>
+                                    <span class="text-xs px-3 py-1 rounded-full bg-gray-800 text-gray-400">
+                                        ${opp.industry}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 leading-relaxed mb-4">${opp.description}</p>
+                        ${opp.contactHeadhunter ? `
+                            <p class="text-xs text-gray-500 mb-3">
+                                <i class="fas fa-handshake mr-2"></i>Kontakt: ${opp.contactHeadhunter}
+                            </p>
+                        ` : ''}
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-800">
+                            <p class="text-xs text-gray-600">Geteilt am ${createdDate}</p>
+                            <button onclick="viewOpportunityDetails('${opp.id}')" class="text-brand-gold hover:text-white text-sm font-bold">
+                                Details anzeigen <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            listDiv.innerHTML = html;
+        }
+
+        window.viewOpportunityDetails = function(oppId) {
+            const opp = allOpportunities.find(o => o.id === oppId);
+            if(!opp) return;
+
+            const createdDate = opp.createdAt && opp.createdAt.seconds
+                ? new Date(opp.createdAt.seconds * 1000).toLocaleDateString('de-DE')
+                : 'Unbekannt';
+
+            const statusColor = opp.status === '🟢 Live' ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                : opp.status === '🟡 Bestätigt' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                : 'bg-red-500/20 text-red-400 border-red-500/30';
+
+            const html = `
+                <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="this.remove()">
+                    <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                        <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-serif text-2xl mb-2">${opp.title}</h3>
+                                <p class="text-sm text-gray-400">${opp.company || 'Vertraulich'} • ${opp.location}</p>
+                            </div>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <div class="flex gap-3 flex-wrap">
+                                <span class="text-sm px-4 py-2 rounded-full border ${statusColor}">
+                                    ${opp.status}
+                                </span>
+                                <span class="text-sm px-4 py-2 rounded-full bg-gray-800 text-gray-300">
+                                    ${opp.level}
+                                </span>
+                                <span class="text-sm px-4 py-2 rounded-full bg-gray-800 text-gray-300">
+                                    ${opp.industry}
+                                </span>
+                            </div>
+
+                            <div>
+                                <h4 class="text-sm uppercase tracking-wider text-brand-gold mb-2">Beschreibung</h4>
+                                <p class="text-gray-300 leading-relaxed whitespace-pre-wrap">${opp.description}</p>
+                            </div>
+
+                            ${opp.contactHeadhunter ? `
+                                <div>
+                                    <h4 class="text-sm uppercase tracking-wider text-brand-gold mb-2">Kontakt Headhunter</h4>
+                                    <p class="text-gray-300">${opp.contactHeadhunter}</p>
+                                </div>
+                            ` : ''}
+
+                            <div class="pt-4 border-t border-gray-800 text-xs text-gray-500">
+                                Geteilt am ${createdDate}
+                            </div>
+
+                            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                                <p class="text-sm text-yellow-400">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    Diese Opportunity wurde von einem Community-Member geteilt. Bitte verifizieren Sie alle Details eigenständig.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+        };
+
+        // Search & Filter for Opportunities
+        document.getElementById('filter-status')?.addEventListener('change', filterOpportunities);
+        document.getElementById('filter-level')?.addEventListener('change', filterOpportunities);
+        document.getElementById('filter-industry')?.addEventListener('change', filterOpportunities);
+        document.getElementById('search-opportunities')?.addEventListener('input', filterOpportunities);
+
+        function filterOpportunities() {
+            const status = document.getElementById('filter-status').value;
+            const level = document.getElementById('filter-level').value;
+            const industry = document.getElementById('filter-industry').value;
+            const search = document.getElementById('search-opportunities').value.toLowerCase();
+
+            let filtered = allOpportunities.filter(opp => {
+                const matchStatus = !status || opp.status === status;
+                const matchLevel = !level || opp.level === level;
+                const matchIndustry = !industry || opp.industry === industry;
+                const matchSearch = !search ||
+                    opp.title.toLowerCase().includes(search) ||
+                    (opp.company && opp.company.toLowerCase().includes(search)) ||
+                    opp.location.toLowerCase().includes(search) ||
+                    opp.description.toLowerCase().includes(search);
+
+                return matchStatus && matchLevel && matchIndustry && matchSearch;
+            });
+
+            displayOpportunities(filtered);
+        }
+
+        window.showShareOpportunityModal = function() {
+            document.getElementById('modal-share-opportunity').classList.remove('hidden');
+        };
+
+        // Form: Share Opportunity
+        document.getElementById('form-share-opportunity').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            try {
+                await addDoc(collection(db, 'opportunities'), {
+                    title: formData.get('title'),
+                    company: formData.get('company') || '',
+                    location: formData.get('location'),
+                    level: formData.get('level'),
+                    industry: formData.get('industry'),
+                    status: formData.get('status'),
+                    description: formData.get('description'),
+                    contactHeadhunter: formData.get('contactHeadhunter') || '',
+                    sharedBy: currentUser.uid,
+                    createdAt: new Date()
+                });
+
+                // Award karma (+10 for sharing opportunity)
+                await updateDoc(doc(db, 'members', currentUser.uid), {
+                    karma: increment(10)
+                });
+
+                // Update local karma display
+                const newKarma = (currentMemberData.karma || 0) + 10;
+                currentMemberData.karma = newKarma;
+                document.getElementById('member-karma').textContent = newKarma;
+                document.getElementById('member-level').textContent = getMemberLevel(newKarma);
+
+                alert('✅ Opportunity erfolgreich geteilt! +10 Karma');
+                closeModal('share-opportunity');
+                this.reset();
+                loadOpportunities();
+
+                // Also update dashboard count
+                const oppsSnapshot = await getDocs(collection(db, 'opportunities'));
+                document.getElementById('opportunities-count').textContent = oppsSnapshot.size;
+            } catch(error) {
+                console.error('Error sharing opportunity:', error);
+                alert('❌ Fehler beim Teilen der Opportunity');
+            }
+        });
+
+        // ========== FORUM FUNCTIONS ==========
+
+        let allPosts = [];
+        let currentForumCategory = 'all';
+
+        window.loadForum = async function() {
+            try {
+                const listDiv = document.getElementById('forum-posts');
+                listDiv.innerHTML = '<p class="text-gray-500 text-center py-12">Lade Forum Posts...</p>';
+
+                const postsQuery = query(
+                    collection(db, 'forum_posts'),
+                    orderBy('createdAt', 'desc')
+                );
+                const postsSnapshot = await getDocs(postsQuery);
+                allPosts = postsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+                displayForumPosts(allPosts);
+            } catch(e) {
+                console.error('Error loading forum:', e);
+                document.getElementById('forum-posts').innerHTML = '<p class="text-red-500 text-center py-12">Fehler beim Laden</p>';
+            }
+        };
+
+        function displayForumPosts(posts) {
+            const listDiv = document.getElementById('forum-posts');
+
+            // Filter by category if needed
+            let filtered = posts;
+            if(currentForumCategory !== 'all') {
+                filtered = posts.filter(p => p.category === currentForumCategory);
+            }
+
+            if(filtered.length === 0) {
+                listDiv.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-comments text-5xl text-gray-700 mb-4"></i>
+                        <p class="text-gray-500">Noch keine Posts in dieser Kategorie.</p>
+                        <p class="text-sm text-gray-600 mt-2">Starten Sie die Diskussion!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="space-y-4">';
+            filtered.forEach(post => {
+                const createdDate = post.createdAt && post.createdAt.seconds
+                    ? new Date(post.createdAt.seconds * 1000).toLocaleDateString('de-DE')
+                    : 'Unbekannt';
+
+                const categoryColors = {
+                    'Strategy': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                    'Headhunter Intel': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+                    'Salary Negotiation': 'bg-green-500/20 text-green-400 border-green-500/30',
+                    'Career Advice': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                };
+
+                const categoryColor = categoryColors[post.category] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+
+                html += `
+                    <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-6 hover-lift cursor-pointer" onclick="viewForumPost('${post.id}')">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="text-xs px-3 py-1 rounded-full border ${categoryColor}">
+                                        ${post.category}
+                                    </span>
+                                </div>
+                                <h3 class="font-serif text-xl mb-2 text-white">${post.title}</h3>
+                                <p class="text-sm text-gray-400 line-clamp-2">${post.content}</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-800 text-xs text-gray-500">
+                            <span>${createdDate}</span>
+                            <span class="brand-gold hover:text-white">
+                                Lesen & Antworten <i class="fas fa-arrow-right ml-1"></i>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            listDiv.innerHTML = html;
+        }
+
+        window.viewForumPost = function(postId) {
+            const post = allPosts.find(p => p.id === postId);
+            if(!post) return;
+
+            const createdDate = post.createdAt && post.createdAt.seconds
+                ? new Date(post.createdAt.seconds * 1000).toLocaleDateString('de-DE')
+                : 'Unbekannt';
+
+            const categoryColors = {
+                'Strategy': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                'Headhunter Intel': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+                'Salary Negotiation': 'bg-green-500/20 text-green-400 border-green-500/30',
+                'Career Advice': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+            };
+
+            const categoryColor = categoryColors[post.category] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+
+            const html = `
+                <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="this.remove()">
+                    <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                        <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs px-3 py-1 rounded-full border ${categoryColor} inline-block mb-2">
+                                    ${post.category}
+                                </span>
+                                <h3 class="font-serif text-2xl">${post.title}</h3>
+                                <p class="text-xs text-gray-500 mt-2">Gepostet am ${createdDate}</p>
+                            </div>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <div>
+                                <p class="text-gray-300 leading-relaxed whitespace-pre-wrap">${post.content}</p>
+                            </div>
+
+                            <div class="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 text-center">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    Reply-Funktionalität kommt in Kürze
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+        };
+
+        window.filterForum = function(category) {
+            currentForumCategory = category;
+
+            // Update active button
+            document.querySelectorAll('.category-filter').forEach(btn => {
+                btn.classList.remove('category-active');
+            });
+            event.target.classList.add('category-active');
+
+            displayForumPosts(allPosts);
+        };
+
+        window.showCreatePostModal = function() {
+            document.getElementById('modal-create-post').classList.remove('hidden');
+        };
+
+        // Form: Create Forum Post
+        document.getElementById('form-create-post').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            try {
+                await addDoc(collection(db, 'forum_posts'), {
+                    category: formData.get('category'),
+                    title: formData.get('title'),
+                    content: formData.get('content'),
+                    authorId: currentUser.uid,
+                    createdAt: new Date()
+                });
+
+                // Award karma (+3 for forum post)
+                await updateDoc(doc(db, 'members', currentUser.uid), {
+                    karma: increment(3)
+                });
+
+                // Update local karma display
+                const newKarma = (currentMemberData.karma || 0) + 3;
+                currentMemberData.karma = newKarma;
+                document.getElementById('member-karma').textContent = newKarma;
+                document.getElementById('member-level').textContent = getMemberLevel(newKarma);
+
+                alert('✅ Post erfolgreich veröffentlicht! +3 Karma');
+                closeModal('create-post');
+                this.reset();
+                loadForum();
+            } catch(error) {
+                console.error('Error creating post:', error);
+                alert('❌ Fehler beim Veröffentlichen');
+            }
+        });
+
+        // ========== LOGOUT ==========
+
+        window.logout = async function() {
+            await signOut(auth);
+            window.location.href = '/index.html';
+        };
+    </script>
+
+    <style>
+        .category-filter {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #999;
+        }
+        .category-filter:hover {
+            border-color: #C9A96E;
+            color: #C9A96E;
+        }
+        .category-active {
+            background: rgba(201,169,110,0.2);
+            border-color: #C9A96E;
+            color: #C9A96E;
+        }
+    </style>
+</body>
+</html>

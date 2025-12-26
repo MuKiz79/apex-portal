@@ -33,13 +33,7 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // Settings Collection - Nur lesen erlaubt (z.B. für "Über uns" Bild)
-    match /settings/{document} {
-      allow read: if true; // Öffentlich lesbar
-      allow write: if false; // Nur Admins (manuell in Console)
-    }
-
-    // Coaches/Mentors Collection - Öffentlich lesbar
+    // Coaches/Mentors Collection - Öffentlich lesbar (MUSS VOR catch-all kommen!)
     match /coaches/{coachId} {
       allow read: if true; // Öffentlich
       allow write: if false; // Nur Admins (manuell in Console)
@@ -51,7 +45,64 @@ service cloud.firestore {
       allow write: if false; // Nur Admins
     }
 
-    // Alle anderen Collections: Komplett gesperrt
+    // Settings Collection - Nur lesen erlaubt (z.B. für "Über uns" Bild)
+    match /settings/{document} {
+      allow read: if true; // Öffentlich lesbar
+      allow write: if false; // Nur Admins (manuell in Console)
+    }
+
+    // Waitlist Collection - Jeder kann sich eintragen, nur Admins können lesen
+    match /waitlist/{entryId} {
+      allow create: if true; // Jeder kann sich auf Warteliste setzen
+      allow read, update, delete: if false; // Nur Admins (manuell in Console)
+    }
+
+    // Members Collection - Inner Circle Members
+    match /members/{memberId} {
+      allow read: if isSignedIn() && request.auth.uid == memberId;
+      allow write: if false; // Nur Admins
+    }
+
+    // Headhunters Collection - Members können lesen
+    match /headhunters/{headhunterId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // Members können Headhunter hinzufügen
+      allow update, delete: if false; // Nur Admins
+    }
+
+    // Headhunter Reviews - Members können lesen und schreiben
+    match /headhunter_reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.reviewerId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.reviewerId;
+      allow delete: if false; // Reviews können nicht gelöscht werden
+    }
+
+    // Opportunities - Members können lesen und teilen
+    match /opportunities/{opportunityId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.sharedBy;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.sharedBy;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.sharedBy;
+    }
+
+    // Forum Posts - Members können lesen und schreiben
+    match /forum_posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.authorId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.authorId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.authorId;
+    }
+
+    // Forum Replies - Members können lesen und schreiben
+    match /forum_replies/{replyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.authorId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.authorId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.authorId;
+    }
+
+    // Alle anderen Collections: Komplett gesperrt (MUSS AM ENDE sein!)
     match /{document=**} {
       allow read, write: if false;
     }
