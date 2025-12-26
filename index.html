@@ -2584,12 +2584,17 @@
                     app.updateAuthUI();
 
                     // Lade Orders wenn auf Dashboard oder nach erfolgreicher Zahlung
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const isPaymentSuccess = urlParams.get('payment') === 'success';
+                    const isPaymentSuccess = app.state.justPaid;
                     console.log('🔐 Payment success:', isPaymentSuccess, 'Current view:', app.state.currentView);
                     if (app.state.currentView === 'dashboard' || isPaymentSuccess) {
                         console.log('🔐 Loading orders...');
-                        app.loadUserOrders();
+                        // Bei Zahlung: warte kurz damit Webhook Zeit hat
+                        if (isPaymentSuccess) {
+                            setTimeout(() => app.loadUserOrders(), 2000);
+                            app.state.justPaid = false; // Reset flag
+                        } else {
+                            app.loadUserOrders();
+                        }
                     }
                 } else {
                     app.state.user = null;
@@ -2600,6 +2605,10 @@
 
         // Initialize debounced functions
         window.app.debouncedFilterCoaches = Core.debounce(() => window.app.filterCoaches(), 200);
+
+        // Check for payment success BEFORE URL is cleaned (store in state)
+        const initialUrlParams = new URLSearchParams(window.location.search);
+        window.app.state.justPaid = initialUrlParams.get('payment') === 'success';
 
         // Load Initial Data
         document.addEventListener('DOMContentLoaded', () => {
