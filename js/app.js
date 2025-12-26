@@ -1202,7 +1202,7 @@ export function handlePaymentCallback(state, navigateTo) {
 function showCheckoutConfirmationModal(cart, total, hasUser) {
     return new Promise((resolve) => {
         const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+        modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4';
 
         const cartItemsHTML = cart.map(item => `
             <div class="flex justify-between items-center py-2 border-b border-gray-100">
@@ -1290,7 +1290,7 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
 
 function showPaymentSuccessModal(sessionId) {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4';
     modal.innerHTML = `
         <div class="bg-white rounded-lg max-w-md w-full p-8 text-center">
             <div class="mb-6">
