@@ -1856,7 +1856,8 @@ function showPaymentSuccessModal(sessionId, checkoutType = 'guest', navigateTo =
         infoContent = `<div class="space-y-3 text-sm text-gray-600 mb-6">
                 <p><i class="fas fa-envelope text-brand-gold mr-2"></i>Sie erhalten eine Bestätigungs-Email mit Rechnung</p>
                 <p><i class="fas fa-user-check text-green-500 mr-2"></i>Ihr Account wurde erfolgreich erstellt</p>
-                <p><i class="fas fa-tachometer-alt text-brand-gold mr-2"></i>Sie können sich jetzt anmelden</p>
+                <p><i class="fas fa-shield-alt text-orange-500 mr-2"></i><strong>Bitte bestätigen Sie Ihre E-Mail</strong> über den Link in Ihrem Postfach</p>
+                <p><i class="fas fa-sign-in-alt text-brand-gold mr-2"></i>Danach können Sie sich anmelden</p>
            </div>`;
         buttonContent = `<button id="success-modal-btn" class="w-full bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
                 <i class="fas fa-sign-in-alt mr-2"></i>Zum Login
