@@ -468,27 +468,22 @@ export async function loadUserOrders(state) {
         return;
     }
 
-    console.log('🔍 Loading orders for user:', state.user.uid, 'Email:', state.user.email);
-
     try {
-        // Versuche zuerst mit userId (ohne orderBy um Index-Probleme zu vermeiden)
+        // Versuche zuerst mit userId
         let ordersQuery = query(
             collection(db, "orders"),
             where("userId", "==", state.user.uid)
         );
 
         let snapshot = await getDocs(ordersQuery);
-        console.log('📦 Orders found by userId:', snapshot.size);
 
         // Falls keine Bestellungen gefunden, versuche auch mit customerEmail
         if (snapshot.empty && state.user.email) {
-            console.log('🔍 Trying with customerEmail:', state.user.email);
             ordersQuery = query(
                 collection(db, "orders"),
                 where("customerEmail", "==", state.user.email)
             );
             snapshot = await getDocs(ordersQuery);
-            console.log('📦 Orders found by email:', snapshot.size);
         }
 
         const orders = snapshot.docs.map(doc => ({
@@ -505,7 +500,7 @@ export async function loadUserOrders(state) {
 
         renderOrders(orders);
     } catch (e) {
-        console.error('❌ Failed to load orders:', e);
+        console.error('Failed to load orders:', e);
         renderOrders([]);
     }
 }

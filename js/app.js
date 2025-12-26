@@ -699,8 +699,6 @@ export async function loadUserOrders(state) {
     }
 
     try {
-        console.log('🔍 Loading orders for user:', state.user.uid, 'Email:', state.user.email);
-
         // Versuche zuerst mit userId
         let ordersQuery = query(
             collection(db, "orders"),
@@ -708,25 +706,20 @@ export async function loadUserOrders(state) {
         );
 
         let snapshot = await getDocs(ordersQuery);
-        console.log('📦 Orders found by userId:', snapshot.size);
 
         // Falls keine Bestellungen gefunden, versuche auch mit customerEmail
         if (snapshot.empty && state.user.email) {
-            console.log('🔍 Trying with customerEmail:', state.user.email);
             ordersQuery = query(
                 collection(db, "orders"),
                 where("customerEmail", "==", state.user.email)
             );
             snapshot = await getDocs(ordersQuery);
-            console.log('📦 Orders found by email:', snapshot.size);
         }
 
-        console.log('📋 Mapping orders from snapshot...');
         const orders = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
-        console.log('📋 Orders mapped:', orders);
 
         // Sortiere nach Datum (client-side, um Index-Probleme zu vermeiden)
         orders.sort((a, b) => {
@@ -735,7 +728,6 @@ export async function loadUserOrders(state) {
             return dateB - dateA;
         });
 
-        console.log('📋 Calling renderOrders...');
         renderOrders(orders);
 
         // Update Dashboard Stats
@@ -773,10 +765,8 @@ function updateDashboardStats(orders) {
 }
 
 export function renderOrders(orders) {
-    console.log('🎨 renderOrders called with', orders.length, 'orders:', orders);
     const container = document.getElementById('orders-list');
     const badge = document.getElementById('order-count-badge');
-    console.log('🎨 Container found:', !!container, 'Badge found:', !!badge);
 
     if (!container) return;
 
