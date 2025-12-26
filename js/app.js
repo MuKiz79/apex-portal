@@ -1212,8 +1212,9 @@ export function handlePaymentCallback(state, navigateTo) {
         saveCartToLocalStorage(state.cart);
         sessionStorage.removeItem('pending_cart');
 
-        // Zeige Success Message
-        showPaymentSuccessModal(sessionId);
+        // Zeige Success Message - prüfe ob User eingeloggt ist
+        const isLoggedIn = !!state.user;
+        showPaymentSuccessModal(sessionId, isLoggedIn, navigateTo);
 
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -1612,12 +1613,34 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
     });
 }
 
-function showPaymentSuccessModal(sessionId) {
+function showPaymentSuccessModal(sessionId, isLoggedIn = false, navigateTo = null) {
     // Generiere kurze Bestellnummer aus Session ID
     const shortOrderId = 'APEX-' + sessionId.slice(-8).toUpperCase();
 
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4';
+
+    // Unterschiedliche Inhalte je nach Login-Status
+    const infoContent = isLoggedIn
+        ? `<div class="space-y-3 text-sm text-gray-600 mb-6">
+                <p><i class="fas fa-envelope text-brand-gold mr-2"></i>Sie erhalten eine Bestätigungs-Email</p>
+                <p><i class="fas fa-box text-brand-gold mr-2"></i>Die Bestellung wurde Ihrem Konto zugeordnet</p>
+                <p><i class="fas fa-tachometer-alt text-brand-gold mr-2"></i>Details finden Sie in Ihrem Dashboard</p>
+           </div>`
+        : `<div class="space-y-3 text-sm text-gray-600 mb-6">
+                <p><i class="fas fa-envelope text-brand-gold mr-2"></i>Sie erhalten eine Bestätigungs-Email</p>
+                <p><i class="fas fa-user-plus text-brand-gold mr-2"></i>Ein Account wurde für Sie erstellt</p>
+                <p><i class="fas fa-key text-brand-gold mr-2"></i>Passwort-Reset Link wurde versendet</p>
+           </div>`;
+
+    const buttonContent = isLoggedIn
+        ? `<button id="success-modal-btn" class="w-full bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
+                <i class="fas fa-tachometer-alt mr-2"></i>Zum Dashboard
+           </button>`
+        : `<button id="success-modal-btn" class="w-full bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
+                <i class="fas fa-sign-in-alt mr-2"></i>Zum Login
+           </button>`;
+
     modal.innerHTML = `
         <div class="bg-white rounded-lg max-w-md w-full p-8 text-center">
             <div class="mb-6">
@@ -1633,20 +1656,23 @@ function showPaymentSuccessModal(sessionId) {
                 <p class="text-2xl font-bold text-brand-dark tracking-wider">${shortOrderId}</p>
             </div>
 
-            <div class="space-y-3 text-sm text-gray-600 mb-6">
-                <p><i class="fas fa-envelope text-brand-gold mr-2"></i>Sie erhalten eine Bestätigungs-Email</p>
-                <p><i class="fas fa-user text-brand-gold mr-2"></i>Ein Account wurde für Sie erstellt</p>
-                <p><i class="fas fa-key text-brand-gold mr-2"></i>Passwort-Reset Link wurde versendet</p>
-            </div>
-
-            <button onclick="this.closest('.fixed').remove(); app.navigateTo('login')"
-                    class="w-full bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
-                Zum Login
-            </button>
+            ${infoContent}
+            ${buttonContent}
         </div>
     `;
 
     document.body.appendChild(modal);
+
+    // Button Click Handler
+    const btn = modal.querySelector('#success-modal-btn');
+    btn.addEventListener('click', () => {
+        modal.remove();
+        if (navigateTo) {
+            navigateTo(isLoggedIn ? 'dashboard' : 'login');
+        } else if (window.app?.navigateTo) {
+            window.app.navigateTo(isLoggedIn ? 'dashboard' : 'login');
+        }
+    });
 
     // Auto-remove nach 30 Sekunden
     setTimeout(() => {
