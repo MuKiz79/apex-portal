@@ -21,7 +21,11 @@ service cloud.firestore {
 
     // Orders Collection - Users können nur eigene Bestellungen lesen
     match /orders/{orderId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // Erlaubt wenn userId ODER customerEmail übereinstimmt
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.customerEmail == request.auth.token.email
+      );
       allow create: if false; // Nur Functions dürfen Orders erstellen
       allow update: if false; // Nur Functions dürfen Orders updaten
       allow delete: if false; // Keine Löschung

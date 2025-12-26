@@ -567,7 +567,8 @@ export async function checkout(state, navigateTo) {
 
         // Verwende state.user wenn eingeloggt, sonst checkoutEmail von Registrierung
         const emailForStripe = state.user?.email || checkoutEmail || null;
-        const userIdForOrder = state.user?.uid || null;
+        // Bei Registrierung: Nutze die gespeicherte userId vom registrierten User
+        const userIdForOrder = state.user?.uid || result.userId || null;
 
         const response = await fetch(functionUrl, {
             method: 'POST',
@@ -1744,17 +1745,21 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                     // Send email verification
                     await sendEmailVerification(userCredential.user);
 
+                    // Speichere die UID BEVOR wir ausloggen
+                    const registeredUserId = userCredential.user.uid;
+
                     // WICHTIG: User ausloggen nach Registrierung - Email muss erst bestätigt werden
                     await signOut(auth);
 
                     showToast('✅ Konto erstellt! Bitte bestätigen Sie Ihre E-Mail bevor Sie sich anmelden.');
                     modal.remove();
 
-                    // Als Gast zur Kasse weiterleiten (mit Email vorausgefüllt für Stripe)
+                    // Zur Kasse weiterleiten mit registrierter User-ID
                     resolve({
                         registered: true,
-                        guestCheckout: true, // Zahlung als Gast, weil Email noch nicht verifiziert
-                        userEmail: email // Email für Stripe vorausfüllen
+                        guestCheckout: true, // Zahlung ohne Login, weil Email noch nicht verifiziert
+                        userEmail: email, // Email für Stripe vorausfüllen
+                        userId: registeredUserId // UID für Order-Zuordnung
                     });
 
                 } catch (error) {
