@@ -1125,6 +1125,9 @@ export async function submitWaitlist(event) {
     const email = document.getElementById('waitlist-email').value;
     const linkedin = document.getElementById('waitlist-linkedin').value;
     const position = document.getElementById('waitlist-position').value;
+    const company = document.getElementById('waitlist-company').value;
+    const experience = document.getElementById('waitlist-experience').value;
+    const reason = document.getElementById('waitlist-reason').value;
 
     try {
         if (!db) {
@@ -1133,23 +1136,31 @@ export async function submitWaitlist(event) {
 
         // Save to Firestore
         await addDoc(collection(db, 'waitlist'), {
-            name: name,
+            name: sanitizeHTML(name),
             email: email,
-            linkedinUrl: linkedin,
-            position: position,
+            linkedin: linkedin,
+            currentRole: sanitizeHTML(position),
+            company: sanitizeHTML(company),
+            yearsExperience: experience,
+            reason: sanitizeHTML(reason),
+            status: 'pending',
             submittedAt: new Date(),
-            status: 'pending' // pending, approved, rejected
+            reviewedBy: null,
+            reviewedAt: null,
+            notes: '',
+            interviewDate: null,
+            interviewNotes: ''
         });
 
-        showToast('✅ Erfolgreich auf die Warteliste gesetzt! Wir melden uns in Kürze.');
+        showToast('✅ Erfolgreich auf die Warteliste gesetzt! Wir melden uns innerhalb von 5 Werktagen.');
 
         // Clear form
         event.target.reset();
 
-        // Optional: Navigate to home after 2 seconds
+        // Navigate to home after 3 seconds
         setTimeout(() => {
             navigateTo('home');
-        }, 2000);
+        }, 3000);
 
     } catch (error) {
         console.error('Error submitting waitlist:', error);

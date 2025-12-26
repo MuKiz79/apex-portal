@@ -1425,10 +1425,35 @@
                         required
                         class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
                     >
-                    <textarea
+                    <input
+                        type="text"
                         id="waitlist-position"
-                        placeholder="Aktuelle Position & Unternehmen"
-                        rows="3"
+                        placeholder="Aktuelle Position (z.B. Director Sales)"
+                        required
+                        class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
+                    >
+                    <input
+                        type="text"
+                        id="waitlist-company"
+                        placeholder="Aktuelles Unternehmen"
+                        required
+                        class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
+                    >
+                    <select
+                        id="waitlist-experience"
+                        required
+                        class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
+                    >
+                        <option value="" disabled selected>Jahre Berufserfahrung</option>
+                        <option value="5-10">5-10 Jahre</option>
+                        <option value="10-15">10-15 Jahre</option>
+                        <option value="15-20">15-20 Jahre</option>
+                        <option value="20+">20+ Jahre</option>
+                    </select>
+                    <textarea
+                        id="waitlist-reason"
+                        placeholder="Warum möchten Sie dem Inner Circle beitreten?"
+                        rows="4"
                         required
                         class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
                     ></textarea>
