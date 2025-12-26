@@ -524,9 +524,25 @@ export async function checkout(state, navigateTo) {
 
     const total = state.cart.reduce((sum, item) => sum + item.price, 0);
 
-    // Zeige schöne Checkout-Bestätigung statt native confirm()
-    const confirmed = await showCheckoutConfirmationModal(state.cart, total, !!state.user);
-    if (!confirmed) return;
+    // Zeige Checkout-Modal mit Optionen (Registrieren/Login/Gast)
+    const result = await showCheckoutConfirmationModal(state.cart, total, !!state.user);
+
+    // User hat abgebrochen
+    if (!result) return;
+
+    // User hat sich registriert oder eingeloggt - update state
+    if (result.registered || result.loggedIn) {
+        state.user = {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName || result.user.email.split('@')[0],
+            emailVerified: result.user.emailVerified
+        };
+        // Update UI
+        if (typeof updateAuthUI === 'function') {
+            updateAuthUI(state);
+        }
+    }
 
     // Zeige Loading
     showToast('⏳ Zahlungsseite wird vorbereitet...', 3000);
@@ -543,10 +559,10 @@ export async function checkout(state, navigateTo) {
             },
             body: JSON.stringify({
                 items: state.cart,
-                userEmail: state.user?.email || null, // Optional - Stripe sammelt Email
-                userId: state.user?.uid || null, // Optional - wird nach Zahlung erstellt
-                customerEmail: state.user?.email || null, // Prefill if logged in
-                mode: 'payment' // One-time payment
+                userEmail: state.user?.email || null,
+                userId: state.user?.uid || null,
+                customerEmail: state.user?.email || null, // Prefill Stripe mit E-Mail
+                mode: 'payment'
             })
         });
 
@@ -1221,7 +1237,7 @@ export function handlePaymentCallback(state, navigateTo) {
 function showCheckoutConfirmationModal(cart, total, hasUser) {
     return new Promise((resolve) => {
         const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4';
+        modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 overflow-y-auto';
 
         const cartItemsHTML = cart.map(item => `
             <div class="flex justify-between items-center py-2 border-b border-gray-100">
@@ -1230,62 +1246,351 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
             </div>
         `).join('');
 
-        modal.innerHTML = `
-            <div class="bg-white rounded-lg max-w-lg w-full p-8">
-                <div class="mb-6 text-center">
-                    <div class="w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-shopping-cart text-brand-dark text-2xl"></i>
+        // Wenn User eingeloggt ist, zeige vereinfachtes Modal
+        if (hasUser) {
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg max-w-lg w-full p-8 my-8">
+                    <div class="mb-6 text-center">
+                        <div class="w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-shopping-cart text-brand-dark text-2xl"></i>
+                        </div>
+                        <h2 class="font-serif text-2xl text-brand-dark mb-2">Bestellung bestätigen</h2>
+                        <p class="text-gray-600 text-sm">Bitte überprüfen Sie Ihre Auswahl</p>
                     </div>
-                    <h2 class="font-serif text-2xl text-brand-dark mb-2">Bestellung bestätigen</h2>
-                    <p class="text-gray-600 text-sm">Bitte überprüfen Sie Ihre Auswahl</p>
-                </div>
 
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h3 class="font-bold text-sm text-gray-700 mb-3">Ihre Bestellung:</h3>
-                    ${cartItemsHTML}
-                    <div class="flex justify-between items-center pt-4 mt-4 border-t-2 border-brand-gold">
-                        <span class="font-bold text-brand-dark">Gesamtbetrag:</span>
-                        <span class="font-serif text-2xl text-brand-dark">€${total.toFixed(2)}</span>
-                    </div>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <div class="flex items-start">
-                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
-                        <div class="text-sm text-gray-700 space-y-2">
-                            <p><i class="fas fa-lock text-brand-gold mr-2"></i>Sie werden zur sicheren Stripe-Zahlung weitergeleitet</p>
-                            <p><i class="fas fa-credit-card text-brand-gold mr-2"></i>Akzeptiert: Kreditkarte & PayPal</p>
-                            ${!hasUser ? '<p><i class="fas fa-user-plus text-brand-gold mr-2"></i>Ein Account wird automatisch für Sie erstellt</p>' : ''}
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h3 class="font-bold text-sm text-gray-700 mb-3">Ihre Bestellung:</h3>
+                        ${cartItemsHTML}
+                        <div class="flex justify-between items-center pt-4 mt-4 border-t-2 border-brand-gold">
+                            <span class="font-bold text-brand-dark">Gesamtbetrag:</span>
+                            <span class="font-serif text-2xl text-brand-dark">€${total.toFixed(2)}</span>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex gap-3">
-                    <button id="modal-cancel" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded hover:bg-gray-300 transition">
-                        <i class="fas fa-times mr-2"></i>Abbrechen
-                    </button>
-                    <button id="modal-confirm" class="flex-1 bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
-                        <i class="fas fa-arrow-right mr-2"></i>Zur Kasse
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                            <p class="text-sm text-gray-700">Sie sind angemeldet. Ihre Bestellung wird Ihrem Account zugeordnet.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button id="modal-cancel" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded hover:bg-gray-300 transition">
+                            <i class="fas fa-times mr-2"></i>Abbrechen
+                        </button>
+                        <button id="modal-confirm" class="flex-1 bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
+                            <i class="fas fa-arrow-right mr-2"></i>Zur Kasse
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Nicht eingeloggt - zeige Optionen
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg max-w-lg w-full p-8 my-8">
+                    <div class="mb-6 text-center">
+                        <div class="w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-shopping-cart text-brand-dark text-2xl"></i>
+                        </div>
+                        <h2 class="font-serif text-2xl text-brand-dark mb-2">Bestellung bestätigen</h2>
+                        <p class="text-gray-600 text-sm">Bitte überprüfen Sie Ihre Auswahl</p>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h3 class="font-bold text-sm text-gray-700 mb-3">Ihre Bestellung:</h3>
+                        ${cartItemsHTML}
+                        <div class="flex justify-between items-center pt-4 mt-4 border-t-2 border-brand-gold">
+                            <span class="font-bold text-brand-dark">Gesamtbetrag:</span>
+                            <span class="font-serif text-2xl text-brand-dark">€${total.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Checkout Options -->
+                    <div id="checkout-options" class="space-y-4 mb-6">
+                        <p class="text-sm text-gray-600 text-center font-medium">Wie möchten Sie fortfahren?</p>
+
+                        <!-- Option 1: Quick Register -->
+                        <button id="btn-quick-register" class="w-full flex items-center gap-4 p-4 border-2 border-brand-gold rounded-lg hover:bg-brand-gold/10 transition group">
+                            <div class="w-12 h-12 bg-brand-gold rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-user-plus text-brand-dark text-lg"></i>
+                            </div>
+                            <div class="text-left">
+                                <span class="font-bold text-brand-dark block">Konto erstellen</span>
+                                <span class="text-xs text-gray-500">Schnelle Registrierung & sofortiger Zugang</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-brand-gold ml-auto group-hover:translate-x-1 transition"></i>
+                        </button>
+
+                        <!-- Option 2: Login -->
+                        <button id="btn-login" class="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-brand-gold hover:bg-gray-50 transition group">
+                            <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-sign-in-alt text-gray-600 text-lg"></i>
+                            </div>
+                            <div class="text-left">
+                                <span class="font-bold text-brand-dark block">Bereits Kunde?</span>
+                                <span class="text-xs text-gray-500">Mit bestehendem Konto anmelden</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:translate-x-1 transition"></i>
+                        </button>
+
+                        <!-- Option 3: Guest -->
+                        <button id="btn-guest" class="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition group">
+                            <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-user-clock text-gray-500 text-lg"></i>
+                            </div>
+                            <div class="text-left">
+                                <span class="font-bold text-gray-700 block">Als Gast fortfahren</span>
+                                <span class="text-xs text-gray-500">Konto wird nach Zahlung erstellt</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:translate-x-1 transition"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Register Form (initially hidden) -->
+                    <div id="quick-register-form" class="hidden mb-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <button id="back-to-options" class="text-gray-500 hover:text-brand-dark transition">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h3 class="font-bold text-brand-dark">Schnell registrieren</h3>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">Vorname *</label>
+                                    <input type="text" id="checkout-firstname" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="Max">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">Nachname *</label>
+                                    <input type="text" id="checkout-lastname" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="Mustermann">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">E-Mail *</label>
+                                <input type="email" id="checkout-email" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="max@beispiel.de">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">Passwort *</label>
+                                <input type="password" id="checkout-password" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="Mindestens 6 Zeichen">
+                            </div>
+                            <div id="checkout-register-error" class="hidden text-red-500 text-xs"></div>
+                        </div>
+
+                        <button id="btn-register-and-pay" class="w-full mt-4 bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
+                            <i class="fas fa-user-check mr-2"></i>Registrieren & zur Kasse
+                        </button>
+                    </div>
+
+                    <!-- Login Form (initially hidden) -->
+                    <div id="quick-login-form" class="hidden mb-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <button id="back-to-options-login" class="text-gray-500 hover:text-brand-dark transition">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h3 class="font-bold text-brand-dark">Anmelden</h3>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">E-Mail</label>
+                                <input type="email" id="checkout-login-email" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="ihre@email.de">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">Passwort</label>
+                                <input type="password" id="checkout-login-password" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="Ihr Passwort">
+                            </div>
+                            <div id="checkout-login-error" class="hidden text-red-500 text-xs"></div>
+                        </div>
+
+                        <button id="btn-login-and-pay" class="w-full mt-4 bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Anmelden & zur Kasse
+                        </button>
+                    </div>
+
+                    <button id="modal-cancel" class="w-full bg-gray-100 text-gray-600 font-medium py-2 px-4 rounded hover:bg-gray-200 transition text-sm">
+                        Abbrechen
                     </button>
                 </div>
-            </div>
-        `;
+            `;
+        }
 
         document.body.appendChild(modal);
 
-        // Event Handlers
-        const confirmBtn = modal.querySelector('#modal-confirm');
-        const cancelBtn = modal.querySelector('#modal-cancel');
+        // Event Handlers für eingeloggten User
+        if (hasUser) {
+            const confirmBtn = modal.querySelector('#modal-confirm');
+            const cancelBtn = modal.querySelector('#modal-cancel');
 
-        confirmBtn.addEventListener('click', () => {
-            modal.remove();
-            resolve(true);
-        });
+            confirmBtn.addEventListener('click', () => {
+                modal.remove();
+                resolve(true);
+            });
 
-        cancelBtn.addEventListener('click', () => {
-            modal.remove();
-            resolve(false);
-        });
+            cancelBtn.addEventListener('click', () => {
+                modal.remove();
+                resolve(false);
+            });
+        } else {
+            // Event Handlers für nicht eingeloggten User
+            const cancelBtn = modal.querySelector('#modal-cancel');
+            const btnQuickRegister = modal.querySelector('#btn-quick-register');
+            const btnLogin = modal.querySelector('#btn-login');
+            const btnGuest = modal.querySelector('#btn-guest');
+            const checkoutOptions = modal.querySelector('#checkout-options');
+            const quickRegisterForm = modal.querySelector('#quick-register-form');
+            const quickLoginForm = modal.querySelector('#quick-login-form');
+            const backToOptions = modal.querySelector('#back-to-options');
+            const backToOptionsLogin = modal.querySelector('#back-to-options-login');
+            const btnRegisterAndPay = modal.querySelector('#btn-register-and-pay');
+            const btnLoginAndPay = modal.querySelector('#btn-login-and-pay');
+
+            cancelBtn.addEventListener('click', () => {
+                modal.remove();
+                resolve(false);
+            });
+
+            // Guest checkout
+            btnGuest.addEventListener('click', () => {
+                modal.remove();
+                resolve(true);
+            });
+
+            // Show register form
+            btnQuickRegister.addEventListener('click', () => {
+                checkoutOptions.classList.add('hidden');
+                quickRegisterForm.classList.remove('hidden');
+            });
+
+            // Show login form
+            btnLogin.addEventListener('click', () => {
+                checkoutOptions.classList.add('hidden');
+                quickLoginForm.classList.remove('hidden');
+            });
+
+            // Back to options from register
+            backToOptions.addEventListener('click', () => {
+                quickRegisterForm.classList.add('hidden');
+                checkoutOptions.classList.remove('hidden');
+            });
+
+            // Back to options from login
+            backToOptionsLogin.addEventListener('click', () => {
+                quickLoginForm.classList.add('hidden');
+                checkoutOptions.classList.remove('hidden');
+            });
+
+            // Register and pay
+            btnRegisterAndPay.addEventListener('click', async () => {
+                const firstname = modal.querySelector('#checkout-firstname').value.trim();
+                const lastname = modal.querySelector('#checkout-lastname').value.trim();
+                const email = modal.querySelector('#checkout-email').value.trim();
+                const password = modal.querySelector('#checkout-password').value;
+                const errorDiv = modal.querySelector('#checkout-register-error');
+
+                errorDiv.classList.add('hidden');
+
+                if (!firstname || !lastname || !email || !password) {
+                    errorDiv.textContent = 'Bitte alle Felder ausfüllen.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (!validateEmail(email)) {
+                    errorDiv.textContent = 'Bitte gültige E-Mail-Adresse eingeben.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    errorDiv.textContent = 'Passwort muss mindestens 6 Zeichen haben.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                btnRegisterAndPay.disabled = true;
+                btnRegisterAndPay.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Wird erstellt...';
+
+                try {
+                    // Create user account
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+                    // Update profile with name
+                    await updateProfile(userCredential.user, {
+                        displayName: `${firstname} ${lastname}`
+                    });
+
+                    // Create user document in Firestore
+                    if (db) {
+                        await setDoc(doc(db, "users", userCredential.user.uid), {
+                            email,
+                            firstname,
+                            lastname,
+                            displayName: `${firstname} ${lastname}`,
+                            createdAt: new Date(),
+                            createdVia: 'checkout_registration'
+                        });
+                    }
+
+                    // Send email verification
+                    await sendEmailVerification(userCredential.user);
+
+                    showToast('✅ Konto erstellt! Bitte bestätigen Sie Ihre E-Mail.');
+                    modal.remove();
+                    resolve({ registered: true, user: userCredential.user });
+
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    btnRegisterAndPay.disabled = false;
+                    btnRegisterAndPay.innerHTML = '<i class="fas fa-user-check mr-2"></i>Registrieren & zur Kasse';
+
+                    if (error.code === 'auth/email-already-in-use') {
+                        errorDiv.textContent = 'Diese E-Mail ist bereits registriert. Bitte anmelden.';
+                    } else {
+                        errorDiv.textContent = 'Fehler bei der Registrierung. Bitte erneut versuchen.';
+                    }
+                    errorDiv.classList.remove('hidden');
+                }
+            });
+
+            // Login and pay
+            btnLoginAndPay.addEventListener('click', async () => {
+                const email = modal.querySelector('#checkout-login-email').value.trim();
+                const password = modal.querySelector('#checkout-login-password').value;
+                const errorDiv = modal.querySelector('#checkout-login-error');
+
+                errorDiv.classList.add('hidden');
+
+                if (!email || !password) {
+                    errorDiv.textContent = 'Bitte E-Mail und Passwort eingeben.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                btnLoginAndPay.disabled = true;
+                btnLoginAndPay.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Wird angemeldet...';
+
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+                    showToast('✅ Erfolgreich angemeldet!');
+                    modal.remove();
+                    resolve({ loggedIn: true, user: userCredential.user });
+
+                } catch (error) {
+                    console.error('Login error:', error);
+                    btnLoginAndPay.disabled = false;
+                    btnLoginAndPay.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Anmelden & zur Kasse';
+
+                    if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        errorDiv.textContent = 'E-Mail oder Passwort ist falsch.';
+                    } else {
+                        errorDiv.textContent = 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.';
+                    }
+                    errorDiv.classList.remove('hidden');
+                }
+            });
+        }
 
         // Close on backdrop click
         modal.addEventListener('click', (e) => {
