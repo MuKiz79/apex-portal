@@ -933,14 +933,20 @@ export async function initData(state) {
     console.log('✅ Loaded', dbCoaches.length, 'coaches from Firestore');
     filterCoaches(state);
 
-    // Load articles from Firestore with fallback to sample data
+    // Load articles from Firestore and fill up to minimum 3 with sample data
     const dbArticles = await fetchCollection('articles');
-    if(dbArticles.length > 0) {
+    const MIN_ARTICLES = 3;
+
+    if(dbArticles.length >= MIN_ARTICLES) {
+        // Genug echte Artikel vorhanden
         state.articles = dbArticles;
         console.log('✅ Loaded', dbArticles.length, 'articles from Firestore');
     } else {
-        state.articles = sampleArticles;
-        console.log('ℹ️ Using', sampleArticles.length, 'sample articles (Firestore empty)');
+        // Auffüllen mit Sample-Artikeln bis mindestens 3
+        const neededSamples = MIN_ARTICLES - dbArticles.length;
+        const fillArticles = sampleArticles.slice(0, neededSamples);
+        state.articles = [...dbArticles, ...fillArticles];
+        console.log(`✅ Loaded ${dbArticles.length} real + ${fillArticles.length} sample articles (total: ${state.articles.length})`);
     }
     renderArticles(state);
 }
