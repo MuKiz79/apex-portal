@@ -8,9 +8,7 @@
 - Unterstützte Zahlungsmethoden:
   - 💳 Kreditkarten (Visa, Mastercard, Amex)
   - 🔵 PayPal
-  - 💸 SEPA Lastschrift
-  - 🔶 Klarna
-  - 🏦 Giropay
+  - ℹ️ Weitere Methoden (SEPA, Klarna, Giropay) können in Stripe Dashboard aktiviert werden
 
 ### 2. **Automatische Account-Erstellung**
 - Nach erfolgreicher Zahlung wird automatisch ein Firebase Auth Account erstellt
@@ -77,12 +75,15 @@ firebase functions:secrets:set STRIPE_SECRET_KEY
 ### 3. Stripe Dashboard - Payment Methods aktivieren
 
 1. Gehe zu https://dashboard.stripe.com/settings/payment_methods
-2. Aktiviere:
-   - ✅ Cards (sollte schon aktiviert sein)
+2. Standardmäßig aktiviert:
+   - ✅ Cards (Kreditkarten)
    - ✅ PayPal
-   - ✅ SEPA Debit
-   - ✅ Klarna
-   - ✅ giropay
+3. Optional aktivierbar (benötigt Anpassung in functions/index.js):
+   - ⚪ SEPA Debit
+   - ⚪ Klarna
+   - ⚪ giropay
+
+**Hinweis:** Um weitere Zahlungsmethoden zu aktivieren, müssen diese zuerst im Stripe Dashboard freigeschaltet werden, dann kann man sie in `functions/index.js` zur `payment_method_types` Liste hinzufügen.
 
 ## 🧪 Testing
 
@@ -169,9 +170,19 @@ async function sendWelcomeEmail(email, name, resetLink) {
 }
 ```
 
+## ✅ Status Update (26.12.2025)
+
+**Erfolgreich implementiert:**
+- ✅ Firebase Functions deployed mit public access
+- ✅ Checkout-Endpoint funktioniert korrekt
+- ✅ Kreditkarten & PayPal aktiviert
+- ✅ Guest Checkout ohne Login möglich
+- ✅ Automatische Account-Erstellung implementiert
+
 ## 🚀 Deployment Checklist
 
 - [x] Firebase Functions deployed
+- [x] Public Access für Functions aktiviert (invoker: 'public')
 - [ ] Stripe Webhook konfiguriert
 - [ ] Webhook Secret in Firebase gesetzt
 - [ ] Payment Methods aktiviert (PayPal, Klarna, etc.)
@@ -188,6 +199,26 @@ async function sendWelcomeEmail(email, name, resetLink) {
 5. **Login testen** mit dem neuen Account
 
 ## 🆘 Troubleshooting
+
+### Error: "Zahlung konnte nicht gestartet werden"
+**Problem:** 403 Forbidden Error beim Aufruf der Firebase Function
+**Lösung:**
+```javascript
+// In functions/index.js muss invoker: 'public' gesetzt sein:
+exports.createCheckoutSession = onRequest({
+    secrets: [stripeSecretKey],
+    invoker: 'public'  // ← Wichtig!
+}, async (req, res) => { ... });
+```
+Danach neu deployen: `firebase deploy --only functions`
+
+### Error: "The payment method type provided: [METHOD] is invalid"
+**Problem:** Zahlungsmethode nicht im Stripe Dashboard aktiviert
+**Lösung:**
+1. Gehe zu https://dashboard.stripe.com/settings/payment_methods
+2. Aktiviere die gewünschte Zahlungsmethode
+3. Füge sie in `functions/index.js` zur `payment_method_types` Liste hinzu
+4. Deploy: `firebase deploy --only functions`
 
 ### Webhook funktioniert nicht
 ```bash
