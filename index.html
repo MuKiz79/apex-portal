@@ -2822,20 +2822,19 @@
                         }
                     }
 
-                    // Lade Orders und Dokumente wenn auf Dashboard oder nach erfolgreicher Zahlung
+                    // Lade Orders und Dokumente
                     const isPaymentSuccess = app.state.justPaid;
-                    if (app.state.currentView === 'dashboard' || isPaymentSuccess) {
-                        // Bei Zahlung: warte kurz damit Webhook Zeit hat
-                        if (isPaymentSuccess) {
-                            setTimeout(() => {
-                                app.loadUserOrders();
-                                app.loadDeliveredDocuments();
-                            }, 2000);
-                            app.state.justPaid = false; // Reset flag
-                        } else {
+                    // Bei Zahlung: warte kurz damit Webhook Zeit hat
+                    if (isPaymentSuccess) {
+                        setTimeout(() => {
                             app.loadUserOrders();
                             app.loadDeliveredDocuments();
-                        }
+                        }, 2000);
+                        app.state.justPaid = false; // Reset flag
+                    } else {
+                        // Immer laden wenn User eingeloggt ist (für Dashboard-Bereitschaft)
+                        app.loadUserOrders();
+                        app.loadDeliveredDocuments();
                     }
                 } else {
                     app.state.user = null;
