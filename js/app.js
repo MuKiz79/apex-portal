@@ -1040,6 +1040,13 @@ export async function loadAboutImage() {
             return;
         }
 
+        const imgElement = document.getElementById('about-founder-image');
+        if (!imgElement) return;
+
+        // Zeige Loading-Zustand
+        imgElement.style.opacity = '0.5';
+        imgElement.style.transition = 'opacity 0.3s ease-in-out';
+
         const docRef = doc(db, 'settings', 'about');
         const docSnap = await getDoc(docRef);
 
@@ -1048,17 +1055,29 @@ export async function loadAboutImage() {
             const imageUrl = data.imageUrl;
 
             if (imageUrl) {
-                const imgElement = document.getElementById('about-founder-image');
-                if (imgElement) {
+                // Preload das Bild im Hintergrund
+                const preloadImg = new Image();
+                preloadImg.onload = () => {
                     imgElement.src = imageUrl;
+                    imgElement.style.opacity = '1';
                     console.log('✅ About image loaded from Firestore');
-                }
+                };
+                preloadImg.onerror = () => {
+                    imgElement.style.opacity = '1';
+                    console.warn('Failed to preload about image');
+                };
+                preloadImg.src = imageUrl;
+            } else {
+                imgElement.style.opacity = '1';
             }
         } else {
+            imgElement.style.opacity = '1';
             console.log('No about image in Firestore, using default');
         }
     } catch (error) {
         console.error('Error loading about image:', error);
+        const imgElement = document.getElementById('about-founder-image');
+        if (imgElement) imgElement.style.opacity = '1';
     }
 }
 
