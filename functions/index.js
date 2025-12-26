@@ -23,7 +23,10 @@ const corsHeaders = {
 };
 
 // ========== CREATE CHECKOUT SESSION ==========
-exports.createCheckoutSession = onRequest({secrets: [stripeSecretKey]}, async (req, res) => {
+exports.createCheckoutSession = onRequest({
+    secrets: [stripeSecretKey],
+    invoker: 'public'
+}, async (req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         res.set(corsHeaders);
@@ -61,7 +64,7 @@ exports.createCheckoutSession = onRequest({secrets: [stripeSecretKey]}, async (r
 
         // Create checkout session
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card', 'sepa_debit', 'paypal', 'klarna', 'giropay'],
+            payment_method_types: ['card', 'paypal'],
             line_items: lineItems,
             mode: 'payment',
             customer_email: userEmail || undefined, // Optional - Stripe sammelt Email wenn nicht vorhanden
@@ -95,7 +98,10 @@ exports.createCheckoutSession = onRequest({secrets: [stripeSecretKey]}, async (r
 });
 
 // ========== STRIPE WEBHOOK ==========
-exports.stripeWebhook = onRequest({secrets: [stripeSecretKey, stripeWebhookSecret]}, async (req, res) => {
+exports.stripeWebhook = onRequest({
+    secrets: [stripeSecretKey, stripeWebhookSecret],
+    invoker: 'public'
+}, async (req, res) => {
     const sig = req.headers['stripe-signature'];
 
     let event;
