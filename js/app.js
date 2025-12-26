@@ -532,21 +532,15 @@ export async function checkout(state, navigateTo) {
 
     // Bestimme Checkout-Typ für spätere Success-Message
     let checkoutType = 'guest';
+    let checkoutEmail = null; // Email für Stripe vorausfüllen
 
-    // User hat sich registriert oder eingeloggt - update state
+    // User hat sich registriert (aber wurde ausgeloggt wegen Email-Verifikation)
     if (result.registered) {
         checkoutType = 'registered';
-        state.user = {
-            uid: result.user.uid,
-            email: result.user.email,
-            displayName: result.user.displayName || result.user.email.split('@')[0],
-            emailVerified: result.user.emailVerified
-        };
-        // Update UI
-        if (typeof updateAuthUI === 'function') {
-            updateAuthUI(state);
-        }
+        checkoutEmail = result.userEmail; // Email die bei Registrierung angegeben wurde
+        // User ist NICHT eingeloggt - muss erst Email verifizieren
     } else if (result.loggedIn || result.wasLoggedIn) {
+        // User war bereits eingeloggt oder hat sich während Checkout eingeloggt
         checkoutType = 'loggedIn';
         if (result.user) {
             state.user = {
@@ -561,6 +555,7 @@ export async function checkout(state, navigateTo) {
             }
         }
     }
+    // Bei guest: checkoutType bleibt 'guest', checkoutEmail bleibt null
 
     // Zeige Loading
     showToast('⏳ Zahlungsseite wird vorbereitet...', 3000);
@@ -570,6 +565,10 @@ export async function checkout(state, navigateTo) {
         // Firebase Function URL für Stripe Checkout
         const functionUrl = 'https://createcheckoutsession-plyofowo4a-uc.a.run.app';
 
+        // Verwende state.user wenn eingeloggt, sonst checkoutEmail von Registrierung
+        const emailForStripe = state.user?.email || checkoutEmail || null;
+        const userIdForOrder = state.user?.uid || null;
+
         const response = await fetch(functionUrl, {
             method: 'POST',
             headers: {
@@ -577,9 +576,9 @@ export async function checkout(state, navigateTo) {
             },
             body: JSON.stringify({
                 items: state.cart,
-                userEmail: state.user?.email || null,
-                userId: state.user?.uid || null,
-                customerEmail: state.user?.email || null, // Prefill Stripe mit E-Mail
+                userEmail: emailForStripe,
+                userId: userIdForOrder,
+                customerEmail: emailForStripe, // Prefill Stripe mit E-Mail
                 mode: 'payment'
             })
         });
@@ -1763,9 +1762,18 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                     // Send email verification
                     await sendEmailVerification(userCredential.user);
 
-                    showToast('✅ Konto erstellt! Bitte bestätigen Sie Ihre E-Mail.');
+                    // WICHTIG: User ausloggen nach Registrierung - Email muss erst bestätigt werden
+                    await signOut(auth);
+
+                    showToast('✅ Konto erstellt! Bitte bestätigen Sie Ihre E-Mail bevor Sie sich anmelden.');
                     modal.remove();
-                    resolve({ registered: true, user: userCredential.user });
+
+                    // Als Gast zur Kasse weiterleiten (mit Email vorausgefüllt für Stripe)
+                    resolve({
+                        registered: true,
+                        guestCheckout: true, // Zahlung als Gast, weil Email noch nicht verifiziert
+                        userEmail: email // Email für Stripe vorausfüllen
+                    });
 
                 } catch (error) {
                     console.error('Registration error:', error);
