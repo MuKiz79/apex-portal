@@ -940,12 +940,17 @@ export async function initData(state) {
 }
 
 export async function fetchCollection(colName) {
-    if(!db) return [];
+    if(!db) {
+        console.error('❌ Firestore (db) ist nicht initialisiert!');
+        return [];
+    }
     try {
+        console.log('🔄 Lade Collection:', colName);
         const snap = await getDocs(collection(db, colName));
+        console.log('✅ Collection geladen:', colName, '- Anzahl:', snap.docs.length);
         return snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
     } catch(e) {
-        console.error('Failed to fetch ' + colName + ':', e);
+        console.error('❌ Failed to fetch ' + colName + ':', e);
         return [];
     }
 }
@@ -958,6 +963,12 @@ export function filterCoaches(state) {
     const filter = filterSelect?.value || 'all';
 
     const filteredCoaches = filter === 'all' ? state.coaches : state.coaches.filter(c => c.industry === filter);
+
+    // Zeige Nachricht wenn keine Coaches vorhanden
+    if(filteredCoaches.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500"><p class="text-lg">Keine Mentoren gefunden.</p><p class="text-sm mt-2">Bitte überprüfen Sie die Firestore-Datenbank.</p></div>';
+        return;
+    }
 
     grid.innerHTML = filteredCoaches.map(coach => {
         const name = sanitizeHTML(coach.name);
