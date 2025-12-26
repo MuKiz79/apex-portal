@@ -107,6 +107,10 @@
                                 <i id="nav-profile-icon" class="fas fa-user text-brand-gold text-sm" aria-hidden="true"></i>
                             </div>
                         </div>
+                        <!-- Admin Link (Hidden initially) -->
+                        <button id="nav-admin-btn" onclick="app.navigateTo('admin')" class="hidden ml-2 bg-red-600 text-white px-4 py-2 rounded-sm font-bold text-xs uppercase hover:bg-red-700 transition duration-300">
+                            <i class="fas fa-cog mr-1"></i>Admin
+                        </button>
                     </div>
 
                     <!-- Mobile Menu Trigger -->
@@ -2520,6 +2524,72 @@
         <div class="py-20 max-w-3xl mx-auto px-4" id="article-content-area"></div>
     </div>
 
+    <!-- === VIEW: ADMIN PANEL === -->
+    <div id="view-admin" class="hidden fade-in min-h-screen bg-gray-100">
+        <div class="bg-brand-dark text-white py-6">
+            <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                <div>
+                    <h1 class="font-serif text-2xl">Admin-Panel</h1>
+                    <p class="text-gray-400 text-sm">Bestellungen & Dokumentenverwaltung</p>
+                </div>
+                <button onclick="app.navigateTo('home')" class="text-brand-gold hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-6 rounded-sm shadow-sm">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Gesamt Bestellungen</p>
+                    <p id="admin-stat-total" class="text-3xl font-serif text-brand-dark">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-sm shadow-sm">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">In Bearbeitung</p>
+                    <p id="admin-stat-processing" class="text-3xl font-serif text-yellow-600">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-sm shadow-sm">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Abgeschlossen</p>
+                    <p id="admin-stat-completed" class="text-3xl font-serif text-green-600">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-sm shadow-sm">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Umsatz (Gesamt)</p>
+                    <p id="admin-stat-revenue" class="text-3xl font-serif text-brand-dark">€0</p>
+                </div>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="bg-white p-4 rounded-sm shadow-sm mb-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <input type="text" id="admin-search" placeholder="Suche nach Name, Email oder Bestellnummer..."
+                               class="w-full border border-gray-200 rounded-sm px-4 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                               onkeyup="app.filterAdminOrders()">
+                    </div>
+                    <select id="admin-filter-status" onchange="app.filterAdminOrders()"
+                            class="border border-gray-200 rounded-sm px-4 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                        <option value="">Alle Status</option>
+                        <option value="processing">In Bearbeitung</option>
+                        <option value="confirmed">Bestätigt</option>
+                        <option value="completed">Abgeschlossen</option>
+                    </select>
+                    <button onclick="app.loadAllOrders()" class="bg-brand-dark text-white px-6 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition">
+                        <i class="fas fa-sync-alt mr-2"></i>Aktualisieren
+                    </button>
+                </div>
+            </div>
+
+            <!-- Orders List -->
+            <div id="admin-orders-list" class="space-y-4">
+                <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                    <p>Lade Bestellungen...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="view-impressum" class="hidden fade-in min-h-screen bg-white">
         <div class="max-w-4xl mx-auto px-4 py-20">
             <h1 class="font-serif text-3xl mb-8">Impressum</h1>
@@ -2648,9 +2718,14 @@
             navigateTo: (viewId) => {
                 window.app.state.currentView = viewId;
                 Core.navigateTo(viewId);
-                // Load orders when navigating to dashboard
+                // Load orders and documents when navigating to dashboard
                 if (viewId === 'dashboard' && window.app.state.user) {
                     window.app.loadUserOrders();
+                    window.app.loadDeliveredDocuments();
+                }
+                // Load all orders when navigating to admin panel
+                if (viewId === 'admin' && window.app.isAdmin()) {
+                    window.app.loadAllOrders();
                 }
             },
             scrollToSection: Core.scrollToSection,
@@ -2709,7 +2784,17 @@
             submitWaitlist: (event) => App.submitWaitlist(event),
 
             // Payment Callback
-            handlePaymentCallback: () => App.handlePaymentCallback(window.app.state, Core.navigateTo)
+            handlePaymentCallback: () => App.handlePaymentCallback(window.app.state, Core.navigateTo),
+
+            // Admin functions
+            isAdmin: () => App.isAdmin(window.app.state.user?.email),
+            loadAllOrders: () => App.loadAllOrders(),
+            filterAdminOrders: () => App.filterAdminOrders(),
+            updateOrderStatus: (orderId, status) => App.updateOrderStatus(orderId, status),
+            uploadDocumentToUser: (userId, orderId, file) => App.uploadDocumentToUser(userId, orderId, file),
+
+            // User documents
+            loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state)
         };
 
         // Initialize Firebase auth observer
@@ -2727,6 +2812,16 @@
                     };
                     app.updateAuthUI();
 
+                    // Show/hide admin button
+                    const adminBtn = document.getElementById('nav-admin-btn');
+                    if (adminBtn) {
+                        if (app.isAdmin()) {
+                            adminBtn.classList.remove('hidden');
+                        } else {
+                            adminBtn.classList.add('hidden');
+                        }
+                    }
+
                     // Lade Orders wenn auf Dashboard oder nach erfolgreicher Zahlung
                     const isPaymentSuccess = app.state.justPaid;
                     if (app.state.currentView === 'dashboard' || isPaymentSuccess) {
@@ -2741,6 +2836,9 @@
                 } else {
                     app.state.user = null;
                     app.updateAuthUI();
+                    // Hide admin button on logout
+                    const adminBtn = document.getElementById('nav-admin-btn');
+                    if (adminBtn) adminBtn.classList.add('hidden');
                 }
             });
         }

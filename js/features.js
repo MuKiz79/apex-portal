@@ -658,3 +658,271 @@ export async function handleFileUpload(state, input) {
         input.value = '';
     }
 }
+
+// ========== ADMIN FUNCTIONS ==========
+
+const ADMIN_EMAILS = ['muammer.kizilaslan@gmail.com'];
+
+export function isAdmin(email) {
+    return ADMIN_EMAILS.includes(email?.toLowerCase());
+}
+
+// Store all orders for filtering
+let allAdminOrders = [];
+
+export async function loadAllOrders() {
+    if (!db) {
+        console.error('Database not available');
+        return;
+    }
+
+    const container = document.getElementById('admin-orders-list');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p>Lade Bestellungen...</p>
+        </div>
+    `;
+
+    try {
+        const ordersRef = collection(db, 'orders');
+        const snapshot = await getDocs(ordersRef);
+
+        allAdminOrders = [];
+        snapshot.forEach(doc => {
+            allAdminOrders.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Sort by date (newest first)
+        allAdminOrders.sort((a, b) => {
+            const dateA = a.date?.seconds || 0;
+            const dateB = b.date?.seconds || 0;
+            return dateB - dateA;
+        });
+
+        updateAdminStats(allAdminOrders);
+        renderAdminOrders(allAdminOrders);
+
+    } catch (e) {
+        console.error('Failed to load orders:', e);
+        container.innerHTML = `
+            <div class="bg-white p-12 rounded-sm shadow-sm text-center text-red-500">
+                <i class="fas fa-exclamation-circle text-3xl mb-4"></i>
+                <p>Fehler beim Laden: ${e.message}</p>
+            </div>
+        `;
+    }
+}
+
+function updateAdminStats(orders) {
+    const total = orders.length;
+    const processing = orders.filter(o => o.status === 'processing').length;
+    const completed = orders.filter(o => o.status === 'completed').length;
+    const revenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+    document.getElementById('admin-stat-total').textContent = total;
+    document.getElementById('admin-stat-processing').textContent = processing;
+    document.getElementById('admin-stat-completed').textContent = completed;
+    document.getElementById('admin-stat-revenue').textContent = `€${revenue.toLocaleString('de-DE')}`;
+}
+
+export function filterAdminOrders() {
+    const searchTerm = document.getElementById('admin-search')?.value.toLowerCase() || '';
+    const statusFilter = document.getElementById('admin-filter-status')?.value || '';
+
+    let filtered = allAdminOrders;
+
+    if (searchTerm) {
+        filtered = filtered.filter(order => {
+            const email = (order.customerEmail || '').toLowerCase();
+            const name = (order.customerName || '').toLowerCase();
+            const id = order.id.toLowerCase();
+            return email.includes(searchTerm) || name.includes(searchTerm) || id.includes(searchTerm);
+        });
+    }
+
+    if (statusFilter) {
+        filtered = filtered.filter(order => order.status === statusFilter);
+    }
+
+    renderAdminOrders(filtered);
+}
+
+function renderAdminOrders(orders) {
+    const container = document.getElementById('admin-orders-list');
+    if (!container) return;
+
+    if (orders.length === 0) {
+        container.innerHTML = `
+            <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
+                <i class="fas fa-inbox text-3xl mb-4"></i>
+                <p>Keine Bestellungen gefunden</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = orders.map(order => {
+        const date = order.date?.seconds
+            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : 'Unbekannt';
+
+        const statusColors = {
+            processing: 'bg-yellow-100 text-yellow-800',
+            confirmed: 'bg-blue-100 text-blue-800',
+            completed: 'bg-green-100 text-green-800',
+            cancelled: 'bg-red-100 text-red-800'
+        };
+
+        const statusLabels = {
+            processing: 'In Bearbeitung',
+            confirmed: 'Bestätigt',
+            completed: 'Abgeschlossen',
+            cancelled: 'Storniert'
+        };
+
+        const items = order.items?.map(item => `${item.title} (€${item.price})`).join(', ') || 'Keine Produkte';
+
+        return `
+            <div class="bg-white rounded-sm shadow-sm overflow-hidden" data-order-id="${order.id}">
+                <div class="p-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                        <div>
+                            <p class="font-mono text-xs text-gray-400 mb-1">#${order.id.substring(0, 8).toUpperCase()}</p>
+                            <p class="font-bold text-brand-dark">${sanitizeHTML(order.customerName || 'Unbekannt')}</p>
+                            <p class="text-sm text-gray-500">${sanitizeHTML(order.customerEmail || 'Keine Email')}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-400 mb-1">${date}</p>
+                            <p class="text-xl font-serif text-brand-dark">€${(order.total || 0).toLocaleString('de-DE')}</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-4 mb-4">
+                        <p class="text-sm text-gray-600"><strong>Produkte:</strong> ${sanitizeHTML(items)}</p>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-500">Status:</span>
+                            <select onchange="app.updateOrderStatus('${order.id}', this.value)"
+                                    class="border border-gray-200 rounded-sm px-3 py-1 text-sm focus:outline-none focus:border-brand-gold ${statusColors[order.status] || ''}">
+                                <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>In Bearbeitung</option>
+                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Bestätigt</option>
+                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
+                                <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Storniert</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <label class="cursor-pointer bg-brand-gold text-brand-dark px-4 py-2 rounded-sm text-xs font-bold uppercase hover:bg-yellow-500 transition">
+                                <i class="fas fa-upload mr-2"></i>Dokument hochladen
+                                <input type="file" class="hidden" accept=".pdf,.doc,.docx"
+                                       onchange="app.uploadDocumentToUser('${order.userId}', '${order.id}', this.files[0])">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Uploaded Documents -->
+                    <div id="docs-${order.id}" class="mt-4 border-t border-gray-100 pt-4">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Hochgeladene Dokumente</p>
+                        <div id="doc-list-${order.id}" class="space-y-2">
+                            <p class="text-xs text-gray-400 italic">Lade Dokumente...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Load documents for each order
+    orders.forEach(order => {
+        if (order.userId) {
+            loadOrderDocuments(order.userId, order.id);
+        }
+    });
+}
+
+async function loadOrderDocuments(userId, orderId) {
+    const container = document.getElementById(`doc-list-${orderId}`);
+    if (!container || !storage) return;
+
+    try {
+        const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
+        const listRef = ref(storage, `delivered/${userId}`);
+        const result = await listAll(listRef);
+
+        if (result.items.length === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-400 italic">Noch keine Dokumente hochgeladen</p>';
+            return;
+        }
+
+        const docs = await Promise.all(result.items.map(async item => {
+            const url = await getDownloadURL(item);
+            return { name: item.name, url };
+        }));
+
+        container.innerHTML = docs.map(doc => `
+            <a href="${doc.url}" target="_blank" class="flex items-center gap-2 text-sm text-brand-gold hover:text-brand-dark transition">
+                <i class="fas fa-file-pdf"></i>
+                <span>${sanitizeHTML(doc.name)}</span>
+                <i class="fas fa-external-link-alt text-xs"></i>
+            </a>
+        `).join('');
+
+    } catch (e) {
+        console.error('Failed to load documents:', e);
+        container.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
+    }
+}
+
+export async function updateOrderStatus(orderId, newStatus) {
+    if (!db) return;
+
+    try {
+        const orderRef = doc(db, 'orders', orderId);
+        await updateDoc(orderRef, {
+            status: newStatus,
+            updatedAt: new Date()
+        });
+
+        // Update local data
+        const order = allAdminOrders.find(o => o.id === orderId);
+        if (order) order.status = newStatus;
+
+        updateAdminStats(allAdminOrders);
+        showToast(`✅ Status auf "${newStatus}" geändert`);
+
+    } catch (e) {
+        console.error('Failed to update status:', e);
+        showToast('❌ Status-Update fehlgeschlagen', 3000);
+    }
+}
+
+export async function uploadDocumentToUser(userId, orderId, file) {
+    if (!file || !storage || !userId) {
+        showToast('❌ Upload nicht möglich', 3000);
+        return;
+    }
+
+    try {
+        showToast('⏳ Dokument wird hochgeladen...');
+
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${file.name}`;
+        const storageRef = ref(storage, `delivered/${userId}/${fileName}`);
+
+        await uploadBytes(storageRef, file);
+
+        showToast('✅ Dokument erfolgreich hochgeladen');
+
+        // Reload documents for this order
+        loadOrderDocuments(userId, orderId);
+
+    } catch (e) {
+        console.error('Upload failed:', e);
+        showToast('❌ Upload fehlgeschlagen: ' + e.message, 3000);
+    }
+}

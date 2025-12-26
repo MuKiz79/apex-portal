@@ -11,23 +11,27 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'muammer.kizilaslan@gmail.com';
+    }
+
     // Users Collection - Users können nur ihr eigenes Profil lesen/schreiben
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if false; // Keine Löschung erlaubt
     }
 
-    // Orders Collection - Users können nur eigene Bestellungen lesen
+    // Orders Collection - Users können nur eigene Bestellungen lesen, Admins alle
     match /orders/{orderId} {
-      // Erlaubt wenn userId ODER customerEmail übereinstimmt
-      allow read: if isSignedIn() && (
+      // Admins können alle Orders lesen und updaten
+      allow read: if isAdmin() || (isSignedIn() && (
         resource.data.userId == request.auth.uid ||
         resource.data.customerEmail == request.auth.token.email
-      );
+      ));
       allow create: if false; // Nur Functions dürfen Orders erstellen
-      allow update: if false; // Nur Functions dürfen Orders updaten
+      allow update: if isAdmin(); // Admins können Status ändern
       allow delete: if false; // Keine Löschung
     }
 
