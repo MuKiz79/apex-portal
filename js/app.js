@@ -7,6 +7,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, on
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
+import { sampleArticles } from './data.js';
 
 // ========== AUTHENTICATION ==========
 
@@ -932,10 +933,15 @@ export async function initData(state) {
     console.log('✅ Loaded', dbCoaches.length, 'coaches from Firestore');
     filterCoaches(state);
 
-    // Load articles from Firestore ONLY (no fallback to sample data)
+    // Load articles from Firestore with fallback to sample data
     const dbArticles = await fetchCollection('articles');
-    state.articles = dbArticles;
-    console.log('✅ Loaded', dbArticles.length, 'articles from Firestore');
+    if(dbArticles.length > 0) {
+        state.articles = dbArticles;
+        console.log('✅ Loaded', dbArticles.length, 'articles from Firestore');
+    } else {
+        state.articles = sampleArticles;
+        console.log('ℹ️ Using', sampleArticles.length, 'sample articles (Firestore empty)');
+    }
     renderArticles(state);
 }
 
