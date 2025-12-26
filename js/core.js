@@ -170,6 +170,9 @@ export function navigateTo(viewId) {
     }
 
     window.scrollTo({top: 0, behavior: 'smooth'});
+
+    // Dispatch custom event for view changes (used by app.js to load orders on dashboard)
+    window.dispatchEvent(new CustomEvent('viewChanged', { detail: { viewId } }));
 }
 
 export function scrollToSection(id) {

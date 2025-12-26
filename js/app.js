@@ -391,6 +391,13 @@ export function setupAuthListener(state, navigateTo) {
                 updateAuthUI(state);
             }
         });
+
+        // Listen for view changes - load orders when dashboard is shown
+        window.addEventListener('viewChanged', (e) => {
+            if (e.detail.viewId === 'dashboard' && state.user) {
+                loadUserOrders(state);
+            }
+        });
     }
 }
 
