@@ -1235,7 +1235,7 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                         <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
                         <div class="text-sm text-gray-700 space-y-2">
                             <p><i class="fas fa-lock text-brand-gold mr-2"></i>Sie werden zur sicheren Stripe-Zahlung weitergeleitet</p>
-                            <p><i class="fas fa-credit-card text-brand-gold mr-2"></i>Akzeptiert: Kreditkarte, PayPal, Klarna, SEPA, Giropay</p>
+                            <p><i class="fas fa-credit-card text-brand-gold mr-2"></i>Akzeptiert: Kreditkarte & PayPal</p>
                             ${!hasUser ? '<p><i class="fas fa-user-plus text-brand-gold mr-2"></i>Ein Account wird automatisch für Sie erstellt</p>' : ''}
                         </div>
                     </div>
