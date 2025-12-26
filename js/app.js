@@ -1560,17 +1560,6 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                             <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:translate-x-1 transition"></i>
                         </button>
 
-                        <!-- Option 3: Guest -->
-                        <button id="btn-guest" class="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition group">
-                            <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-user-clock text-gray-500 text-lg"></i>
-                            </div>
-                            <div class="text-left">
-                                <span class="font-bold text-gray-700 block">Als Gast fortfahren</span>
-                                <span class="text-xs text-gray-500">Konto wird nach Zahlung erstellt</span>
-                            </div>
-                            <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:translate-x-1 transition"></i>
-                        </button>
                     </div>
 
                     <!-- Quick Register Form (initially hidden) -->
@@ -1663,7 +1652,6 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
             const cancelBtn = modal.querySelector('#modal-cancel');
             const btnQuickRegister = modal.querySelector('#btn-quick-register');
             const btnLogin = modal.querySelector('#btn-login');
-            const btnGuest = modal.querySelector('#btn-guest');
             const checkoutOptions = modal.querySelector('#checkout-options');
             const quickRegisterForm = modal.querySelector('#quick-register-form');
             const quickLoginForm = modal.querySelector('#quick-login-form');
@@ -1675,12 +1663,6 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
             cancelBtn.addEventListener('click', () => {
                 modal.remove();
                 resolve(false);
-            });
-
-            // Guest checkout
-            btnGuest.addEventListener('click', () => {
-                modal.remove();
-                resolve({ guest: true }); // Gast-Checkout, Account wird nach Zahlung erstellt
             });
 
             // Show register form
