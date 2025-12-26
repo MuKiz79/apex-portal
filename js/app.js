@@ -1289,6 +1289,9 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
 }
 
 function showPaymentSuccessModal(sessionId) {
+    // Generiere kurze Bestellnummer aus Session ID
+    const shortOrderId = 'APEX-' + sessionId.slice(-8).toUpperCase();
+
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4';
     modal.innerHTML = `
@@ -1303,7 +1306,7 @@ function showPaymentSuccessModal(sessionId) {
 
             <div class="bg-gray-50 rounded p-4 mb-6 text-left">
                 <p class="text-xs text-gray-500 mb-2">Bestellnummer:</p>
-                <p class="text-sm font-mono text-gray-800 break-all">${sessionId}</p>
+                <p class="text-2xl font-bold text-brand-dark tracking-wider">${shortOrderId}</p>
             </div>
 
             <div class="space-y-3 text-sm text-gray-600 mb-6">
