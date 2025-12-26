@@ -391,6 +391,13 @@ export function setupAuthListener(state, navigateTo) {
                 updateAuthUI(state);
             }
         });
+
+        // Listen for view changes - load orders when dashboard is shown
+        window.addEventListener('viewChanged', (e) => {
+            if (e.detail.viewId === 'dashboard' && state.user) {
+                loadUserOrders(state);
+            }
+        });
     }
 }
 
@@ -532,21 +539,15 @@ export async function checkout(state, navigateTo) {
 
     // Bestimme Checkout-Typ für spätere Success-Message
     let checkoutType = 'guest';
+    let checkoutEmail = null; // Email für Stripe vorausfüllen
 
-    // User hat sich registriert oder eingeloggt - update state
+    // User hat sich registriert (aber wurde ausgeloggt wegen Email-Verifikation)
     if (result.registered) {
         checkoutType = 'registered';
-        state.user = {
-            uid: result.user.uid,
-            email: result.user.email,
-            displayName: result.user.displayName || result.user.email.split('@')[0],
-            emailVerified: result.user.emailVerified
-        };
-        // Update UI
-        if (typeof updateAuthUI === 'function') {
-            updateAuthUI(state);
-        }
+        checkoutEmail = result.userEmail; // Email die bei Registrierung angegeben wurde
+        // User ist NICHT eingeloggt - muss erst Email verifizieren
     } else if (result.loggedIn || result.wasLoggedIn) {
+        // User war bereits eingeloggt oder hat sich während Checkout eingeloggt
         checkoutType = 'loggedIn';
         if (result.user) {
             state.user = {
@@ -561,6 +562,7 @@ export async function checkout(state, navigateTo) {
             }
         }
     }
+    // Bei guest: checkoutType bleibt 'guest', checkoutEmail bleibt null
 
     // Zeige Loading
     showToast('⏳ Zahlungsseite wird vorbereitet...', 3000);
@@ -570,6 +572,11 @@ export async function checkout(state, navigateTo) {
         // Firebase Function URL für Stripe Checkout
         const functionUrl = 'https://createcheckoutsession-plyofowo4a-uc.a.run.app';
 
+        // Verwende state.user wenn eingeloggt, sonst checkoutEmail von Registrierung
+        const emailForStripe = state.user?.email || checkoutEmail || null;
+        // Bei Registrierung: Nutze die gespeicherte userId vom registrierten User
+        const userIdForOrder = state.user?.uid || result.userId || null;
+
         const response = await fetch(functionUrl, {
             method: 'POST',
             headers: {
@@ -577,9 +584,9 @@ export async function checkout(state, navigateTo) {
             },
             body: JSON.stringify({
                 items: state.cart,
-                userEmail: state.user?.email || null,
-                userId: state.user?.uid || null,
-                customerEmail: state.user?.email || null, // Prefill Stripe mit E-Mail
+                userEmail: emailForStripe,
+                userId: userIdForOrder,
+                customerEmail: emailForStripe, // Prefill Stripe mit E-Mail
                 mode: 'payment'
             })
         });
@@ -732,28 +739,49 @@ export async function loadUserOrders(state) {
     }
 }
 
+// Retry-Funktion für Orders nach Zahlung (Webhook braucht manchmal etwas Zeit)
+async function loadUserOrdersWithRetry(state, retries = 3) {
+    const previousCount = document.getElementById('order-count-badge')?.textContent || '0';
+
+    await loadUserOrders(state);
+
+    const newCount = document.getElementById('order-count-badge')?.textContent || '0';
+
+    // Wenn keine neue Order gefunden wurde und noch Retries übrig sind
+    if (newCount === previousCount && retries > 0) {
+        setTimeout(() => {
+            loadUserOrdersWithRetry(state, retries - 1);
+        }, 2000);
+    }
+}
+
 function updateDashboardStats(orders) {
     // Update order count in stats
-    const orderCountEl = document.getElementById('stat-orders-count');
+    const orderCountEl = document.getElementById('stat-orders');
     if (orderCountEl) {
         orderCountEl.textContent = orders.length;
     }
 
-    // Count documents (placeholder - would need real document count)
-    const docCountEl = document.getElementById('stat-documents-count');
+    // Count documents (CV packages)
+    const docCountEl = document.getElementById('stat-documents');
     if (docCountEl) {
         const docCount = orders.filter(o => o.items?.some(i =>
             i.title?.toLowerCase().includes('cv') ||
-            i.title?.toLowerCase().includes('lebenslauf')
+            i.title?.toLowerCase().includes('lebenslauf') ||
+            i.title?.toLowerCase().includes('professional')
         )).length;
         docCountEl.textContent = docCount;
     }
 
-    // Count appointments
-    const appointmentCountEl = document.getElementById('stat-appointments-count');
-    if (appointmentCountEl) {
-        const appointmentCount = orders.filter(o => o.appointment?.datetime).length;
-        appointmentCountEl.textContent = appointmentCount;
+    // Count sessions (mentoring/coaching)
+    const sessionCountEl = document.getElementById('stat-sessions');
+    if (sessionCountEl) {
+        const sessionCount = orders.filter(o => o.items?.some(i =>
+            i.title?.toLowerCase().includes('mentoring') ||
+            i.title?.toLowerCase().includes('session') ||
+            i.title?.toLowerCase().includes('coaching')
+        )).length;
+        sessionCountEl.textContent = sessionCount;
     }
 }
 
@@ -1085,13 +1113,77 @@ function clearAvailabilityForm() {
 export async function loadAvailability(state) {
     if (!db || !state.user) return;
 
+    const container = document.getElementById('upcoming-appointments');
+    if (!container) return;
+
     try {
         const availDoc = await getDoc(doc(db, "availability", state.user.uid));
         if (availDoc.exists()) {
             const data = availDoc.data();
-            // Could display saved availability if needed
-            console.log('Saved availability:', data);
+            const slots = data.slots || [];
+
+            if (slots.length > 0) {
+                // Filter nur zukünftige Termine
+                const now = new Date();
+                const futureSlots = slots.filter(slot => new Date(slot.datetime) >= now);
+
+                if (futureSlots.length > 0) {
+                    container.innerHTML = `
+                        <div class="space-y-3">
+                            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
+                                <i class="fas fa-clock text-brand-gold mr-2"></i>
+                                Ihre Wunschtermine
+                            </h3>
+                            ${futureSlots.map((slot, index) => {
+                                const date = new Date(slot.datetime);
+                                const dateStr = date.toLocaleDateString('de-DE', {
+                                    weekday: 'long',
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
+                                const timeStr = date.toLocaleTimeString('de-DE', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                return `
+                                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div class="w-10 h-10 bg-brand-gold/20 rounded-lg flex items-center justify-center">
+                                            <span class="text-brand-gold font-bold">${index + 1}</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-medium text-gray-900">${dateStr}</div>
+                                            <div class="text-sm text-gray-500">${timeStr} Uhr</div>
+                                        </div>
+                                        <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium">
+                                            Wartet auf Bestätigung
+                                        </span>
+                                    </div>
+                                `;
+                            }).join('')}
+                            ${data.notes ? `
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Hinweis:</strong> ${data.notes}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    return;
+                }
+            }
         }
+
+        // Empty state wenn keine Termine
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-calendar-alt text-2xl text-gray-400"></i>
+                </div>
+                <h3 class="font-bold text-gray-700 mb-2">Keine anstehenden Termine</h3>
+                <p class="text-sm text-gray-500">Geben Sie unten Ihre Wunschtermine an</p>
+            </div>
+        `;
     } catch (e) {
         console.error('Failed to load availability:', e);
     }
@@ -1440,6 +1532,14 @@ export function handlePaymentCallback(state, navigateTo) {
         const checkoutType = sessionStorage.getItem('checkout_type') || 'guest';
         sessionStorage.removeItem('checkout_type');
 
+        // Warte kurz, damit der Webhook Zeit hat die Order zu speichern
+        // Dann lade Orders neu (mit Retry falls noch nicht verfügbar)
+        if (state.user) {
+            setTimeout(() => {
+                loadUserOrdersWithRetry(state, 3);
+            }, 2000);
+        }
+
         // Zeige Success Message basierend auf Checkout-Typ
         showPaymentSuccessModal(sessionId, checkoutType, navigateTo);
 
@@ -1561,17 +1661,6 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                             <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:translate-x-1 transition"></i>
                         </button>
 
-                        <!-- Option 3: Guest -->
-                        <button id="btn-guest" class="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition group">
-                            <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-user-clock text-gray-500 text-lg"></i>
-                            </div>
-                            <div class="text-left">
-                                <span class="font-bold text-gray-700 block">Als Gast fortfahren</span>
-                                <span class="text-xs text-gray-500">Konto wird nach Zahlung erstellt</span>
-                            </div>
-                            <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:translate-x-1 transition"></i>
-                        </button>
                     </div>
 
                     <!-- Quick Register Form (initially hidden) -->
@@ -1664,7 +1753,6 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
             const cancelBtn = modal.querySelector('#modal-cancel');
             const btnQuickRegister = modal.querySelector('#btn-quick-register');
             const btnLogin = modal.querySelector('#btn-login');
-            const btnGuest = modal.querySelector('#btn-guest');
             const checkoutOptions = modal.querySelector('#checkout-options');
             const quickRegisterForm = modal.querySelector('#quick-register-form');
             const quickLoginForm = modal.querySelector('#quick-login-form');
@@ -1676,12 +1764,6 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
             cancelBtn.addEventListener('click', () => {
                 modal.remove();
                 resolve(false);
-            });
-
-            // Guest checkout
-            btnGuest.addEventListener('click', () => {
-                modal.remove();
-                resolve({ guest: true }); // Gast-Checkout, Account wird nach Zahlung erstellt
             });
 
             // Show register form
@@ -1763,9 +1845,22 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                     // Send email verification
                     await sendEmailVerification(userCredential.user);
 
-                    showToast('✅ Konto erstellt! Bitte bestätigen Sie Ihre E-Mail.');
+                    // Speichere die UID BEVOR wir ausloggen
+                    const registeredUserId = userCredential.user.uid;
+
+                    // WICHTIG: User ausloggen nach Registrierung - Email muss erst bestätigt werden
+                    await signOut(auth);
+
+                    showToast('✅ Konto erstellt! Bitte bestätigen Sie Ihre E-Mail bevor Sie sich anmelden.');
                     modal.remove();
-                    resolve({ registered: true, user: userCredential.user });
+
+                    // Zur Kasse weiterleiten mit registrierter User-ID
+                    resolve({
+                        registered: true,
+                        guestCheckout: true, // Zahlung ohne Login, weil Email noch nicht verifiziert
+                        userEmail: email, // Email für Stripe vorausfüllen
+                        userId: registeredUserId // UID für Order-Zuordnung
+                    });
 
                 } catch (error) {
                     console.error('Registration error:', error);
@@ -1866,7 +1961,8 @@ function showPaymentSuccessModal(sessionId, checkoutType = 'guest', navigateTo =
         infoContent = `<div class="space-y-3 text-sm text-gray-600 mb-6">
                 <p><i class="fas fa-envelope text-brand-gold mr-2"></i>Sie erhalten eine Bestätigungs-Email mit Rechnung</p>
                 <p><i class="fas fa-user-check text-green-500 mr-2"></i>Ihr Account wurde erfolgreich erstellt</p>
-                <p><i class="fas fa-tachometer-alt text-brand-gold mr-2"></i>Sie können sich jetzt anmelden</p>
+                <p><i class="fas fa-shield-alt text-orange-500 mr-2"></i><strong>Bitte bestätigen Sie Ihre E-Mail</strong> über den Link in Ihrem Postfach</p>
+                <p><i class="fas fa-sign-in-alt text-brand-gold mr-2"></i>Danach können Sie sich anmelden</p>
            </div>`;
         buttonContent = `<button id="success-modal-btn" class="w-full bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
                 <i class="fas fa-sign-in-alt mr-2"></i>Zum Login
@@ -1918,24 +2014,20 @@ function showPaymentSuccessModal(sessionId, checkoutType = 'guest', navigateTo =
         }
     });
 
-    // Auto-remove nach 30 Sekunden
-    setTimeout(() => {
-        if (modal.parentElement) {
-            modal.remove();
-        }
-    }, 30000);
+    // Modal bleibt offen bis User es schließt - kein Auto-remove
 }
 
 // ========== DASHBOARD TAB SYSTEM ==========
 
-export function switchDashboardTab(tabName) {
+export function switchDashboardTab(tabName, state) {
     // Get all tabs and tab contents
     const tabs = document.querySelectorAll('.dashboard-tab');
     const contents = document.querySelectorAll('.dashboard-tab-content');
 
-    // Remove active class from all tabs
+    // Update all tabs - remove active styling, add inactive styling
     tabs.forEach(tab => {
-        tab.classList.remove('active');
+        tab.classList.remove('active', 'text-white', 'border-brand-gold');
+        tab.classList.add('text-white/50', 'border-transparent');
     });
 
     // Hide all tab contents
@@ -1946,7 +2038,8 @@ export function switchDashboardTab(tabName) {
     // Find and activate the clicked tab
     const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
     if (activeTab) {
-        activeTab.classList.add('active');
+        activeTab.classList.add('active', 'text-white', 'border-brand-gold');
+        activeTab.classList.remove('text-white/50', 'border-transparent');
     }
 
     // Show the selected tab content
@@ -1955,6 +2048,11 @@ export function switchDashboardTab(tabName) {
         activeContent.classList.remove('hidden');
         // Add animation class
         activeContent.classList.add('tab-content');
+    }
+
+    // Load data for specific tabs
+    if (tabName === 'appointments' && state) {
+        loadAvailability(state);
     }
 }
 
@@ -2051,5 +2149,343 @@ export async function changePassword(state) {
         } else {
             showToast('❌ Fehler beim Ändern des Passworts.', 'error');
         }
+    }
+}
+
+// ========== ADMIN FUNCTIONS ==========
+
+const ADMIN_EMAILS = ['muammer.kizilaslan@gmail.com'];
+
+export function isAdmin(email) {
+    return ADMIN_EMAILS.includes(email?.toLowerCase());
+}
+
+// Store all orders for filtering
+let allAdminOrders = [];
+
+export async function loadAllOrders() {
+    if (!db) {
+        console.error('Database not available');
+        return;
+    }
+
+    const container = document.getElementById('admin-orders-list');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p>Lade Bestellungen...</p>
+        </div>
+    `;
+
+    try {
+        const ordersRef = collection(db, 'orders');
+        const snapshot = await getDocs(ordersRef);
+
+        allAdminOrders = [];
+        snapshot.forEach(docSnap => {
+            allAdminOrders.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // Sort by date (newest first)
+        allAdminOrders.sort((a, b) => {
+            const dateA = a.date?.seconds || 0;
+            const dateB = b.date?.seconds || 0;
+            return dateB - dateA;
+        });
+
+        updateAdminStats(allAdminOrders);
+        renderAdminOrders(allAdminOrders);
+
+    } catch (e) {
+        console.error('Failed to load orders:', e);
+        container.innerHTML = `
+            <div class="bg-white p-12 rounded-sm shadow-sm text-center text-red-500">
+                <i class="fas fa-exclamation-circle text-3xl mb-4"></i>
+                <p>Fehler beim Laden: ${e.message}</p>
+            </div>
+        `;
+    }
+}
+
+function updateAdminStats(orders) {
+    const total = orders.length;
+    const processing = orders.filter(o => o.status === 'processing').length;
+    const completed = orders.filter(o => o.status === 'completed').length;
+    const revenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+    const totalEl = document.getElementById('admin-stat-total');
+    const processingEl = document.getElementById('admin-stat-processing');
+    const completedEl = document.getElementById('admin-stat-completed');
+    const revenueEl = document.getElementById('admin-stat-revenue');
+
+    if (totalEl) totalEl.textContent = total;
+    if (processingEl) processingEl.textContent = processing;
+    if (completedEl) completedEl.textContent = completed;
+    if (revenueEl) revenueEl.textContent = `€${revenue.toLocaleString('de-DE')}`;
+}
+
+export function filterAdminOrders() {
+    const searchTerm = document.getElementById('admin-search')?.value.toLowerCase() || '';
+    const statusFilter = document.getElementById('admin-filter-status')?.value || '';
+
+    let filtered = allAdminOrders;
+
+    if (searchTerm) {
+        filtered = filtered.filter(order => {
+            const email = (order.customerEmail || '').toLowerCase();
+            const name = (order.customerName || '').toLowerCase();
+            const id = order.id.toLowerCase();
+            return email.includes(searchTerm) || name.includes(searchTerm) || id.includes(searchTerm);
+        });
+    }
+
+    if (statusFilter) {
+        filtered = filtered.filter(order => order.status === statusFilter);
+    }
+
+    renderAdminOrders(filtered);
+}
+
+function renderAdminOrders(orders) {
+    const container = document.getElementById('admin-orders-list');
+    if (!container) return;
+
+    if (orders.length === 0) {
+        container.innerHTML = `
+            <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
+                <i class="fas fa-inbox text-3xl mb-4"></i>
+                <p>Keine Bestellungen gefunden</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = orders.map(order => {
+        const date = order.date?.seconds
+            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : 'Unbekannt';
+
+        const statusColors = {
+            processing: 'bg-yellow-100 text-yellow-800',
+            confirmed: 'bg-blue-100 text-blue-800',
+            completed: 'bg-green-100 text-green-800',
+            cancelled: 'bg-red-100 text-red-800'
+        };
+
+        const items = order.items?.map(item => `${item.title} (€${item.price})`).join(', ') || 'Keine Produkte';
+
+        return `
+            <div class="bg-white rounded-sm shadow-sm overflow-hidden" data-order-id="${order.id}">
+                <div class="p-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                        <div>
+                            <p class="font-mono text-xs text-gray-400 mb-1">#${order.id.substring(0, 8).toUpperCase()}</p>
+                            <p class="font-bold text-brand-dark">${sanitizeHTML(order.customerName || 'Unbekannt')}</p>
+                            <p class="text-sm text-gray-500">${sanitizeHTML(order.customerEmail || 'Keine Email')}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-400 mb-1">${date}</p>
+                            <p class="text-xl font-serif text-brand-dark">€${(order.total || 0).toLocaleString('de-DE')}</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-4 mb-4">
+                        <p class="text-sm text-gray-600"><strong>Produkte:</strong> ${sanitizeHTML(items)}</p>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-500">Status:</span>
+                            <select onchange="app.updateOrderStatus('${order.id}', this.value)"
+                                    class="border border-gray-200 rounded-sm px-3 py-1 text-sm focus:outline-none focus:border-brand-gold ${statusColors[order.status] || ''}">
+                                <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>In Bearbeitung</option>
+                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Bestätigt</option>
+                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
+                                <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Storniert</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <label class="cursor-pointer bg-brand-gold text-brand-dark px-4 py-2 rounded-sm text-xs font-bold uppercase hover:bg-yellow-500 transition">
+                                <i class="fas fa-upload mr-2"></i>Dokument hochladen
+                                <input type="file" class="hidden" accept=".pdf,.doc,.docx"
+                                       onchange="app.uploadDocumentToUser('${order.userId}', '${order.id}', this.files[0])">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Uploaded Documents -->
+                    <div id="docs-${order.id}" class="mt-4 border-t border-gray-100 pt-4">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Hochgeladene Dokumente</p>
+                        <div id="doc-list-${order.id}" class="space-y-2">
+                            <p class="text-xs text-gray-400 italic">Lade Dokumente...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Load documents for each order
+    orders.forEach(order => {
+        if (order.userId) {
+            loadOrderDocuments(order.userId, order.id);
+        }
+    });
+}
+
+async function loadOrderDocuments(userId, orderId) {
+    const container = document.getElementById(`doc-list-${orderId}`);
+    if (!container || !storage) return;
+
+    try {
+        const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
+        const listRef = ref(storage, `delivered/${userId}`);
+        const result = await listAll(listRef);
+
+        if (result.items.length === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-400 italic">Noch keine Dokumente hochgeladen</p>';
+            return;
+        }
+
+        const docs = await Promise.all(result.items.map(async item => {
+            const url = await getDownloadURL(item);
+            return { name: item.name, url };
+        }));
+
+        container.innerHTML = docs.map(d => `
+            <a href="${d.url}" target="_blank" class="flex items-center gap-2 text-sm text-brand-gold hover:text-brand-dark transition">
+                <i class="fas fa-file-pdf"></i>
+                <span>${sanitizeHTML(d.name)}</span>
+                <i class="fas fa-external-link-alt text-xs"></i>
+            </a>
+        `).join('');
+
+    } catch (e) {
+        console.error('Failed to load documents:', e);
+        container.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
+    }
+}
+
+export async function updateOrderStatus(orderId, newStatus) {
+    if (!db) return;
+
+    try {
+        const orderRef = doc(db, 'orders', orderId);
+        await updateDoc(orderRef, {
+            status: newStatus,
+            updatedAt: new Date()
+        });
+
+        // Update local data
+        const order = allAdminOrders.find(o => o.id === orderId);
+        if (order) order.status = newStatus;
+
+        updateAdminStats(allAdminOrders);
+        showToast(`✅ Status auf "${newStatus}" geändert`);
+
+    } catch (e) {
+        console.error('Failed to update status:', e);
+        showToast('❌ Status-Update fehlgeschlagen', 3000);
+    }
+}
+
+export async function uploadDocumentToUser(userId, orderId, file) {
+    if (!file || !storage || !userId) {
+        showToast('❌ Upload nicht möglich', 3000);
+        return;
+    }
+
+    try {
+        showToast('⏳ Dokument wird hochgeladen...');
+
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${file.name}`;
+        const storageRef = ref(storage, `delivered/${userId}/${fileName}`);
+
+        await uploadBytes(storageRef, file);
+
+        showToast('✅ Dokument erfolgreich hochgeladen');
+
+        // Reload documents for this order
+        loadOrderDocuments(userId, orderId);
+
+    } catch (e) {
+        console.error('Upload failed:', e);
+        showToast('❌ Upload fehlgeschlagen: ' + e.message, 3000);
+    }
+}
+
+// Load delivered documents for user dashboard
+export async function loadDeliveredDocuments(state) {
+    console.log('Loading delivered documents for user:', state.user?.uid);
+
+    if (!state.user || !storage) {
+        console.log('No user or storage available');
+        return;
+    }
+
+    const container = document.getElementById('downloads-list');
+    if (!container) {
+        console.log('Downloads container not found');
+        return;
+    }
+
+    try {
+        const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
+        const storagePath = `delivered/${state.user.uid}`;
+        console.log('Checking storage path:', storagePath);
+        const listRef = ref(storage, storagePath);
+        const result = await listAll(listRef);
+        console.log('Found documents:', result.items.length);
+
+        if (result.items.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-file-download text-3xl text-gray-300 mb-3"></i>
+                    <p class="text-sm">Noch keine fertigen Dokumente verfügbar</p>
+                </div>
+            `;
+            return;
+        }
+
+        const docs = await Promise.all(result.items.map(async item => {
+            const url = await getDownloadURL(item);
+            // Extract original filename (remove timestamp prefix)
+            const nameParts = item.name.split('_');
+            const displayName = nameParts.length > 1 ? nameParts.slice(1).join('_') : item.name;
+            return { name: displayName, fullName: item.name, url };
+        }));
+
+        container.innerHTML = `
+            <div class="space-y-3">
+                ${docs.map(doc => `
+                    <a href="${doc.url}" target="_blank" download="${doc.name}"
+                       class="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-pdf text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-brand-dark">${sanitizeHTML(doc.name)}</p>
+                                <p class="text-xs text-gray-500">Klicken zum Download</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-download text-green-600 group-hover:scale-110 transition-transform"></i>
+                    </a>
+                `).join('')}
+            </div>
+        `;
+
+    } catch (e) {
+        console.error('Failed to load delivered documents:', e);
+        container.innerHTML = `
+            <div class="text-center py-8 text-red-500">
+                <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
+                <p class="text-sm">Fehler beim Laden der Dokumente</p>
+            </div>
+        `;
     }
 }
