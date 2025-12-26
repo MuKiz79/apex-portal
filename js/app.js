@@ -757,26 +757,31 @@ async function loadUserOrdersWithRetry(state, retries = 3) {
 
 function updateDashboardStats(orders) {
     // Update order count in stats
-    const orderCountEl = document.getElementById('stat-orders-count');
+    const orderCountEl = document.getElementById('stat-orders');
     if (orderCountEl) {
         orderCountEl.textContent = orders.length;
     }
 
-    // Count documents (placeholder - would need real document count)
-    const docCountEl = document.getElementById('stat-documents-count');
+    // Count documents (CV packages)
+    const docCountEl = document.getElementById('stat-documents');
     if (docCountEl) {
         const docCount = orders.filter(o => o.items?.some(i =>
             i.title?.toLowerCase().includes('cv') ||
-            i.title?.toLowerCase().includes('lebenslauf')
+            i.title?.toLowerCase().includes('lebenslauf') ||
+            i.title?.toLowerCase().includes('professional')
         )).length;
         docCountEl.textContent = docCount;
     }
 
-    // Count appointments
-    const appointmentCountEl = document.getElementById('stat-appointments-count');
-    if (appointmentCountEl) {
-        const appointmentCount = orders.filter(o => o.appointment?.datetime).length;
-        appointmentCountEl.textContent = appointmentCount;
+    // Count sessions (mentoring/coaching)
+    const sessionCountEl = document.getElementById('stat-sessions');
+    if (sessionCountEl) {
+        const sessionCount = orders.filter(o => o.items?.some(i =>
+            i.title?.toLowerCase().includes('mentoring') ||
+            i.title?.toLowerCase().includes('session') ||
+            i.title?.toLowerCase().includes('coaching')
+        )).length;
+        sessionCountEl.textContent = sessionCount;
     }
 }
 
