@@ -2581,7 +2581,11 @@
                         emailVerified: user.emailVerified
                     };
                     app.updateAuthUI();
-                    if (app.state.currentView === 'dashboard') {
+
+                    // Lade Orders wenn auf Dashboard oder nach erfolgreicher Zahlung
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const isPaymentSuccess = urlParams.get('payment') === 'success';
+                    if (app.state.currentView === 'dashboard' || isPaymentSuccess) {
                         app.loadUserOrders();
                     }
                 } else {
