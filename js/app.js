@@ -524,9 +524,9 @@ export async function checkout(state, navigateTo) {
 
     const total = state.cart.reduce((sum, item) => sum + item.price, 0);
 
-    const confirmMessage = `Ihre Bestellung:\n\nGesamtbetrag: €${total.toFixed(2)}\n\nSie werden zur sicheren Stripe-Zahlung weitergeleitet.\n\n${!state.user ? 'Ein Account wird automatisch für Sie erstellt.' : ''}`;
-
-    if (!confirm(confirmMessage)) return;
+    // Zeige schöne Checkout-Bestätigung statt native confirm()
+    const confirmed = await showCheckoutConfirmationModal(state.cart, total, !!state.user);
+    if (!confirmed) return;
 
     // Zeige Loading
     showToast('⏳ Zahlungsseite wird vorbereitet...', 3000);
@@ -1197,6 +1197,95 @@ export function handlePaymentCallback(state, navigateTo) {
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
+}
+
+function showCheckoutConfirmationModal(cart, total, hasUser) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+
+        const cartItemsHTML = cart.map(item => `
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                <span class="text-sm text-gray-700">${item.title}</span>
+                <span class="text-sm font-bold text-brand-dark">€${item.price.toFixed(2)}</span>
+            </div>
+        `).join('');
+
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg max-w-lg w-full p-8">
+                <div class="mb-6 text-center">
+                    <div class="w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shopping-cart text-brand-dark text-2xl"></i>
+                    </div>
+                    <h2 class="font-serif text-2xl text-brand-dark mb-2">Bestellung bestätigen</h2>
+                    <p class="text-gray-600 text-sm">Bitte überprüfen Sie Ihre Auswahl</p>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="font-bold text-sm text-gray-700 mb-3">Ihre Bestellung:</h3>
+                    ${cartItemsHTML}
+                    <div class="flex justify-between items-center pt-4 mt-4 border-t-2 border-brand-gold">
+                        <span class="font-bold text-brand-dark">Gesamtbetrag:</span>
+                        <span class="font-serif text-2xl text-brand-dark">€${total.toFixed(2)}</span>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <div class="text-sm text-gray-700 space-y-2">
+                            <p><i class="fas fa-lock text-brand-gold mr-2"></i>Sie werden zur sicheren Stripe-Zahlung weitergeleitet</p>
+                            <p><i class="fas fa-credit-card text-brand-gold mr-2"></i>Akzeptiert: Kreditkarte, PayPal, Klarna, SEPA, Giropay</p>
+                            ${!hasUser ? '<p><i class="fas fa-user-plus text-brand-gold mr-2"></i>Ein Account wird automatisch für Sie erstellt</p>' : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button id="modal-cancel" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded hover:bg-gray-300 transition">
+                        <i class="fas fa-times mr-2"></i>Abbrechen
+                    </button>
+                    <button id="modal-confirm" class="flex-1 bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
+                        <i class="fas fa-arrow-right mr-2"></i>Zur Kasse
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event Handlers
+        const confirmBtn = modal.querySelector('#modal-confirm');
+        const cancelBtn = modal.querySelector('#modal-cancel');
+
+        confirmBtn.addEventListener('click', () => {
+            modal.remove();
+            resolve(true);
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            modal.remove();
+            resolve(false);
+        });
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(false);
+            }
+        });
+
+        // Close on ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                resolve(false);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    });
 }
 
 function showPaymentSuccessModal(sessionId) {
