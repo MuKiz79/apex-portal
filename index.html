@@ -2234,6 +2234,10 @@
             app.initData();
             app.updateCartUI();
             app.loadAboutImage(); // Load dynamic "Über uns" image
+
+            // Handle payment callback (success/cancelled)
+            app.handlePaymentCallback();
+
             console.log('✅ APEX Executive Platform loaded successfully');
         });
     </script>

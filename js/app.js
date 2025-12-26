@@ -522,16 +522,9 @@ export async function checkout(state, navigateTo) {
         return;
     }
 
-    if(!state.user) {
-        showToast('⚠️ Bitte registrieren Sie sich oder melden Sie sich an', 3000);
-        toggleCart();
-        navigateTo('login');
-        return;
-    }
-
     const total = state.cart.reduce((sum, item) => sum + item.price, 0);
 
-    const confirmMessage = `Ihre Bestellung:\n\nGesamtbetrag: €${total.toFixed(2)}\n\nSie werden zur sicheren Stripe-Zahlung weitergeleitet.`;
+    const confirmMessage = `Ihre Bestellung:\n\nGesamtbetrag: €${total.toFixed(2)}\n\nSie werden zur sicheren Stripe-Zahlung weitergeleitet.\n\n${!state.user ? 'Ein Account wird automatisch für Sie erstellt.' : ''}`;
 
     if (!confirm(confirmMessage)) return;
 
@@ -550,8 +543,10 @@ export async function checkout(state, navigateTo) {
             },
             body: JSON.stringify({
                 items: state.cart,
-                userEmail: state.user.email,
-                userId: state.user.uid
+                userEmail: state.user?.email || null, // Optional - Stripe sammelt Email
+                userId: state.user?.uid || null, // Optional - wird nach Zahlung erstellt
+                customerEmail: state.user?.email || null, // Prefill if logged in
+                mode: 'payment' // One-time payment
             })
         });
 
@@ -1166,4 +1161,81 @@ export async function submitWaitlist(event) {
         console.error('Error submitting waitlist:', error);
         showToast('❌ Fehler beim Absenden. Bitte versuchen Sie es später erneut.', 'error');
     }
+}
+
+// ========== PAYMENT SUCCESS HANDLING ==========
+
+export function handlePaymentCallback(state, navigateTo) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const sessionId = urlParams.get('session_id');
+
+    if (paymentStatus === 'success' && sessionId) {
+        // Leere den Warenkorb
+        state.cart = [];
+        updateCartUI(state);
+        saveCartToLocalStorage(state.cart);
+        sessionStorage.removeItem('pending_cart');
+
+        // Zeige Success Message
+        showPaymentSuccessModal(sessionId);
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (paymentStatus === 'cancelled') {
+        // Stelle Warenkorb wieder her
+        const pendingCart = sessionStorage.getItem('pending_cart');
+        if (pendingCart) {
+            state.cart = JSON.parse(pendingCart);
+            updateCartUI(state);
+            saveCartToLocalStorage(state.cart);
+            sessionStorage.removeItem('pending_cart');
+        }
+
+        showToast('⚠️ Zahlung abgebrochen. Ihr Warenkorb wurde wiederhergestellt.', 4000);
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+function showPaymentSuccessModal(sessionId) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg max-w-md w-full p-8 text-center">
+            <div class="mb-6">
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-white text-3xl"></i>
+                </div>
+                <h2 class="font-serif text-2xl text-brand-dark mb-2">Zahlung erfolgreich!</h2>
+                <p class="text-gray-600 text-sm">Vielen Dank für Ihre Bestellung.</p>
+            </div>
+
+            <div class="bg-gray-50 rounded p-4 mb-6 text-left">
+                <p class="text-xs text-gray-500 mb-2">Bestellnummer:</p>
+                <p class="text-sm font-mono text-gray-800 break-all">${sessionId}</p>
+            </div>
+
+            <div class="space-y-3 text-sm text-gray-600 mb-6">
+                <p><i class="fas fa-envelope text-brand-gold mr-2"></i>Sie erhalten eine Bestätigungs-Email</p>
+                <p><i class="fas fa-user text-brand-gold mr-2"></i>Ein Account wurde für Sie erstellt</p>
+                <p><i class="fas fa-key text-brand-gold mr-2"></i>Passwort-Reset Link wurde versendet</p>
+            </div>
+
+            <button onclick="this.closest('.fixed').remove(); app.navigateTo('login')"
+                    class="w-full bg-brand-gold text-brand-dark font-bold py-3 px-6 rounded hover:bg-brand-dark hover:text-white transition">
+                Zum Login
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Auto-remove nach 30 Sekunden
+    setTimeout(() => {
+        if (modal.parentElement) {
+            modal.remove();
+        }
+    }, 30000);
 }
