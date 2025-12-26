@@ -2500,7 +2500,14 @@
             },
 
             // Core functions
-            navigateTo: Core.navigateTo,
+            navigateTo: (viewId) => {
+                window.app.state.currentView = viewId;
+                Core.navigateTo(viewId);
+                // Load orders when navigating to dashboard
+                if (viewId === 'dashboard' && window.app.state.user) {
+                    window.app.loadUserOrders();
+                }
+            },
             scrollToSection: Core.scrollToSection,
             navigateToSection: Core.navigateToSection,
             showToast: Core.showToast,
