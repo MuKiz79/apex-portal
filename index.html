@@ -2199,7 +2199,10 @@
             uploadAboutImage: (file) => App.uploadAboutImage(file),
 
             // Inner Circle
-            submitWaitlist: (event) => App.submitWaitlist(event)
+            submitWaitlist: (event) => App.submitWaitlist(event),
+
+            // Payment Callback
+            handlePaymentCallback: () => App.handlePaymentCallback(window.app.state, Core.navigateTo)
         };
 
         // Initialize Firebase auth observer

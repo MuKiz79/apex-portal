@@ -69,8 +69,8 @@ exports.createCheckoutSession = onRequest({
             mode: 'payment',
             customer_email: userEmail || undefined, // Optional - Stripe sammelt Email wenn nicht vorhanden
             client_reference_id: userId || 'new_customer',
-            success_url: `${req.headers.origin || 'https://apex-executive.de'}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${req.headers.origin || 'https://apex-executive.de'}?payment=cancelled`,
+            success_url: `${req.headers.origin || 'https://mukiz79.github.io/apex-portal'}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${req.headers.origin || 'https://mukiz79.github.io/apex-portal'}?payment=cancelled`,
             metadata: {
                 userId: userId || '',
                 items: JSON.stringify(items),
