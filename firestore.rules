@@ -42,7 +42,7 @@ service cloud.firestore {
     // Coaches/Mentors Collection - Öffentlich lesbar
     match /coaches/{coachId} {
       allow read: if true; // Öffentlich
-      allow write: if false; // Nur Admins
+      allow write: if false; // Nur Admins (manuell in Console)
     }
 
     // Articles Collection - Öffentlich lesbar
