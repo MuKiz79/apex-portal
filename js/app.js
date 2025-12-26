@@ -1350,3 +1350,131 @@ function showPaymentSuccessModal(sessionId) {
         }
     }, 30000);
 }
+
+// ========== DASHBOARD TAB SYSTEM ==========
+
+export function switchDashboardTab(tabName) {
+    // Get all tabs and tab contents
+    const tabs = document.querySelectorAll('.dashboard-tab');
+    const contents = document.querySelectorAll('.dashboard-tab-content');
+
+    // Remove active class from all tabs
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Hide all tab contents
+    contents.forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    // Find and activate the clicked tab
+    const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
+
+    // Show the selected tab content
+    const activeContent = document.getElementById(`tab-${tabName}`);
+    if (activeContent) {
+        activeContent.classList.remove('hidden');
+        // Add animation class
+        activeContent.classList.add('tab-content');
+    }
+}
+
+export async function saveProfile(state) {
+    const firstnameInput = document.getElementById('profile-firstname');
+    const lastnameInput = document.getElementById('profile-lastname');
+    const emailInput = document.getElementById('profile-email');
+    const phoneInput = document.getElementById('profile-phone');
+    const companyInput = document.getElementById('profile-company');
+
+    const firstname = firstnameInput?.value?.trim() || '';
+    const lastname = lastnameInput?.value?.trim() || '';
+    const phone = phoneInput?.value?.trim() || '';
+    const company = companyInput?.value?.trim() || '';
+
+    if (!firstname || !lastname) {
+        showToast('❌ Vor- und Nachname sind erforderlich.', 'error');
+        return;
+    }
+
+    try {
+        if (db && state.user?.uid) {
+            await updateDoc(doc(db, "users", state.user.uid), {
+                firstname,
+                lastname,
+                phone,
+                company,
+                updatedAt: new Date()
+            });
+
+            // Update display name in auth
+            if (auth?.currentUser) {
+                await updateProfile(auth.currentUser, {
+                    displayName: `${firstname} ${lastname}`
+                });
+            }
+
+            showToast('✅ Profil erfolgreich gespeichert!');
+        } else {
+            showToast('✅ Profil gespeichert (Demo-Modus)');
+        }
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showToast('❌ Fehler beim Speichern. Bitte versuchen Sie es erneut.', 'error');
+    }
+}
+
+export async function changePassword(state) {
+    const currentPassword = document.getElementById('current-password')?.value || '';
+    const newPassword = document.getElementById('new-password')?.value || '';
+    const confirmPassword = document.getElementById('confirm-new-password')?.value || '';
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showToast('❌ Bitte füllen Sie alle Passwort-Felder aus.', 'error');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showToast('❌ Die neuen Passwörter stimmen nicht überein.', 'error');
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        showToast('❌ Das neue Passwort muss mindestens 6 Zeichen lang sein.', 'error');
+        return;
+    }
+
+    try {
+        if (auth?.currentUser) {
+            // Re-authenticate user first
+            const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import('https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js');
+
+            const credential = EmailAuthProvider.credential(
+                auth.currentUser.email,
+                currentPassword
+            );
+
+            await reauthenticateWithCredential(auth.currentUser, credential);
+            await updatePassword(auth.currentUser, newPassword);
+
+            // Clear form fields
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-new-password').value = '';
+
+            showToast('✅ Passwort erfolgreich geändert!');
+        } else {
+            showToast('✅ Passwort geändert (Demo-Modus)');
+        }
+    } catch (error) {
+        console.error('Error changing password:', error);
+        if (error.code === 'auth/wrong-password') {
+            showToast('❌ Das aktuelle Passwort ist falsch.', 'error');
+        } else {
+            showToast('❌ Fehler beim Ändern des Passworts.', 'error');
+        }
+    }
+}
