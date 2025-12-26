@@ -739,6 +739,22 @@ export async function loadUserOrders(state) {
     }
 }
 
+// Retry-Funktion für Orders nach Zahlung (Webhook braucht manchmal etwas Zeit)
+async function loadUserOrdersWithRetry(state, retries = 3) {
+    const previousCount = document.getElementById('order-count-badge')?.textContent || '0';
+
+    await loadUserOrders(state);
+
+    const newCount = document.getElementById('order-count-badge')?.textContent || '0';
+
+    // Wenn keine neue Order gefunden wurde und noch Retries übrig sind
+    if (newCount === previousCount && retries > 0) {
+        setTimeout(() => {
+            loadUserOrdersWithRetry(state, retries - 1);
+        }, 2000);
+    }
+}
+
 function updateDashboardStats(orders) {
     // Update order count in stats
     const orderCountEl = document.getElementById('stat-orders-count');
@@ -1446,6 +1462,14 @@ export function handlePaymentCallback(state, navigateTo) {
         // Prüfe Checkout-Typ: 'loggedIn', 'registered', oder 'guest'
         const checkoutType = sessionStorage.getItem('checkout_type') || 'guest';
         sessionStorage.removeItem('checkout_type');
+
+        // Warte kurz, damit der Webhook Zeit hat die Order zu speichern
+        // Dann lade Orders neu (mit Retry falls noch nicht verfügbar)
+        if (state.user) {
+            setTimeout(() => {
+                loadUserOrdersWithRetry(state, 3);
+            }, 2000);
+        }
 
         // Zeige Success Message basierend auf Checkout-Typ
         showPaymentSuccessModal(sessionId, checkoutType, navigateTo);
