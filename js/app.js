@@ -2349,15 +2349,26 @@ export async function uploadDocumentToUser(userId, orderId, file) {
 
 // Load delivered documents for user dashboard
 export async function loadDeliveredDocuments(state) {
-    if (!state.user || !storage) return;
+    console.log('Loading delivered documents for user:', state.user?.uid);
+
+    if (!state.user || !storage) {
+        console.log('No user or storage available');
+        return;
+    }
 
     const container = document.getElementById('downloads-list');
-    if (!container) return;
+    if (!container) {
+        console.log('Downloads container not found');
+        return;
+    }
 
     try {
         const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
-        const listRef = ref(storage, `delivered/${state.user.uid}`);
+        const storagePath = `delivered/${state.user.uid}`;
+        console.log('Checking storage path:', storagePath);
+        const listRef = ref(storage, storagePath);
         const result = await listAll(listRef);
+        console.log('Found documents:', result.items.length);
 
         if (result.items.length === 0) {
             container.innerHTML = `
