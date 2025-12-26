@@ -2570,7 +2570,6 @@
         // Initialize Firebase auth observer
         if (Core.auth) {
             Core.onAuthStateChanged(Core.auth, (user) => {
-                console.log('🔐 Auth state changed:', user ? user.email : 'null');
                 if (user) {
                     if (!user.emailVerified) {
                         Core.showToast('Bitte verifizieren Sie Ihre E-Mail-Adresse.', 'warning');
@@ -2585,9 +2584,7 @@
 
                     // Lade Orders wenn auf Dashboard oder nach erfolgreicher Zahlung
                     const isPaymentSuccess = app.state.justPaid;
-                    console.log('🔐 Payment success:', isPaymentSuccess, 'Current view:', app.state.currentView);
                     if (app.state.currentView === 'dashboard' || isPaymentSuccess) {
-                        console.log('🔐 Loading orders...');
                         // Bei Zahlung: warte kurz damit Webhook Zeit hat
                         if (isPaymentSuccess) {
                             setTimeout(() => app.loadUserOrders(), 2000);
