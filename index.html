@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="APEX Executive - Professionelle Karriere-Architektur & CV-Manufaktur für Führungskräfte und Aufsteiger">
+    <meta name="keywords" content="Karriereberatung, CV Erstellung, Executive Coaching, Mentoring, Führungskräfte, Executive Mentoring">
+    <title>APEX Executive | Karriere-Architektur & CV-Manufaktur</title>
+
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0B1120',
+                            gold: '#C6A87C',
+                            light: '#F3F4F6',
+                            accent: '#1E293B',
+                            success: '#10B981',
+                            error: '#EF4444'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cinzel"', 'serif'],
+                        sans: ['"Lato"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-brand-light text-brand-dark font-sans antialiased relative flex flex-col min-h-screen">
+<body class="bg-brand-light text-brand-dark font-sans antialiased relative flex flex-col min-h-screen">
+
+    <!-- Skip to Main Content (Accessibility) -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-brand-gold text-brand-dark px-4 py-2 rounded-sm z-[100] font-bold">
+        Zum Hauptinhalt springen
+    </a>
+
+    <!-- NAVIGATION -->
+    <nav class="bg-brand-dark text-white sticky top-0 z-50 shadow-xl border-b border-white/5" role="navigation" aria-label="Hauptnavigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-24 items-center">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3 group cursor-pointer" onclick="app.navigateTo('home')" tabindex="0" role="button" aria-label="Zur Startseite">
+                    <div class="relative w-10 h-10 flex items-center justify-center border-2 border-brand-gold rounded-sm transform group-hover:rotate-45 transition duration-500">
+                        <svg class="w-6 h-6 transform group-hover:-rotate-45 transition duration-500" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <!-- Berggipfel mit mehreren Peaks -->
+                            <!-- Linker kleiner Berg -->
+                            <path d="M2 24 L9 12 L16 24" stroke="#C6A87C" stroke-width="2" fill="none" stroke-linejoin="miter"/>
+                            <!-- Hauptgipfel (Mitte-Rechts) -->
+                            <path d="M12 24 L16 16 L20 8 L24 16 L30 24" stroke="#C6A87C" stroke-width="2.5" fill="none" stroke-linejoin="miter"/>
+                            <!-- Schnee/Highlight am Hauptgipfel -->
+                            <circle cx="20" cy="8" r="1.5" fill="#C6A87C"/>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-serif text-2xl tracking-widest leading-none text-white">APEX</span>
+                        <span class="text-[0.65rem] uppercase tracking-[0.3em] text-brand-gold">Executive</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div id="nav-links" class="hidden md:flex space-x-8 text-xs uppercase tracking-widest font-bold text-gray-400">
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">CV-Manufaktur</button>
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Executive Mentoring</button>
+                    <button onclick="app.navigateTo('inner-circle')" class="text-brand-gold hover:text-white transition py-2 border-b-2 border-brand-gold/50 hover:border-brand-gold flex items-center gap-2">
+                        <i class="fas fa-lock text-xs" aria-hidden="true"></i>
+                        Inner Circle
+                    </button>
+                    <button onclick="app.navigateTo('journal')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Insights</button>
+                    <button onclick="app.navigateTo('about')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Über uns</button>
+                </div>
+
+                <!-- User Actions -->
+                <div class="flex items-center space-x-6">
+                    <!-- Cart -->
+                    <button onclick="app.toggleCart()" class="relative text-white hover:text-brand-gold transition group flex items-center gap-2" aria-label="Warenkorb anzeigen">
+                        <i class="fas fa-briefcase text-lg group-hover:scale-110 transition-transform" aria-hidden="true"></i>
+                        <span class="hidden md:inline text-[10px] uppercase tracking-widest font-bold">Portfolio</span>
+                        <span id="cart-count" class="absolute -top-2 -right-2 bg-brand-gold text-brand-dark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden shadow-md" aria-live="polite">0</span>
+                    </button>
+
+                    <div class="hidden md:block">
+                        <!-- Login Button -->
+                        <button id="nav-login-btn" onclick="app.navigateTo('login')" class="border border-brand-gold/30 text-brand-gold px-6 py-2 rounded-sm font-bold text-xs uppercase hover:bg-brand-gold hover:text-brand-dark transition duration-300">
+                            Login
+                        </button>
+                        <!-- User Profile (Hidden initially) -->
+                        <div id="nav-user-profile" class="hidden flex items-center gap-3 cursor-pointer" onclick="app.navigateTo('dashboard')">
+                            <div class="text-right hidden lg:block">
+                                <span class="block text-xs text-white font-bold" id="user-name-display">User</span>
+                                <span class="block text-[10px] text-brand-gold uppercase tracking-wider">Dashboard</span>
+                            </div>
+                            <div class="w-10 h-10 rounded-full border-2 border-brand-gold bg-brand-dark flex items-center justify-center overflow-hidden">
+                                <img id="nav-profile-picture" src="" alt="Profilbild" class="w-full h-full object-cover hidden">
+                                <i id="nav-profile-icon" class="fas fa-user text-brand-gold text-sm" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Trigger -->
+                    <button onclick="app.toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none" aria-label="Menü öffnen">
+                        <i class="fas fa-bars" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden md:hidden absolute top-24 left-0 w-full bg-brand-dark border-b border-white/10 shadow-xl py-6 px-4 flex-col space-y-4 z-40">
+            <button onclick="app.navigateTo('home'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Home</button>
+            <button onclick="app.navigateTo('journal'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Insights</button>
+            <button onclick="app.navigateTo('about'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Über uns</button>
+            <button onclick="app.navigateTo('login'); app.toggleMobileMenu()" class="text-left text-brand-gold font-bold uppercase tracking-widest text-xs pt-2">Mitglieder Login</button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content">
+
+    <!-- === VIEW 1: HOME === -->
+    <div id="view-home" class="fade-in">
+        <!-- Hero + Zwei Wege -->
+        <header id="two-paths" class="bg-gradient-to-br from-[#0B1120] via-[#1A1F2E] to-[#0B1120] text-white relative overflow-hidden">
+            <!-- Background Pattern -->
+            <div class="absolute inset-0 opacity-[0.03]">
+                <div class="absolute inset-0" style="background-image: repeating-linear-gradient(45deg, #C6A87C 0, #C6A87C 1px, transparent 0, transparent 50%); background-size: 30px 30px;"></div>
+            </div>
+
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+                <!-- Hero Text -->
+                <div class="text-center mb-12 md:mb-16">
+                    <div class="inline-block border-l-2 border-brand-gold pl-4 mb-6">
+                        <span class="text-gray-400 uppercase tracking-widest text-xs font-bold block">Karriere-Architektur & CV-Manufaktur</span>
+                    </div>
+                    <h1 class="font-serif text-4xl md:text-6xl leading-tight mb-6">
+                        Zwei Wege.<br>
+                        Ein Ziel: <span class="text-transparent bg-clip-text gold-gradient">Ihre nächste Karrierestufe</span>.
+                    </h1>
+                    <p class="text-gray-300 text-lg mb-12 font-light leading-relaxed max-w-2xl mx-auto">
+                        <strong class="text-white">Perfekte Unterlagen</strong> für Ihre Bewerbung oder <strong class="text-white">strategisches Mentoring</strong> mit erfahrenen Führungskräften. Wählen Sie Ihren Weg – oder kombinieren Sie beides.
+                    </p>
+                </div>
+
+                <!-- Zwei Wege Cards - Schlank -->
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <!-- LINKS: Unterlagen -->
+                    <div class="bg-white/5 backdrop-blur-sm border-2 border-gray-800 rounded-sm p-8 hover:border-brand-gold/50 transition-all duration-500 text-center">
+                        <div class="w-16 h-16 border-2 border-brand-gold/30 rounded-sm flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file-contract text-brand-gold text-3xl"></i>
+                        </div>
+
+                        <h3 class="font-serif text-2xl mb-3">CV-Manufaktur</h3>
+
+                        <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                            Perfekte Unterlagen für Ihre Bewerbung: CV, LinkedIn, Anschreiben.
+                        </p>
+
+                        <div class="text-brand-gold text-xl font-serif mb-6">Ab €249</div>
+
+                        <button onclick="app.scrollToSection('cv-packages')" class="w-full border-2 border-brand-gold/30 text-brand-gold px-6 py-3 uppercase text-xs font-bold tracking-wider hover:bg-brand-gold hover:text-brand-dark transition rounded-sm">
+                            Pakete ansehen
+                        </button>
+                    </div>
+
+                    <!-- RECHTS: Executive Mentoring -->
+                    <div class="bg-white/5 backdrop-blur-sm border-2 border-brand-gold rounded-sm p-8 shadow-xl relative text-center">
+                        <div class="absolute -top-3 right-6 bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-wide">Mentoring</div>
+
+                        <div class="w-16 h-16 border-2 border-brand-gold rounded-sm flex items-center justify-center mx-auto mb-4 bg-brand-gold/10">
+                            <i class="fas fa-handshake text-brand-gold text-3xl"></i>
+                        </div>
+
+                        <h3 class="font-serif text-2xl mb-3">Executive Mentoring</h3>
+
+                        <p class="text-gray-300 text-sm mb-6 leading-relaxed">
+                            1:1 Mentoring mit erfahrenen Senior Executives.
+                        </p>
+
+                        <div class="text-brand-gold text-xl font-serif mb-6">Ab €350</div>
+
+                        <button onclick="app.scrollToSection('coaches')" class="w-full bg-brand-gold text-brand-dark px-6 py-3 uppercase text-xs font-bold tracking-wider hover:bg-white transition rounded-sm">
+                            Sessions ansehen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CV Packages -->
+        <section id="cv-packages" class="py-24 bg-white relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Die CV-Manufaktur</span>
+                    <h2 class="font-serif text-4xl text-brand-dark mb-4">Unterlagen für jede Karrierestufe</h2>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 items-start">
+
+                    <!-- Starter -->
+                    <div class="group border border-gray-200 p-8 rounded-sm bg-white hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer relative" onclick="app.openPackageDetail()">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-100 text-gray-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">0-5 Jahre Erfahrung</div>
+                        <h3 class="font-serif text-xl text-brand-dark mb-2">Young Professional</h3>
+                        <div class="text-3xl font-serif text-brand-dark mb-4">€249</div>
+                        <p class="text-xs text-gray-500 mb-6 italic">Ideal für Berufseinsteiger & High Potentials</p>
+                        <ul class="space-y-3 mb-8 text-sm text-gray-700">
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0" aria-hidden="true"></i><span><strong>CV-Erstellung</strong> (2 Seiten, ATS-optimiert)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0" aria-hidden="true"></i><span><strong>Potenzial-Analyse</strong> statt Lückenfokus</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0" aria-hidden="true"></i><span><strong>Anschreiben-Template</strong> (anpassbar)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0" aria-hidden="true"></i><span><strong>LinkedIn-Profil Basics</strong> (Headline & About-Optimierung)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0" aria-hidden="true"></i><span><strong>Formatierung</strong> in Word & PDF</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0" aria-hidden="true"></i><span><strong>1 Revision</strong> inklusive</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0" aria-hidden="true"></i><span><strong>Lieferung</strong> in 5-7 Werktagen</span></li>
+                        </ul>
+                        <div class="space-y-3">
+                            <button onclick="event.stopPropagation(); app.addToCart('Young Professional CV', 249)" class="w-full border border-brand-dark text-brand-dark py-3 uppercase text-xs font-bold hover:bg-brand-dark hover:text-white transition">Auswählen</button>
+                            <button onclick="event.stopPropagation(); app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                        </div>
+                    </div>
+
+                    <!-- Pro -->
+                    <div class="group border-2 border-brand-gold p-8 rounded-sm shadow-xl relative transform md:-translate-y-4 hover:shadow-2xl hover:-translate-y-6 transition-all duration-300 cursor-pointer" onclick="app.openPackageDetail()">
+                        <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-[10px] font-bold px-3 py-1 uppercase tracking-wide">Popular</div>
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-700 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">5-15 Jahre Erfahrung</div>
+                        <h3 class="font-serif text-xl text-brand-dark mb-2">Senior Professional</h3>
+                        <div class="text-3xl font-serif text-brand-dark mb-4">€490</div>
+                        <p class="text-xs text-gray-500 mb-6 italic">Für etablierte Fach- & Führungskräfte</p>
+                        <ul class="space-y-3 mb-8 text-sm text-gray-700">
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Premium CV-Erstellung</strong> (3 Seiten, ATS + Executive-optimiert)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>USP-Erarbeitung</strong> & Executive Summary</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>LinkedIn-Profile-Optimierung</strong> (vollständiges Update)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Anschreiben</strong> (individuell & branchenspezifisch)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Interview-Vorbereitung</strong> (Leitfaden & Tipps)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>2 Revisionen</strong> inklusive</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Lieferung</strong> in 7-10 Werktagen</span></li>
+                        </ul>
+                        <div class="space-y-3">
+                            <button onclick="event.stopPropagation(); app.addToCart('Senior Professional CV', 490)" class="w-full bg-brand-gold text-brand-dark py-3 uppercase text-xs font-bold hover:shadow-lg transition">Auswählen</button>
+                            <button onclick="event.stopPropagation(); app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                        </div>
+                    </div>
+
+                    <!-- Exec -->
+                    <div class="group border border-gray-200 p-8 rounded-sm bg-brand-dark text-white relative hover:shadow-2xl hover:-translate-y-2 hover:border-brand-gold transition-all duration-300 cursor-pointer" onclick="app.openPackageDetail()">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">15+ Jahre · C-Level</div>
+                        <h3 class="font-serif text-xl text-white mb-2">Executive C-Suite</h3>
+                        <div class="text-3xl font-serif text-white mb-4">€990</div>
+                        <p class="text-xs text-gray-400 mb-6 italic">Exklusiv für C-Level & Board Members</p>
+                        <ul class="space-y-3 mb-8 text-sm text-gray-300">
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Executive CV-Suite</strong> (Board CV, Bio, One-Pager)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Personal Branding Strategy</strong> & Executive Positionierung</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>LinkedIn Executive Rebranding</strong> (vollständig)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Headhunter-Netzwerk</strong> Vorstellung (optional)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Unbegrenzte Revisionen</strong> (30 Tage)</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>Priority Service</strong> · Lieferung in 10-14 Werktagen</span></li>
+                            <li class="flex items-start"><i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i><span><strong>1:1 Strategy Call</strong> (60 Min.)</span></li>
+                        </ul>
+                        <div class="space-y-3">
+                            <button onclick="event.stopPropagation(); app.addToCart('Executive C-Suite CV', 990)" class="w-full border border-white text-white py-3 uppercase text-xs font-bold hover:bg-white hover:text-brand-dark transition">Auswählen</button>
+                            <button onclick="event.stopPropagation(); app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-500 hover:text-white underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CV Process Flow -->
+                <div class="mt-24 border-t border-gray-200 pt-24">
+                    <div class="text-center mb-12">
+                        <span class="text-brand-gold uppercase tracking-[0.3em] text-xs font-bold mb-4 block">Der Ablauf</span>
+                        <h3 class="font-serif text-3xl text-brand-dark mb-4">So entsteht Ihr CV</h3>
+                        <p class="text-gray-600 text-sm max-w-2xl mx-auto">
+                            Von der Buchung bis zur Lieferung – professionell und transparent.
+                        </p>
+                    </div>
+
+                    <div class="grid md:grid-cols-5 gap-6">
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">1</span>
+                            </div>
+                            <h4 class="font-serif text-base text-brand-dark mb-2">Paket wählen</h4>
+                            <p class="text-xs text-gray-600 leading-relaxed">Young Professional, Senior oder Executive</p>
+                        </div>
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">2</span>
+                            </div>
+                            <h4 class="font-serif text-base text-brand-dark mb-2">Briefing</h4>
+                            <p class="text-xs text-gray-600 leading-relaxed">Upload Ihrer Unterlagen & Fragebogen</p>
+                        </div>
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">3</span>
+                            </div>
+                            <h4 class="font-serif text-base text-brand-dark mb-2">Analyse</h4>
+                            <p class="text-xs text-gray-600 leading-relaxed">Unsere Experten analysieren Ihren Werdegang</p>
+                        </div>
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">4</span>
+                            </div>
+                            <h4 class="font-serif text-base text-brand-dark mb-2">Erstellung</h4>
+                            <p class="text-xs text-gray-600 leading-relaxed">Professionelle Ausarbeitung Ihrer Dokumente</p>
+                        </div>
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">5</span>
+                            </div>
+                            <h4 class="font-serif text-base text-brand-dark mb-2">Lieferung</h4>
+                            <p class="text-xs text-gray-600 leading-relaxed">Finale Dokumente + Revisionen</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="coaches" class="py-32 bg-gradient-to-br from-[#0B1120] via-[#1A1F2E] to-[#0B1120] text-white relative overflow-hidden border-t border-gray-800">
+            <!-- Background Pattern -->
+            <div class="absolute inset-0 opacity-[0.03]">
+                <div class="absolute inset-0" style="background-image: repeating-linear-gradient(45deg, #C6A87C 0, #C6A87C 1px, transparent 0, transparent 50%); background-size: 30px 30px;"></div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+                <!-- Hero Section -->
+                <div class="mb-24 text-center">
+                    <div class="inline-block border border-brand-gold/30 px-4 py-2 rounded-sm mb-6">
+                        <span class="text-brand-gold uppercase tracking-[0.3em] text-xs font-bold">Executive Mentoring</span>
+                    </div>
+                    <h2 class="font-serif text-5xl md:text-6xl mb-8 leading-tight">
+                        Der Weg nach oben.<br>
+                        <span class="text-brand-gold">Mit jemandem, der ihn kennt.</span>
+                    </h2>
+                    <p class="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed mb-6">
+                        1:1 Mentoring mit erfahrenen Führungskräften in aktiven Führungspositionen. Vertrauliche Gespräche. Strategische Perspektiven. Aus erster Hand.
+                    </p>
+                    <p class="text-gray-500 text-sm max-w-2xl mx-auto">
+                        Für ambitionierte Professionals, die den nächsten Karriereschritt strategisch angehen wollen.
+                    </p>
+                </div>
+
+                <!-- Value Propositions - Elegant Cards -->
+                <div class="grid md:grid-cols-3 gap-8 mb-24">
+                    <div class="group">
+                        <div class="bg-white/5 backdrop-blur-sm border border-gray-800 hover:border-brand-gold/50 rounded-sm p-8 transition-all duration-500 h-full">
+                            <div class="w-12 h-12 border border-brand-gold/30 rounded-sm flex items-center justify-center mb-6 group-hover:bg-brand-gold/10 transition">
+                                <i class="fas fa-award text-brand-gold text-xl"></i>
+                            </div>
+                            <h3 class="font-serif text-xl mb-4">Erfahrene Mentoren</h3>
+                            <p class="text-sm text-gray-400 leading-relaxed">
+                                Senior Executives mit 15+ Jahren Leadership-Erfahrung. VPs, SVPs und C-Level aus DAX-Konzernen, Fortune 500 und Hidden Champions. Keine Coaches – nur Praktizierende.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="group">
+                        <div class="bg-white/5 backdrop-blur-sm border border-gray-800 hover:border-brand-gold/50 rounded-sm p-8 transition-all duration-500 h-full">
+                            <div class="w-12 h-12 border border-brand-gold/30 rounded-sm flex items-center justify-center mb-6 group-hover:bg-brand-gold/10 transition">
+                                <i class="fas fa-lock text-brand-gold text-xl"></i>
+                            </div>
+                            <h3 class="font-serif text-xl mb-4">Vertraulich & diskret</h3>
+                            <p class="text-sm text-gray-400 leading-relaxed">
+                                Strikte NDAs. Compliance-geprüftes Matching. Ihre Wechselabsichten, Gehaltsverhandlungen und Karrierepläne bleiben absolut vertraulich.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="group">
+                        <div class="bg-white/5 backdrop-blur-sm border border-gray-800 hover:border-brand-gold/50 rounded-sm p-8 transition-all duration-500 h-full">
+                            <div class="w-12 h-12 border border-brand-gold/30 rounded-sm flex items-center justify-center mb-6 group-hover:bg-brand-gold/10 transition">
+                                <i class="fas fa-bullseye text-brand-gold text-xl"></i>
+                            </div>
+                            <h3 class="font-serif text-xl mb-4">Einblicke aus der Praxis</h3>
+                            <p class="text-sm text-gray-400 leading-relaxed">
+                                Keine Theorie, keine Frameworks. Ihre Mentoren teilen echte Erfahrungen: Was funktioniert hat, was nicht, und warum. Perspektiven, die Sie nirgendwo sonst bekommen.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Use Cases -->
+                <div class="mb-24">
+                    <h3 class="font-serif text-2xl text-center mb-12">Wann Sie Executive Mentoring brauchen</h3>
+                    <div class="grid md:grid-cols-3 gap-8 text-sm">
+                        <div class="bg-white/5 border border-gray-800 rounded-sm p-6">
+                            <div class="w-10 h-10 border border-brand-gold/30 rounded-sm flex items-center justify-center mb-4">
+                                <i class="fas fa-rocket text-brand-gold"></i>
+                            </div>
+                            <h4 class="font-serif text-lg mb-4">Karriere-Aufstieg</h4>
+                            <ul class="space-y-3 text-gray-400 leading-relaxed">
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Wie navigiere ich den Weg nach oben?</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Wie positioniere ich mich für den nächsten Schritt?</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Wie baue ich echte Executive Presence auf?</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-white/5 border border-gray-800 rounded-sm p-6">
+                            <div class="w-10 h-10 border border-brand-gold/30 rounded-sm flex items-center justify-center mb-4">
+                                <i class="fas fa-compass text-brand-gold"></i>
+                            </div>
+                            <h4 class="font-serif text-lg mb-4">Strategische Entscheidungen</h4>
+                            <ul class="space-y-3 text-gray-400 leading-relaxed">
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Ist dieses Angebot der richtige Schritt?</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Wie wechsle ich strategisch die Branche?</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Was ist mein tatsächlicher Marktwert?</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-white/5 border border-gray-800 rounded-sm p-6">
+                            <div class="w-10 h-10 border border-brand-gold/30 rounded-sm flex items-center justify-center mb-4">
+                                <i class="fas fa-users text-brand-gold"></i>
+                            </div>
+                            <h4 class="font-serif text-lg mb-4">Leadership-Entwicklung</h4>
+                            <ul class="space-y-3 text-gray-400 leading-relaxed">
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Wie navigiere ich komplexe Stakeholder-Beziehungen?</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Wie baue ich strategische Beziehungen auf?</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-gold mr-2">—</span>
+                                    <span>Wie führe ich in politisch sensiblen Umfeldern?</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coach Selection -->
+                <div class="border-t border-gray-800 pt-24 mb-24">
+                    <div class="text-center mb-12">
+                        <h3 class="font-serif text-3xl mb-4">Unsere Mentoren</h3>
+                        <p class="text-gray-400 max-w-2xl mx-auto mb-8">
+                            Erfahrene Führungskräfte im aktiven Dienst. Strenger Vetting-Prozess. Keine Rentner, keine Theoretiker.
+                        </p>
+
+                        <div class="flex justify-end">
+                            <label for="industry-filter" class="sr-only">Nach Branche filtern</label>
+                            <select id="industry-filter" onchange="app.debouncedFilterCoaches()" class="bg-white/5 border border-gray-800 text-gray-400 px-4 py-2 rounded-sm text-sm focus:border-brand-gold outline-none">
+                                <option value="all">Alle Branchen</option>
+                                <option value="tech">Technology & IT</option>
+                                <option value="finance">Finance & Banking</option>
+                                <option value="automotive">Automotive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="coach-grid" class="grid md:grid-cols-3 gap-8"></div>
+                </div>
+
+                <!-- Combined Journey: From Booking to Session -->
+                <div class="mb-24 border-t border-gray-800 pt-24">
+                    <div class="text-center mb-16">
+                        <span class="text-brand-gold uppercase tracking-[0.3em] text-xs font-bold mb-4 block">Der Ablauf</span>
+                        <h3 class="font-serif text-3xl md:text-4xl mb-4">Vom Erstkontakt bis zur Session</h3>
+                        <p class="text-gray-400 text-sm max-w-2xl mx-auto">
+                            Transparent, strukturiert und auf Ihr Thema fokussiert.
+                        </p>
+                    </div>
+
+                    <div class="grid md:grid-cols-5 gap-6 max-w-6xl mx-auto mb-16">
+                        <!-- 1. Format wählen -->
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">1</span>
+                            </div>
+                            <h4 class="font-serif text-base mb-2">Format wählen</h4>
+                            <p class="text-xs text-gray-500 leading-relaxed">Single Session, 3er-Paket oder Retainer</p>
+                        </div>
+
+                        <!-- 2. Mentor-Matching -->
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">2</span>
+                            </div>
+                            <h4 class="font-serif text-base mb-2">Matching & Vorbereitung</h4>
+                            <p class="text-xs text-gray-500 leading-relaxed">Passender Mentor + Fragebogen zu Ihrem Thema</p>
+                        </div>
+
+                        <!-- 3. Terminfindung -->
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">3</span>
+                            </div>
+                            <h4 class="font-serif text-base mb-2">Terminfindung</h4>
+                            <p class="text-xs text-gray-500 leading-relaxed">Wir koordinieren mit Ihrem Mentor</p>
+                        </div>
+
+                        <!-- 4. 60-Min Session -->
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">4</span>
+                            </div>
+                            <h4 class="font-serif text-base mb-2">60-Min Session</h4>
+                            <p class="text-xs text-gray-500 leading-relaxed">Vertrauliches 1:1 Gespräch</p>
+                        </div>
+
+                        <!-- 5. Follow-up -->
+                        <div class="text-center group">
+                            <div class="w-14 h-14 rounded-full border-2 border-brand-gold flex items-center justify-center mx-auto mb-4 bg-brand-gold/10 transition-all duration-300 group-hover:bg-brand-gold group-hover:scale-110">
+                                <span class="text-xl font-bold text-brand-gold transition-colors duration-300 group-hover:text-brand-dark">5</span>
+                            </div>
+                            <h4 class="font-serif text-base mb-2">Summary & Follow-up</h4>
+                            <p class="text-xs text-gray-500 leading-relaxed">Schriftliche Zusammenfassung + Action Items</p>
+                        </div>
+                    </div>
+
+                    <!-- Session Detail Breakdown -->
+                    <div class="bg-white/5 border border-brand-gold/30 rounded-sm p-8 max-w-4xl mx-auto">
+                        <h4 class="font-serif text-xl text-center mb-6">Die 60-Minuten Session im Detail</h4>
+                        <div class="grid md:grid-cols-4 gap-6 text-sm">
+                            <div class="text-center">
+                                <div class="text-3xl font-serif text-brand-gold mb-2">5 Min</div>
+                                <p class="text-gray-400">Kennenlernen & Erwartungen</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-serif text-brand-gold mb-2">10 Min</div>
+                                <p class="text-gray-400">Situations-analyse</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-serif text-brand-gold mb-2">35 Min</div>
+                                <p class="text-gray-400">Tiefenarbeit am Kernthema</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-serif text-brand-gold mb-2">10 Min</div>
+                                <p class="text-gray-400">Nächste Schritte</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-12 max-w-3xl mx-auto bg-brand-gold/5 border border-brand-gold/30 rounded-sm p-6 text-center">
+                        <p class="text-sm text-gray-400 leading-relaxed">
+                            <i class="fas fa-info-circle text-brand-gold mr-2"></i>
+                            <strong class="text-white">Was Mentoring ist:</strong> Ein vertraulicher Dialog mit jemandem, der Ihren Weg kennt.
+                            <strong class="text-white ml-4">Was es nicht ist:</strong> Coaching, Therapie oder fertige Lösungen.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Pakete -->
+                <div class="mb-24">
+                    <h3 class="font-serif text-3xl text-center mb-12">Wählen Sie Ihr Mentoring-Format</h3>
+
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <!-- Single Session -->
+                        <div class="bg-white/5 backdrop-blur-sm border border-gray-800 hover:border-brand-gold/50 rounded-sm p-8 transition-all duration-500">
+                            <div class="border-b border-gray-800 pb-6 mb-6">
+                                <div class="text-xs text-gray-500 uppercase tracking-widest mb-3">Single Session</div>
+                                <div class="text-4xl font-serif mb-2">€350</div>
+                                <div class="text-xs text-gray-500">Einmalige Buchung</div>
+                            </div>
+
+                            <ul class="space-y-4 mb-8 text-sm text-gray-400">
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>60 Min Video-Call</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>1 Executive Ihrer Wahl</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>Fokus auf ein konkretes Thema</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>Schriftliches Summary</span>
+                                </li>
+                            </ul>
+
+                            <button onclick="app.addToCart('Executive Mentoring - Single Session', 350)" class="w-full border border-brand-gold/30 text-brand-gold py-3 uppercase text-xs font-bold tracking-wider hover:bg-brand-gold/10 transition">
+                                Session buchen
+                            </button>
+                        </div>
+
+                        <!-- 3-Session Package -->
+                        <div class="bg-white/5 backdrop-blur-sm border-2 border-brand-gold rounded-sm p-8 shadow-xl relative">
+                            <div class="absolute -top-3 right-6 bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-wide">Empfohlen</div>
+
+                            <div class="border-b border-gray-800 pb-6 mb-6">
+                                <div class="text-xs text-gray-500 uppercase tracking-widest mb-3">3-Session Package</div>
+                                <div class="text-4xl font-serif mb-2">€950</div>
+                                <div class="text-xs text-gray-500">€317 pro Session <span class="line-through ml-2">€1.050</span></div>
+                            </div>
+
+                            <ul class="space-y-4 mb-8 text-sm text-gray-300">
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>3x 60 Min über 3 Monate</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>Derselbe Executive (Kontinuität)</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>E-Mail-Support zwischen Sessions</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>Ersparnis: €100</span>
+                                </li>
+                            </ul>
+
+                            <button onclick="app.addToCart('Executive Mentoring - 3 Sessions', 950)" class="w-full bg-brand-gold text-brand-dark py-3 uppercase text-xs font-bold tracking-wider hover:bg-white transition">
+                                Paket buchen
+                            </button>
+                        </div>
+
+                        <!-- Retainer -->
+                        <div class="bg-white/5 backdrop-blur-sm border border-gray-800 hover:border-brand-gold/50 rounded-sm p-8 transition-all duration-500">
+                            <div class="border-b border-gray-800 pb-6 mb-6">
+                                <div class="text-xs text-gray-500 uppercase tracking-widest mb-3">Executive Retainer</div>
+                                <div class="text-4xl font-serif mb-2">€2.500</div>
+                                <div class="text-xs text-gray-500">pro Monat • min. 6 Monate</div>
+                            </div>
+
+                            <ul class="space-y-4 mb-8 text-sm text-gray-400">
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>Unbegrenzte Calls (9-18 Uhr)</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>2 Executives parallel verfügbar</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>24h Response-Zeit</span>
+                                </li>
+                                <li class="flex items-start leading-relaxed">
+                                    <span class="text-brand-gold mr-3 mt-0.5">—</span>
+                                    <span>Netzwerk-Intros & Krisenintervention</span>
+                                </li>
+                            </ul>
+
+                            <button onclick="app.addToCart('Executive Mentoring - Retainer', 2500)" class="w-full border border-brand-gold/30 text-brand-gold py-3 uppercase text-xs font-bold tracking-wider hover:bg-brand-gold/10 transition">
+                                Anfrage senden
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KOMPLETTPAKET -->
+        <section class="py-24 bg-gradient-to-br from-[#0B1120] via-[#1A1F2E] to-[#0B1120] text-white relative overflow-hidden border-t border-gray-800">
+            <div class="absolute inset-0 opacity-[0.03]">
+                <div class="absolute inset-0" style="background-image: repeating-linear-gradient(45deg, #C6A87C 0, #C6A87C 1px, transparent 0, transparent 50%); background-size: 30px 30px;"></div>
+            </div>
+
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="bg-gradient-to-br from-brand-gold/10 to-brand-gold/5 border-2 border-brand-gold/30 rounded-sm p-12 text-center">
+                    <div class="inline-block bg-brand-gold text-brand-dark px-4 py-1 text-xs font-bold uppercase tracking-wide rounded-full mb-6">
+                        Bestseller-Kombination
+                    </div>
+
+                    <h2 class="font-serif text-4xl md:text-5xl mb-6">Das Komplettpaket</h2>
+
+                    <p class="text-gray-300 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+                        Optimale Unterlagen <strong class="text-white">+</strong> strategische Begleitung.<br>
+                        Die perfekte Kombination für Ihren Karriereschritt.
+                    </p>
+
+                    <div class="bg-white/5 border border-gray-800 rounded-sm p-6 mb-8 max-w-2xl mx-auto">
+                        <div class="grid md:grid-cols-2 gap-6 text-left">
+                            <div>
+                                <h4 class="font-serif text-lg mb-3 text-brand-gold">Senior Professional CV</h4>
+                                <ul class="space-y-2 text-sm text-gray-400">
+                                    <li class="flex items-start">
+                                        <span class="text-brand-gold mr-2">—</span>
+                                        <span>Premium CV (3 Seiten)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-brand-gold mr-2">—</span>
+                                        <span>LinkedIn-Optimierung</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-brand-gold mr-2">—</span>
+                                        <span>Individuelles Anschreiben</span>
+                                    </li>
+                                </ul>
+                                <div class="mt-4 text-gray-500 text-sm">Regulär: <span class="line-through">€490</span></div>
+                            </div>
+
+                            <div>
+                                <h4 class="font-serif text-lg mb-3 text-brand-gold">3 Mentoring-Sessions</h4>
+                                <ul class="space-y-2 text-sm text-gray-400">
+                                    <li class="flex items-start">
+                                        <span class="text-brand-gold mr-2">—</span>
+                                        <span>3× 60 Min Video-Call</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-brand-gold mr-2">—</span>
+                                        <span>Senior Executive als Mentor</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-brand-gold mr-2">—</span>
+                                        <span>3 Monate Begleitung</span>
+                                    </li>
+                                </ul>
+                                <div class="mt-4 text-gray-500 text-sm">Regulär: <span class="line-through">€950</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-6 mb-8">
+                        <div class="text-3xl font-serif line-through text-gray-500">€1.440</div>
+                        <div class="text-6xl font-serif text-brand-gold">€1.299</div>
+                        <div class="bg-brand-gold text-brand-dark px-4 py-2 text-sm font-bold uppercase rounded-sm">
+                            €141 sparen
+                        </div>
+                    </div>
+
+                    <p class="text-sm text-gray-400 mb-8 italic">
+                        Die beliebteste Kombination unserer Kunden: Perfekte Unterlagen + strategische Mentoring-Sessions über 3 Monate
+                    </p>
+
+                    <button onclick="app.addToCart('Komplettpaket: Senior CV + 3 Mentoring-Sessions', 1299)" class="bg-brand-gold text-brand-dark px-12 py-5 uppercase text-sm font-bold tracking-wider hover:bg-white transition rounded-sm shadow-xl">
+                        Komplettpaket buchen · €1.299
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq" class="py-24 bg-gray-50 border-t border-gray-200">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Häufige Fragen</span>
+                    <h2 class="font-serif text-3xl text-brand-dark">Wichtige Hinweise & Exclusions</h2>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq1')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq1"><span class="font-bold text-brand-dark text-sm">Garantieren Sie einen Job oder eine Beförderung?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq1" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Nein. Wir garantieren die Optimierung Ihrer Unterlagen und Ihrer Strategie nach höchsten Marktstandards ("Enabling"). Die Entscheidung über eine Einstellung liegt jedoch immer beim Unternehmen. Rechtlich schulden wir eine Dienstleistung, keinen Erfolg im Sinne einer Anstellung.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq2')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq2"><span class="font-bold text-brand-dark text-sm">Sind Sie Headhunter oder Personalvermittler?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq2" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Wir arbeiten ausschließlich im Auftrag des Kandidaten (Sie), nicht im Auftrag von Unternehmen. Das garantiert Ihnen 100% Loyalität und Unabhängigkeit. Im "Executive C-Suite"-Paket nutzen wir jedoch unser persönliches Netzwerk für diskrete Intros, sofern passend.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq3')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq3"><span class="font-bold text-brand-dark text-sm">Prüfen Sie Arbeitsverträge rechtlich?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq3" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Nein. Unsere Beratung bezieht sich auf strategische und taktische Karriereplanung (Verhandlungstaktik, Marktwert). Wir bieten keine Rechtsberatung. Für die Prüfung von Verträgen empfehlen wir spezialisierte Fachanwälte für Arbeitsrecht.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq-compliance')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq-compliance"><span class="font-bold text-brand-dark text-sm">Gibt es Einschränkungen bei der Mentoren-Wahl? (Compliance)</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq-compliance" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Ja. Da unsere Mentoren in aktiven Führungspositionen sind, gelten strikte Compliance-Regeln. Ein Mentor darf keine Personen beraten, die bei direkten Wettbewerbern tätig sind. <strong>Ebenso ist eine Beratung ausgeschlossen, wenn Sie sich aktiv beim aktuellen Arbeitgeber des Mentors bewerben</strong>, um Interessenskonflikte zu vermeiden. Dies wird im Matching-Prozess (Compliance-Check) geprüft.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq4')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq4"><span class="font-bold text-brand-dark text-sm">Sind die Kosten steuerlich absetzbar?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq4" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">In der Regel ja. Da es sich um berufliche Weiterbildung und Bewerbungskosten handelt, können diese meist als Werbungskosten geltend gemacht werden. Bitte konsultieren Sie hierzu Ihren Steuerberater. Sie erhalten von uns eine ordnungsgemäße Rechnung mit ausgewiesener MwSt.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq5')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq5"><span class="font-bold text-brand-dark text-sm">Wie schnell ist die Umsetzung?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq5" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Mentoring-Sessions sind oft innerhalb von 48h buchbar. Für CV-Pakete benötigen wir nach vollständigem Briefing ca. 5-7 Werktage für den ersten Entwurf. Express-Service (48h) ist auf Anfrage gegen Aufpreis möglich.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq6')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq6"><span class="font-bold text-brand-dark text-sm">Wie wird Diskretion gewährleistet?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq6" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Diskretion ist unser höchstes Gut. Alle Daten werden verschlüsselt übertragen. Mentoren unterzeichnen strikte Verschwiegenheitserklärungen (NDAs). Ihre Identität wird erst im direkten Gespräch mit dem Mentor offengelegt, nicht auf einer öffentlichen Liste.</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- VIEW 2: AUTH (LOGIN & REGISTER WITH EMAIL VERIFICATION) -->
+    <div id="view-login" class="hidden min-h-[80vh] flex items-center justify-center bg-brand-light fade-in">
+        <div class="bg-white p-10 rounded-sm shadow-2xl w-full max-w-lg border-t-4 border-brand-gold relative my-10">
+            <div class="flex justify-center mb-8 gap-6 border-b border-gray-100 pb-4" id="auth-tabs">
+                <button onclick="app.toggleAuthMode('login')" id="tab-login" class="font-bold text-brand-dark border-b-2 border-brand-dark pb-1 text-sm uppercase tracking-wide">Anmelden</button>
+                <button onclick="app.toggleAuthMode('register')" id="tab-register" class="text-gray-400 pb-1 text-sm uppercase tracking-wide">Registrieren</button>
+            </div>
+
+            <form onsubmit="return false;" class="space-y-4" id="auth-form">
+                <div id="login-fields">
+                    <div>
+                        <label for="login-email" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">E-Mail</label>
+                        <input type="email" id="login-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                    </div>
+                    <div class="mt-4">
+                        <label for="login-password" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Passwort</label>
+                        <input type="password" id="login-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                    </div>
+                </div>
+
+                <div id="register-fields" class="hidden space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                         <div>
+                            <label for="reg-salutation" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Anrede</label>
+                            <select id="reg-salutation" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                                <option>Herr</option>
+                                <option>Frau</option>
+                                <option>Divers</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label for="reg-title" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Titel (Optional)</label>
+                            <input type="text" id="reg-title" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="reg-firstname" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vorname <span class="text-red-500">*</span></label>
+                            <input type="text" id="reg-firstname" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                        </div>
+                        <div>
+                            <label for="reg-lastname" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Nachname <span class="text-red-500">*</span></label>
+                            <input type="text" id="reg-lastname" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                         <div class="col-span-2">
+                            <label for="reg-street" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Straße (Optional)</label>
+                            <input type="text" id="reg-street" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Straße">
+                        </div>
+                         <div>
+                            <label for="reg-houseno" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Nr.</label>
+                            <input type="text" id="reg-houseno" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                         <div>
+                            <label for="reg-zip" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">PLZ</label>
+                            <input type="text" id="reg-zip" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" pattern="[0-9]{5}" title="5-stellige PLZ">
+                        </div>
+                         <div class="col-span-2">
+                            <label for="reg-city" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Ort</label>
+                            <input type="text" id="reg-city" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="reg-phone" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Telefon</label>
+                        <input type="tel" id="reg-phone" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                    </div>
+                    <div>
+                        <label for="reg-email" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">E-Mail <span class="text-red-500">*</span></label>
+                        <input type="email" id="reg-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.validateEmailField(this.value)">
+                        <div id="email-feedback" class="form-feedback"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="reg-password" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Passwort <span class="text-red-500">*</span></label>
+                            <input type="password" id="reg-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.updatePasswordStrength(this.value)">
+                            <!-- Password Strength Indicator -->
+                            <div class="mt-2 bg-gray-200 rounded-full h-1 overflow-hidden">
+                                <div id="password-strength-bar" class="password-strength-bar h-full"></div>
+                            </div>
+                            <p id="password-strength-text" class="text-xs mt-1"></p>
+                        </div>
+                        <div>
+                            <label for="reg-password-confirm" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Wiederholen <span class="text-red-500">*</span></label>
+                            <input type="password" id="reg-password-confirm" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.validatePasswordMatchField()">
+                            <div id="password-match-feedback" class="form-feedback"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="app.handleAuth()" id="auth-submit-btn" class="w-full gold-gradient text-brand-dark font-bold py-3 uppercase text-xs hover:shadow-lg transition mt-6">Anmelden</button>
+            </form>
+
+            <div id="auth-error" class="text-red-500 text-xs mt-4 text-center hidden p-2 bg-red-50 border border-red-100 rounded" role="alert"></div>
+            <div id="auth-success" class="text-green-600 text-xs mt-4 text-center hidden p-2 bg-green-50 border border-green-100 rounded font-bold" role="status"></div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: ENHANCED DASHBOARD -->
+    <div id="view-dashboard" class="hidden fade-in flex-grow bg-gray-50">
+        <!-- Dashboard Header mit Profilbild -->
+        <div class="bg-brand-dark text-white py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                    <div class="flex items-center gap-6">
+                        <!-- Profilbild Upload -->
+                        <div class="relative group">
+                            <div id="profile-picture-container" class="w-24 h-24 rounded-full overflow-hidden border-4 border-brand-gold shadow-lg cursor-pointer bg-brand-dark flex items-center justify-center">
+                                <img id="profile-picture" src="" alt="Profilbild" class="w-full h-full object-cover hidden">
+                                <i id="profile-placeholder-icon" class="fas fa-user text-brand-gold text-4xl" aria-hidden="true"></i>
+                            </div>
+                            <label for="profile-picture-upload" class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                                <i class="fas fa-camera text-white text-xl" aria-hidden="true"></i>
+                            </label>
+                            <input type="file" id="profile-picture-upload" accept="image/*" class="hidden" onchange="app.handleProfilePictureUpload(this)">
+                        </div>
+                        <div>
+                            <h1 class="font-serif text-3xl mb-1">Willkommen, <span id="dash-username">User</span></h1>
+                            <div id="verification-warning" class="hidden mt-2 bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 inline-block rounded">Bitte E-Mail bestätigen!</div>
+                        </div>
+                    </div>
+                    <button onclick="app.handleLogout()" class="text-xs border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition">Abmelden</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Hauptbereich -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Bestellstatus / Bestellübersicht -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 class="font-bold text-brand-dark">Meine Bestellungen</h3>
+                        <span id="order-count-badge" class="bg-brand-gold text-brand-dark text-xs px-2 py-1 rounded font-bold">0</span>
+                    </div>
+                    <div id="orders-list">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-3 text-gray-300" aria-hidden="true"></i>
+                            <p class="text-sm">Noch keine Bestellungen</p>
+                            <button onclick="app.navigateToSection('home', 'cv-packages')" class="mt-4 text-brand-gold font-bold text-xs uppercase hover:underline">
+                                Pakete ansehen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verfügbarkeit angeben -->
+                <div id="availability-section" class="hidden bg-gradient-to-br from-brand-gold/5 to-white p-6 rounded-sm shadow-sm border-2 border-brand-gold/30">
+                    <h3 class="font-bold text-brand-dark mb-4 border-b border-brand-gold/30 pb-3">
+                        <i class="fas fa-calendar-check mr-2 text-brand-gold" aria-hidden="true"></i>
+                        Ihre Verfügbarkeit angeben
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Wählen Sie bis zu 3 Wunschtermine für Ihre Session/Ihr Paket:</p>
+
+                    <div class="space-y-4">
+                        <!-- Termin 1 -->
+                        <div class="bg-white p-4 rounded border border-gray-200">
+                            <label class="text-xs font-bold text-gray-700 block mb-2">
+                                <i class="fas fa-star text-brand-gold mr-1" aria-hidden="true"></i>
+                                1. Wunschtermin
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="date" id="availability-date-1" class="text-sm p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                                <input type="time" id="availability-time-1" class="text-sm p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Termin 2 -->
+                        <div class="bg-white p-4 rounded border border-gray-200">
+                            <label class="text-xs font-bold text-gray-700 block mb-2">
+                                2. Wunschtermin (optional)
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="date" id="availability-date-2" class="text-sm p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                                <input type="time" id="availability-time-2" class="text-sm p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Termin 3 -->
+                        <div class="bg-white p-4 rounded border border-gray-200">
+                            <label class="text-xs font-bold text-gray-700 block mb-2">
+                                3. Wunschtermin (optional)
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="date" id="availability-date-3" class="text-sm p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                                <input type="time" id="availability-time-3" class="text-sm p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Zusätzliche Notizen -->
+                        <div class="bg-white p-4 rounded border border-gray-200">
+                            <label class="text-xs font-bold text-gray-700 block mb-2">
+                                Zusätzliche Hinweise (optional)
+                            </label>
+                            <textarea id="availability-notes" rows="3" placeholder="z.B. Timezone, bevorzugte Wochentage, etc." class="w-full text-sm p-2 border border-gray-300 rounded focus:border-brand-gold outline-none resize-none"></textarea>
+                        </div>
+
+                        <!-- Speichern Button -->
+                        <button onclick="app.saveAvailability()" class="w-full bg-brand-gold text-brand-dark font-bold py-3 uppercase text-xs hover:shadow-xl transition">
+                            <i class="fas fa-check mr-2" aria-hidden="true"></i>
+                            Verfügbarkeit speichern
+                        </button>
+
+                        <!-- Gespeicherte Info -->
+                        <div id="availability-saved-info" class="hidden bg-green-50 border border-green-200 p-3 rounded text-xs">
+                            <i class="fas fa-check-circle text-green-600 mr-1" aria-hidden="true"></i>
+                            <strong>Verfügbarkeit gespeichert!</strong> Wir melden uns in Kürze zur Terminbestätigung.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terminkalender (nur sichtbar bei Coach-Buchung) -->
+                <div id="appointment-calendar" class="hidden bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4 border-b pb-2">
+                        <i class="fas fa-calendar-alt mr-2 text-brand-gold" aria-hidden="true"></i>
+                        Termin mit <span id="coach-name-calendar">Mentor</span> buchen
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Wählen Sie einen verfügbaren Termin für Ihre 1:1 Session:</p>
+                    <div id="calendar-slots" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Calendar slots werden hier dynamisch eingefügt -->
+                    </div>
+                </div>
+
+                <!-- Secure Data Vault -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4">
+                        <i class="fas fa-shield-alt mr-2 text-brand-gold" aria-hidden="true"></i>
+                        Secure Data Vault
+                    </h3>
+                    <div class="border-2 border-dashed border-gray-300 p-8 text-center bg-gray-50 hover:bg-gray-100 transition relative">
+                        <input type="file" id="file-upload" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="app.handleFileUpload(this)" aria-label="Datei hochladen">
+                        <div id="upload-ui-default">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2" aria-hidden="true"></i>
+                            <p class="text-sm">Dokumente hier ablegen (PDF)</p>
+                            <p class="text-xs text-gray-400 mt-1">Max. 10MB</p>
+                        </div>
+                        <div id="upload-ui-loading" class="hidden">
+                            <div class="loader"></div>
+                            <p class="text-xs mt-2">Uploading...</p>
+                        </div>
+                    </div>
+                    <div id="file-list" class="mt-4 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-8">
+
+                <!-- Quick Actions -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <button onclick="app.navigateToSection('home', 'cv-packages')" class="w-full bg-brand-gold text-brand-dark text-xs font-bold py-3 uppercase hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fas fa-file-alt" aria-hidden="true"></i>
+                            CV-Pakete ansehen
+                        </button>
+                        <button onclick="app.navigateToSection('home', 'coaches')" class="w-full border-2 border-brand-dark text-brand-dark text-xs font-bold py-3 uppercase hover:bg-brand-dark hover:text-white transition flex items-center justify-center gap-2">
+                            <i class="fas fa-user-tie" aria-hidden="true"></i>
+                            Mentoren ansehen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mitglieder-Vorteile -->
+                <div class="bg-brand-dark text-white p-6 rounded-sm shadow-lg">
+                    <h3 class="font-serif text-lg font-bold mb-4">
+                        <i class="fas fa-crown text-brand-gold mr-2" aria-hidden="true"></i>
+                        Ihre Vorteile
+                    </h3>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span>Prioritäts-Support</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span>Exklusive Insights</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span>Secure Document Storage</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span>Bestellhistorie & Terminverwaltung</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Concierge Service -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider">Concierge Service</h3>
+                    <p class="text-xs text-gray-600 mb-4">Ihr persönlicher Ansprechpartner für Terminbuchungen und Rückfragen.</p>
+                    <div class="space-y-2">
+                        <button class="w-full border border-brand-dark text-brand-dark text-xs font-bold py-3 uppercase hover:bg-brand-dark hover:text-white transition">
+                            <i class="fas fa-envelope mr-2" aria-hidden="true"></i>
+                            Nachricht senden
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin: Über uns Bild verwalten -->
+                <div class="bg-gradient-to-br from-brand-gold/10 to-brand-dark/5 p-6 rounded-sm shadow-sm border-2 border-brand-gold/30">
+                    <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-brand-gold" aria-hidden="true"></i>
+                        Admin: "Über uns" Bild
+                    </h3>
+                    <p class="text-xs text-gray-600 mb-4">Bild für die "Über uns" Seite verwalten.</p>
+
+                    <div class="space-y-3">
+                        <!-- Option 1: URL eingeben -->
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-2">Option 1: Bild-URL eingeben</label>
+                            <input type="url" id="about-image-url" placeholder="https://example.com/image.jpg" class="w-full text-xs p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                            <button onclick="app.updateAboutImage(document.getElementById('about-image-url').value)" class="w-full mt-2 bg-brand-gold text-brand-dark text-xs font-bold py-2 uppercase hover:shadow-lg transition">
+                                <i class="fas fa-link mr-1" aria-hidden="true"></i>
+                                URL Speichern
+                            </button>
+                        </div>
+
+                        <div class="text-center text-xs text-gray-400">- ODER -</div>
+
+                        <!-- Option 2: Bild hochladen -->
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-2">Option 2: Bild hochladen</label>
+                            <label for="about-image-upload" class="w-full bg-brand-dark text-white text-xs font-bold py-2 uppercase cursor-pointer hover:bg-opacity-90 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                                Datei wählen & hochladen
+                            </label>
+                            <input type="file" id="about-image-upload" accept="image/*" class="hidden" onchange="if(this.files[0]) app.uploadAboutImage(this.files[0])">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- OTHER VIEWS (Journal, About, Details, Coach Detail) -->
+    <div id="view-journal" class="hidden fade-in min-h-screen bg-gray-50">
+        <header class="bg-brand-dark text-white py-20 relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 relative z-10 text-center">
+                <span class="text-brand-gold uppercase tracking-[0.2em] text-xs font-bold block mb-4">APEX Journal</span>
+                <h1 class="font-serif text-4xl mb-4">Executive Insights</h1>
+                <p class="text-gray-400 text-sm max-w-2xl mx-auto">Marktanalysen, Strategien und Insider-Wissen für die moderne Führungskraft.</p>
+            </div>
+        </header>
+        <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div id="journal-grid" class="grid md:grid-cols-3 gap-8"></div>
+        </section>
+    </div>
+
+    <!-- INNER CIRCLE VIEW -->
+    <div id="view-inner-circle" class="hidden fade-in min-h-screen bg-gradient-to-br from-[#0B1120] via-[#151B2E] to-[#0B1120]">
+        <!-- Hero Section -->
+        <div class="relative py-24 overflow-hidden">
+            <!-- Background Pattern -->
+            <div class="absolute inset-0 opacity-5">
+                <div class="absolute inset-0" style="background-image: repeating-linear-gradient(45deg, #C6A87C 0, #C6A87C 1px, transparent 0, transparent 50%); background-size: 20px 20px;"></div>
+            </div>
+
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center mb-4">
+                    <span class="text-brand-gold uppercase tracking-[0.3em] text-xs font-bold">By Invitation Only</span>
+                </div>
+
+                <h1 class="font-serif text-5xl md:text-7xl text-white mb-6 leading-tight">
+                    Der APEX<br>
+                    <span class="text-brand-gold">Inner Circle.</span>
+                </h1>
+
+                <p class="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-12">
+                    Zugang zu einem exklusiven Netzwerk, das auf LinkedIn nicht existiert. Das "Shadow Board" für Führungskräfte, die einsam an der Spitze sind, und der Zugang zum verdeckten Arbeitsmarkt für Beiratsmandate.
+                </p>
+
+                <!-- Member Card Preview -->
+                <div class="max-w-md mx-auto">
+                    <div class="bg-gradient-to-br from-gray-900 to-black border border-brand-gold/30 rounded-lg p-8 shadow-2xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-brand-gold/5 rounded-full blur-3xl"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-brand-gold/5 rounded-full blur-2xl"></div>
+
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-between mb-8">
+                                <h3 class="font-serif text-xl text-brand-gold tracking-wider">Member Card</h3>
+                                <i class="fas fa-infinity text-brand-gold text-xl"></i>
+                            </div>
+
+                            <div class="space-y-3 mb-8">
+                                <div class="h-2 bg-gray-800/50 rounded-full w-3/4"></div>
+                                <div class="h-2 bg-gray-800/50 rounded-full w-1/2"></div>
+                            </div>
+
+                            <div class="border-t border-gray-800 pt-6">
+                                <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Member</p>
+                                <p class="text-white font-serif text-xl mb-1">Dr. Stefan M.</p>
+                                <p class="text-brand-gold text-sm">#0042</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="py-20 bg-gradient-to-b from-transparent to-black/30">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid md:grid-cols-2 gap-12">
+
+                    <!-- Shadow Board -->
+                    <div class="group">
+                        <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-8 hover:border-brand-gold/50 transition-all duration-500 h-full backdrop-blur-sm">
+                            <div class="w-14 h-14 bg-brand-gold/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-brand-gold/20 transition">
+                                <i class="fas fa-users text-brand-gold text-2xl"></i>
+                            </div>
+
+                            <h3 class="font-serif text-2xl text-white mb-4">Shadow Board</h3>
+                            <p class="text-gray-400 leading-relaxed mb-6">
+                                Monatliche Mastermind-Sessions mit 5 Peers aus nicht-konkurrierenden Branchen. Diskutieren Sie vertraulich strategische Entscheidungen, Führungsherausforderungen und Karrieremoves mit gleichgesinnten Executives.
+                            </p>
+
+                            <ul class="space-y-3 text-sm text-gray-500">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Monatliche 90-Min Sessions (online & offline)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Strenge NDA & Compliance-Regeln</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Max. 5 Teilnehmer pro Gruppe</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Moderiert durch erfahrenen Facilitator</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- The Vault -->
+                    <div class="group">
+                        <div class="bg-gradient-to-br from-gray-900/50 to-black/50 border border-gray-800 rounded-lg p-8 hover:border-brand-gold/50 transition-all duration-500 h-full backdrop-blur-sm">
+                            <div class="w-14 h-14 bg-brand-gold/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-brand-gold/20 transition">
+                                <i class="fas fa-vault text-brand-gold text-2xl"></i>
+                            </div>
+
+                            <h3 class="font-serif text-2xl text-white mb-4">The Vault</h3>
+                            <p class="text-gray-400 leading-relaxed mb-6">
+                                Exklusive Mandate und Opportunities, die nur intern geteilt werden. Zugang zum verdeckten Arbeitsmarkt: C-Level Positionen, Beiratsmandate und strategische Beratungsprojekte, die nie öffentlich ausgeschrieben werden.
+                            </p>
+
+                            <ul class="space-y-3 text-sm text-gray-500">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Wöchentliche Updates zu neuen Mandaten</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Direkte Intros ohne Recruiting-Prozess</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Beiratsmandate (DAX, MDAX, Family Offices)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check text-brand-gold mr-3 mt-0.5"></i>
+                                    <span>Portfolio-Positionen (Private Equity, VC)</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="py-20">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="font-serif text-3xl md:text-4xl text-white mb-4">Wie funktioniert der Zugang?</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">Der Inner Circle ist streng limitiert und nur durch Einladung zugänglich.</p>
+                </div>
+
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-brand-gold/10 border border-brand-gold/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl font-bold text-brand-gold">1</span>
+                        </div>
+                        <h4 class="text-white font-bold mb-2 text-sm">Warteliste</h4>
+                        <p class="text-gray-500 text-xs">Bewerben Sie sich für die Warteliste mit Ihrem LinkedIn-Profil</p>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-brand-gold/10 border border-brand-gold/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl font-bold text-brand-gold">2</span>
+                        </div>
+                        <h4 class="text-white font-bold mb-2 text-sm">Prüfung</h4>
+                        <p class="text-gray-500 text-xs">Unser Team prüft Ihre Qualifikation (C-Level, VP+, 10+ Jahre)</p>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-brand-gold/10 border border-brand-gold/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl font-bold text-brand-gold">3</span>
+                        </div>
+                        <h4 class="text-white font-bold mb-2 text-sm">Interview</h4>
+                        <p class="text-gray-500 text-xs">30-Min Gespräch mit einem bestehenden Member</p>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-brand-gold/10 border border-brand-gold/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl font-bold text-brand-gold">4</span>
+                        </div>
+                        <h4 class="text-white font-bold mb-2 text-sm">Einladung</h4>
+                        <p class="text-gray-500 text-xs">Bei Freigabe erhalten Sie Ihre persönliche Member Card</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Criteria Section -->
+        <div class="py-20 bg-gradient-to-b from-black/30 to-transparent">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-gradient-to-br from-gray-900/80 to-black/80 border border-gray-800 rounded-lg p-10 backdrop-blur-sm">
+                    <h3 class="font-serif text-2xl text-white mb-6 text-center">Zugangsvoraussetzungen</h3>
+
+                    <div class="grid md:grid-cols-2 gap-6 text-sm">
+                        <div>
+                            <h4 class="text-brand-gold font-bold mb-3 flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Erforderlich:
+                            </h4>
+                            <ul class="space-y-2 text-gray-400">
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-brand-gold mr-2 mt-1 text-xs"></i>
+                                    <span>Mindestens 10 Jahre Berufserfahrung</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-brand-gold mr-2 mt-1 text-xs"></i>
+                                    <span>Aktuelle oder ehemalige C-Level/VP+ Position</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-brand-gold mr-2 mt-1 text-xs"></i>
+                                    <span>Bereitschaft zur aktiven Teilnahme</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-brand-gold mr-2 mt-1 text-xs"></i>
+                                    <span>Vertraulichkeit & NDA-Unterzeichnung</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="text-red-400 font-bold mb-3 flex items-center">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                Ausschlusskriterien:
+                            </h4>
+                            <ul class="space-y-2 text-gray-400">
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-red-400 mr-2 mt-1 text-xs"></i>
+                                    <span>Aktive Headhunter/Recruiter</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-red-400 mr-2 mt-1 text-xs"></i>
+                                    <span>Direkte Wettbewerber in derselben Gruppe</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-red-400 mr-2 mt-1 text-xs"></i>
+                                    <span>Compliance-Konflikte mit bestehenden Members</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-chevron-right text-red-400 mr-2 mt-1 text-xs"></i>
+                                    <span>Keine Bereitschaft zur Gegenleistung (Give & Take)</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="py-24">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div class="mb-8">
+                    <div class="inline-block bg-brand-gold/10 border border-brand-gold/30 rounded-full px-4 py-2 mb-6">
+                        <span class="text-brand-gold text-xs font-bold uppercase tracking-widest">Limitierte Plätze</span>
+                    </div>
+                    <h2 class="font-serif text-4xl md:text-5xl text-white mb-6">Bereit für den nächsten Schritt?</h2>
+                    <p class="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">
+                        Der Inner Circle nimmt nur 50 Members pro Jahr auf. Aktuell sind <span class="text-brand-gold font-bold">12 Plätze</span> verfügbar.
+                    </p>
+                </div>
+
+                <form class="max-w-md mx-auto space-y-4 mb-8" onsubmit="app.submitWaitlist(event)">
+                    <input
+                        type="text"
+                        id="waitlist-name"
+                        placeholder="Ihr vollständiger Name"
+                        required
+                        class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
+                    >
+                    <input
+                        type="email"
+                        id="waitlist-email"
+                        placeholder="E-Mail-Adresse"
+                        required
+                        class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
+                    >
+                    <input
+                        type="url"
+                        id="waitlist-linkedin"
+                        placeholder="LinkedIn-Profil URL"
+                        required
+                        class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
+                    >
+                    <textarea
+                        id="waitlist-position"
+                        placeholder="Aktuelle Position & Unternehmen"
+                        rows="3"
+                        required
+                        class="w-full bg-gray-900/50 border border-gray-700 text-white px-6 py-4 rounded-sm focus:outline-none focus:border-brand-gold transition"
+                    ></textarea>
+
+                    <button
+                        type="submit"
+                        class="w-full bg-brand-gold text-brand-dark px-8 py-5 font-bold uppercase text-sm hover:bg-white transition rounded-sm shadow-xl hover:shadow-2xl"
+                    >
+                        Auf Warteliste setzen
+                    </button>
+                </form>
+
+                <p class="text-gray-500 text-xs">
+                    <i class="fas fa-lock mr-2"></i>
+                    Ihre Daten werden vertraulich behandelt und nicht an Dritte weitergegeben.
+                </p>
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="pb-12 text-center">
+            <button onclick="app.navigateTo('home')" class="text-brand-gold hover:text-white text-sm uppercase tracking-widest font-bold transition">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Zurück zur Startseite
+            </button>
+        </div>
+    </div>
+
+    <div id="view-about" class="hidden fade-in min-h-screen bg-white">
+        <div class="py-20 max-w-4xl mx-auto px-4 text-center">
+            <h1 class="font-serif text-3xl mb-6">Über uns</h1>
+            <div class="prose mx-auto text-gray-600 mb-12">
+                <div class="grid md:grid-cols-2 gap-12 items-center mb-24 text-left">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-brand-gold/10 transform translate-x-4 translate-y-4"></div>
+                        <img id="about-founder-image" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Gründer" class="relative z-10 w-full rounded-sm shadow-xl grayscale hover:grayscale-0 transition duration-700" loading="lazy">
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-4">Vom CIO zum Enabler</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">"Als CIO habe ich hunderte Bewerbungen gesehen. Das Problem: Die meisten Dienstleister verstehen die Sprache des C-Levels nicht. Die Idee zu APEX entstand aus dem Bedürfnis, eine Brücke zu bauen. Zwischen ambitionierten Talenten und der Realität in den Vorstandsetagen."</p>
+                        <div class="border-l-4 border-brand-gold pl-4 py-2 bg-gray-50">
+                            <p class="text-sm italic text-gray-800 font-serif">"Unser Ziel ist es, Ihnen nicht nur einen Job zu verschaffen, sondern eine Karriere-Strategie."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 text-sm text-center">
+                <div class="p-6 bg-gray-50">
+                    <i class="fas fa-handshake text-brand-gold text-2xl mb-4" aria-hidden="true"></i>
+                    <h4 class="font-bold mb-2">Integrität</h4>
+                    Wir versprechen keine Wunder, sondern harte Arbeit an Ihrer Positionierung.
+                </div>
+                <div class="p-6 bg-gray-50">
+                    <i class="fas fa-chess-queen text-brand-gold text-2xl mb-4" aria-hidden="true"></i>
+                    <h4 class="font-bold mb-2">Strategie</h4>
+                    Ein CV ist kein Lebenslauf, sondern ein Verkaufsprospekt.
+                </div>
+                <div class="p-6 bg-gray-50">
+                    <i class="fas fa-network-wired text-brand-gold text-2xl mb-4" aria-hidden="true"></i>
+                    <h4 class="font-bold mb-2">Netzwerk</h4>
+                    Zugang zu einem Kreis von Entscheidern.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-package-details" class="hidden fade-in min-h-screen bg-white">
+        <!-- Hero Section -->
+        <div class="bg-gradient-to-br from-brand-dark via-brand-dark to-gray-900 text-white py-16">
+            <div class="max-w-5xl mx-auto px-4 text-center">
+                <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-3 block">Volle Transparenz</span>
+                <h1 class="font-serif text-4xl md:text-5xl mb-4">Finden Sie das richtige Paket</h1>
+                <p class="text-gray-300 text-lg max-w-2xl mx-auto">Detaillierte Übersicht: Was Sie für Ihr Investment bekommen und wie der Prozess abläuft.</p>
+            </div>
+        </div>
+
+        <!-- Detaillierte Paket-Beschreibungen -->
+        <div class="max-w-7xl mx-auto px-4 py-16">
+            <div class="grid md:grid-cols-3 gap-8 mb-20">
+
+                <!-- Young Professional Details -->
+                <div class="bg-white border-2 border-gray-200 rounded-sm p-8">
+                    <div class="bg-gray-100 text-gray-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full inline-block mb-4">0-5 Jahre Erfahrung</div>
+                    <h3 class="font-serif text-2xl text-brand-dark mb-2">Young Professional</h3>
+                    <div class="text-4xl font-serif text-brand-dark mb-6">€249</div>
+
+                    <div class="mb-6 pb-6 border-b border-gray-200">
+                        <h4 class="font-bold text-sm text-brand-dark mb-3 uppercase tracking-wide">Für wen?</h4>
+                        <p class="text-sm text-gray-600 leading-relaxed">Berufseinsteiger, High Potentials und Professionals mit 0-5 Jahren Erfahrung, die ihre erste professionelle Bewerbung erstellen oder ihren Karrierestart optimieren möchten.</p>
+                    </div>
+
+                    <div class="mb-6 pb-6 border-b border-gray-200">
+                        <h4 class="font-bold text-sm text-brand-dark mb-3 uppercase tracking-wide">Was Sie erhalten</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-start"><i class="fas fa-file-pdf text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>CV (2 Seiten)</strong> als PDF & Word</span></li>
+                            <li class="flex items-start"><i class="fas fa-file-pdf text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Anschreiben-Template</strong> als Word-Datei</span></li>
+                            <li class="flex items-start"><i class="fas fa-linkedin text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>LinkedIn-Text</strong> für Headline & About</span></li>
+                            <li class="flex items-start"><i class="fas fa-check-circle text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>ATS-Optimierung</strong> (Keyword-Analyse)</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold text-sm text-brand-dark mb-3 uppercase tracking-wide">Prozess & Timeline</h4>
+                        <div class="space-y-3 text-xs text-gray-600">
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">1</span>
+                                <div><strong>Tag 1:</strong> Upload Ihrer aktuellen Unterlagen & Briefing-Fragebogen</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">2</span>
+                                <div><strong>Tag 2-4:</strong> Analyse, Potenzial-Mapping & Erstellung</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">3</span>
+                                <div><strong>Tag 5:</strong> Erste Version zur Review (1 Revision inklusive)</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">4</span>
+                                <div><strong>Tag 7:</strong> Finale Lieferung aller Dateien per E-Mail</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Senior Professional Details -->
+                <div class="bg-white border-2 border-brand-gold rounded-sm p-8 shadow-lg transform md:-translate-y-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-gray-700 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">5-15 Jahre Erfahrung</div>
+                        <div class="bg-brand-gold text-brand-dark text-[10px] font-bold px-3 py-1 uppercase tracking-wide">Popular</div>
+                    </div>
+                    <h3 class="font-serif text-2xl text-brand-dark mb-2">Senior Professional</h3>
+                    <div class="text-4xl font-serif text-brand-dark mb-6">€490</div>
+
+                    <div class="mb-6 pb-6 border-b border-gray-200">
+                        <h4 class="font-bold text-sm text-brand-dark mb-3 uppercase tracking-wide">Für wen?</h4>
+                        <p class="text-sm text-gray-600 leading-relaxed">Etablierte Fach- und Führungskräfte mit 5-15 Jahren Erfahrung, die in Senior-Positionen oder erste Management-Rollen wechseln möchten. Ideal für Team Leads, Senior Manager und Abteilungsleiter.</p>
+                    </div>
+
+                    <div class="mb-6 pb-6 border-b border-gray-200">
+                        <h4 class="font-bold text-sm text-brand-dark mb-3 uppercase tracking-wide">Was Sie erhalten</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-start"><i class="fas fa-file-pdf text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Premium CV (3 Seiten)</strong> mit Executive Summary</span></li>
+                            <li class="flex items-start"><i class="fas fa-file-pdf text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Individuelles Anschreiben</strong> (branchenspezifisch)</span></li>
+                            <li class="flex items-start"><i class="fas fa-linkedin text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>LinkedIn Full Update</strong> (alle Sektionen optimiert)</span></li>
+                            <li class="flex items-start"><i class="fas fa-lightbulb text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>USP-Analyse</strong> & Unique Value Proposition</span></li>
+                            <li class="flex items-start"><i class="fas fa-file-alt text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Interview-Leitfaden</strong> mit typischen Fragen</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold text-sm text-brand-dark mb-3 uppercase tracking-wide">Prozess & Timeline</h4>
+                        <div class="space-y-3 text-xs text-gray-600">
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">1</span>
+                                <div><strong>Tag 1-2:</strong> Intake-Call (30 Min) + Unterlagen-Upload</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">2</span>
+                                <div><strong>Tag 3-6:</strong> USP-Workshop, Content-Erstellung & LinkedIn-Optimierung</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">3</span>
+                                <div><strong>Tag 7:</strong> Erste Version (2 Revisionen inklusive)</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">4</span>
+                                <div><strong>Tag 10:</strong> Finale Lieferung inkl. Interview-Guide</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive C-Suite Details -->
+                <div class="bg-gradient-to-br from-brand-dark to-gray-900 text-white rounded-sm p-8 shadow-xl">
+                    <div class="bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full inline-block mb-4">15+ Jahre · C-Level</div>
+                    <h3 class="font-serif text-2xl mb-2">Executive C-Suite</h3>
+                    <div class="text-4xl font-serif mb-6">€990</div>
+
+                    <div class="mb-6 pb-6 border-b border-gray-700">
+                        <h4 class="font-bold text-sm text-brand-gold mb-3 uppercase tracking-wide">Für wen?</h4>
+                        <p class="text-sm text-gray-300 leading-relaxed">C-Level Executives, Board Members und Senior Leaders mit 15+ Jahren Erfahrung. Für Positionen wie CEO, CFO, COO, Managing Director oder Aufsichtsrat.</p>
+                    </div>
+
+                    <div class="mb-6 pb-6 border-b border-gray-700">
+                        <h4 class="font-bold text-sm text-brand-gold mb-3 uppercase tracking-wide">Was Sie erhalten</h4>
+                        <ul class="space-y-2 text-sm text-gray-300">
+                            <li class="flex items-start"><i class="fas fa-file-pdf text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Executive CV-Suite:</strong> Board CV, Executive Bio, One-Pager</span></li>
+                            <li class="flex items-start"><i class="fas fa-chart-line text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Personal Branding Strategy</strong> (10-seitiges Dokument)</span></li>
+                            <li class="flex items-start"><i class="fas fa-linkedin text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>LinkedIn Executive Rebranding</strong> (komplett)</span></li>
+                            <li class="flex items-start"><i class="fas fa-handshake text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Headhunter-Intro</strong> (optional, Top-Tier Network)</span></li>
+                            <li class="flex items-start"><i class="fas fa-phone text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>1:1 Strategy Call</strong> (60 Min) mit Senior Consultant</span></li>
+                            <li class="flex items-start"><i class="fas fa-infinity text-brand-gold mr-2 mt-1 flex-shrink-0"></i><span><strong>Unbegrenzte Revisionen</strong> (30 Tage Support)</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold text-sm text-brand-gold mb-3 uppercase tracking-wide">Prozess & Timeline</h4>
+                        <div class="space-y-3 text-xs text-gray-300">
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">1</span>
+                                <div><strong>Tag 1-2:</strong> Strategischer Kick-off Call (60 Min) + Zieldefinition</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">2</span>
+                                <div><strong>Tag 3-8:</strong> Personal Branding Workshop, Executive Positioning & Content Creation</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">3</span>
+                                <div><strong>Tag 9-10:</strong> Review & Feinschliff (unbegrenzte Anpassungen)</div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="bg-brand-gold text-brand-dark w-6 h-6 rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">4</span>
+                                <div><strong>Tag 14:</strong> Finale Lieferung + 30 Tage Priority Support</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beispiele Section -->
+            <div class="mb-20">
+                <div class="text-center mb-12">
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-3 block">Live-Beispiele</span>
+                    <h2 class="font-serif text-3xl text-brand-dark mb-4">So sehen unsere Ergebnisse aus</h2>
+                    <p class="text-gray-500 max-w-2xl mx-auto">Anonymisierte Beispiele aus echten Projekten. Ihre Daten werden selbstverständlich vertraulich behandelt.</p>
+                </div>
+
+                <!-- Vorher/Nachher CV -->
+                <div class="mb-16">
+                    <h3 class="font-serif text-2xl text-brand-dark text-center mb-8">Vorher/Nachher: CV-Transformation</h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Vorher -->
+                        <div class="relative group">
+                            <div class="absolute -top-3 left-4 bg-red-100 text-red-700 px-4 py-1 text-xs font-bold uppercase tracking-wide rounded-full z-10 border-2 border-red-300">Vorher</div>
+                            <div class="border-2 border-red-200 rounded-sm p-6 bg-white shadow-sm">
+                                <div class="aspect-[8.5/11] bg-gray-100 rounded-sm overflow-hidden relative">
+                                    <!-- Platzhalter-Bild -->
+                                    <img src="https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&q=80&w=800" alt="CV Vorher Beispiel" class="w-full h-full object-cover opacity-40">
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="bg-white/95 p-6 rounded-sm shadow-lg max-w-xs text-left">
+                                            <p class="text-xs text-red-600 font-bold mb-2">❌ Typische Probleme:</p>
+                                            <ul class="text-xs text-gray-700 space-y-1">
+                                                <li>• Keine klare Struktur</li>
+                                                <li>• Fehlende Keywords (ATS)</li>
+                                                <li>• Aufgaben statt Erfolge</li>
+                                                <li>• Generisches Design</li>
+                                                <li>• Zu lang oder zu kurz</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-3 text-center italic">Selbsterstellter CV ohne Optimierung</p>
+                            </div>
+                        </div>
+
+                        <!-- Nachher -->
+                        <div class="relative group">
+                            <div class="absolute -top-3 left-4 bg-green-100 text-green-700 px-4 py-1 text-xs font-bold uppercase tracking-wide rounded-full z-10 border-2 border-green-300">Nachher</div>
+                            <div class="border-2 border-green-200 rounded-sm p-6 bg-white shadow-lg">
+                                <div class="aspect-[8.5/11] bg-gray-100 rounded-sm overflow-hidden relative">
+                                    <!-- Platzhalter-Bild -->
+                                    <img src="https://images.unsplash.com/photo-1554224311-beee460ae6ba?auto=format&fit=crop&q=80&w=800" alt="CV Nachher Beispiel" class="w-full h-full object-cover opacity-40">
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="bg-white/95 p-6 rounded-sm shadow-lg max-w-xs text-left">
+                                            <p class="text-xs text-green-600 font-bold mb-2">✅ APEX Optimierung:</p>
+                                            <ul class="text-xs text-gray-700 space-y-1">
+                                                <li>• ATS-optimierte Struktur</li>
+                                                <li>• Keyword-Integration</li>
+                                                <li>• Quantifizierte Erfolge</li>
+                                                <li>• Executive Summary</li>
+                                                <li>• Professional Design</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-3 text-center italic">APEX Executive CV - ATS & Executive optimiert</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CV-Beispiele nach Karrierestufe -->
+                <div class="mb-16">
+                    <h3 class="font-serif text-2xl text-brand-dark text-center mb-8">CV-Beispiele nach Karrierestufe</h3>
+                    <div class="grid md:grid-cols-3 gap-6">
+
+                        <!-- Young Professional Sample -->
+                        <div class="bg-white border border-gray-200 rounded-sm p-4 hover:shadow-lg transition">
+                            <div class="bg-gray-100 text-gray-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full inline-block mb-3">Young Professional</div>
+                            <div class="aspect-[8.5/11] bg-gray-50 rounded-sm overflow-hidden mb-3 relative group cursor-pointer">
+                                <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600" alt="Young Professional CV Sample" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-brand-dark/90 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <div class="text-white text-center p-4">
+                                        <i class="fas fa-search-plus text-3xl mb-2"></i>
+                                        <p class="text-xs">Beispiel: Marketing Specialist</p>
+                                        <p class="text-xs text-gray-300 mt-1">2 Seiten, ATS-optimiert</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600"><strong>Highlights:</strong> Potenzial-Fokus, moderne Struktur, LinkedIn-Ready</p>
+                        </div>
+
+                        <!-- Senior Professional Sample -->
+                        <div class="bg-white border-2 border-brand-gold rounded-sm p-4 hover:shadow-xl transition">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="bg-gray-700 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">Senior Professional</div>
+                                <div class="bg-brand-gold text-brand-dark text-[9px] font-bold px-2 py-1 uppercase">Bestseller</div>
+                            </div>
+                            <div class="aspect-[8.5/11] bg-gray-50 rounded-sm overflow-hidden mb-3 relative group cursor-pointer">
+                                <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=600" alt="Senior Professional CV Sample" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-brand-gold/90 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <div class="text-brand-dark text-center p-4">
+                                        <i class="fas fa-search-plus text-3xl mb-2"></i>
+                                        <p class="text-xs font-bold">Beispiel: Senior Operations Manager</p>
+                                        <p class="text-xs mt-1">3 Seiten + Executive Summary</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600"><strong>Highlights:</strong> USP-Positionierung, Leadership-Fokus, Achievements quantifiziert</p>
+                        </div>
+
+                        <!-- Executive C-Suite Sample -->
+                        <div class="bg-gradient-to-br from-brand-dark to-gray-900 text-white rounded-sm p-4 hover:shadow-xl transition">
+                            <div class="bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full inline-block mb-3">Executive C-Suite</div>
+                            <div class="aspect-[8.5/11] bg-gray-800 rounded-sm overflow-hidden mb-3 relative group cursor-pointer">
+                                <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=600" alt="Executive CV Sample" class="w-full h-full object-cover opacity-80">
+                                <div class="absolute inset-0 bg-brand-dark/95 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <div class="text-white text-center p-4">
+                                        <i class="fas fa-search-plus text-3xl mb-2"></i>
+                                        <p class="text-xs font-bold">Beispiel: Chief Financial Officer</p>
+                                        <p class="text-xs text-gray-300 mt-1">Board CV + Bio + One-Pager</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-300"><strong>Highlights:</strong> Executive Branding, Board-Ready, Strategic Impact</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anschreiben Beispiel -->
+                <div class="mb-16">
+                    <h3 class="font-serif text-2xl text-brand-dark text-center mb-8">Anschreiben: Template vs. Individuell</h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+
+                        <!-- Template (Young) -->
+                        <div class="bg-white border border-gray-200 rounded-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Young Professional</span>
+                                <span class="bg-gray-100 text-gray-600 px-3 py-1 text-[10px] font-bold uppercase rounded-full">Template</span>
+                            </div>
+                            <div class="bg-gray-50 p-6 rounded-sm border border-gray-200 text-xs text-gray-700 leading-relaxed space-y-3">
+                                <p><strong>Sehr geehrte Damen und Herren,</strong></p>
+                                <p>hiermit bewerbe ich mich auf die ausgeschriebene Position als [Position]. Ich bin überzeugt, dass meine Qualifikationen und Erfahrungen gut zu Ihren Anforderungen passen.</p>
+                                <p class="text-gray-400 italic">[Anpassbarer Textbaustein mit Ihren Highlights...]</p>
+                                <p>Ich freue mich auf Ihre Rückmeldung.</p>
+                                <p><strong>Mit freundlichen Grüßen</strong></p>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-4">✓ Strukturiert & anpassbar für schnelle Bewerbungen</p>
+                        </div>
+
+                        <!-- Individuell (Senior/Executive) -->
+                        <div class="bg-gradient-to-br from-brand-gold/10 to-white border-2 border-brand-gold rounded-sm p-6 shadow-lg">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold text-brand-dark uppercase tracking-wide">Senior/Executive</span>
+                                <span class="bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase rounded-full">Individuell</span>
+                            </div>
+                            <div class="bg-white p-6 rounded-sm border border-brand-gold/30 text-xs text-gray-700 leading-relaxed space-y-3">
+                                <p><strong>Sehr geehrter Herr Dr. Schmidt,</strong></p>
+                                <p>Ihre Strategie, [Unternehmen] bis 2026 in neue Märkte zu führen, hat mich überzeugt. Als Head of Operations bei [Company] habe ich vergleichbare Transformationen geleitet und dabei den Umsatz um 34% gesteigert.</p>
+                                <p><strong>Warum ich zu Ihnen passe:</strong> Meine Expertise in Change Management und mein Netzwerk in der DACH-Region würden Ihre Expansion beschleunigen...</p>
+                                <p class="text-brand-dark font-semibold">Lassen Sie uns über konkrete Quick Wins sprechen.</p>
+                                <p><strong>Mit besten Grüßen</strong></p>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-4">✓ Branchenspezifisch · Quantifizierte Erfolge · Direkte Ansprache</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LinkedIn Vorher/Nachher -->
+                <div>
+                    <h3 class="font-serif text-2xl text-brand-dark text-center mb-8">LinkedIn-Optimierung</h3>
+                    <div class="max-w-4xl mx-auto">
+                        <div class="grid md:grid-cols-2 gap-6">
+
+                            <!-- Vorher -->
+                            <div class="bg-white border border-red-200 rounded-sm p-6">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <i class="fab fa-linkedin text-red-400 text-xl"></i>
+                                    <span class="text-xs font-bold text-red-600 uppercase">Vorher</span>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-400 mb-1">Headline:</p>
+                                        <p class="text-sm text-gray-700">"Marketing Manager bei ABC GmbH"</p>
+                                        <p class="text-xs text-red-500 mt-1">❌ Nur Jobtitel, keine Differenzierung</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-400 mb-1">About:</p>
+                                        <p class="text-xs text-gray-600 leading-relaxed">"Ich bin Marketing Manager mit 8 Jahren Erfahrung. Ich arbeite gerne in Teams und bin kreativ..."</p>
+                                        <p class="text-xs text-red-500 mt-1">❌ Generisch, keine konkreten Erfolge</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Nachher -->
+                            <div class="bg-white border-2 border-green-200 rounded-sm p-6 shadow-lg">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <i class="fab fa-linkedin text-green-600 text-xl"></i>
+                                    <span class="text-xs font-bold text-green-600 uppercase">Nachher (APEX)</span>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-400 mb-1">Headline:</p>
+                                        <p class="text-sm text-gray-900 font-semibold">"Senior Marketing Strategist | 3x Revenue Growth | B2B SaaS Scaling Expert | ex-Microsoft"</p>
+                                        <p class="text-xs text-green-600 mt-1">✅ Keywords + Unique Value + Social Proof</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-400 mb-1">About:</p>
+                                        <p class="text-xs text-gray-700 leading-relaxed font-medium">"I scale B2B SaaS companies. Last year: €2.4M → €7.1M ARR in 18 months.<br><br>Specialties: Demand Gen, Account-Based Marketing, Marketing Automation..."</p>
+                                        <p class="text-xs text-green-600 mt-1">✅ Quantifizierte Erfolge + Expertise-Keywords</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 bg-brand-light p-6 rounded-sm border border-brand-gold/30">
+                            <p class="text-sm text-gray-700 text-center">
+                                <i class="fas fa-info-circle text-brand-gold mr-2"></i>
+                                <strong>Hinweis:</strong> Alle Beispiele sind anonymisiert und dienen nur zur Veranschaulichung. Ihre echten Unterlagen werden vertraulich behandelt.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vergleichstabelle -->
+            <div class="mb-20">
+                <h2 class="font-serif text-3xl text-brand-dark text-center mb-8">Feature-Vergleich auf einen Blick</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm border border-gray-200 rounded-sm overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-4 text-left font-bold text-brand-dark">Feature</th>
+                                <th class="p-4 text-center font-bold text-brand-dark">Young Professional</th>
+                                <th class="p-4 text-center font-bold text-brand-gold bg-brand-gold/10">Senior Professional</th>
+                                <th class="p-4 text-center font-bold text-white bg-brand-dark">Executive C-Suite</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">CV Umfang</td>
+                                <td class="p-4 text-center text-gray-600">2 Seiten</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5">3 Seiten + Summary</td>
+                                <td class="p-4 text-center text-gray-600">Board CV + Bio + One-Pager</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">ATS-Optimierung</td>
+                                <td class="p-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                                <td class="p-4 text-center bg-brand-gold/5"><i class="fas fa-check text-green-600"></i> Premium</td>
+                                <td class="p-4 text-center"><i class="fas fa-check text-green-600"></i> Executive</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">Anschreiben</td>
+                                <td class="p-4 text-center text-gray-600">Template</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5">Individuell</td>
+                                <td class="p-4 text-center text-gray-600">Pitch Deck Style</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">LinkedIn-Optimierung</td>
+                                <td class="p-4 text-center text-gray-600">Headline & About</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5">Vollständig</td>
+                                <td class="p-4 text-center text-gray-600">Full Rebranding</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">USP-Erarbeitung</td>
+                                <td class="p-4 text-center text-gray-400">-</td>
+                                <td class="p-4 text-center bg-brand-gold/5"><i class="fas fa-check text-green-600"></i></td>
+                                <td class="p-4 text-center"><i class="fas fa-check text-green-600"></i> + Branding</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">Strategie-Call</td>
+                                <td class="p-4 text-center text-gray-400">-</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5">30 Min</td>
+                                <td class="p-4 text-center text-gray-600">60 Min</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">Interview-Vorbereitung</td>
+                                <td class="p-4 text-center text-gray-400">-</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5">Leitfaden</td>
+                                <td class="p-4 text-center"><i class="fas fa-check text-green-600"></i> Premium</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">Headhunter-Intro</td>
+                                <td class="p-4 text-center text-gray-400">-</td>
+                                <td class="p-4 text-center text-gray-400 bg-brand-gold/5">-</td>
+                                <td class="p-4 text-center"><i class="fas fa-check text-green-600"></i> Top-Tier</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">Revisionen</td>
+                                <td class="p-4 text-center text-gray-600">1x</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5">2x</td>
+                                <td class="p-4 text-center text-gray-600">Unbegrenzt (30 Tage)</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">Lieferzeit</td>
+                                <td class="p-4 text-center text-gray-600">5-7 Werktage</td>
+                                <td class="p-4 text-center text-gray-600 bg-brand-gold/5">7-10 Werktage</td>
+                                <td class="p-4 text-center text-gray-600">10-14 Werktage</td>
+                            </tr>
+                            <tr class="bg-gray-50 font-bold">
+                                <td class="p-4">Preis</td>
+                                <td class="p-4 text-center text-brand-dark">€249</td>
+                                <td class="p-4 text-center text-brand-gold bg-brand-gold/5">€490</td>
+                                <td class="p-4 text-center text-white bg-brand-dark">€990</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="mb-20">
+                <h2 class="font-serif text-3xl text-brand-dark text-center mb-4">Häufige Fragen zu den Paketen</h2>
+                <p class="text-center text-gray-500 mb-12 max-w-2xl mx-auto">Alles, was Sie über unsere CV-Pakete wissen müssen</p>
+
+                <div class="max-w-4xl mx-auto space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" onclick="app.toggleFaq('pkg-faq1')">
+                            <span class="font-bold text-brand-dark text-sm">Was bedeutet "ATS-optimiert"?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="pkg-faq1" class="faq-content">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                                ATS (Applicant Tracking System) sind Software-Systeme, die Bewerbungen automatisch scannen und filtern. Wir optimieren Ihren CV mit den richtigen Keywords, Formatierungen und Strukturen, damit er von diesen Systemen erkannt und positiv bewertet wird. Das erhöht Ihre Chancen, zum Interview eingeladen zu werden, erheblich.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" onclick="app.toggleFaq('pkg-faq2')">
+                            <span class="font-bold text-brand-dark text-sm">Wie läuft der Prozess konkret ab?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="pkg-faq2" class="faq-content">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                                <strong>Schritt 1:</strong> Nach der Buchung erhalten Sie ein Briefing-Formular und Upload-Link.<br>
+                                <strong>Schritt 2:</strong> Unser Team analysiert Ihre Unterlagen und führt ggf. ein Intake-Gespräch (ab Senior Paket).<br>
+                                <strong>Schritt 3:</strong> Wir erstellen Ihre Dokumente und senden die erste Version zur Review.<br>
+                                <strong>Schritt 4:</strong> Sie geben Feedback, wir passen an (entsprechend der inkludierten Revisionen).<br>
+                                <strong>Schritt 5:</strong> Finale Lieferung aller Dateien per E-Mail (Word, PDF, Text-Dateien).
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" onclick="app.toggleFaq('pkg-faq3')">
+                            <span class="font-bold text-brand-dark text-sm">Was ist der Unterschied zwischen den Paketen?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="pkg-faq3" class="faq-content">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                                <strong>Young Professional (€249):</strong> Basis-Paket mit CV, Template-Anschreiben und LinkedIn-Basics. Ideal für den Einstieg.<br><br>
+                                <strong>Senior Professional (€490):</strong> Erweitert um USP-Erarbeitung, vollständige LinkedIn-Optimierung, individuelles Anschreiben und Interview-Guide. Für erfahrene Professionals.<br><br>
+                                <strong>Executive C-Suite (€990):</strong> Premium-Paket mit kompletter Personal Branding Strategy, Board CV, Executive Bio, 60-Min Strategy Call, unbegrenzten Revisionen und Headhunter-Zugang. Für C-Level Positionen.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" onclick="app.toggleFaq('pkg-faq4')">
+                            <span class="font-bold text-brand-dark text-sm">Wie viele Revisionen sind sinnvoll?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="pkg-faq4" class="faq-content">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                                In der Regel reichen 1-2 Revisionen aus, da unsere Experten bereits beim ersten Entwurf sehr nah am Optimum sind. Für komplexere Karrierewege (z.B. Branchenwechsel, internationale Positionen) empfehlen wir mindestens 2 Revisionen (Senior Paket). Das Executive-Paket bietet unbegrenzte Revisionen für maximale Flexibilität.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" onclick="app.toggleFaq('pkg-faq5')">
+                            <span class="font-bold text-brand-dark text-sm">Kann ich später auf ein höheres Paket upgraden?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="pkg-faq5" class="faq-content">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                                Ja, jederzeit. Wenn Sie z.B. mit dem Young Professional Paket starten und später merken, dass Sie mehr Unterstützung benötigen, können Sie upgraden. Wir rechnen den bereits gezahlten Betrag an und Sie zahlen nur die Differenz. Kontaktieren Sie einfach unser Support-Team.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" onclick="app.toggleFaq('pkg-faq6')">
+                            <span class="font-bold text-brand-dark text-sm">Was passiert nach der Lieferung?</span>
+                            <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
+                        </button>
+                        <div id="pkg-faq6" class="faq-content">
+                            <div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                                Sie erhalten alle Dateien (Word, PDF) zum Download und können diese sofort nutzen. Bei Bedarf bieten wir Follow-up Support: Young (7 Tage E-Mail-Support), Senior (14 Tage), Executive (30 Tage Priority Support). Für längerfristige Betreuung können Sie zusätzlich Coach-Sessions buchen.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="bg-gradient-to-br from-brand-dark to-gray-900 rounded-sm p-12 text-center text-white">
+                <h3 class="font-serif text-3xl mb-4">Noch unsicher, welches Paket passt?</h3>
+                <p class="text-gray-300 mb-8 max-w-2xl mx-auto">Buchen Sie ein kostenloses 15-minütiges Beratungsgespräch. Wir helfen Ihnen, das optimale Paket für Ihre Karriereziele zu finden.</p>
+                <button onclick="app.navigateToSection('home', 'coaches')" class="bg-brand-gold text-brand-dark px-8 py-4 font-bold uppercase text-sm hover:shadow-xl transition rounded-sm">
+                    Kostenlose Beratung buchen
+                </button>
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center mt-12">
+                <button onclick="app.navigateToSection('home', 'cv-packages')" class="text-brand-gold font-bold underline hover:no-underline text-sm uppercase tracking-wide">
+                    <i class="fas fa-arrow-left mr-2"></i> Zurück zur Paket-Übersicht
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-coach-detail" class="hidden fade-in min-h-screen bg-white">
+        <div class="py-20 max-w-4xl mx-auto px-4" id="coach-detail-content"></div>
+    </div>
+
+    <div id="view-article-detail" class="hidden fade-in min-h-screen bg-white">
+        <div class="py-20 max-w-3xl mx-auto px-4" id="article-content-area"></div>
+    </div>
+
+    <div id="view-impressum" class="hidden fade-in min-h-screen bg-white">
+        <div class="max-w-4xl mx-auto px-4 py-20">
+            <h1 class="font-serif text-3xl mb-8">Impressum</h1>
+            <div class="space-y-4 text-sm text-gray-600">
+                <p><strong>Angaben gemäß § 5 TMG</strong><br>APEX Executive GmbH<br>Musterstraße 1<br>10115 Berlin</p>
+                <p><strong>Kontakt</strong><br>Telefon: +49 (0) 30 12345678<br>E-Mail: kontakt@apex-executive.de</p>
+                <p><strong>Registereintrag</strong><br>Eintragung im Handelsregister.<br>Registergericht: Amtsgericht Berlin-Charlottenburg<br>Registernummer: HRB 123456</p>
+                <p><strong>Umsatzsteuer-ID</strong><br>DE 123 456 789</p>
+                <p><strong>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:</strong><br>Max Mustermann<br>Musterstraße 1<br>10115 Berlin</p>
+            </div>
+            <div class="mt-8"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold hover:underline">Zurück zur Startseite</button></div>
+        </div>
+    </div>
+
+    </main>
+
+    <footer class="bg-white pt-10 pb-6 border-t mt-auto text-center text-xs text-gray-500">
+        &copy; 2024 APEX Executive GmbH |
+        <button onclick="app.navigateTo('impressum')" class="hover:text-brand-gold underline">Impressum</button> |
+        v3.4 (Enhanced Dashboard)
+    </footer>
+
+    <!-- Modals -->
+    <div id="cart-overlay" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/50" onclick="app.toggleCart()"></div>
+        <div id="cart-sidebar" class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+            <div class="p-6 border-b flex justify-between">
+                <h3 class="font-serif text-xl">Portfolio</h3>
+                <button onclick="app.toggleCart()" aria-label="Warenkorb schließen">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div id="cart-items" class="flex-grow p-6 overflow-y-auto"></div>
+            <div class="p-6 border-t">
+                <span id="cart-total" class="font-serif text-2xl block mb-4">€0</span>
+                <button onclick="app.checkout()" class="w-full bg-brand-dark text-white py-4 font-bold uppercase text-xs hover:bg-brand-accent transition">Kostenpflichtig bestellen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-brand-dark text-white px-6 py-4 rounded shadow-lg transform translate-y-20 transition-transform duration-300 z-[70]" role="status" aria-live="polite">
+        Hinzugefügt
+    </div>
+
+    <!-- APP LOGIC -->
+    <script type="module">
+        // Import modules
+        import * as Core from './js/core.js';
+        import * as App from './js/app.js';
+
+        // Make functions globally accessible
+        window.app = {
+            state: {
+                user: null,
+                cart: [],
+                currentView: 'home',
+                coaches: [],
+                articles: [],
+                isLoginMode: true
+            },
+
+            // Core functions
+            navigateTo: Core.navigateTo,
+            scrollToSection: Core.scrollToSection,
+            navigateToSection: Core.navigateToSection,
+            showToast: Core.showToast,
+            toggleMobileMenu: Core.toggleMobileMenu,
+            toggleFaq: Core.toggleFaq,
+            openPackageDetail: Core.openPackageDetail,
+
+            // Auth functions
+            updateAuthUI: () => App.updateAuthUI(window.app.state),
+            toggleAuthMode: (mode) => {
+                window.app.state.isLoginMode = (mode === 'login');
+                App.toggleAuthMode(window.app.state.isLoginMode);
+            },
+            handleAuth: () => App.handleAuth(window.app.state.isLoginMode, window.app.state, Core.navigateTo),
+            handleLogout: () => App.handleLogout(window.app.state, Core.navigateTo),
+            resetAuthToLogin: () => {
+                window.app.state.isLoginMode = true;
+                App.resetAuthToLogin();
+            },
+            validateEmailField: (email) => App.validateEmailField(email),
+            updatePasswordStrength: (password) => App.updatePasswordStrength(password),
+            validatePasswordMatchField: () => App.validatePasswordMatchField(),
+
+            // Cart functions
+            addToCart: (name, price) => App.addToCart(window.app.state, name, price),
+            removeFromCart: (index) => App.removeFromCart(window.app.state, index),
+            updateCartUI: () => App.updateCartUI(window.app.state),
+            toggleCart: App.toggleCart,
+            checkout: () => App.checkout(window.app.state, Core.navigateTo),
+
+            // Dashboard functions
+            loadUserOrders: () => App.loadUserOrders(window.app.state),
+            handleProfilePictureUpload: (input) => App.handleProfilePictureUpload(window.app.state, input),
+            showAppointmentCalendar: (orderId) => App.showAppointmentCalendar(orderId),
+            bookAppointment: (orderId, datetime) => App.bookAppointment(window.app.state, orderId, datetime),
+            handleFileUpload: (input) => App.handleFileUpload(window.app.state, input),
+
+            // Coaches & Articles functions
+            filterCoaches: () => App.filterCoaches(window.app.state),
+            openCoachDetail: (id) => App.openCoachDetail(window.app.state, id, Core.navigateTo),
+            renderArticles: () => App.renderArticles(window.app.state),
+            openArticle: (id) => App.openArticle(window.app.state, id, Core.navigateTo),
+            initData: () => App.initData(window.app.state),
+
+            // About Section
+            loadAboutImage: () => App.loadAboutImage(),
+            updateAboutImage: (url) => App.updateAboutImage(url),
+            uploadAboutImage: (file) => App.uploadAboutImage(file),
+
+            // Inner Circle
+            submitWaitlist: (event) => App.submitWaitlist(event)
+        };
+
+        // Initialize Firebase auth observer
+        if (Core.auth) {
+            Core.onAuthStateChanged(Core.auth, (user) => {
+                if (user) {
+                    if (!user.emailVerified) {
+                        Core.showToast('Bitte verifizieren Sie Ihre E-Mail-Adresse.', 'warning');
+                    }
+                    app.state.user = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email.split('@')[0],
+                        emailVerified: user.emailVerified
+                    };
+                    app.updateAuthUI();
+                    if (app.state.currentView === 'dashboard') {
+                        app.loadUserOrders();
+                    }
+                } else {
+                    app.state.user = null;
+                    app.updateAuthUI();
+                }
+            });
+        }
+
+        // Initialize debounced functions
+        window.app.debouncedFilterCoaches = Core.debounce(() => window.app.filterCoaches(), 200);
+
+        // Load Initial Data
+        document.addEventListener('DOMContentLoaded', () => {
+            app.initData();
+            app.updateCartUI();
+            app.loadAboutImage(); // Load dynamic "Über uns" image
+            console.log('✅ APEX Executive Platform loaded successfully');
+        });
+    </script>
+</body>
+</html>

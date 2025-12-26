@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users Collection - Users können nur ihr eigenes Profil lesen/schreiben
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false; // Keine Löschung erlaubt
+    }
+
+    // Orders Collection - Users können nur eigene Bestellungen lesen
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if false; // Nur Functions dürfen Orders erstellen
+      allow update: if false; // Nur Functions dürfen Orders updaten
+      allow delete: if false; // Keine Löschung
+    }
+
+    // Availability Collection - Users können nur eigene Verfügbarkeit lesen/schreiben
+    match /availability/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Settings Collection - Nur lesen erlaubt (z.B. für "Über uns" Bild)
+    match /settings/{document} {
+      allow read: if true; // Öffentlich lesbar
+      allow write: if false; // Nur Admins (manuell in Console)
+    }
+
+    // Coaches/Mentors Collection - Öffentlich lesbar
+    match /coaches/{coachId} {
+      allow read: if true; // Öffentlich
+      allow write: if false; // Nur Admins
+    }
+
+    // Articles Collection - Öffentlich lesbar
+    match /articles/{articleId} {
+      allow read: if true; // Öffentlich
+      allow write: if false; // Nur Admins
+    }
+
+    // Alle anderen Collections: Komplett gesperrt
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
