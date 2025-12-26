@@ -1914,12 +1914,7 @@ function showPaymentSuccessModal(sessionId, checkoutType = 'guest', navigateTo =
         }
     });
 
-    // Auto-remove nach 30 Sekunden
-    setTimeout(() => {
-        if (modal.parentElement) {
-            modal.remove();
-        }
-    }, 30000);
+    // Modal bleibt offen bis User es schließt - kein Auto-remove
 }
 
 // ========== DASHBOARD TAB SYSTEM ==========
