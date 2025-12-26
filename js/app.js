@@ -1023,11 +1023,20 @@ export async function handleFileUpload(state, input) {
 
 export async function initData(state) {
     const dbCoaches = await fetchCollection('coaches');
-    if(dbCoaches.length > 0) state.coaches = dbCoaches;
+    if(dbCoaches.length > 0) {
+        state.coaches = dbCoaches;
+    } else {
+        // Fallback to sample data if Firestore is empty
+        state.coaches = sampleCoaches;
+    }
     filterCoaches(state);
 
     const dbArticles = await fetchCollection('articles');
-    if(dbArticles.length > 0) state.articles = dbArticles;
+    if(dbArticles.length > 0) {
+        state.articles = dbArticles;
+    } else {
+        state.articles = sampleArticles;
+    }
     renderArticles(state);
 }
 
