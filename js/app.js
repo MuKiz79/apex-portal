@@ -721,10 +721,12 @@ export async function loadUserOrders(state) {
             console.log('📦 Orders found by email:', snapshot.size);
         }
 
+        console.log('📋 Mapping orders from snapshot...');
         const orders = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        console.log('📋 Orders mapped:', orders);
 
         // Sortiere nach Datum (client-side, um Index-Probleme zu vermeiden)
         orders.sort((a, b) => {
@@ -733,6 +735,7 @@ export async function loadUserOrders(state) {
             return dateB - dateA;
         });
 
+        console.log('📋 Calling renderOrders...');
         renderOrders(orders);
 
         // Update Dashboard Stats
