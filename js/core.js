@@ -3,6 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebas
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBZ970mA7-2pJzhbxyFjjmzO97YKZhrSmU",
@@ -18,6 +19,18 @@ const firebaseConfig = {
 let auth, db, storage;
 try {
     const app = initializeApp(firebaseConfig);
+
+    // Initialize App Check with correct reCAPTCHA v3 Site Key
+    try {
+        const appCheck = initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6LcJXzcsAAAAAFROW8bD5BTJV4Lx3_CjzzelPWua'),
+            isTokenAutoRefreshEnabled: true
+        });
+        console.log("✅ App Check initialized successfully");
+    } catch(appCheckError) {
+        console.warn("⚠️ App Check initialization failed:", appCheckError);
+    }
+
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
