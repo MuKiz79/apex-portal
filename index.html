@@ -2570,6 +2570,7 @@
         // Initialize Firebase auth observer
         if (Core.auth) {
             Core.onAuthStateChanged(Core.auth, (user) => {
+                console.log('🔐 Auth state changed:', user ? user.email : 'null');
                 if (user) {
                     if (!user.emailVerified) {
                         Core.showToast('Bitte verifizieren Sie Ihre E-Mail-Adresse.', 'warning');
@@ -2585,7 +2586,9 @@
                     // Lade Orders wenn auf Dashboard oder nach erfolgreicher Zahlung
                     const urlParams = new URLSearchParams(window.location.search);
                     const isPaymentSuccess = urlParams.get('payment') === 'success';
+                    console.log('🔐 Payment success:', isPaymentSuccess, 'Current view:', app.state.currentView);
                     if (app.state.currentView === 'dashboard' || isPaymentSuccess) {
+                        console.log('🔐 Loading orders...');
                         app.loadUserOrders();
                     }
                 } else {
