@@ -235,10 +235,13 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
 
     // Konfiguriere SMTP-Transport
     // HINWEIS: SMTP-Credentials müssen als Firebase Secrets gesetzt werden
+    const host = smtpHost.value() || 'smtpout.secureserver.net';
+    const isGodaddy = host.includes('secureserver.net');
+
     const transporter = nodemailer.createTransport({
-        host: smtpHost.value() || 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        host: host,
+        port: isGodaddy ? 465 : 587,
+        secure: isGodaddy, // true für Port 465, false für Port 587
         auth: {
             user: smtpUser.value(),
             pass: smtpPass.value()
