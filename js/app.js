@@ -3,7 +3,7 @@
 
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, applyActionCode, checkActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
@@ -138,12 +138,11 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
 
             await updateProfile(user, { displayName: `${firstname} ${lastname}` });
 
-            // Send verification email with action URL
-            const actionCodeSettings = {
-                url: window.location.origin + '/',
-                handleCodeInApp: false
-            };
-            await sendEmailVerification(user, actionCodeSettings);
+            // Send verification email
+            // Note: To use custom email action handler, set the Action URL in Firebase Console:
+            // Authentication > Templates > Edit Template > Customize action URL
+            // Set it to: https://apex-executive.de/
+            await sendEmailVerification(user);
             await signOut(auth);
 
             document.getElementById('auth-form')?.classList.add('hidden');
@@ -2661,5 +2660,75 @@ export function closeEmailVerifiedModal() {
     if (modal) {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
+    }
+}
+
+// ========== EMAIL ACTION HANDLER ==========
+// Handles Firebase email actions: verifyEmail, resetPassword, recoverEmail
+
+export async function handleEmailAction(navigateToFn) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const oobCode = urlParams.get('oobCode');
+
+    // Only proceed if we have a mode and action code
+    if (!mode || !oobCode) return;
+
+    // Navigate to the email action view
+    if (navigateToFn) {
+        navigateToFn('email-action');
+    }
+
+    const loadingEl = document.getElementById('email-action-loading');
+    const successEl = document.getElementById('email-action-success');
+    const errorEl = document.getElementById('email-action-error');
+    const errorMsgEl = document.getElementById('email-action-error-message');
+
+    try {
+        switch (mode) {
+            case 'verifyEmail':
+                // Verify the email
+                await applyActionCode(auth, oobCode);
+
+                // Show success
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (successEl) successEl.classList.remove('hidden');
+
+                // Clean URL
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+                break;
+
+            case 'resetPassword':
+                // For password reset, we would show a password reset form
+                // For now, just show an error since we haven't implemented this yet
+                throw new Error('Passwort-Reset wird vorbereitet...');
+
+            default:
+                throw new Error('Unbekannte Aktion');
+        }
+    } catch (error) {
+        console.error('Email action error:', error);
+
+        // Show error state
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (errorEl) errorEl.classList.remove('hidden');
+
+        // Set appropriate error message
+        let errorMessage = 'Der Link ist ungültig oder abgelaufen.';
+
+        if (error.code === 'auth/invalid-action-code') {
+            errorMessage = 'Der Bestätigungslink ist ungültig oder wurde bereits verwendet.';
+        } else if (error.code === 'auth/expired-action-code') {
+            errorMessage = 'Der Bestätigungslink ist abgelaufen. Bitte fordern Sie einen neuen Link an.';
+        } else if (error.code === 'auth/user-disabled') {
+            errorMessage = 'Dieses Konto wurde deaktiviert.';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
+        if (errorMsgEl) {
+            errorMsgEl.textContent = errorMessage;
+        }
     }
 }
