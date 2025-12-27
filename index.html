@@ -1100,6 +1100,13 @@
                             <div id="password-match-feedback" class="form-feedback"></div>
                         </div>
                     </div>
+                    <!-- AGB & Datenschutz Zustimmung -->
+                    <div class="flex items-start gap-3 mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <input type="checkbox" id="reg-terms-accept" class="w-4 h-4 mt-0.5 text-brand-gold rounded border-gray-300 focus:ring-brand-gold" required>
+                        <label for="reg-terms-accept" class="text-xs text-gray-600 leading-relaxed">
+                            Ich akzeptiere die <button type="button" onclick="app.navigateTo('agb')" class="text-brand-gold hover:underline font-medium">AGB</button> und habe die <button type="button" onclick="app.navigateTo('datenschutz')" class="text-brand-gold hover:underline font-medium">Datenschutzerklärung</button> gelesen. <span class="text-red-500">*</span>
+                        </label>
+                    </div>
                 </div>
 
                 <button type="button" onclick="app.handleAuth()" id="auth-submit-btn" class="w-full gold-gradient text-brand-dark font-bold py-3 uppercase text-xs hover:shadow-lg transition mt-6">Anmelden</button>
@@ -2968,7 +2975,12 @@
             // Strategy Call Modal
             openStrategyModal: () => App.openStrategyModal(),
             closeStrategyModal: () => App.closeStrategyModal(),
-            submitStrategyCall: (event) => App.submitStrategyCall(event)
+            submitStrategyCall: (event) => App.submitStrategyCall(event),
+
+            // Cookie Consent
+            acceptCookies: () => App.acceptCookies(),
+            declineCookies: () => App.declineCookies(),
+            checkCookieConsent: () => App.checkCookieConsent()
         };
 
         // Initialize Firebase auth observer
@@ -3035,6 +3047,9 @@
 
             // Handle payment callback (success/cancelled)
             app.handlePaymentCallback();
+
+            // Check cookie consent and show banner if needed
+            app.checkCookieConsent();
 
             console.log('✅ APEX Executive Platform loaded successfully');
         });
@@ -3139,6 +3154,32 @@
                     <p class="text-sm text-green-700">Wir melden uns innerhalb von 24 Stunden bei Ihnen.</p>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- COOKIE BANNER (DSGVO) -->
+    <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-brand-dark text-white p-4 z-50 shadow-2xl border-t border-brand-gold/20 transform translate-y-full transition-transform duration-500">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-start gap-4">
+                <div class="hidden md:flex w-12 h-12 bg-brand-gold/20 rounded-full items-center justify-center flex-shrink-0">
+                    <i class="fas fa-cookie-bite text-brand-gold text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm leading-relaxed">
+                        Wir verwenden Cookies, um Ihnen die bestmögliche Erfahrung auf unserer Website zu bieten.
+                        Weitere Informationen finden Sie in unserer
+                        <button onclick="app.navigateTo('datenschutz'); app.acceptCookies();" class="text-brand-gold hover:underline">Datenschutzerklärung</button>.
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-3 flex-shrink-0">
+                <button onclick="app.declineCookies()" class="px-5 py-2 text-xs uppercase tracking-wider font-bold border border-white/30 hover:border-white hover:bg-white/10 transition rounded-sm">
+                    Nur Notwendige
+                </button>
+                <button onclick="app.acceptCookies()" class="px-5 py-2 text-xs uppercase tracking-wider font-bold bg-brand-gold text-brand-dark hover:bg-white transition rounded-sm">
+                    Alle Akzeptieren
+                </button>
+            </div>
         </div>
     </div>
 </body>
