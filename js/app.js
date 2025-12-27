@@ -2527,7 +2527,7 @@ export async function uploadDocumentToUser(userId, orderId, file) {
 
 export function switchAdminTab(tabName) {
     // Update tab buttons
-    const tabs = ['orders', 'users', 'strategy'];
+    const tabs = ['orders', 'users', 'strategy', 'settings'];
     tabs.forEach(tab => {
         const btn = document.getElementById(`admin-tab-${tab}`);
         const content = document.getElementById(`admin-content-${tab}`);
@@ -2552,6 +2552,8 @@ export function switchAdminTab(tabName) {
         loadAdminUsers();
     } else if (tabName === 'strategy') {
         loadStrategyCalls();
+    } else if (tabName === 'settings') {
+        loadAdminSettings();
     }
 }
 
@@ -2844,6 +2846,88 @@ export async function updateStrategyCallStatus(callId, newStatus) {
     } catch (e) {
         console.error('Failed to update strategy call status:', e);
         showToast('❌ Status-Update fehlgeschlagen', 3000);
+    }
+}
+
+// ========== ADMIN SETTINGS ==========
+
+export async function loadAdminSettings() {
+    if (!db) return;
+
+    try {
+        const settingsRef = doc(db, 'settings', 'website');
+        const docSnap = await getDoc(settingsRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const input = document.getElementById('admin-mentoring-slots');
+            if (input && data.mentoringSlotsText) {
+                input.value = data.mentoringSlotsText;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load settings:', e);
+    }
+}
+
+export async function saveMentoringSlots() {
+    if (!db) {
+        showToast('❌ Datenbank nicht verfügbar', 3000);
+        return;
+    }
+
+    const input = document.getElementById('admin-mentoring-slots');
+    const status = document.getElementById('admin-mentoring-slots-status');
+    const text = input?.value?.trim();
+
+    if (!text) {
+        showToast('❌ Bitte Text eingeben', 3000);
+        return;
+    }
+
+    try {
+        const settingsRef = doc(db, 'settings', 'website');
+        await setDoc(settingsRef, {
+            mentoringSlotsText: text,
+            updatedAt: new Date()
+        }, { merge: true });
+
+        // Update the frontend immediately
+        const frontendText = document.getElementById('mentoring-slots-text');
+        if (frontendText) {
+            frontendText.textContent = text;
+        }
+
+        if (status) {
+            status.textContent = `✓ Gespeichert am ${new Date().toLocaleString('de-DE')}`;
+            status.classList.remove('text-gray-400');
+            status.classList.add('text-green-600');
+        }
+
+        showToast('✅ Einstellung gespeichert');
+    } catch (e) {
+        console.error('Failed to save mentoring slots:', e);
+        showToast('❌ Speichern fehlgeschlagen: ' + e.message, 3000);
+    }
+}
+
+// Load mentoring slots text on page load
+export async function loadMentoringSlotsText() {
+    if (!db) return;
+
+    try {
+        const settingsRef = doc(db, 'settings', 'website');
+        const docSnap = await getDoc(settingsRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const textEl = document.getElementById('mentoring-slots-text');
+            if (textEl && data.mentoringSlotsText) {
+                textEl.textContent = data.mentoringSlotsText;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load mentoring slots text:', e);
     }
 }
 

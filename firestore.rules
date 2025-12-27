@@ -53,10 +53,10 @@ service cloud.firestore {
       allow write: if false; // Nur Admins
     }
 
-    // Settings Collection - Nur lesen erlaubt (z.B. für "Über uns" Bild)
+    // Settings Collection - Öffentlich lesbar, Admins können schreiben
     match /settings/{document} {
       allow read: if true; // Öffentlich lesbar
-      allow write: if false; // Nur Admins (manuell in Console)
+      allow write: if isAdmin(); // Admins können Einstellungen ändern
     }
 
     // Waitlist Collection - Jeder kann sich eintragen, nur Admins können lesen

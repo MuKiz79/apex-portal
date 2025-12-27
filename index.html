@@ -559,7 +559,7 @@
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                         </span>
-                        <span class="text-red-400 text-sm font-bold uppercase tracking-wider">Nur noch 3 Mentoring-Plätze im Januar verfügbar</span>
+                        <span id="mentoring-slots-text" class="text-red-400 text-sm font-bold uppercase tracking-wider">Nur noch 3 Mentoring-Plätze im Januar verfügbar</span>
                     </div>
                 </div>
 
@@ -2584,6 +2584,9 @@
                 <button onclick="app.switchAdminTab('strategy')" id="admin-tab-strategy" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
                     <i class="fas fa-phone mr-2"></i>Erstgespräch-Anfragen
                 </button>
+                <button onclick="app.switchAdminTab('settings')" id="admin-tab-settings" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
+                    <i class="fas fa-cog mr-2"></i>Einstellungen
+                </button>
             </div>
 
             <!-- Orders Tab Content -->
@@ -2703,6 +2706,35 @@
                         <div class="p-8 text-center text-gray-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
                             <p class="text-sm">Lade Anfragen...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab Content -->
+            <div id="admin-content-settings" class="hidden">
+                <div class="bg-white rounded-sm shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100">
+                        <h3 class="font-bold text-brand-dark">Website-Einstellungen</h3>
+                        <p class="text-sm text-gray-500">Hier kannst du Texte auf der Website anpassen</p>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Mentoring Slots -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <label class="block text-sm font-bold text-brand-dark mb-2">
+                                <i class="fas fa-users text-brand-gold mr-2"></i>Mentoring-Plätze Hinweis
+                            </label>
+                            <p class="text-xs text-gray-500 mb-3">Dieser Text erscheint im Hero-Bereich der Startseite</p>
+                            <div class="flex gap-3">
+                                <input type="text" id="admin-mentoring-slots"
+                                       placeholder="z.B.: Nur noch 3 Mentoring-Plätze im Januar verfügbar"
+                                       class="flex-1 border border-gray-200 rounded px-4 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                                <button onclick="app.saveMentoringSlots()"
+                                        class="bg-brand-gold text-brand-dark px-6 py-2 rounded text-sm font-bold hover:bg-yellow-500 transition">
+                                    <i class="fas fa-save mr-2"></i>Speichern
+                                </button>
+                            </div>
+                            <p id="admin-mentoring-slots-status" class="text-xs text-gray-400 mt-2"></p>
                         </div>
                     </div>
                 </div>
@@ -3164,6 +3196,9 @@
             loadAdminUsers: () => App.loadAdminUsers(),
             loadStrategyCalls: () => App.loadStrategyCalls(),
             updateStrategyCallStatus: (callId, status) => App.updateStrategyCallStatus(callId, status),
+            loadAdminSettings: () => App.loadAdminSettings(),
+            saveMentoringSlots: () => App.saveMentoringSlots(),
+            loadMentoringSlotsText: () => App.loadMentoringSlotsText(),
 
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),
@@ -3245,6 +3280,7 @@
             app.initData();
             app.updateCartUI();
             app.loadAboutImage(); // Load dynamic "Über uns" image
+            app.loadMentoringSlotsText(); // Load dynamic mentoring slots text
 
             // Handle payment callback (success/cancelled)
             app.handlePaymentCallback();
