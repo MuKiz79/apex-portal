@@ -65,6 +65,13 @@ service cloud.firestore {
       allow read, update, delete: if false; // Nur Admins (manuell in Console)
     }
 
+    // Strategy Calls Collection - Kontaktanfragen für Strategiegespräche
+    match /strategy_calls/{callId} {
+      allow create: if true; // Jeder kann eine Anfrage stellen
+      allow read: if isAdmin(); // Nur Admins können lesen
+      allow update, delete: if isAdmin(); // Nur Admins können bearbeiten
+    }
+
     // Members Collection - Inner Circle Members
     match /members/{memberId} {
       allow read: if isSignedIn() && request.auth.uid == memberId;

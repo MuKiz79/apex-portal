@@ -2056,6 +2056,104 @@ export function switchDashboardTab(tabName, state) {
     }
 }
 
+// ========== STRATEGY CALL MODAL ==========
+
+export function openStrategyModal() {
+    const modal = document.getElementById('strategy-call-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+export function closeStrategyModal() {
+    const modal = document.getElementById('strategy-call-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        // Reset form
+        const form = document.getElementById('strategy-call-form');
+        if (form) form.reset();
+        // Hide success message, show form
+        const success = document.getElementById('strategy-success');
+        const submitBtn = document.getElementById('strategy-submit-btn');
+        if (success) success.classList.add('hidden');
+        if (submitBtn) submitBtn.classList.remove('hidden');
+    }
+}
+
+export async function submitStrategyCall(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('strategy-name')?.value?.trim();
+    const email = document.getElementById('strategy-email')?.value?.trim();
+    const phone = document.getElementById('strategy-phone')?.value?.trim();
+    const message = document.getElementById('strategy-message')?.value?.trim();
+
+    // Get preferred times
+    const timeCheckboxes = document.querySelectorAll('input[name="preferred-time"]:checked');
+    const preferredTimes = Array.from(timeCheckboxes).map(cb => cb.value);
+
+    if (!name || !email || !phone) {
+        showToast('Bitte alle Pflichtfelder ausfüllen', 3000);
+        return;
+    }
+
+    const submitBtn = document.getElementById('strategy-submit-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loader mr-2"></span> Wird gesendet...';
+    }
+
+    try {
+        // Save to Firestore
+        if (db) {
+            await addDoc(collection(db, "strategy_calls"), {
+                name,
+                email,
+                phone,
+                message: message || '',
+                preferredTimes,
+                status: 'new',
+                createdAt: new Date(),
+                source: 'website'
+            });
+        }
+
+        // Show success
+        const form = document.getElementById('strategy-call-form');
+        const success = document.getElementById('strategy-success');
+
+        if (form) {
+            // Hide form fields
+            const formFields = form.querySelectorAll('div:not(#strategy-success)');
+            formFields.forEach(field => field.style.display = 'none');
+        }
+        if (submitBtn) submitBtn.classList.add('hidden');
+        if (success) success.classList.remove('hidden');
+
+        showToast('Anfrage erfolgreich gesendet!');
+
+        // Close modal after 3 seconds
+        setTimeout(() => {
+            closeStrategyModal();
+            // Restore form fields
+            if (form) {
+                const formFields = form.querySelectorAll('div:not(#strategy-success)');
+                formFields.forEach(field => field.style.display = '');
+            }
+        }, 3000);
+
+    } catch (error) {
+        console.error('Strategy call submission failed:', error);
+        showToast('Fehler beim Senden. Bitte versuchen Sie es erneut.', 3000);
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Rückruf anfordern';
+        }
+    }
+}
+
 export async function saveProfile(state) {
     const firstnameInput = document.getElementById('profile-firstname');
     const lastnameInput = document.getElementById('profile-lastname');
