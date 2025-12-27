@@ -2943,8 +2943,33 @@ export async function acceptCookies() {
     hideCookieBanner();
     showToast('Cookie-Einstellungen gespeichert');
 
+    // Load Google Analytics now that consent is given
+    loadGoogleAnalytics();
+
     // Save to Firestore if user is logged in
     await saveCookieConsentToFirestore('all', consentDate);
+}
+
+function loadGoogleAnalytics() {
+    // Check if already loaded
+    if (window.gaLoaded) return;
+
+    const gaId = 'G-XXXXXXXXXX'; // TODO: Replace with your GA4 ID
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+    document.head.appendChild(script);
+
+    script.onload = function() {
+        window.gtag('js', new Date());
+        window.gtag('config', gaId, {
+            'anonymize_ip': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+        window.gaLoaded = true;
+        console.log('Google Analytics loaded after consent');
+    };
 }
 
 export async function declineCookies() {

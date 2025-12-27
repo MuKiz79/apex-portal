@@ -7,6 +7,33 @@
     <meta name="keywords" content="Karriereberatung, CV Erstellung, Executive Coaching, Mentoring, Führungskräfte, Executive Mentoring">
     <title>APEX Executive | Karriere-Architektur & CV-Manufaktur</title>
 
+    <!-- Google Analytics 4 - Only loads if user consented to cookies -->
+    <script>
+        // GA4 Configuration - wird nur geladen wenn Cookie-Consent gegeben wurde
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+
+        // Check cookie consent before loading GA
+        (function() {
+            const consent = localStorage.getItem('cookieConsent');
+            if (consent === 'all') {
+                // Load GA4 script
+                var script = document.createElement('script');
+                script.async = true;
+                script.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX'; // TODO: Replace with your GA4 ID
+                document.head.appendChild(script);
+
+                script.onload = function() {
+                    gtag('js', new Date());
+                    gtag('config', 'G-XXXXXXXXXX', { // TODO: Replace with your GA4 ID
+                        'anonymize_ip': true,
+                        'cookie_flags': 'SameSite=None;Secure'
+                    });
+                };
+            }
+        })();
+    </script>
+
     <!-- Preconnect for Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
