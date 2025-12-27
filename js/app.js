@@ -2954,7 +2954,7 @@ function loadGoogleAnalytics() {
     // Check if already loaded
     if (window.gaLoaded) return;
 
-    const gaId = 'G-XXXXXXXXXX'; // TODO: Replace with your GA4 ID
+    const gaId = 'G-8K4T9MXEZ8';
 
     const script = document.createElement('script');
     script.async = true;
