@@ -2634,3 +2634,32 @@ function hideCookieBanner() {
         banner.classList.add('translate-y-full');
     }
 }
+
+// ========== EMAIL VERIFICATION ==========
+
+export function checkEmailVerification() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+
+    // Firebase uses 'verifyEmail' mode when redirecting after email verification
+    if (mode === 'verifyEmail') {
+        // Show the verification success modal
+        const modal = document.getElementById('email-verified-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Clean URL without refreshing
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+    }
+}
+
+export function closeEmailVerifiedModal() {
+    const modal = document.getElementById('email-verified-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
