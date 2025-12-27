@@ -140,7 +140,7 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
 
             // Send verification email with action URL
             const actionCodeSettings = {
-                url: window.location.origin + '/index-modular.html',
+                url: window.location.origin + '/',
                 handleCodeInApp: false
             };
             await sendEmailVerification(user, actionCodeSettings);
