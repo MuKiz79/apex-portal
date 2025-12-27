@@ -2546,25 +2546,40 @@
         </div>
 
         <div class="max-w-7xl mx-auto px-4 py-8">
-            <!-- Stats Overview -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div class="bg-white p-6 rounded-sm shadow-sm">
-                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Gesamt Bestellungen</p>
-                    <p id="admin-stat-total" class="text-3xl font-serif text-brand-dark">0</p>
-                </div>
-                <div class="bg-white p-6 rounded-sm shadow-sm">
-                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">In Bearbeitung</p>
-                    <p id="admin-stat-processing" class="text-3xl font-serif text-yellow-600">0</p>
-                </div>
-                <div class="bg-white p-6 rounded-sm shadow-sm">
-                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Abgeschlossen</p>
-                    <p id="admin-stat-completed" class="text-3xl font-serif text-green-600">0</p>
-                </div>
-                <div class="bg-white p-6 rounded-sm shadow-sm">
-                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Umsatz (Gesamt)</p>
-                    <p id="admin-stat-revenue" class="text-3xl font-serif text-brand-dark">€0</p>
-                </div>
+            <!-- Admin Tabs -->
+            <div class="flex gap-2 mb-6 border-b border-gray-200">
+                <button onclick="app.switchAdminTab('orders')" id="admin-tab-orders" class="px-6 py-3 text-sm font-bold text-brand-dark border-b-2 border-brand-gold">
+                    <i class="fas fa-shopping-cart mr-2"></i>Bestellungen
+                </button>
+                <button onclick="app.switchAdminTab('users')" id="admin-tab-users" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
+                    <i class="fas fa-users mr-2"></i>Benutzer & Cookies
+                </button>
+                <button onclick="app.switchAdminTab('strategy')" id="admin-tab-strategy" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
+                    <i class="fas fa-phone mr-2"></i>Erstgespräch-Anfragen
+                </button>
             </div>
+
+            <!-- Orders Tab Content -->
+            <div id="admin-content-orders">
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Gesamt Bestellungen</p>
+                        <p id="admin-stat-total" class="text-3xl font-serif text-brand-dark">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">In Bearbeitung</p>
+                        <p id="admin-stat-processing" class="text-3xl font-serif text-yellow-600">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Abgeschlossen</p>
+                        <p id="admin-stat-completed" class="text-3xl font-serif text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Umsatz (Gesamt)</p>
+                        <p id="admin-stat-revenue" class="text-3xl font-serif text-brand-dark">€0</p>
+                    </div>
+                </div>
 
             <!-- Search & Filter -->
             <div class="bg-white p-4 rounded-sm shadow-sm mb-6">
@@ -2587,11 +2602,82 @@
                 </div>
             </div>
 
-            <!-- Orders List -->
-            <div id="admin-orders-list" class="space-y-4">
-                <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
-                    <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
-                    <p>Lade Bestellungen...</p>
+                <!-- Orders List -->
+                <div id="admin-orders-list" class="space-y-4">
+                    <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                        <p>Lade Bestellungen...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users & Cookies Tab Content -->
+            <div id="admin-content-users" class="hidden">
+                <!-- Cookie Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Registrierte Benutzer</p>
+                        <p id="admin-stat-users" class="text-3xl font-serif text-brand-dark">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Cookies akzeptiert (Alle)</p>
+                        <p id="admin-stat-cookies-all" class="text-3xl font-serif text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Nur notwendige Cookies</p>
+                        <p id="admin-stat-cookies-essential" class="text-3xl font-serif text-yellow-600">0</p>
+                    </div>
+                </div>
+
+                <!-- Users List with Cookie Consent -->
+                <div class="bg-white rounded-sm shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-brand-dark">Benutzer mit Cookie-Einstellungen</h3>
+                        <button onclick="app.loadAdminUsers()" class="text-brand-gold text-sm hover:underline">
+                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
+                        </button>
+                    </div>
+                    <div id="admin-users-list" class="divide-y divide-gray-100">
+                        <div class="p-8 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p class="text-sm">Lade Benutzer...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategy Calls Tab Content -->
+            <div id="admin-content-strategy" class="hidden">
+                <!-- Strategy Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Gesamt Anfragen</p>
+                        <p id="admin-stat-strategy-total" class="text-3xl font-serif text-brand-dark">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Neue (unbearbeitet)</p>
+                        <p id="admin-stat-strategy-new" class="text-3xl font-serif text-red-500">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-sm shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Bearbeitet</p>
+                        <p id="admin-stat-strategy-done" class="text-3xl font-serif text-green-600">0</p>
+                    </div>
+                </div>
+
+                <!-- Strategy Calls List -->
+                <div class="bg-white rounded-sm shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-brand-dark">Erstgespräch-Anfragen</h3>
+                        <button onclick="app.loadStrategyCalls()" class="text-brand-gold text-sm hover:underline">
+                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
+                        </button>
+                    </div>
+                    <div id="admin-strategy-list" class="divide-y divide-gray-100">
+                        <div class="p-8 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p class="text-sm">Lade Anfragen...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3047,6 +3133,10 @@
             filterAdminOrders: () => App.filterAdminOrders(),
             updateOrderStatus: (orderId, status) => App.updateOrderStatus(orderId, status),
             uploadDocumentToUser: (userId, orderId, file) => App.uploadDocumentToUser(userId, orderId, file),
+            switchAdminTab: (tabName) => App.switchAdminTab(tabName),
+            loadAdminUsers: () => App.loadAdminUsers(),
+            loadStrategyCalls: () => App.loadStrategyCalls(),
+            updateStrategyCallStatus: (callId, status) => App.updateStrategyCallStatus(callId, status),
 
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),

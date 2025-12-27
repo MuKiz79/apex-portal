@@ -2523,6 +2523,330 @@ export async function uploadDocumentToUser(userId, orderId, file) {
     }
 }
 
+// ========== ADMIN TABS ==========
+
+export function switchAdminTab(tabName) {
+    // Update tab buttons
+    const tabs = ['orders', 'users', 'strategy'];
+    tabs.forEach(tab => {
+        const btn = document.getElementById(`admin-tab-${tab}`);
+        const content = document.getElementById(`admin-content-${tab}`);
+
+        if (btn && content) {
+            if (tab === tabName) {
+                btn.classList.add('text-brand-dark', 'border-brand-gold');
+                btn.classList.remove('text-gray-400', 'border-transparent');
+                content.classList.remove('hidden');
+            } else {
+                btn.classList.remove('text-brand-dark', 'border-brand-gold');
+                btn.classList.add('text-gray-400', 'border-transparent');
+                content.classList.add('hidden');
+            }
+        }
+    });
+
+    // Load data for the selected tab
+    if (tabName === 'orders') {
+        loadAllOrders();
+    } else if (tabName === 'users') {
+        loadAdminUsers();
+    } else if (tabName === 'strategy') {
+        loadStrategyCalls();
+    }
+}
+
+// Store users and strategy calls for filtering
+let allAdminUsers = [];
+let allStrategyCalls = [];
+
+export async function loadAdminUsers() {
+    if (!db) {
+        console.error('Database not available');
+        return;
+    }
+
+    const container = document.getElementById('admin-users-list');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="p-8 text-center text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p class="text-sm">Lade Benutzer...</p>
+        </div>
+    `;
+
+    try {
+        const usersRef = collection(db, 'users');
+        const snapshot = await getDocs(usersRef);
+
+        allAdminUsers = [];
+        snapshot.forEach(docSnap => {
+            allAdminUsers.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // Sort by registration date (newest first)
+        allAdminUsers.sort((a, b) => {
+            const dateA = a.createdAt?.seconds || 0;
+            const dateB = b.createdAt?.seconds || 0;
+            return dateB - dateA;
+        });
+
+        updateUserStats(allAdminUsers);
+        renderAdminUsers(allAdminUsers);
+
+    } catch (e) {
+        console.error('Failed to load users:', e);
+        container.innerHTML = `
+            <div class="p-8 text-center text-red-500">
+                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                <p class="text-sm">Fehler beim Laden: ${e.message}</p>
+            </div>
+        `;
+    }
+}
+
+function updateUserStats(users) {
+    const total = users.length;
+    const cookiesAll = users.filter(u => u.cookieConsent === 'all').length;
+    const cookiesEssential = users.filter(u => u.cookieConsent === 'essential').length;
+
+    const totalEl = document.getElementById('admin-stat-users');
+    const cookiesAllEl = document.getElementById('admin-stat-cookies-all');
+    const cookiesEssentialEl = document.getElementById('admin-stat-cookies-essential');
+
+    if (totalEl) totalEl.textContent = total;
+    if (cookiesAllEl) cookiesAllEl.textContent = cookiesAll;
+    if (cookiesEssentialEl) cookiesEssentialEl.textContent = cookiesEssential;
+}
+
+function renderAdminUsers(users) {
+    const container = document.getElementById('admin-users-list');
+    if (!container) return;
+
+    if (users.length === 0) {
+        container.innerHTML = `
+            <div class="p-8 text-center text-gray-400">
+                <i class="fas fa-users text-2xl mb-2"></i>
+                <p class="text-sm">Keine Benutzer gefunden</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = users.map(user => {
+        const createdAt = user.createdAt?.seconds
+            ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            : 'Unbekannt';
+
+        const consentDate = user.cookieConsentDate
+            ? new Date(user.cookieConsentDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : 'Nicht gesetzt';
+
+        const cookieStatus = user.cookieConsent === 'all'
+            ? '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">Alle akzeptiert</span>'
+            : user.cookieConsent === 'essential'
+            ? '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded">Nur notwendige</span>'
+            : '<span class="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded">Nicht gesetzt</span>';
+
+        const termsStatus = user.acceptedTermsAt
+            ? '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">AGB akzeptiert</span>'
+            : '<span class="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded">AGB nicht akzeptiert</span>';
+
+        return `
+            <div class="p-4 hover:bg-gray-50 transition">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand-dark rounded-full flex items-center justify-center text-white font-bold">
+                            ${(user.displayName || user.email || '?')[0].toUpperCase()}
+                        </div>
+                        <div>
+                            <p class="font-bold text-brand-dark">${sanitizeHTML(user.displayName || 'Unbekannt')}</p>
+                            <p class="text-sm text-gray-500">${sanitizeHTML(user.email || 'Keine Email')}</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row items-start md:items-center gap-2 text-sm">
+                        ${cookieStatus}
+                        ${termsStatus}
+                        <span class="text-gray-400 text-xs">Reg: ${createdAt}</span>
+                    </div>
+                </div>
+                ${user.cookieConsent ? `
+                <div class="mt-2 ml-13 text-xs text-gray-400">
+                    <i class="fas fa-clock mr-1"></i>Cookie-Zustimmung: ${consentDate}
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+export async function loadStrategyCalls() {
+    if (!db) {
+        console.error('Database not available');
+        return;
+    }
+
+    const container = document.getElementById('admin-strategy-list');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="p-8 text-center text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p class="text-sm">Lade Anfragen...</p>
+        </div>
+    `;
+
+    try {
+        const callsRef = collection(db, 'strategy_calls');
+        const snapshot = await getDocs(callsRef);
+
+        allStrategyCalls = [];
+        snapshot.forEach(docSnap => {
+            allStrategyCalls.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // Sort by date (newest first)
+        allStrategyCalls.sort((a, b) => {
+            const dateA = a.createdAt?.seconds || 0;
+            const dateB = b.createdAt?.seconds || 0;
+            return dateB - dateA;
+        });
+
+        updateStrategyStats(allStrategyCalls);
+        renderStrategyCalls(allStrategyCalls);
+
+    } catch (e) {
+        console.error('Failed to load strategy calls:', e);
+        container.innerHTML = `
+            <div class="p-8 text-center text-red-500">
+                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                <p class="text-sm">Fehler beim Laden: ${e.message}</p>
+            </div>
+        `;
+    }
+}
+
+function updateStrategyStats(calls) {
+    const total = calls.length;
+    const newCalls = calls.filter(c => c.status === 'new' || !c.status).length;
+    const doneCalls = calls.filter(c => c.status === 'done' || c.status === 'contacted').length;
+
+    const totalEl = document.getElementById('admin-stat-strategy-total');
+    const newEl = document.getElementById('admin-stat-strategy-new');
+    const doneEl = document.getElementById('admin-stat-strategy-done');
+
+    if (totalEl) totalEl.textContent = total;
+    if (newEl) newEl.textContent = newCalls;
+    if (doneEl) doneEl.textContent = doneCalls;
+}
+
+function renderStrategyCalls(calls) {
+    const container = document.getElementById('admin-strategy-list');
+    if (!container) return;
+
+    if (calls.length === 0) {
+        container.innerHTML = `
+            <div class="p-8 text-center text-gray-400">
+                <i class="fas fa-phone text-2xl mb-2"></i>
+                <p class="text-sm">Keine Erstgespräch-Anfragen vorhanden</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = calls.map(call => {
+        const createdAt = call.createdAt?.seconds
+            ? new Date(call.createdAt.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : 'Unbekannt';
+
+        const statusColors = {
+            'new': 'bg-red-100 text-red-700',
+            'contacted': 'bg-blue-100 text-blue-700',
+            'done': 'bg-green-100 text-green-700',
+            'cancelled': 'bg-gray-100 text-gray-500'
+        };
+
+        const statusLabels = {
+            'new': 'Neu',
+            'contacted': 'Kontaktiert',
+            'done': 'Erledigt',
+            'cancelled': 'Abgesagt'
+        };
+
+        const currentStatus = call.status || 'new';
+        const preferredTimes = call.preferredTimes?.join(', ') || 'Keine Angabe';
+
+        return `
+            <div class="p-4 hover:bg-gray-50 transition border-l-4 ${currentStatus === 'new' ? 'border-red-500' : 'border-transparent'}">
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2 py-1 ${statusColors[currentStatus] || statusColors.new} text-xs font-bold rounded">
+                                ${statusLabels[currentStatus] || 'Neu'}
+                            </span>
+                            <span class="text-xs text-gray-400">${createdAt}</span>
+                        </div>
+                        <p class="font-bold text-brand-dark">${sanitizeHTML(call.name || 'Unbekannt')}</p>
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-envelope text-brand-gold mr-1"></i>${sanitizeHTML(call.email || 'Keine Email')}
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-phone text-brand-gold mr-1"></i>${sanitizeHTML(call.phone || 'Keine Telefon')}
+                        </p>
+                        ${call.message ? `
+                        <div class="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
+                            <i class="fas fa-comment text-brand-gold mr-1"></i>${sanitizeHTML(call.message)}
+                        </div>
+                        ` : ''}
+                        <p class="mt-2 text-xs text-gray-400">
+                            <i class="fas fa-clock mr-1"></i>Bevorzugte Zeiten: ${sanitizeHTML(preferredTimes)}
+                        </p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <select onchange="app.updateStrategyCallStatus('${call.id}', this.value)"
+                                class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                            <option value="new" ${currentStatus === 'new' ? 'selected' : ''}>Neu</option>
+                            <option value="contacted" ${currentStatus === 'contacted' ? 'selected' : ''}>Kontaktiert</option>
+                            <option value="done" ${currentStatus === 'done' ? 'selected' : ''}>Erledigt</option>
+                            <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>Abgesagt</option>
+                        </select>
+                        <a href="mailto:${call.email}" class="text-center bg-brand-gold text-brand-dark px-3 py-2 rounded text-xs font-bold hover:bg-yellow-500 transition">
+                            <i class="fas fa-envelope mr-1"></i>E-Mail
+                        </a>
+                        <a href="tel:${call.phone}" class="text-center bg-brand-dark text-white px-3 py-2 rounded text-xs font-bold hover:bg-gray-800 transition">
+                            <i class="fas fa-phone mr-1"></i>Anrufen
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+export async function updateStrategyCallStatus(callId, newStatus) {
+    if (!db) return;
+
+    try {
+        const callRef = doc(db, 'strategy_calls', callId);
+        await updateDoc(callRef, {
+            status: newStatus,
+            updatedAt: new Date()
+        });
+
+        // Update local data
+        const call = allStrategyCalls.find(c => c.id === callId);
+        if (call) call.status = newStatus;
+
+        updateStrategyStats(allStrategyCalls);
+        renderStrategyCalls(allStrategyCalls);
+        showToast(`✅ Status auf "${newStatus}" geändert`);
+
+    } catch (e) {
+        console.error('Failed to update strategy call status:', e);
+        showToast('❌ Status-Update fehlgeschlagen', 3000);
+    }
+}
+
 // Load delivered documents for user dashboard
 export async function loadDeliveredDocuments(state) {
     console.log('Loading delivered documents for user:', state.user?.uid);
@@ -2612,18 +2936,42 @@ export function checkCookieConsent() {
     }
 }
 
-export function acceptCookies() {
+export async function acceptCookies() {
+    const consentDate = new Date().toISOString();
     localStorage.setItem('cookieConsent', 'all');
-    localStorage.setItem('cookieConsentDate', new Date().toISOString());
+    localStorage.setItem('cookieConsentDate', consentDate);
     hideCookieBanner();
     showToast('Cookie-Einstellungen gespeichert');
+
+    // Save to Firestore if user is logged in
+    await saveCookieConsentToFirestore('all', consentDate);
 }
 
-export function declineCookies() {
+export async function declineCookies() {
+    const consentDate = new Date().toISOString();
     localStorage.setItem('cookieConsent', 'essential');
-    localStorage.setItem('cookieConsentDate', new Date().toISOString());
+    localStorage.setItem('cookieConsentDate', consentDate);
     hideCookieBanner();
     showToast('Nur notwendige Cookies aktiviert');
+
+    // Save to Firestore if user is logged in
+    await saveCookieConsentToFirestore('essential', consentDate);
+}
+
+async function saveCookieConsentToFirestore(consent, consentDate) {
+    try {
+        // Check if user is logged in
+        if (auth && auth.currentUser && db) {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, {
+                cookieConsent: consent,
+                cookieConsentDate: consentDate
+            });
+            console.log('Cookie consent saved to Firestore');
+        }
+    } catch (error) {
+        console.error('Failed to save cookie consent to Firestore:', error);
+    }
 }
 
 function hideCookieBanner() {
