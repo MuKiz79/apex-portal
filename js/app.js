@@ -438,6 +438,8 @@ export function addToCart(state, title, price) {
         category = 'mentoring';
     } else if (sanitizedTitle.includes('Komplettpaket')) {
         category = 'bundle';
+    } else if (sanitizedTitle.includes('Interview-Simulation') || sanitizedTitle.includes('Zeugnis-Analyse')) {
+        category = 'addon';
     }
 
     // Entferne existierende Items aus derselben Kategorie
@@ -461,6 +463,13 @@ export function addToCart(state, title, price) {
             !item.title.includes('Session') &&
             !item.title.includes('Retainer')
         );
+    } else if (category === 'addon') {
+        // Prüfe ob dieses Add-on bereits im Warenkorb ist
+        const alreadyInCart = state.cart.some(item => item.title === sanitizedTitle);
+        if (alreadyInCart) {
+            showToast('⚠️ Dieses Add-on ist bereits im Warenkorb');
+            return;
+        }
     }
 
     // Wenn Komplettpaket bereits im Warenkorb, nichts weiteres hinzufügen
@@ -487,6 +496,8 @@ export function addToCart(state, title, price) {
         showToast('✅ Mentoring-Paket ausgewählt (vorheriges ersetzt)');
     } else if (category === 'bundle') {
         showToast('✅ Komplettpaket ausgewählt (ersetzt CV + Mentoring)');
+    } else if (category === 'addon') {
+        showToast('✅ Add-on hinzugefügt');
     } else {
         showToast('✅ Zur Auswahl hinzugefügt');
     }
