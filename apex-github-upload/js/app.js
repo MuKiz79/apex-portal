@@ -145,8 +145,10 @@ export async function handlePasswordResetFromURL() {
 
 // Show the form to enter a new password
 export function showNewPasswordForm(oobCode) {
-    // Navigate to auth view first
-    navigateTo('auth');
+    console.log('🔑 showNewPasswordForm called with oobCode:', oobCode ? 'present' : 'missing');
+
+    // Navigate to login view first
+    navigateTo('login');
 
     // Hide login/register fields, show new password fields
     document.getElementById('login-fields')?.classList.add('hidden');
@@ -266,9 +268,15 @@ export async function handleEmailAction() {
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
 
-    if (!mode || !oobCode) return;
+    console.log('🔗 handleEmailAction called - mode:', mode, 'oobCode:', oobCode ? 'present' : 'missing');
+
+    if (!mode || !oobCode) {
+        console.log('📝 No email action parameters found');
+        return;
+    }
 
     if (mode === 'resetPassword') {
+        console.log('🔄 Password reset mode detected, showing form...');
         // Show the new password form
         showNewPasswordForm(oobCode);
     } else if (mode === 'verifyEmail') {
