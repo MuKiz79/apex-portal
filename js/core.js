@@ -241,3 +241,14 @@ export function toggleFaq(id) {
         button.setAttribute('aria-expanded', isOpen.toString());
     }
 }
+
+export function toggleSection(id) {
+    const element = document.getElementById(id);
+    const icon = document.getElementById(`${id}-icon`);
+    if(!element) return;
+
+    element.classList.toggle('hidden');
+    if(icon) {
+        icon.classList.toggle('rotate-180');
+    }
+}
