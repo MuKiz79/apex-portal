@@ -3287,20 +3287,25 @@ export async function toggleCoachVisibility(coachId, visible) {
             updatedAt: new Date()
         });
 
-        // Update local state
+        // Update local admin state
         const coach = allAdminCoaches.find(c => c.id === coachId);
         if (coach) {
             coach.visible = visible;
         }
 
-        // Re-render
+        // Also update app state for frontend display
+        if (window.app && window.app.state && window.app.state.coaches) {
+            const frontendCoach = window.app.state.coaches.find(c => c.id === coachId);
+            if (frontendCoach) {
+                frontendCoach.visible = visible;
+            }
+            // Re-render frontend coach grid
+            filterCoaches(window.app.state);
+        }
+
+        // Re-render admin list
         updateCoachStats(allAdminCoaches);
         renderAdminCoaches(allAdminCoaches);
-
-        // Also update frontend coach display
-        if (window.state) {
-            filterCoaches(window.state);
-        }
 
         showToast(visible ? '✅ Mentor ist jetzt sichtbar' : '✅ Mentor ist jetzt versteckt');
     } catch (e) {
