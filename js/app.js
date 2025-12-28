@@ -1561,7 +1561,11 @@ export function filterCoaches(state) {
     const filterSelect = document.getElementById('industry-filter');
     const filter = filterSelect?.value || 'all';
 
-    const filteredCoaches = filter === 'all' ? state.coaches : state.coaches.filter(c => c.industry === filter);
+    // First filter by visibility (only show coaches where visible !== false)
+    const visibleCoaches = state.coaches.filter(c => c.visible !== false);
+
+    // Then apply industry filter
+    const filteredCoaches = filter === 'all' ? visibleCoaches : visibleCoaches.filter(c => c.industry === filter);
 
     // Zeige Nachricht wenn keine Coaches vorhanden
     if(filteredCoaches.length === 0) {
@@ -2780,7 +2784,7 @@ export async function uploadDocumentToUser(userId, orderId, file) {
 
 export function switchAdminTab(tabName) {
     // Update tab buttons
-    const tabs = ['orders', 'users', 'strategy', 'settings'];
+    const tabs = ['orders', 'users', 'strategy', 'coaches', 'settings'];
     tabs.forEach(tab => {
         const btn = document.getElementById(`admin-tab-${tab}`);
         const content = document.getElementById(`admin-content-${tab}`);
@@ -2805,6 +2809,8 @@ export function switchAdminTab(tabName) {
         loadAdminUsers();
     } else if (tabName === 'strategy') {
         loadStrategyCalls();
+    } else if (tabName === 'coaches') {
+        loadAdminCoaches();
     } else if (tabName === 'settings') {
         loadAdminSettings();
     }
@@ -3161,6 +3167,145 @@ export async function saveMentoringSlots() {
     } catch (e) {
         console.error('Failed to save mentoring slots:', e);
         showToast('❌ Speichern fehlgeschlagen: ' + e.message, 3000);
+    }
+}
+
+// ========== ADMIN COACHES MANAGEMENT ==========
+
+let allAdminCoaches = [];
+
+export async function loadAdminCoaches() {
+    if (!db) {
+        console.error('Database not available');
+        return;
+    }
+
+    const container = document.getElementById('admin-coaches-list');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="p-8 text-center text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p class="text-sm">Lade Mentoren...</p>
+        </div>
+    `;
+
+    try {
+        const coachesRef = collection(db, 'coaches');
+        const snapshot = await getDocs(coachesRef);
+
+        allAdminCoaches = [];
+        snapshot.forEach(docSnap => {
+            allAdminCoaches.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // Sort by name
+        allAdminCoaches.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        updateCoachStats(allAdminCoaches);
+        renderAdminCoaches(allAdminCoaches);
+
+    } catch (e) {
+        console.error('Failed to load coaches:', e);
+        container.innerHTML = `
+            <div class="p-8 text-center text-red-500">
+                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                <p class="text-sm">Fehler beim Laden: ${e.message}</p>
+            </div>
+        `;
+    }
+}
+
+function updateCoachStats(coaches) {
+    const total = coaches.length;
+    const visible = coaches.filter(c => c.visible !== false).length;
+    const hidden = total - visible;
+
+    const statTotal = document.getElementById('admin-stat-coaches-total');
+    const statVisible = document.getElementById('admin-stat-coaches-visible');
+    const statHidden = document.getElementById('admin-stat-coaches-hidden');
+
+    if (statTotal) statTotal.textContent = total;
+    if (statVisible) statVisible.textContent = visible;
+    if (statHidden) statHidden.textContent = hidden;
+}
+
+function renderAdminCoaches(coaches) {
+    const container = document.getElementById('admin-coaches-list');
+    if (!container) return;
+
+    if (coaches.length === 0) {
+        container.innerHTML = `
+            <div class="p-8 text-center text-gray-400">
+                <i class="fas fa-user-slash text-2xl mb-2"></i>
+                <p class="text-sm">Keine Mentoren gefunden</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = coaches.map(coach => {
+        const isVisible = coach.visible !== false;
+        return `
+            <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition">
+                <div class="flex items-center gap-4">
+                    <img src="${coach.image || 'https://via.placeholder.com/50'}"
+                         alt="${sanitizeHTML(coach.name)}"
+                         class="w-12 h-12 rounded-full object-cover border-2 ${isVisible ? 'border-green-500' : 'border-gray-300'}">
+                    <div>
+                        <p class="font-bold text-brand-dark">${sanitizeHTML(coach.name)}</p>
+                        <p class="text-sm text-gray-500">${sanitizeHTML(coach.role || '')}</p>
+                        <p class="text-xs text-gray-400">${sanitizeHTML(coach.industry || 'Keine Branche')}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs px-3 py-1 rounded-full ${isVisible ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
+                        ${isVisible ? 'Sichtbar' : 'Versteckt'}
+                    </span>
+                    <button onclick="app.toggleCoachVisibility('${coach.id}', ${!isVisible})"
+                            class="px-4 py-2 rounded-lg text-sm font-bold transition ${isVisible
+                                ? 'bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700'
+                                : 'bg-green-500 text-white hover:bg-green-600'}">
+                        ${isVisible ? '<i class="fas fa-eye-slash mr-2"></i>Verstecken' : '<i class="fas fa-eye mr-2"></i>Anzeigen'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+export async function toggleCoachVisibility(coachId, visible) {
+    if (!db) {
+        showToast('❌ Datenbank nicht verfügbar', 3000);
+        return;
+    }
+
+    try {
+        const coachRef = doc(db, 'coaches', coachId);
+        await updateDoc(coachRef, {
+            visible: visible,
+            updatedAt: new Date()
+        });
+
+        // Update local state
+        const coach = allAdminCoaches.find(c => c.id === coachId);
+        if (coach) {
+            coach.visible = visible;
+        }
+
+        // Re-render
+        updateCoachStats(allAdminCoaches);
+        renderAdminCoaches(allAdminCoaches);
+
+        // Also update frontend coach display
+        if (window.state) {
+            filterCoaches(window.state);
+        }
+
+        showToast(visible ? '✅ Mentor ist jetzt sichtbar' : '✅ Mentor ist jetzt versteckt');
+    } catch (e) {
+        console.error('Failed to toggle coach visibility:', e);
+        showToast('❌ Fehler: ' + e.message, 3000);
     }
 }
 

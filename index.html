@@ -438,7 +438,7 @@
                             </li>
                             <li class="flex items-start text-sm text-gray-700">
                                 <i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i>
-                                <span>LinkedIn Profil-Audit <span class="text-gray-400">(Video-Feedback)</span></span>
+                                <span>LinkedIn Profil-Audit</span>
                             </li>
                             <li class="flex items-start text-sm text-gray-700">
                                 <i class="fas fa-check text-brand-gold mr-3 mt-0.5 flex-shrink-0"></i>
@@ -2634,6 +2634,9 @@
                 <button onclick="app.switchAdminTab('strategy')" id="admin-tab-strategy" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
                     <i class="fas fa-phone mr-2"></i>Erstgespräch-Anfragen
                 </button>
+                <button onclick="app.switchAdminTab('coaches')" id="admin-tab-coaches" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
+                    <i class="fas fa-user-tie mr-2"></i>Mentoren
+                </button>
                 <button onclick="app.switchAdminTab('settings')" id="admin-tab-settings" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
                     <i class="fas fa-cog mr-2"></i>Einstellungen
                 </button>
@@ -2756,6 +2759,41 @@
                         <div class="p-8 text-center text-gray-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
                             <p class="text-sm">Lade Anfragen...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coaches Tab Content -->
+            <div id="admin-content-coaches" class="hidden">
+                <!-- Coaches Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Gesamt Mentoren</p>
+                        <p id="admin-stat-coaches-total" class="text-3xl font-serif text-brand-dark">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Sichtbar</p>
+                        <p id="admin-stat-coaches-visible" class="text-3xl font-serif text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Versteckt</p>
+                        <p id="admin-stat-coaches-hidden" class="text-3xl font-serif text-gray-400">0</p>
+                    </div>
+                </div>
+
+                <!-- Coaches List -->
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-brand-dark">Mentoren-Verwaltung</h3>
+                        <button onclick="app.loadAdminCoaches()" class="text-brand-gold text-sm hover:underline">
+                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
+                        </button>
+                    </div>
+                    <div id="admin-coaches-list" class="divide-y divide-gray-100">
+                        <div class="p-8 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p class="text-sm">Lade Mentoren...</p>
                         </div>
                     </div>
                 </div>
