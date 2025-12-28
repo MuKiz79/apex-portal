@@ -603,9 +603,25 @@ export function openPackageConfigModal(state, packageName, basePrice) {
         input.addEventListener('change', updatePackageConfigTotal);
     });
 
+    // Reset scroll position and show scroll indicator
+    const contentArea = document.getElementById('config-modal-content');
+    const scrollIndicator = document.getElementById('config-scroll-indicator');
+    if (contentArea) {
+        contentArea.scrollTop = 0;
+    }
+    if (scrollIndicator) {
+        scrollIndicator.classList.remove('hidden');
+        scrollIndicator.style.opacity = '1';
+    }
+
     // Show modal
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+
+    // Check if scroll indicator should be shown (only if content is scrollable)
+    setTimeout(() => {
+        checkModalScroll();
+    }, 100);
 }
 
 export function closePackageConfigModal() {
@@ -613,6 +629,36 @@ export function closePackageConfigModal() {
     if (modal) {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
+    }
+}
+
+// Check if user has scrolled and hide scroll indicator
+export function checkModalScroll() {
+    const contentArea = document.getElementById('config-modal-content');
+    const scrollIndicator = document.getElementById('config-scroll-indicator');
+
+    if (!contentArea || !scrollIndicator) return;
+
+    // Check if content is scrollable at all
+    const isScrollable = contentArea.scrollHeight > contentArea.clientHeight;
+
+    if (!isScrollable) {
+        // No scroll needed - hide indicator
+        scrollIndicator.classList.add('hidden');
+        return;
+    }
+
+    // Check how far user has scrolled
+    const scrolledToBottom = contentArea.scrollTop + contentArea.clientHeight >= contentArea.scrollHeight - 50;
+
+    if (scrolledToBottom || contentArea.scrollTop > 50) {
+        // User has scrolled enough - fade out indicator
+        scrollIndicator.style.opacity = '0';
+        setTimeout(() => {
+            if (scrollIndicator.style.opacity === '0') {
+                scrollIndicator.classList.add('hidden');
+            }
+        }, 300);
     }
 }
 

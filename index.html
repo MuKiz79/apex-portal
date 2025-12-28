@@ -3162,7 +3162,7 @@
             </div>
 
             <!-- Content -->
-            <div class="p-6 space-y-6 overflow-y-auto flex-grow">
+            <div id="config-modal-content" class="p-6 space-y-6 overflow-y-auto flex-grow relative" onscroll="app.checkModalScroll()">
                 <!-- Basispreis Anzeige -->
                 <div class="flex justify-between items-center pb-4 border-b border-gray-100">
                     <span class="text-gray-600">Basispreis</span>
@@ -3283,6 +3283,14 @@
 
             </div>
 
+            <!-- Scroll Indicator (zeigt an, dass mehr Inhalt vorhanden ist) -->
+            <div id="config-scroll-indicator" class="flex-shrink-0 bg-gradient-to-t from-white via-white to-transparent py-2 text-center transition-opacity duration-300">
+                <div class="flex flex-col items-center text-gray-400 text-xs animate-bounce">
+                    <span class="mb-1">Mehr Optionen</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+
             <!-- Footer mit Gesamtpreis (immer sichtbar) -->
             <div class="p-6 pt-4 flex-shrink-0 border-t border-gray-100 bg-white">
                 <div class="bg-gray-50 rounded-xl p-4 mb-4">
@@ -3380,6 +3388,7 @@
             addToCartWithExpress: (name, basePrice, expressPrice, checkboxId) => App.addToCartWithExpress(window.app.state, name, basePrice, expressPrice, checkboxId),
             openPackageConfigModal: (name, price) => App.openPackageConfigModal(window.app.state, name, price),
             closePackageConfigModal: App.closePackageConfigModal,
+            checkModalScroll: App.checkModalScroll,
             confirmPackageConfig: () => App.confirmPackageConfig(window.app.state),
             updatePackageConfigTotal: App.updatePackageConfigTotal,
             removeFromCart: (index) => App.removeFromCart(window.app.state, index),
