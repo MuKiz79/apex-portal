@@ -180,11 +180,15 @@ export function scrollToSection(id) {
 
     if(isHomeHidden) {
         navigateTo('home');
+        // Längerer Timeout für zuverlässiges Scrolling nach View-Wechsel
         setTimeout(() => {
-            document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
-        }, 100);
+            const element = document.getElementById(id);
+            if(element) {
+                element.scrollIntoView({behavior:'smooth', block: 'start'});
+            }
+        }, 200);
     } else {
-        document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+        document.getElementById(id)?.scrollIntoView({behavior:'smooth', block: 'start'});
     }
 }
 
