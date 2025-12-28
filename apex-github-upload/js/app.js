@@ -148,24 +148,35 @@ export function showNewPasswordForm(oobCode) {
     console.log('🔑 showNewPasswordForm called with oobCode:', oobCode ? 'present' : 'missing');
 
     // Navigate to login view first
+    console.log('   Navigating to login view...');
     navigateTo('login');
 
-    // Hide login/register fields, show new password fields
-    document.getElementById('login-fields')?.classList.add('hidden');
-    document.getElementById('register-fields')?.classList.add('hidden');
-    document.getElementById('password-reset-fields')?.classList.add('hidden');
-    document.getElementById('auth-tabs')?.classList.add('hidden');
-    document.getElementById('auth-submit-btn')?.classList.add('hidden');
-    document.getElementById('auth-error')?.classList.add('hidden');
-    document.getElementById('auth-success')?.classList.add('hidden');
+    // Small delay to ensure view is visible
+    setTimeout(() => {
+        console.log('   Hiding other fields...');
 
-    // Show new password form
-    const newPasswordFields = document.getElementById('new-password-fields');
-    if (newPasswordFields) {
-        newPasswordFields.classList.remove('hidden');
-        // Store the oobCode for later use
-        newPasswordFields.dataset.oobCode = oobCode;
-    }
+        // Hide login/register fields, show new password fields
+        document.getElementById('login-fields')?.classList.add('hidden');
+        document.getElementById('register-fields')?.classList.add('hidden');
+        document.getElementById('password-reset-fields')?.classList.add('hidden');
+        document.getElementById('auth-tabs')?.classList.add('hidden');
+        document.getElementById('auth-submit-btn')?.classList.add('hidden');
+        document.getElementById('auth-error')?.classList.add('hidden');
+        document.getElementById('auth-success')?.classList.add('hidden');
+
+        // Show new password form
+        const newPasswordFields = document.getElementById('new-password-fields');
+        console.log('   new-password-fields element:', newPasswordFields ? 'found' : 'NOT FOUND');
+
+        if (newPasswordFields) {
+            newPasswordFields.classList.remove('hidden');
+            // Store the oobCode for later use
+            newPasswordFields.dataset.oobCode = oobCode;
+            console.log('✅ New password form is now visible');
+        } else {
+            console.error('❌ new-password-fields element not found in DOM!');
+        }
+    }, 50);
 }
 
 // Confirm the new password
@@ -264,21 +275,27 @@ export async function confirmNewPassword() {
 
 // Handle Firebase email actions (verify email, reset password)
 export async function handleEmailAction() {
+    const fullUrl = window.location.href;
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
 
-    console.log('🔗 handleEmailAction called - mode:', mode, 'oobCode:', oobCode ? 'present' : 'missing');
+    console.log('🔗 handleEmailAction called');
+    console.log('   Full URL:', fullUrl);
+    console.log('   mode:', mode);
+    console.log('   oobCode:', oobCode ? oobCode.substring(0, 10) + '...' : 'missing');
 
     if (!mode || !oobCode) {
-        console.log('📝 No email action parameters found');
+        console.log('📝 No email action parameters found in URL');
         return;
     }
 
     if (mode === 'resetPassword') {
         console.log('🔄 Password reset mode detected, showing form...');
-        // Show the new password form
-        showNewPasswordForm(oobCode);
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+            showNewPasswordForm(oobCode);
+        }, 100);
     } else if (mode === 'verifyEmail') {
         // Email verification is handled automatically by Firebase
         // Just show a success message
