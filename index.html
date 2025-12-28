@@ -211,7 +211,7 @@
     <div id="view-home" class="fade-in">
         <!-- Hero + Zwei Wege -->
         <header id="two-paths" class="bg-[#0B1120] text-white relative overflow-hidden">
-                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 relative z-10">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-20 pb-20 md:pb-24 relative z-10">
                 <!-- Hero Text -->
                 <div class="text-center mb-12 md:mb-16">
                     <div class="inline-block border-l-2 border-brand-gold pl-4 mb-6">
@@ -286,7 +286,7 @@
         </header>
 
         <!-- Testimonials Section -->
-        <section class="py-24 md:py-32 bg-white" id="testimonials">
+        <section class="py-16 md:py-20 bg-white" id="testimonials">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Erfahrungen</span>
@@ -828,7 +828,7 @@
                         </div>
                         <p class="text-center text-sm text-white/50">
                             <i class="fas fa-info-circle text-brand-gold mr-2"></i>
-                            Sie wählen Ihren Wunsch-Mentor oder wir schlagen den passenden vor.
+                            Wir matchen Sie mit dem passenden Executive (Compliance-geprüft).
                         </p>
                     </div>
                 </div>
@@ -866,7 +866,7 @@
                                 </li>
                                 <li class="flex items-start leading-relaxed">
                                     <i class="fas fa-check text-brand-gold/70 mr-3 mt-0.5 text-xs"></i>
-                                    <span>1 Executive Ihrer Wahl</span>
+                                    <span>1 passender Executive</span>
                                 </li>
                                 <li class="flex items-start leading-relaxed">
                                     <i class="fas fa-check text-brand-gold/70 mr-3 mt-0.5 text-xs"></i>
@@ -956,7 +956,7 @@
         </section>
 
         <!-- KOMPLETTPAKET -->
-        <section id="komplettpaket" class="py-24 md:py-32 bg-[#0B1120] text-white relative overflow-hidden">
+        <section id="komplettpaket" class="pt-16 md:pt-20 pb-16 md:pb-20 bg-[#0B1120] text-white relative overflow-hidden">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-gradient-to-br from-brand-gold/10 to-brand-gold/5 border-2 border-brand-gold/30 rounded-lg p-12 text-center">
                     <div class="inline-block bg-brand-gold text-brand-dark px-4 py-1 text-xs font-bold uppercase tracking-wide rounded-full mb-6">
@@ -1039,7 +1039,7 @@
         </section>
 
         <!-- Inner Circle Teaser -->
-        <section id="inner-circle-teaser" class="py-24 md:py-32 bg-brand-dark">
+        <section id="inner-circle-teaser" class="py-16 md:py-20 bg-brand-dark">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <div class="inline-flex items-center gap-2 bg-brand-gold/10 border border-brand-gold/30 px-4 py-2 rounded-full mb-6">
                     <i class="fas fa-crown text-brand-gold text-sm"></i>
@@ -1058,7 +1058,7 @@
         </section>
 
         <!-- FAQ -->
-        <section id="faq" class="py-24 md:py-32 bg-white">
+        <section id="faq" class="py-16 md:py-20 bg-white">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Häufige Fragen</span>
@@ -1116,6 +1116,31 @@
                         <label for="login-password" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Passwort</label>
                         <input type="password" id="login-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
                     </div>
+                    <div class="mt-3 text-right">
+                        <button type="button" onclick="app.showPasswordReset()" class="text-xs text-brand-gold hover:text-brand-dark hover:underline transition">
+                            Passwort vergessen?
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Password Reset Fields (hidden by default) -->
+                <div id="password-reset-fields" class="hidden">
+                    <div class="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Geben Sie Ihre E-Mail-Adresse ein. Sie erhalten einen Link zum Zurücksetzen Ihres Passworts.
+                        </p>
+                    </div>
+                    <div>
+                        <label for="reset-email" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">E-Mail-Adresse</label>
+                        <input type="email" id="reset-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                    </div>
+                    <button type="button" onclick="app.sendPasswordReset()" id="reset-submit-btn" class="w-full gold-gradient text-brand-dark font-bold py-3 uppercase text-xs hover:shadow-lg transition mt-4">
+                        Link senden
+                    </button>
+                    <button type="button" onclick="app.showLoginForm()" class="w-full text-gray-500 hover:text-brand-dark py-2 text-xs mt-2 transition">
+                        <i class="fas fa-arrow-left mr-1"></i> Zurück zur Anmeldung
+                    </button>
                 </div>
 
                 <div id="register-fields" class="hidden space-y-4">
@@ -3422,6 +3447,9 @@
             validateEmailField: (email) => App.validateEmailField(email),
             updatePasswordStrength: (password) => App.updatePasswordStrength(password),
             validatePasswordMatchField: () => App.validatePasswordMatchField(),
+            showPasswordReset: () => App.showPasswordReset(),
+            showLoginForm: () => App.showLoginForm(),
+            sendPasswordReset: () => App.sendPasswordReset(),
 
             // Cart functions
             addToCart: (name, price) => App.addToCart(window.app.state, name, price),
