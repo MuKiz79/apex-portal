@@ -1,9 +1,8 @@
-// Firebase Configuration & Initialization
+// Firebase Configuration & Initialization - v2.0
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBZ970mA7-2pJzhbxyFjjmzO97YKZhrSmU",
@@ -19,18 +18,6 @@ const firebaseConfig = {
 let auth, db, storage;
 try {
     const app = initializeApp(firebaseConfig);
-
-    // Initialize App Check with correct reCAPTCHA v3 Site Key
-    try {
-        const appCheck = initializeAppCheck(app, {
-            provider: new ReCaptchaV3Provider('6LcJXzcsAAAAAFROW8bD5BTJV4Lx3_CjzzelPWua'),
-            isTokenAutoRefreshEnabled: true
-        });
-        console.log("✅ App Check initialized successfully");
-    } catch(appCheckError) {
-        console.warn("⚠️ App Check initialization failed:", appCheckError);
-    }
-
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
@@ -63,17 +50,33 @@ export const sanitizeHTML = (str) => {
 // Get Firebase Error Message in German
 export const getFirebaseErrorMessage = (errorCode) => {
     const errorMessages = {
-        'auth/email-already-in-use': 'Diese E-Mail-Adresse wird bereits verwendet.',
-        'auth/invalid-email': 'Ungültige E-Mail-Adresse.',
-        'auth/operation-not-allowed': 'Vorgang nicht erlaubt.',
-        'auth/weak-password': 'Das Passwort ist zu schwach (mind. 6 Zeichen).',
-        'auth/user-disabled': 'Dieser Benutzer wurde deaktiviert.',
-        'auth/user-not-found': 'Benutzer nicht gefunden.',
-        'auth/wrong-password': 'Falsches Passwort.',
-        'auth/too-many-requests': 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.',
-        'auth/network-request-failed': 'Netzwerkfehler. Bitte prüfen Sie Ihre Internetverbindung.'
+        // Login Errors
+        'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.',
+        'auth/invalid-email': 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
+        'auth/user-disabled': 'Dieses Konto wurde deaktiviert. Bitte kontaktieren Sie den Support.',
+        'auth/user-not-found': 'Kein Konto mit dieser E-Mail-Adresse gefunden.',
+        'auth/wrong-password': 'Das eingegebene Passwort ist falsch.',
+
+        // Registration Errors
+        'auth/email-already-in-use': 'Diese E-Mail-Adresse ist bereits registriert.',
+        'auth/operation-not-allowed': 'Diese Anmeldemethode ist nicht aktiviert.',
+        'auth/weak-password': 'Das Passwort muss mindestens 6 Zeichen lang sein.',
+
+        // Rate Limiting
+        'auth/too-many-requests': 'Zu viele fehlgeschlagene Versuche. Bitte warten Sie einige Minuten.',
+
+        // Network
+        'auth/network-request-failed': 'Keine Internetverbindung. Bitte prüfen Sie Ihre Verbindung.',
+
+        // Password Reset
+        'auth/expired-action-code': 'Der Link ist abgelaufen. Bitte fordern Sie einen neuen an.',
+        'auth/invalid-action-code': 'Der Link ist ungültig. Bitte fordern Sie einen neuen an.',
+
+        // Generic
+        'auth/internal-error': 'Ein interner Fehler ist aufgetreten. Bitte versuchen Sie es erneut.',
+        'auth/requires-recent-login': 'Bitte melden Sie sich erneut an, um fortzufahren.'
     };
-    return errorMessages[errorCode] || 'Ein unbekannter Fehler ist aufgetreten.';
+    return errorMessages[errorCode] || `Ein Fehler ist aufgetreten. (${errorCode || 'Unbekannt'})`;
 };
 
 // Show Toast Notification
@@ -170,9 +173,6 @@ export function navigateTo(viewId) {
     }
 
     window.scrollTo({top: 0, behavior: 'smooth'});
-
-    // Dispatch custom event for view changes (used by app.js to load orders on dashboard)
-    window.dispatchEvent(new CustomEvent('viewChanged', { detail: { viewId } }));
 }
 
 export function scrollToSection(id) {
@@ -180,15 +180,11 @@ export function scrollToSection(id) {
 
     if(isHomeHidden) {
         navigateTo('home');
-        // Längerer Timeout für zuverlässiges Scrolling nach View-Wechsel
         setTimeout(() => {
-            const element = document.getElementById(id);
-            if(element) {
-                element.scrollIntoView({behavior:'smooth', block: 'start'});
-            }
-        }, 200);
+            document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+        }, 100);
     } else {
-        document.getElementById(id)?.scrollIntoView({behavior:'smooth', block: 'start'});
+        document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
     }
 }
 
@@ -201,29 +197,10 @@ export function navigateToSection(viewId, sectionId) {
 
 export function toggleMobileMenu() {
     const menu = document.getElementById('mobile-menu');
-    const btn = document.getElementById('mobile-menu-btn');
-    const icon = document.getElementById('mobile-menu-icon');
     if(!menu) return;
 
-    const isOpen = !menu.classList.contains('hidden');
-
-    if (isOpen) {
-        // Schließen
-        menu.classList.add('hidden');
-        btn?.setAttribute('aria-expanded', 'false');
-        btn?.setAttribute('aria-label', 'Menü öffnen');
-        icon?.classList.remove('fa-times');
-        icon?.classList.add('fa-bars');
-        document.body.style.overflow = '';
-    } else {
-        // Öffnen
-        menu.classList.remove('hidden');
-        btn?.setAttribute('aria-expanded', 'true');
-        btn?.setAttribute('aria-label', 'Menü schließen');
-        icon?.classList.remove('fa-bars');
-        icon?.classList.add('fa-times');
-        document.body.style.overflow = 'hidden'; // Verhindert Scrollen im Hintergrund
-    }
+    menu.classList.toggle('hidden');
+    menu.classList.toggle('flex');
 }
 
 export function openPackageDetail() {
@@ -243,16 +220,5 @@ export function toggleFaq(id) {
     if(button) {
         const isOpen = parent.classList.contains('faq-open');
         button.setAttribute('aria-expanded', isOpen.toString());
-    }
-}
-
-export function toggleSection(id) {
-    const element = document.getElementById(id);
-    const icon = document.getElementById(`${id}-icon`);
-    if(!element) return;
-
-    element.classList.toggle('hidden');
-    if(icon) {
-        icon.classList.toggle('rotate-180');
     }
 }

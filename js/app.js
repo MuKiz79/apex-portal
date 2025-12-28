@@ -1,9 +1,9 @@
-// APEX Executive - Application Module
-// Contains: Auth, Cart, Dashboard, Coaches, Articles, Data
+// APEX Executive - Application Module v2.0
+// Contains: Auth, Cart, Dashboard, Coaches, Articles, Data, Password Reset
 
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, applyActionCode, checkActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
@@ -35,6 +35,98 @@ export function toggleAuthMode(isLoginMode) {
     if(btn) btn.innerText = isLoginMode ? "Anmelden" : "Kostenlos Registrieren";
 
     document.getElementById('auth-error')?.classList.add('hidden');
+
+    // Hide password reset fields when switching modes
+    document.getElementById('password-reset-fields')?.classList.add('hidden');
+    document.getElementById('auth-tabs')?.classList.remove('hidden');
+    document.getElementById('auth-submit-btn')?.classList.remove('hidden');
+}
+
+// Show Password Reset Form
+export function showPasswordReset() {
+    document.getElementById('login-fields')?.classList.add('hidden');
+    document.getElementById('register-fields')?.classList.add('hidden');
+    document.getElementById('password-reset-fields')?.classList.remove('hidden');
+    document.getElementById('auth-tabs')?.classList.add('hidden');
+    document.getElementById('auth-submit-btn')?.classList.add('hidden');
+    document.getElementById('auth-error')?.classList.add('hidden');
+    document.getElementById('auth-success')?.classList.add('hidden');
+
+    // Copy email from login field if present
+    const loginEmail = document.getElementById('login-email')?.value;
+    if (loginEmail) {
+        const resetEmail = document.getElementById('reset-email');
+        if (resetEmail) resetEmail.value = loginEmail;
+    }
+}
+
+// Show Login Form (back from password reset)
+export function showLoginForm() {
+    document.getElementById('password-reset-fields')?.classList.add('hidden');
+    document.getElementById('login-fields')?.classList.remove('hidden');
+    document.getElementById('auth-tabs')?.classList.remove('hidden');
+    document.getElementById('auth-submit-btn')?.classList.remove('hidden');
+    document.getElementById('auth-error')?.classList.add('hidden');
+    document.getElementById('auth-success')?.classList.add('hidden');
+}
+
+// Send Password Reset Email
+export async function sendPasswordReset() {
+    const errorDiv = document.getElementById('auth-error');
+    const successDiv = document.getElementById('auth-success');
+    const resetBtn = document.getElementById('reset-submit-btn');
+    const email = document.getElementById('reset-email')?.value?.trim();
+
+    errorDiv?.classList.add('hidden');
+    successDiv?.classList.add('hidden');
+
+    if (!email || !validateEmail(email)) {
+        if (errorDiv) {
+            errorDiv.textContent = 'Bitte geben Sie eine gültige E-Mail-Adresse ein.';
+            errorDiv.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // Show loading state
+    const originalText = resetBtn?.innerText;
+    if (resetBtn) {
+        resetBtn.innerText = 'Wird gesendet...';
+        resetBtn.disabled = true;
+    }
+
+    try {
+        if (!auth) {
+            // Demo mode
+            if (successDiv) {
+                successDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.';
+                successDiv.classList.remove('hidden');
+            }
+            return;
+        }
+
+        await sendPasswordResetEmail(auth, email);
+
+        if (successDiv) {
+            successDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen an <strong>' + email + '</strong> gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.';
+            successDiv.classList.remove('hidden');
+        }
+
+        showToast('E-Mail wurde gesendet');
+
+    } catch (error) {
+        console.error('Password reset error:', error);
+        // For security, always show success message (don't reveal if email exists)
+        if (successDiv) {
+            successDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.';
+            successDiv.classList.remove('hidden');
+        }
+    } finally {
+        if (resetBtn) {
+            resetBtn.innerText = originalText || 'Link senden';
+            resetBtn.disabled = false;
+        }
+    }
 }
 
 export async function handleAuth(isLoginMode, state, navigateTo) {
@@ -97,12 +189,6 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
             if(pass !== passConfirm) throw new Error('Die Passwörter stimmen nicht überein.');
             if (!validatePassword(pass)) throw new Error('Das Passwort muss mindestens 6 Zeichen lang sein.');
 
-            // Check AGB & Datenschutz acceptance
-            const termsAccepted = document.getElementById('reg-terms-accept')?.checked;
-            if (!termsAccepted) {
-                throw new Error('Bitte akzeptieren Sie die AGB und Datenschutzerklärung.');
-            }
-
             if(!auth) {
                 // Demo Mode
                 document.getElementById('auth-form')?.classList.add('hidden');
@@ -130,19 +216,18 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
                         city: getVal('reg-city')
                     },
                     role: 'member',
-                    joined: new Date(),
-                    termsAcceptedAt: new Date(),
-                    termsVersion: '2024-12'
+                    joined: new Date()
                 });
             }
 
             await updateProfile(user, { displayName: `${firstname} ${lastname}` });
 
-            // Send verification email
-            // Note: To use custom email action handler, set the Action URL in Firebase Console:
-            // Authentication > Templates > Edit Template > Customize action URL
-            // Set it to: https://apex-executive.de/
-            await sendEmailVerification(user);
+            // Send verification email with action URL
+            const actionCodeSettings = {
+                url: window.location.origin + '/index-modular.html',
+                handleCodeInApp: false
+            };
+            await sendEmailVerification(user, actionCodeSettings);
             await signOut(auth);
 
             document.getElementById('auth-form')?.classList.add('hidden');
@@ -438,8 +523,6 @@ export function addToCart(state, title, price) {
         category = 'mentoring';
     } else if (sanitizedTitle.includes('Komplettpaket')) {
         category = 'bundle';
-    } else if (sanitizedTitle.includes('Interview-Simulation') || sanitizedTitle.includes('Zeugnis-Analyse')) {
-        category = 'addon';
     }
 
     // Entferne existierende Items aus derselben Kategorie
@@ -463,17 +546,6 @@ export function addToCart(state, title, price) {
             !item.title.includes('Session') &&
             !item.title.includes('Retainer')
         );
-    } else if (category === 'addon') {
-        // Prüfe ob dieses Add-on bereits im Warenkorb ist (einzeln oder als Teil eines Pakets)
-        const addonName = sanitizedTitle.includes('Interview') ? 'Interview-Simulation' : 'Zeugnis-Analyse';
-        const alreadyInCart = state.cart.some(item =>
-            item.title === sanitizedTitle || // Exakt gleicher Titel
-            item.title.includes(addonName)   // Als Teil eines Pakets (z.B. "Senior CV + Interview-Simulation")
-        );
-        if (alreadyInCart) {
-            showToast('⚠️ Dieses Add-on ist bereits im Warenkorb');
-            return;
-        }
     }
 
     // Wenn Komplettpaket bereits im Warenkorb, nichts weiteres hinzufügen
@@ -500,249 +572,9 @@ export function addToCart(state, title, price) {
         showToast('✅ Mentoring-Paket ausgewählt (vorheriges ersetzt)');
     } else if (category === 'bundle') {
         showToast('✅ Komplettpaket ausgewählt (ersetzt CV + Mentoring)');
-    } else if (category === 'addon') {
-        showToast('✅ Add-on hinzugefügt');
     } else {
         showToast('✅ Zur Auswahl hinzugefügt');
     }
-}
-
-export function addToCartWithExpress(state, title, basePrice, expressPrice, checkboxId) {
-    const checkbox = document.getElementById(checkboxId);
-    const isExpress = checkbox && checkbox.checked;
-
-    if (isExpress) {
-        addToCart(state, title + ' + Express (24h)', basePrice + expressPrice);
-    } else {
-        addToCart(state, title, basePrice);
-    }
-
-    // Checkbox zurücksetzen
-    if (checkbox) checkbox.checked = false;
-}
-
-// Package Configuration Modal State
-let packageConfigState = {
-    packageName: '',
-    basePrice: 0,
-    expressPrice: 99, // Default Express Aufpreis
-    bilingualPrice: 99, // Zweisprachig Aufpreis
-    standardDelivery: '5-7 Werktage'
-};
-
-// Package-specific settings
-const packageSettings = {
-    'Young Professional CV': { expressPrice: 99, standardDelivery: '3-5 Werktage', bilingualIncluded: false },
-    'Senior Professional CV': { expressPrice: 149, standardDelivery: '5-7 Werktage', bilingualIncluded: false },
-    'Executive C-Suite CV': { expressPrice: 299, standardDelivery: '5-7 Werktage', bilingualIncluded: true },
-    'CV Quick-Check': { expressPrice: 49, standardDelivery: '2-3 Werktage', bilingualIncluded: false }
-};
-
-export function openPackageConfigModal(state, packageName, basePrice) {
-    const modal = document.getElementById('package-config-modal');
-    if (!modal) return;
-
-    // Get package-specific settings
-    const settings = packageSettings[packageName] || { expressPrice: 99, standardDelivery: '5-7 Werktage', bilingualIncluded: false };
-
-    // Set state
-    packageConfigState = {
-        packageName: packageName,
-        basePrice: basePrice,
-        expressPrice: settings.expressPrice,
-        bilingualPrice: settings.bilingualIncluded ? 0 : 99,
-        bilingualIncluded: settings.bilingualIncluded,
-        standardDelivery: settings.standardDelivery
-    };
-
-    // Update UI
-    document.getElementById('config-modal-title').textContent = packageName;
-    document.getElementById('config-base-price').textContent = '€' + basePrice;
-    document.getElementById('config-express-price').textContent = '+€' + settings.expressPrice;
-    document.getElementById('config-standard-time').textContent = settings.standardDelivery;
-
-    // Handle language section for Executive (bilingual included)
-    const languageSection = document.getElementById('config-language-section');
-    const languageIncludedNote = document.getElementById('config-language-included');
-
-    if (settings.bilingualIncluded) {
-        // Executive C-Suite: Hide language selection, show "included" note
-        if (languageSection) languageSection.classList.add('hidden');
-        if (languageIncludedNote) languageIncludedNote.classList.remove('hidden');
-    } else {
-        // Other packages: Show language selection
-        if (languageSection) languageSection.classList.remove('hidden');
-        if (languageIncludedNote) languageIncludedNote.classList.add('hidden');
-    }
-
-    // Reset selections
-    document.querySelector('input[name="language"][value="de"]').checked = true;
-    document.querySelector('input[name="delivery"][value="standard"]').checked = true;
-
-    // Reset add-on checkboxes
-    const addonInterview = document.querySelector('input[name="addon-interview"]');
-    const addonZeugnis = document.querySelector('input[name="addon-zeugnis"]');
-    if (addonInterview) addonInterview.checked = false;
-    if (addonZeugnis) addonZeugnis.checked = false;
-
-    // Hide add-ons for Quick-Check (makes no sense for a quick check)
-    const addonsSection = document.getElementById('config-addons-section');
-    if (addonsSection) {
-        if (packageName === 'CV Quick-Check') {
-            addonsSection.classList.add('hidden');
-        } else {
-            addonsSection.classList.remove('hidden');
-        }
-    }
-
-    // Update total price
-    updatePackageConfigTotal();
-
-    // Add event listeners for price updates
-    modal.querySelectorAll('input[name="language"], input[name="delivery"]').forEach(input => {
-        input.addEventListener('change', updatePackageConfigTotal);
-    });
-
-    // Reset scroll position and show scroll indicator
-    const contentArea = document.getElementById('config-modal-content');
-    const scrollIndicator = document.getElementById('config-scroll-indicator');
-    if (contentArea) {
-        contentArea.scrollTop = 0;
-    }
-    if (scrollIndicator) {
-        scrollIndicator.classList.remove('hidden');
-        scrollIndicator.style.opacity = '1';
-    }
-
-    // Show modal
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    // Check if scroll indicator should be shown (only if content is scrollable)
-    setTimeout(() => {
-        checkModalScroll();
-    }, 100);
-}
-
-export function closePackageConfigModal() {
-    const modal = document.getElementById('package-config-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-}
-
-// Check if user has scrolled and hide scroll indicator
-export function checkModalScroll() {
-    const contentArea = document.getElementById('config-modal-content');
-    const scrollIndicator = document.getElementById('config-scroll-indicator');
-
-    if (!contentArea || !scrollIndicator) return;
-
-    // Check if content is scrollable at all
-    const isScrollable = contentArea.scrollHeight > contentArea.clientHeight;
-
-    if (!isScrollable) {
-        // No scroll needed - hide indicator
-        scrollIndicator.classList.add('hidden');
-        return;
-    }
-
-    // Check how far user has scrolled
-    const scrolledToBottom = contentArea.scrollTop + contentArea.clientHeight >= contentArea.scrollHeight - 50;
-
-    if (scrolledToBottom || contentArea.scrollTop > 50) {
-        // User has scrolled enough - fade out indicator
-        scrollIndicator.style.opacity = '0';
-        setTimeout(() => {
-            if (scrollIndicator.style.opacity === '0') {
-                scrollIndicator.classList.add('hidden');
-            }
-        }, 300);
-    }
-}
-
-function updatePackageConfigTotal() {
-    let total = packageConfigState.basePrice;
-
-    // Check language selection (only if not already included)
-    if (!packageConfigState.bilingualIncluded) {
-        const language = document.querySelector('input[name="language"]:checked')?.value;
-        if (language === 'both') {
-            total += packageConfigState.bilingualPrice;
-        }
-    }
-
-    // Check delivery selection
-    const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
-    if (delivery === 'express') {
-        total += packageConfigState.expressPrice;
-    }
-
-    // Check add-ons
-    const addonInterview = document.querySelector('input[name="addon-interview"]');
-    const addonZeugnis = document.querySelector('input[name="addon-zeugnis"]');
-    if (addonInterview?.checked) {
-        total += 199;
-    }
-    if (addonZeugnis?.checked) {
-        total += 49;
-    }
-
-    // Update total display
-    document.getElementById('config-total-price').textContent = '€' + total;
-}
-
-// Make updatePackageConfigTotal globally accessible
-export { updatePackageConfigTotal };
-
-export function confirmPackageConfig(state) {
-    const language = document.querySelector('input[name="language"]:checked')?.value;
-    const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
-    const addonInterview = document.querySelector('input[name="addon-interview"]');
-    const addonZeugnis = document.querySelector('input[name="addon-zeugnis"]');
-
-    let total = packageConfigState.basePrice;
-    let titleParts = [packageConfigState.packageName];
-    let addons = [];
-
-    // Add language suffix (Executive already includes DE+EN)
-    if (packageConfigState.bilingualIncluded) {
-        titleParts.push('(DE + EN)');
-    } else if (language === 'en') {
-        titleParts.push('(Englisch)');
-    } else if (language === 'both') {
-        titleParts.push('(DE + EN)');
-        total += packageConfigState.bilingualPrice;
-    }
-
-    // Add express suffix
-    if (delivery === 'express') {
-        titleParts.push('+ Express 48h');
-        total += packageConfigState.expressPrice;
-    }
-
-    // Check add-ons
-    if (addonInterview?.checked) {
-        addons.push('Interview-Simulation');
-        total += 199;
-    }
-    if (addonZeugnis?.checked) {
-        addons.push('Zeugnis-Analyse');
-        total += 49;
-    }
-
-    // Build final title with add-ons
-    let finalTitle = titleParts.join(' ');
-    if (addons.length > 0) {
-        finalTitle += ' + ' + addons.join(' + ');
-    }
-
-    // Add to cart
-    addToCart(state, finalTitle, total);
-
-    // Close modal
-    closePackageConfigModal();
 }
 
 export function removeFromCart(state, id) {
@@ -1561,11 +1393,7 @@ export function filterCoaches(state) {
     const filterSelect = document.getElementById('industry-filter');
     const filter = filterSelect?.value || 'all';
 
-    // First filter by visibility (only show coaches where visible !== false)
-    const visibleCoaches = state.coaches.filter(c => c.visible !== false);
-
-    // Then apply industry filter
-    const filteredCoaches = filter === 'all' ? visibleCoaches : visibleCoaches.filter(c => c.industry === filter);
+    const filteredCoaches = filter === 'all' ? state.coaches : state.coaches.filter(c => c.industry === filter);
 
     // Zeige Nachricht wenn keine Coaches vorhanden
     if(filteredCoaches.length === 0) {
@@ -1577,7 +1405,7 @@ export function filterCoaches(state) {
         const name = sanitizeHTML(coach.name);
         const role = sanitizeHTML(coach.role);
         const experience = sanitizeHTML(coach.experience || '15+ Jahre');
-        return '<div class="group bg-brand-gold/[0.06] backdrop-blur-xl rounded-2xl border border-brand-gold/15 overflow-hidden hover:bg-brand-gold/[0.1] hover:border-brand-gold/25 transition-all duration-500 cursor-pointer" onclick="app.openCoachDetail(\'' + coach.id + '\')"><div class="relative h-32 bg-gradient-to-r from-brand-gold/10 to-transparent"></div><div class="px-8 pb-8 relative"><div class="-mt-16 mb-6"><img src="' + coach.image + '" class="w-28 h-28 rounded-2xl object-cover border-2 border-brand-gold/40 shadow-lg" alt="' + name + '" loading="lazy"></div><h4 class="font-serif text-xl text-white mb-1">' + name + '</h4><p class="text-xs text-brand-gold/80 font-medium uppercase tracking-wider">' + role + '</p><p class="text-xs text-white/50 mt-4">' + experience + ' Erfahrung</p></div></div>';
+        return '<div class="group bg-white rounded-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:border-brand-gold/30 transition-all duration-300 cursor-pointer"><div class="relative h-24 bg-brand-dark overflow-hidden"><div class="absolute inset-0 bg-brand-gold/10"></div></div><div class="px-6 pb-6 relative"><div class="-mt-12 mb-4"><img src="' + coach.image + '" class="w-20 h-20 rounded-sm object-cover border-4 border-white shadow-md" alt="' + name + '" loading="lazy"></div><div onclick="app.openCoachDetail(\'' + coach.id + '\')"><h4 class="font-serif text-lg text-brand-dark font-bold hover:text-brand-gold transition cursor-pointer">' + name + '</h4><p class="text-xs text-brand-gold font-bold uppercase tracking-widest mt-1">' + role + '</p></div><div class="mt-4 pt-4 border-t flex justify-between items-center"><div class="text-xs text-gray-500">' + experience + ' Erfahrung</div><div class="flex gap-2"><button onclick="app.openCoachDetail(\'' + coach.id + '\')" class="text-gray-400 hover:text-brand-dark transition" aria-label="Mentor-Details ansehen"><i class="far fa-eye text-lg" aria-hidden="true"></i></button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350)" class="text-brand-dark hover:text-brand-gold transition" aria-label="Session buchen"><i class="fas fa-plus-circle text-lg" aria-hidden="true"></i></button></div></div></div></div>';
     }).join('');
 }
 
@@ -1594,7 +1422,7 @@ export function openCoachDetail(state, id, navigateTo) {
     const bio = sanitizeHTML(coach.bio || 'Keine Bio verfügbar.');
     const experience = sanitizeHTML(coach.experience || '15+ Jahre Leadership-Erfahrung');
 
-    contentArea.innerHTML = '<button onclick="app.scrollToSection(\'coaches\')" class="inline-flex items-center gap-2 text-brand-gold font-bold text-sm mb-8 hover:underline"><i class="fas fa-arrow-left"></i>Zurück zu Mentoren</button><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/3"><img src="' + coach.image + '" class="w-full rounded border-4 border-white shadow-lg object-cover" alt="' + name + '" loading="lazy"><div class="mt-4 p-4 bg-gray-50 rounded text-sm"><p class="text-gray-600 mb-2"><i class="fas fa-briefcase mr-2 text-brand-gold"></i>' + experience + '</p><p class="text-gray-600"><i class="fas fa-check-circle mr-2 text-brand-gold"></i>Alle Formate verfügbar</p></div></div><div class="w-full md:w-2/3"><h1 class="font-serif text-3xl mb-2">' + name + '</h1><p class="text-brand-gold uppercase font-bold text-xs mb-6">' + role + '</p><p class="text-gray-600 mb-6 leading-relaxed">' + bio + '</p><div class="mb-6"><h4 class="font-bold text-xs uppercase mb-2">Expertise</h4><div class="flex flex-wrap gap-2">' + expertise.map(e => '<span class="bg-brand-dark text-white px-2 py-1 text-[10px] uppercase rounded">' + sanitizeHTML(e) + '</span>').join('') + '</div></div>' + (coach.stats ? '<p class="text-sm text-gray-500 mb-6"><i class="fas fa-chart-line mr-2" aria-hidden="true"></i>' + sanitizeHTML(coach.stats) + '</p>' : '') + '<div class="flex flex-wrap gap-4"><button onclick="app.scrollToSection(\'coaches\')" class="border-2 border-brand-dark text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:bg-brand-dark hover:text-white transition rounded-full">Zurück zur Übersicht</button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350); app.scrollToSection(\'coaches\')" class="bg-brand-gold text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:shadow-lg transition rounded-full">Session Buchen</button></div></div></div>';
+    contentArea.innerHTML = '<div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/3"><img src="' + coach.image + '" class="w-full rounded border-4 border-white shadow-lg object-cover" alt="' + name + '" loading="lazy"><div class="mt-4 p-4 bg-gray-50 rounded text-sm"><p class="text-gray-600 mb-2"><i class="fas fa-briefcase mr-2 text-brand-gold"></i>' + experience + '</p><p class="text-gray-600"><i class="fas fa-check-circle mr-2 text-brand-gold"></i>Alle Formate verfügbar</p></div></div><div class="w-full md:w-2/3"><h1 class="font-serif text-3xl mb-2">' + name + '</h1><p class="text-brand-gold uppercase font-bold text-xs mb-6">' + role + '</p><p class="text-gray-600 mb-6 leading-relaxed">' + bio + '</p><div class="mb-6"><h4 class="font-bold text-xs uppercase mb-2">Expertise</h4><div class="flex flex-wrap gap-2">' + expertise.map(e => '<span class="bg-brand-dark text-white px-2 py-1 text-[10px] uppercase rounded">' + sanitizeHTML(e) + '</span>').join('') + '</div></div>' + (coach.stats ? '<p class="text-sm text-gray-500 mb-6"><i class="fas fa-chart-line mr-2" aria-hidden="true"></i>' + sanitizeHTML(coach.stats) + '</p>' : '') + '<div class="flex gap-4"><button onclick="app.navigateToSection(\'home\', \'coaches\')" class="border-2 border-brand-dark text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:bg-brand-dark hover:text-white transition">Zurück zur Übersicht</button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350); app.navigateToSection(\'home\', \'coaches\')" class="bg-brand-gold text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:shadow-lg transition">Session Buchen</button></div></div></div>';
 
     navigateTo('coach-detail');
 }
@@ -2320,104 +2148,6 @@ export function switchDashboardTab(tabName, state) {
     }
 }
 
-// ========== STRATEGY CALL MODAL ==========
-
-export function openStrategyModal() {
-    const modal = document.getElementById('strategy-call-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-export function closeStrategyModal() {
-    const modal = document.getElementById('strategy-call-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-        // Reset form
-        const form = document.getElementById('strategy-call-form');
-        if (form) form.reset();
-        // Hide success message, show form
-        const success = document.getElementById('strategy-success');
-        const submitBtn = document.getElementById('strategy-submit-btn');
-        if (success) success.classList.add('hidden');
-        if (submitBtn) submitBtn.classList.remove('hidden');
-    }
-}
-
-export async function submitStrategyCall(event) {
-    event.preventDefault();
-
-    const name = document.getElementById('strategy-name')?.value?.trim();
-    const email = document.getElementById('strategy-email')?.value?.trim();
-    const phone = document.getElementById('strategy-phone')?.value?.trim();
-    const message = document.getElementById('strategy-message')?.value?.trim();
-
-    // Get preferred times
-    const timeCheckboxes = document.querySelectorAll('input[name="preferred-time"]:checked');
-    const preferredTimes = Array.from(timeCheckboxes).map(cb => cb.value);
-
-    if (!name || !email || !phone) {
-        showToast('Bitte alle Pflichtfelder ausfüllen', 3000);
-        return;
-    }
-
-    const submitBtn = document.getElementById('strategy-submit-btn');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="loader mr-2"></span> Wird gesendet...';
-    }
-
-    try {
-        // Save to Firestore
-        if (db) {
-            await addDoc(collection(db, "strategy_calls"), {
-                name,
-                email,
-                phone,
-                message: message || '',
-                preferredTimes,
-                status: 'new',
-                createdAt: new Date(),
-                source: 'website'
-            });
-        }
-
-        // Show success
-        const form = document.getElementById('strategy-call-form');
-        const success = document.getElementById('strategy-success');
-
-        if (form) {
-            // Hide form fields
-            const formFields = form.querySelectorAll('div:not(#strategy-success)');
-            formFields.forEach(field => field.style.display = 'none');
-        }
-        if (submitBtn) submitBtn.classList.add('hidden');
-        if (success) success.classList.remove('hidden');
-
-        showToast('Anfrage erfolgreich gesendet!');
-
-        // Close modal after 3 seconds
-        setTimeout(() => {
-            closeStrategyModal();
-            // Restore form fields
-            if (form) {
-                const formFields = form.querySelectorAll('div:not(#strategy-success)');
-                formFields.forEach(field => field.style.display = '');
-            }
-        }, 3000);
-
-    } catch (error) {
-        console.error('Strategy call submission failed:', error);
-        showToast('Fehler beim Senden. Bitte versuchen Sie es erneut.', 3000);
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Rückruf anfordern';
-        }
-    }
-}
-
 export async function saveProfile(state) {
     const firstnameInput = document.getElementById('profile-firstname');
     const lastnameInput = document.getElementById('profile-lastname');
@@ -2780,560 +2510,6 @@ export async function uploadDocumentToUser(userId, orderId, file) {
     }
 }
 
-// ========== ADMIN TABS ==========
-
-export function switchAdminTab(tabName) {
-    // Update tab buttons
-    const tabs = ['orders', 'users', 'strategy', 'coaches', 'settings'];
-    tabs.forEach(tab => {
-        const btn = document.getElementById(`admin-tab-${tab}`);
-        const content = document.getElementById(`admin-content-${tab}`);
-
-        if (btn && content) {
-            if (tab === tabName) {
-                btn.classList.add('text-brand-dark', 'border-brand-gold');
-                btn.classList.remove('text-gray-400', 'border-transparent');
-                content.classList.remove('hidden');
-            } else {
-                btn.classList.remove('text-brand-dark', 'border-brand-gold');
-                btn.classList.add('text-gray-400', 'border-transparent');
-                content.classList.add('hidden');
-            }
-        }
-    });
-
-    // Load data for the selected tab
-    if (tabName === 'orders') {
-        loadAllOrders();
-    } else if (tabName === 'users') {
-        loadAdminUsers();
-    } else if (tabName === 'strategy') {
-        loadStrategyCalls();
-    } else if (tabName === 'coaches') {
-        loadAdminCoaches();
-    } else if (tabName === 'settings') {
-        loadAdminSettings();
-    }
-}
-
-// Store users and strategy calls for filtering
-let allAdminUsers = [];
-let allStrategyCalls = [];
-
-export async function loadAdminUsers() {
-    if (!db) {
-        console.error('Database not available');
-        return;
-    }
-
-    const container = document.getElementById('admin-users-list');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="p-8 text-center text-gray-400">
-            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-            <p class="text-sm">Lade Benutzer...</p>
-        </div>
-    `;
-
-    try {
-        const usersRef = collection(db, 'users');
-        const snapshot = await getDocs(usersRef);
-
-        allAdminUsers = [];
-        snapshot.forEach(docSnap => {
-            allAdminUsers.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        // Sort by registration date (newest first)
-        allAdminUsers.sort((a, b) => {
-            const dateA = a.createdAt?.seconds || 0;
-            const dateB = b.createdAt?.seconds || 0;
-            return dateB - dateA;
-        });
-
-        updateUserStats(allAdminUsers);
-        renderAdminUsers(allAdminUsers);
-
-    } catch (e) {
-        console.error('Failed to load users:', e);
-        container.innerHTML = `
-            <div class="p-8 text-center text-red-500">
-                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
-                <p class="text-sm">Fehler beim Laden: ${e.message}</p>
-            </div>
-        `;
-    }
-}
-
-function updateUserStats(users) {
-    const total = users.length;
-    const cookiesAll = users.filter(u => u.cookieConsent === 'all').length;
-    const cookiesEssential = users.filter(u => u.cookieConsent === 'essential').length;
-
-    const totalEl = document.getElementById('admin-stat-users');
-    const cookiesAllEl = document.getElementById('admin-stat-cookies-all');
-    const cookiesEssentialEl = document.getElementById('admin-stat-cookies-essential');
-
-    if (totalEl) totalEl.textContent = total;
-    if (cookiesAllEl) cookiesAllEl.textContent = cookiesAll;
-    if (cookiesEssentialEl) cookiesEssentialEl.textContent = cookiesEssential;
-}
-
-function renderAdminUsers(users) {
-    const container = document.getElementById('admin-users-list');
-    if (!container) return;
-
-    if (users.length === 0) {
-        container.innerHTML = `
-            <div class="p-8 text-center text-gray-400">
-                <i class="fas fa-users text-2xl mb-2"></i>
-                <p class="text-sm">Keine Benutzer gefunden</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = users.map(user => {
-        const createdAt = user.createdAt?.seconds
-            ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            : 'Unbekannt';
-
-        const consentDate = user.cookieConsentDate
-            ? new Date(user.cookieConsentDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : 'Nicht gesetzt';
-
-        const cookieStatus = user.cookieConsent === 'all'
-            ? '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">Alle akzeptiert</span>'
-            : user.cookieConsent === 'essential'
-            ? '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded">Nur notwendige</span>'
-            : '<span class="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded">Nicht gesetzt</span>';
-
-        const termsStatus = user.acceptedTermsAt
-            ? '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">AGB akzeptiert</span>'
-            : '<span class="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded">AGB nicht akzeptiert</span>';
-
-        return `
-            <div class="p-4 hover:bg-gray-50 transition">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-brand-dark rounded-full flex items-center justify-center text-white font-bold">
-                            ${(user.displayName || user.email || '?')[0].toUpperCase()}
-                        </div>
-                        <div>
-                            <p class="font-bold text-brand-dark">${sanitizeHTML(user.displayName || 'Unbekannt')}</p>
-                            <p class="text-sm text-gray-500">${sanitizeHTML(user.email || 'Keine Email')}</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col md:flex-row items-start md:items-center gap-2 text-sm">
-                        ${cookieStatus}
-                        ${termsStatus}
-                        <span class="text-gray-400 text-xs">Reg: ${createdAt}</span>
-                    </div>
-                </div>
-                ${user.cookieConsent ? `
-                <div class="mt-2 ml-13 text-xs text-gray-400">
-                    <i class="fas fa-clock mr-1"></i>Cookie-Zustimmung: ${consentDate}
-                </div>
-                ` : ''}
-            </div>
-        `;
-    }).join('');
-}
-
-export async function loadStrategyCalls() {
-    if (!db) {
-        console.error('Database not available');
-        return;
-    }
-
-    const container = document.getElementById('admin-strategy-list');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="p-8 text-center text-gray-400">
-            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-            <p class="text-sm">Lade Anfragen...</p>
-        </div>
-    `;
-
-    try {
-        const callsRef = collection(db, 'strategy_calls');
-        const snapshot = await getDocs(callsRef);
-
-        allStrategyCalls = [];
-        snapshot.forEach(docSnap => {
-            allStrategyCalls.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        // Sort by date (newest first)
-        allStrategyCalls.sort((a, b) => {
-            const dateA = a.createdAt?.seconds || 0;
-            const dateB = b.createdAt?.seconds || 0;
-            return dateB - dateA;
-        });
-
-        updateStrategyStats(allStrategyCalls);
-        renderStrategyCalls(allStrategyCalls);
-
-    } catch (e) {
-        console.error('Failed to load strategy calls:', e);
-        container.innerHTML = `
-            <div class="p-8 text-center text-red-500">
-                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
-                <p class="text-sm">Fehler beim Laden: ${e.message}</p>
-            </div>
-        `;
-    }
-}
-
-function updateStrategyStats(calls) {
-    const total = calls.length;
-    const newCalls = calls.filter(c => c.status === 'new' || !c.status).length;
-    const doneCalls = calls.filter(c => c.status === 'done' || c.status === 'contacted').length;
-
-    const totalEl = document.getElementById('admin-stat-strategy-total');
-    const newEl = document.getElementById('admin-stat-strategy-new');
-    const doneEl = document.getElementById('admin-stat-strategy-done');
-
-    if (totalEl) totalEl.textContent = total;
-    if (newEl) newEl.textContent = newCalls;
-    if (doneEl) doneEl.textContent = doneCalls;
-}
-
-function renderStrategyCalls(calls) {
-    const container = document.getElementById('admin-strategy-list');
-    if (!container) return;
-
-    if (calls.length === 0) {
-        container.innerHTML = `
-            <div class="p-8 text-center text-gray-400">
-                <i class="fas fa-phone text-2xl mb-2"></i>
-                <p class="text-sm">Keine Erstgespräch-Anfragen vorhanden</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = calls.map(call => {
-        const createdAt = call.createdAt?.seconds
-            ? new Date(call.createdAt.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : 'Unbekannt';
-
-        const statusColors = {
-            'new': 'bg-red-100 text-red-700',
-            'contacted': 'bg-blue-100 text-blue-700',
-            'done': 'bg-green-100 text-green-700',
-            'cancelled': 'bg-gray-100 text-gray-500'
-        };
-
-        const statusLabels = {
-            'new': 'Neu',
-            'contacted': 'Kontaktiert',
-            'done': 'Erledigt',
-            'cancelled': 'Abgesagt'
-        };
-
-        const currentStatus = call.status || 'new';
-        const preferredTimes = call.preferredTimes?.join(', ') || 'Keine Angabe';
-
-        return `
-            <div class="p-4 hover:bg-gray-50 transition border-l-4 ${currentStatus === 'new' ? 'border-red-500' : 'border-transparent'}">
-                <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="px-2 py-1 ${statusColors[currentStatus] || statusColors.new} text-xs font-bold rounded">
-                                ${statusLabels[currentStatus] || 'Neu'}
-                            </span>
-                            <span class="text-xs text-gray-400">${createdAt}</span>
-                        </div>
-                        <p class="font-bold text-brand-dark">${sanitizeHTML(call.name || 'Unbekannt')}</p>
-                        <p class="text-sm text-gray-600">
-                            <i class="fas fa-envelope text-brand-gold mr-1"></i>${sanitizeHTML(call.email || 'Keine Email')}
-                        </p>
-                        <p class="text-sm text-gray-600">
-                            <i class="fas fa-phone text-brand-gold mr-1"></i>${sanitizeHTML(call.phone || 'Keine Telefon')}
-                        </p>
-                        ${call.message ? `
-                        <div class="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
-                            <i class="fas fa-comment text-brand-gold mr-1"></i>${sanitizeHTML(call.message)}
-                        </div>
-                        ` : ''}
-                        <p class="mt-2 text-xs text-gray-400">
-                            <i class="fas fa-clock mr-1"></i>Bevorzugte Zeiten: ${sanitizeHTML(preferredTimes)}
-                        </p>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <select onchange="app.updateStrategyCallStatus('${call.id}', this.value)"
-                                class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
-                            <option value="new" ${currentStatus === 'new' ? 'selected' : ''}>Neu</option>
-                            <option value="contacted" ${currentStatus === 'contacted' ? 'selected' : ''}>Kontaktiert</option>
-                            <option value="done" ${currentStatus === 'done' ? 'selected' : ''}>Erledigt</option>
-                            <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>Abgesagt</option>
-                        </select>
-                        <a href="mailto:${call.email}" class="text-center bg-brand-gold text-brand-dark px-3 py-2 rounded text-xs font-bold hover:bg-yellow-500 transition">
-                            <i class="fas fa-envelope mr-1"></i>E-Mail
-                        </a>
-                        <a href="tel:${call.phone}" class="text-center bg-brand-dark text-white px-3 py-2 rounded text-xs font-bold hover:bg-gray-800 transition">
-                            <i class="fas fa-phone mr-1"></i>Anrufen
-                        </a>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-export async function updateStrategyCallStatus(callId, newStatus) {
-    if (!db) return;
-
-    try {
-        const callRef = doc(db, 'strategy_calls', callId);
-        await updateDoc(callRef, {
-            status: newStatus,
-            updatedAt: new Date()
-        });
-
-        // Update local data
-        const call = allStrategyCalls.find(c => c.id === callId);
-        if (call) call.status = newStatus;
-
-        updateStrategyStats(allStrategyCalls);
-        renderStrategyCalls(allStrategyCalls);
-        showToast(`✅ Status auf "${newStatus}" geändert`);
-
-    } catch (e) {
-        console.error('Failed to update strategy call status:', e);
-        showToast('❌ Status-Update fehlgeschlagen', 3000);
-    }
-}
-
-// ========== ADMIN SETTINGS ==========
-
-export async function loadAdminSettings() {
-    if (!db) return;
-
-    try {
-        const settingsRef = doc(db, 'settings', 'website');
-        const docSnap = await getDoc(settingsRef);
-
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            const input = document.getElementById('admin-mentoring-slots');
-            if (input && data.mentoringSlotsText) {
-                input.value = data.mentoringSlotsText;
-            }
-        }
-    } catch (e) {
-        console.error('Failed to load settings:', e);
-    }
-}
-
-export async function saveMentoringSlots() {
-    if (!db) {
-        showToast('❌ Datenbank nicht verfügbar', 3000);
-        return;
-    }
-
-    const input = document.getElementById('admin-mentoring-slots');
-    const status = document.getElementById('admin-mentoring-slots-status');
-    const text = input?.value?.trim();
-
-    if (!text) {
-        showToast('❌ Bitte Text eingeben', 3000);
-        return;
-    }
-
-    try {
-        const settingsRef = doc(db, 'settings', 'website');
-        await setDoc(settingsRef, {
-            mentoringSlotsText: text,
-            updatedAt: new Date()
-        }, { merge: true });
-
-        // Update the frontend immediately
-        const frontendText = document.getElementById('mentoring-slots-text');
-        if (frontendText) {
-            frontendText.textContent = text;
-        }
-
-        if (status) {
-            status.textContent = `✓ Gespeichert am ${new Date().toLocaleString('de-DE')}`;
-            status.classList.remove('text-gray-400');
-            status.classList.add('text-green-600');
-        }
-
-        showToast('✅ Einstellung gespeichert');
-    } catch (e) {
-        console.error('Failed to save mentoring slots:', e);
-        showToast('❌ Speichern fehlgeschlagen: ' + e.message, 3000);
-    }
-}
-
-// ========== ADMIN COACHES MANAGEMENT ==========
-
-let allAdminCoaches = [];
-
-export async function loadAdminCoaches() {
-    if (!db) {
-        console.error('Database not available');
-        return;
-    }
-
-    const container = document.getElementById('admin-coaches-list');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="p-8 text-center text-gray-400">
-            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-            <p class="text-sm">Lade Mentoren...</p>
-        </div>
-    `;
-
-    try {
-        const coachesRef = collection(db, 'coaches');
-        const snapshot = await getDocs(coachesRef);
-
-        allAdminCoaches = [];
-        snapshot.forEach(docSnap => {
-            allAdminCoaches.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        // Sort by name
-        allAdminCoaches.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-        updateCoachStats(allAdminCoaches);
-        renderAdminCoaches(allAdminCoaches);
-
-    } catch (e) {
-        console.error('Failed to load coaches:', e);
-        container.innerHTML = `
-            <div class="p-8 text-center text-red-500">
-                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
-                <p class="text-sm">Fehler beim Laden: ${e.message}</p>
-            </div>
-        `;
-    }
-}
-
-function updateCoachStats(coaches) {
-    const total = coaches.length;
-    const visible = coaches.filter(c => c.visible !== false).length;
-    const hidden = total - visible;
-
-    const statTotal = document.getElementById('admin-stat-coaches-total');
-    const statVisible = document.getElementById('admin-stat-coaches-visible');
-    const statHidden = document.getElementById('admin-stat-coaches-hidden');
-
-    if (statTotal) statTotal.textContent = total;
-    if (statVisible) statVisible.textContent = visible;
-    if (statHidden) statHidden.textContent = hidden;
-}
-
-function renderAdminCoaches(coaches) {
-    const container = document.getElementById('admin-coaches-list');
-    if (!container) return;
-
-    if (coaches.length === 0) {
-        container.innerHTML = `
-            <div class="p-8 text-center text-gray-400">
-                <i class="fas fa-user-slash text-2xl mb-2"></i>
-                <p class="text-sm">Keine Mentoren gefunden</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = coaches.map(coach => {
-        const isVisible = coach.visible !== false;
-        return `
-            <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition">
-                <div class="flex items-center gap-4">
-                    <img src="${coach.image || 'https://via.placeholder.com/50'}"
-                         alt="${sanitizeHTML(coach.name)}"
-                         class="w-12 h-12 rounded-full object-cover border-2 ${isVisible ? 'border-green-500' : 'border-gray-300'}">
-                    <div>
-                        <p class="font-bold text-brand-dark">${sanitizeHTML(coach.name)}</p>
-                        <p class="text-sm text-gray-500">${sanitizeHTML(coach.role || '')}</p>
-                        <p class="text-xs text-gray-400">${sanitizeHTML(coach.industry || 'Keine Branche')}</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-xs px-3 py-1 rounded-full ${isVisible ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
-                        ${isVisible ? 'Sichtbar' : 'Versteckt'}
-                    </span>
-                    <button onclick="app.toggleCoachVisibility('${coach.id}', ${!isVisible})"
-                            class="px-4 py-2 rounded-lg text-sm font-bold transition ${isVisible
-                                ? 'bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700'
-                                : 'bg-green-500 text-white hover:bg-green-600'}">
-                        ${isVisible ? '<i class="fas fa-eye-slash mr-2"></i>Verstecken' : '<i class="fas fa-eye mr-2"></i>Anzeigen'}
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-export async function toggleCoachVisibility(coachId, visible) {
-    if (!db) {
-        showToast('❌ Datenbank nicht verfügbar', 3000);
-        return;
-    }
-
-    try {
-        const coachRef = doc(db, 'coaches', coachId);
-        await updateDoc(coachRef, {
-            visible: visible,
-            updatedAt: new Date()
-        });
-
-        // Update local admin state
-        const coach = allAdminCoaches.find(c => c.id === coachId);
-        if (coach) {
-            coach.visible = visible;
-        }
-
-        // Also update app state for frontend display
-        if (window.app && window.app.state && window.app.state.coaches) {
-            const frontendCoach = window.app.state.coaches.find(c => c.id === coachId);
-            if (frontendCoach) {
-                frontendCoach.visible = visible;
-            }
-            // Re-render frontend coach grid
-            filterCoaches(window.app.state);
-        }
-
-        // Re-render admin list
-        updateCoachStats(allAdminCoaches);
-        renderAdminCoaches(allAdminCoaches);
-
-        showToast(visible ? '✅ Mentor ist jetzt sichtbar' : '✅ Mentor ist jetzt versteckt');
-    } catch (e) {
-        console.error('Failed to toggle coach visibility:', e);
-        showToast('❌ Fehler: ' + e.message, 3000);
-    }
-}
-
-// Load mentoring slots text on page load
-export async function loadMentoringSlotsText() {
-    if (!db) return;
-
-    try {
-        const settingsRef = doc(db, 'settings', 'website');
-        const docSnap = await getDoc(settingsRef);
-
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            const textEl = document.getElementById('mentoring-slots-text');
-            if (textEl && data.mentoringSlotsText) {
-                textEl.textContent = data.mentoringSlotsText;
-            }
-        }
-    } catch (e) {
-        console.error('Failed to load mentoring slots text:', e);
-    }
-}
-
 // Load delivered documents for user dashboard
 export async function loadDeliveredDocuments(state) {
     console.log('Loading delivered documents for user:', state.user?.uid);
@@ -3403,192 +2579,5 @@ export async function loadDeliveredDocuments(state) {
                 <p class="text-sm">Fehler beim Laden der Dokumente</p>
             </div>
         `;
-    }
-}
-
-// ========== COOKIE CONSENT ==========
-
-export function checkCookieConsent() {
-    const consent = localStorage.getItem('cookieConsent');
-
-    if (!consent) {
-        // Show cookie banner after a short delay
-        setTimeout(() => {
-            const banner = document.getElementById('cookie-banner');
-            if (banner) {
-                banner.classList.remove('translate-y-full');
-                banner.classList.add('translate-y-0');
-            }
-        }, 1000);
-    }
-}
-
-export async function acceptCookies() {
-    const consentDate = new Date().toISOString();
-    localStorage.setItem('cookieConsent', 'all');
-    localStorage.setItem('cookieConsentDate', consentDate);
-    hideCookieBanner();
-    showToast('Cookie-Einstellungen gespeichert');
-
-    // Load Google Analytics now that consent is given
-    loadGoogleAnalytics();
-
-    // Save to Firestore if user is logged in
-    await saveCookieConsentToFirestore('all', consentDate);
-}
-
-function loadGoogleAnalytics() {
-    // Check if already loaded
-    if (window.gaLoaded) return;
-
-    const gaId = 'G-8K4T9MXEZ8';
-
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
-    document.head.appendChild(script);
-
-    script.onload = function() {
-        window.gtag('js', new Date());
-        window.gtag('config', gaId, {
-            'anonymize_ip': true,
-            'cookie_flags': 'SameSite=None;Secure'
-        });
-        window.gaLoaded = true;
-        console.log('Google Analytics loaded after consent');
-    };
-}
-
-export async function declineCookies() {
-    const consentDate = new Date().toISOString();
-    localStorage.setItem('cookieConsent', 'essential');
-    localStorage.setItem('cookieConsentDate', consentDate);
-    hideCookieBanner();
-    showToast('Nur notwendige Cookies aktiviert');
-
-    // Save to Firestore if user is logged in
-    await saveCookieConsentToFirestore('essential', consentDate);
-}
-
-async function saveCookieConsentToFirestore(consent, consentDate) {
-    try {
-        // Check if user is logged in
-        if (auth && auth.currentUser && db) {
-            const userRef = doc(db, 'users', auth.currentUser.uid);
-            await updateDoc(userRef, {
-                cookieConsent: consent,
-                cookieConsentDate: consentDate
-            });
-            console.log('Cookie consent saved to Firestore');
-        }
-    } catch (error) {
-        console.error('Failed to save cookie consent to Firestore:', error);
-    }
-}
-
-function hideCookieBanner() {
-    const banner = document.getElementById('cookie-banner');
-    if (banner) {
-        banner.classList.remove('translate-y-0');
-        banner.classList.add('translate-y-full');
-    }
-}
-
-// ========== EMAIL VERIFICATION ==========
-
-export function checkEmailVerification() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode');
-
-    // Firebase uses 'verifyEmail' mode when redirecting after email verification
-    if (mode === 'verifyEmail') {
-        // Show the verification success modal
-        const modal = document.getElementById('email-verified-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        // Clean URL without refreshing
-        const cleanUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-    }
-}
-
-export function closeEmailVerifiedModal() {
-    const modal = document.getElementById('email-verified-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-}
-
-// ========== EMAIL ACTION HANDLER ==========
-// Handles Firebase email actions: verifyEmail, resetPassword, recoverEmail
-
-export async function handleEmailAction(navigateToFn) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode');
-    const oobCode = urlParams.get('oobCode');
-
-    // Only proceed if we have a mode and action code
-    if (!mode || !oobCode) return;
-
-    // Navigate to the email action view
-    if (navigateToFn) {
-        navigateToFn('email-action');
-    }
-
-    const loadingEl = document.getElementById('email-action-loading');
-    const successEl = document.getElementById('email-action-success');
-    const errorEl = document.getElementById('email-action-error');
-    const errorMsgEl = document.getElementById('email-action-error-message');
-
-    try {
-        switch (mode) {
-            case 'verifyEmail':
-                // Verify the email
-                await applyActionCode(auth, oobCode);
-
-                // Show success
-                if (loadingEl) loadingEl.classList.add('hidden');
-                if (successEl) successEl.classList.remove('hidden');
-
-                // Clean URL
-                const cleanUrl = window.location.origin + window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
-                break;
-
-            case 'resetPassword':
-                // For password reset, we would show a password reset form
-                // For now, just show an error since we haven't implemented this yet
-                throw new Error('Passwort-Reset wird vorbereitet...');
-
-            default:
-                throw new Error('Unbekannte Aktion');
-        }
-    } catch (error) {
-        console.error('Email action error:', error);
-
-        // Show error state
-        if (loadingEl) loadingEl.classList.add('hidden');
-        if (errorEl) errorEl.classList.remove('hidden');
-
-        // Set appropriate error message
-        let errorMessage = 'Der Link ist ungültig oder abgelaufen.';
-
-        if (error.code === 'auth/invalid-action-code') {
-            errorMessage = 'Der Bestätigungslink ist ungültig oder wurde bereits verwendet.';
-        } else if (error.code === 'auth/expired-action-code') {
-            errorMessage = 'Der Bestätigungslink ist abgelaufen. Bitte fordern Sie einen neuen Link an.';
-        } else if (error.code === 'auth/user-disabled') {
-            errorMessage = 'Dieses Konto wurde deaktiviert.';
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-
-        if (errorMsgEl) {
-            errorMsgEl.textContent = errorMessage;
-        }
     }
 }
