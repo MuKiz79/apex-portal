@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="APEX Executive - Professionelle Karriere-Architektur & CV-Manufaktur für Führungskräfte und Aufsteiger">
+    <meta name="keywords" content="Karriereberatung, CV Erstellung, Executive Coaching, Mentoring, C-Level">
+    <title>APEX Executive | Karriere-Architektur & CV-Manufaktur</title>
+
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0B1120',
+                            gold: '#C6A87C',
+                            light: '#F3F4F6',
+                            accent: '#1E293B',
+                            success: '#10B981',
+                            error: '#EF4444'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cinzel"', 'serif'],
+                        sans: ['"Lato"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-brand-light text-brand-dark font-sans antialiased relative flex flex-col min-h-screen">
+<body class="bg-brand-light text-brand-dark font-sans antialiased relative flex flex-col min-h-screen">
+
+    <!-- Skip to Main Content (Accessibility) -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-brand-gold text-brand-dark px-4 py-2 rounded-sm z-[100] font-bold">
+        Zum Hauptinhalt springen
+    </a>
+
+    <!-- NAVIGATION -->
+    <nav class="bg-brand-dark text-white sticky top-0 z-50 shadow-xl border-b border-white/5" role="navigation" aria-label="Hauptnavigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-24 items-center">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3 group cursor-pointer" onclick="app.navigateTo('home')" tabindex="0" role="button" aria-label="Zur Startseite">
+                    <div class="relative w-10 h-10 flex items-center justify-center border-2 border-brand-gold rounded-sm transform group-hover:rotate-45 transition duration-500">
+                        <svg class="w-6 h-6 transform group-hover:-rotate-45 transition duration-500" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <!-- Berggipfel mit mehreren Peaks -->
+                            <!-- Linker kleiner Berg -->
+                            <path d="M2 24 L9 12 L16 24" stroke="#C6A87C" stroke-width="2" fill="none" stroke-linejoin="miter"/>
+                            <!-- Hauptgipfel (Mitte-Rechts) -->
+                            <path d="M12 24 L16 16 L20 8 L24 16 L30 24" stroke="#C6A87C" stroke-width="2.5" fill="none" stroke-linejoin="miter"/>
+                            <!-- Schnee/Highlight am Hauptgipfel -->
+                            <circle cx="20" cy="8" r="1.5" fill="#C6A87C"/>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-serif text-2xl tracking-widest leading-none text-white">APEX</span>
+                        <span class="text-[0.65rem] uppercase tracking-[0.3em] text-brand-gold">Executive</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div id="nav-links" class="hidden md:flex space-x-8 text-xs uppercase tracking-widest font-bold text-gray-400">
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">CV-Manufaktur</button>
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Mentoren</button>
+                    <button onclick="app.navigateTo('journal')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Insights</button>
+                    <button onclick="app.navigateTo('about')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Über uns</button>
+                </div>
+
+                <!-- User Actions -->
+                <div class="flex items-center space-x-6">
+                    <!-- Cart -->
+                    <button onclick="app.toggleCart()" class="relative text-white hover:text-brand-gold transition group flex items-center gap-2" aria-label="Warenkorb anzeigen">
+                        <i class="fas fa-briefcase text-lg group-hover:scale-110 transition-transform" aria-hidden="true"></i>
+                        <span class="hidden md:inline text-[10px] uppercase tracking-widest font-bold">Portfolio</span>
+                        <span id="cart-count" class="absolute -top-2 -right-2 bg-brand-gold text-brand-dark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden shadow-md" aria-live="polite">0</span>
+                    </button>
+
+                    <div class="hidden md:block">
+                        <!-- Login Button -->
+                        <button id="nav-login-btn" onclick="app.navigateTo('login')" class="border border-brand-gold/30 text-brand-gold px-6 py-2 rounded-sm font-bold text-xs uppercase hover:bg-brand-gold hover:text-brand-dark transition duration-300">
+                            Login
+                        </button>
+                        <!-- User Profile (Hidden initially) -->
+                        <div id="nav-user-profile" class="hidden flex items-center gap-3 cursor-pointer" onclick="app.navigateTo('dashboard')">
+                            <div class="text-right hidden lg:block">
+                                <span class="block text-xs text-white font-bold" id="user-name-display">User</span>
+                                <span class="block text-[10px] text-brand-gold uppercase tracking-wider">Dashboard</span>
+                            </div>
+                            <img src="https://randomuser.me/api/portraits/men/46.jpg" class="w-10 h-10 rounded-full border-2 border-brand-gold object-cover" alt="Benutzerprofilbild" loading="lazy">
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Trigger -->
+                    <button onclick="app.toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none" aria-label="Menü öffnen">
+                        <i class="fas fa-bars" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden md:hidden absolute top-24 left-0 w-full bg-brand-dark border-b border-white/10 shadow-xl py-6 px-4 flex-col space-y-4 z-40">
+            <button onclick="app.navigateTo('home'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Home</button>
+            <button onclick="app.navigateTo('journal'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Insights</button>
+            <button onclick="app.navigateTo('about'); app.toggleMobileMenu()" class="text-left text-white font-serif text-lg border-b border-white/5 pb-2">Über uns</button>
+            <button onclick="app.navigateTo('login'); app.toggleMobileMenu()" class="text-left text-brand-gold font-bold uppercase tracking-widest text-xs pt-2">Mitglieder Login</button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content">
+
+    <!-- === VIEW 1: HOME === -->
+    <div id="view-home" class="fade-in">
+        <!-- Hero -->
+        <header class="bg-brand-dark text-white relative overflow-hidden hero-pattern">
+            <div class="absolute inset-0 bg-gradient-to-br from-brand-dark via-brand-dark/95 to-brand-accent/90 z-10"></div>
+            <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 grid md:grid-cols-12 gap-12 items-center">
+                <div class="md:col-span-7">
+                    <div class="inline-block border-l-2 border-brand-gold pl-4 mb-6">
+                        <span class="text-gray-400 uppercase tracking-widest text-xs font-bold block">Für Führungskräfte & Aufsteiger</span>
+                    </div>
+                    <h1 class="font-serif text-4xl md:text-6xl leading-tight mb-6">
+                        Karriere <br> neu <span class="text-transparent bg-clip-text gold-gradient">definieren</span>.
+                    </h1>
+                    <p class="text-gray-300 text-lg mb-10 font-light leading-relaxed max-w-xl">Wir demokratisieren Executive-Qualität. Egal ob Sie ins C-Level aufsteigen oder Ihre Karriere erst starten – wir erstellen Unterlagen, die Türen öffnen.</p>
+                    <div class="flex flex-col sm:flex-row gap-5">
+                        <button onclick="app.scrollToSection('cv-packages')" class="gold-gradient text-brand-dark font-bold py-4 px-10 rounded-sm hover:shadow-lg transition text-center uppercase tracking-wider text-sm">
+                            Zu den CV Paketen
+                        </button>
+                        <button onclick="app.scrollToSection('coaches')" class="group flex items-center justify-center text-white py-4 px-8 rounded-sm hover:text-brand-gold transition text-center uppercase tracking-wider text-sm">
+                            <span>Mentoren ansehen</span>
+                            <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CV Packages -->
+        <section id="cv-packages" class="py-24 bg-white relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Die CV-Manufaktur</span>
+                    <h2 class="font-serif text-4xl text-brand-dark mb-4">Unterlagen für jede Karrierestufe</h2>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 items-start">
+
+                    <!-- Starter -->
+                    <div class="group border border-gray-200 p-8 rounded-sm bg-white hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer relative" onclick="app.openPackageDetail()">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-100 text-gray-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">High Potential</div>
+                        <h3 class="font-serif text-xl text-brand-dark mb-2">Young Professional</h3>
+                        <div class="text-3xl font-serif text-brand-dark mb-6">€249 <span class="text-sm font-sans text-gray-400 font-normal">/ Paket</span></div>
+                        <ul class="space-y-4 mb-8 text-sm text-gray-600">
+                            <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-2" aria-hidden="true"></i> Profi-CV Erstellung</li>
+                            <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-2" aria-hidden="true"></i> Fokus auf Potenziale</li>
+                            <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-2" aria-hidden="true"></i> Anschreiben-Template</li>
+                        </ul>
+                        <div class="space-y-3">
+                            <button onclick="event.stopPropagation(); app.addToCart('Young Professional CV', 249)" class="w-full border border-brand-dark text-brand-dark py-3 uppercase text-xs font-bold hover:bg-brand-dark hover:text-white transition">Auswählen</button>
+                            <button onclick="event.stopPropagation(); app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                        </div>
+                    </div>
+
+                    <!-- Pro -->
+                    <div class="group border-2 border-brand-gold p-8 rounded-sm shadow-xl relative transform md:-translate-y-4 hover:shadow-2xl hover:-translate-y-6 transition-all duration-300 cursor-pointer" onclick="app.openPackageDetail()">
+                        <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-[10px] font-bold px-3 py-1 uppercase tracking-wide">Popular</div>
+                        <h3 class="font-serif text-xl text-brand-dark mb-2">Senior Professional</h3>
+                        <div class="text-3xl font-serif text-brand-dark mb-6">€490 <span class="text-sm font-sans text-gray-400 font-normal">/ Paket</span></div>
+                        <ul class="space-y-4 mb-8 text-sm text-gray-600">
+                            <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-2" aria-hidden="true"></i> USP Erarbeitung</li>
+                            <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-2" aria-hidden="true"></i> LinkedIn Update</li>
+                        </ul>
+                        <div class="space-y-3">
+                            <button onclick="event.stopPropagation(); app.addToCart('Senior Professional CV', 490)" class="w-full bg-brand-gold text-brand-dark py-3 uppercase text-xs font-bold hover:shadow-lg transition">Auswählen</button>
+                            <button onclick="event.stopPropagation(); app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-400 hover:text-brand-dark underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                        </div>
+                    </div>
+
+                    <!-- Exec -->
+                    <div class="group border border-gray-200 p-8 rounded-sm bg-brand-dark text-white relative hover:shadow-2xl hover:-translate-y-2 hover:border-brand-gold transition-all duration-300 cursor-pointer" onclick="app.openPackageDetail()">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-gold text-brand-dark px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">Board Level</div>
+                        <h3 class="font-serif text-xl text-white mb-2">Executive C-Suite</h3>
+                        <div class="text-3xl font-serif text-white mb-6">€990 <span class="text-sm font-sans text-gray-500 font-normal">/ Paket</span></div>
+                        <ul class="space-y-4 mb-8 text-sm text-gray-400">
+                            <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-2" aria-hidden="true"></i> Executive Rebranding</li>
+                            <li class="flex items-center"><i class="fas fa-check text-brand-gold mr-2" aria-hidden="true"></i> Headhunter Intro</li>
+                        </ul>
+                        <div class="space-y-3">
+                            <button onclick="event.stopPropagation(); app.addToCart('Executive C-Suite CV', 990)" class="w-full border border-white text-white py-3 uppercase text-xs font-bold hover:bg-white hover:text-brand-dark transition">Auswählen</button>
+                            <button onclick="event.stopPropagation(); app.navigateTo('package-details')" class="block w-full text-center text-[10px] uppercase tracking-widest text-gray-500 hover:text-white underline decoration-1 underline-offset-4">Details & Vergleich</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="coaches" class="py-24 bg-brand-light border-t border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-20 text-center">
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Executive Sparring</span>
+                    <h2 class="font-serif text-4xl text-brand-dark mb-4">Wissen statt Weisheiten</h2>
+                    <p class="text-gray-500 max-w-2xl mx-auto">Wir vermitteln keine Coaches, sondern aktive Entscheider. Verstehen Sie es als "Beratung auf Augenhöhe".</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 mb-16">
+                    <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center">
+                        <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-user-tie text-2xl" aria-hidden="true"></i></div>
+                        <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Peer-to-Peer</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed">Sprechen Sie mit jemandem, der Ihren Job heute schon macht. Keine Theoretiker, sondern Führungskräfte mit aktueller Budgetverantwortung.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center">
+                        <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-video text-2xl" aria-hidden="true"></i></div>
+                        <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Das Format</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed">60 Minuten Video-Session über unsere verschlüsselte Plattform. Fokus auf Ad-hoc Problemlösung oder Strategie-Validierung.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-sm shadow-sm border border-gray-100 flex flex-col items-center text-center">
+                        <div class="w-14 h-14 rounded-full bg-brand-light flex items-center justify-center text-brand-dark mb-4"><i class="fas fa-lock text-2xl" aria-hidden="true"></i></div>
+                        <h3 class="font-serif text-lg font-bold mb-2 text-brand-dark">Diskretion</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed">Ihr Interesse bleibt geheim. Ideal, um heikle Themen (Wechselabsichten, Konflikte im Board) sicher zu besprechen.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end mb-8">
+                    <label for="industry-filter" class="sr-only">Nach Branche filtern</label>
+                    <select id="industry-filter" onchange="app.debouncedFilterCoaches()" class="bg-white border border-gray-300 px-4 py-2 rounded-sm text-sm focus:border-brand-gold outline-none">
+                        <option value="all">Alle Branchen</option>
+                        <option value="tech">Technology & IT</option>
+                        <option value="finance">Finance & Banking</option>
+                        <option value="automotive">Automotive</option>
+                    </select>
+                </div>
+                <div id="coach-grid" class="grid md:grid-cols-3 gap-8"></div>
+            </div>
+        </section>
+
+        <section id="process" class="py-24 bg-brand-dark text-white relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center mb-16">
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Der Ablauf</span>
+                    <h2 class="font-serif text-4xl mb-4">Der Weg zum Ziel</h2>
+                </div>
+                <div class="grid md:grid-cols-4 gap-8">
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 transition duration-300 hover:bg-brand-gold hover:text-brand-dark"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">1</span></div>
+                        <h4 class="font-bold mb-2">Auswahl</h4><p class="text-sm text-gray-400">Paket/Mentor wählen.</p>
+                    </div>
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 transition duration-300 hover:bg-brand-gold hover:text-brand-dark"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">2</span></div>
+                        <h4 class="font-bold mb-2">Briefing</h4><p class="text-sm text-gray-400">Upload & Analyse.</p>
+                    </div>
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 transition duration-300 hover:bg-brand-gold hover:text-brand-dark"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">3</span></div>
+                        <h4 class="font-bold mb-2">Umsetzung</h4><p class="text-sm text-gray-400">Arbeit der Experten.</p>
+                    </div>
+                    <div class="text-center group">
+                        <div class="w-16 h-16 rounded-full border border-brand-gold flex items-center justify-center mx-auto mb-6 transition duration-300 hover:bg-brand-gold hover:text-brand-dark"><span class="text-xl font-bold text-brand-gold group-hover:text-brand-dark">4</span></div>
+                        <h4 class="font-bold mb-2">Lieferung</h4><p class="text-sm text-gray-400">Finale Dokumente.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq" class="py-24 bg-gray-50 border-t border-gray-200">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Häufige Fragen</span>
+                    <h2 class="font-serif text-3xl text-brand-dark">Wichtige Hinweise & Exclusions</h2>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq1')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq1"><span class="font-bold text-brand-dark text-sm">Garantieren Sie einen Job oder eine Beförderung?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq1" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Nein. Wir garantieren die Optimierung Ihrer Unterlagen und Ihrer Strategie nach höchsten Marktstandards ("Enabling"). Die Entscheidung über eine Einstellung liegt jedoch immer beim Unternehmen. Rechtlich schulden wir eine Dienstleistung, keinen Erfolg im Sinne einer Anstellung.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq2')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq2"><span class="font-bold text-brand-dark text-sm">Sind Sie Headhunter oder Personalvermittler?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq2" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Wir arbeiten ausschließlich im Auftrag des Kandidaten (Sie), nicht im Auftrag von Unternehmen. Das garantiert Ihnen 100% Loyalität und Unabhängigkeit. Im "Executive C-Suite"-Paket nutzen wir jedoch unser persönliches Netzwerk für diskrete Intros, sofern passend.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq3')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq3"><span class="font-bold text-brand-dark text-sm">Prüfen Sie Arbeitsverträge rechtlich?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq3" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Nein. Unsere Beratung bezieht sich auf strategische und taktische Karriereplanung (Verhandlungstaktik, Marktwert). Wir bieten keine Rechtsberatung. Für die Prüfung von Verträgen empfehlen wir spezialisierte Fachanwälte für Arbeitsrecht.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq-compliance')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq-compliance"><span class="font-bold text-brand-dark text-sm">Gibt es Einschränkungen bei der Mentoren-Wahl? (Compliance)</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq-compliance" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Ja. Da unsere Mentoren in aktiven Führungspositionen sind, gelten strikte Compliance-Regeln. Ein Mentor darf keine Personen beraten, die bei direkten Wettbewerbern tätig sind. <strong>Ebenso ist eine Beratung ausgeschlossen, wenn Sie sich aktiv beim aktuellen Arbeitgeber des Mentors bewerben</strong>, um Interessenskonflikte zu vermeiden. Dies wird im Matching-Prozess (Compliance-Check) geprüft.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq4')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq4"><span class="font-bold text-brand-dark text-sm">Sind die Kosten steuerlich absetzbar?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq4" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">In der Regel ja. Da es sich um berufliche Weiterbildung und Bewerbungskosten handelt, können diese meist als Werbungskosten geltend gemacht werden. Bitte konsultieren Sie hierzu Ihren Steuerberater. Sie erhalten von uns eine ordnungsgemäße Rechnung mit ausgewiesener MwSt.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq5')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq5"><span class="font-bold text-brand-dark text-sm">Wie schnell ist die Umsetzung?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq5" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Mentoring-Sessions sind oft innerhalb von 48h buchbar. Für CV-Pakete benötigen wir nach vollständigem Briefing ca. 5-7 Werktage für den ersten Entwurf. Express-Service (48h) ist auf Anfrage gegen Aufpreis möglich.</div></div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden" onclick="app.toggleFaq('faq6')">
+                        <button class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition" aria-expanded="false" aria-controls="faq6"><span class="font-bold text-brand-dark text-sm">Wie wird Diskretion gewährleistet?</span><i class="fas fa-chevron-down text-brand-gold transition-transform duration-300" aria-hidden="true"></i></button>
+                        <div id="faq6" class="faq-content bg-gray-50/50"><div class="px-6 pb-6 pt-2 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">Diskretion ist unser höchstes Gut. Alle Daten werden verschlüsselt übertragen. Mentoren unterzeichnen strikte Verschwiegenheitserklärungen (NDAs). Ihre Identität wird erst im direkten Gespräch mit dem Mentor offengelegt, nicht auf einer öffentlichen Liste.</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- VIEW 2: AUTH (LOGIN & REGISTER WITH EMAIL VERIFICATION) -->
+    <div id="view-login" class="hidden min-h-[80vh] flex items-center justify-center bg-brand-light fade-in">
+        <div class="bg-white p-10 rounded-sm shadow-2xl w-full max-w-lg border-t-4 border-brand-gold relative my-10">
+            <div class="flex justify-center mb-8 gap-6 border-b border-gray-100 pb-4" id="auth-tabs">
+                <button onclick="app.toggleAuthMode('login')" id="tab-login" class="font-bold text-brand-dark border-b-2 border-brand-dark pb-1 text-sm uppercase tracking-wide">Anmelden</button>
+                <button onclick="app.toggleAuthMode('register')" id="tab-register" class="text-gray-400 pb-1 text-sm uppercase tracking-wide">Registrieren</button>
+            </div>
+
+            <form onsubmit="return false;" class="space-y-4" id="auth-form">
+                <div id="login-fields">
+                    <div>
+                        <label for="login-email" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">E-Mail</label>
+                        <input type="email" id="login-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                    </div>
+                    <div class="mt-4">
+                        <label for="login-password" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Passwort</label>
+                        <input type="password" id="login-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                    </div>
+                </div>
+
+                <div id="register-fields" class="hidden space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                         <div>
+                            <label for="reg-salutation" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Anrede</label>
+                            <select id="reg-salutation" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                                <option>Herr</option>
+                                <option>Frau</option>
+                                <option>Divers</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label for="reg-title" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Titel (Optional)</label>
+                            <input type="text" id="reg-title" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="reg-firstname" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vorname <span class="text-red-500">*</span></label>
+                            <input type="text" id="reg-firstname" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                        </div>
+                        <div>
+                            <label for="reg-lastname" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Nachname <span class="text-red-500">*</span></label>
+                            <input type="text" id="reg-lastname" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                         <div class="col-span-2">
+                            <label for="reg-street" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Straße (Optional)</label>
+                            <input type="text" id="reg-street" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Straße">
+                        </div>
+                         <div>
+                            <label for="reg-houseno" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Nr.</label>
+                            <input type="text" id="reg-houseno" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                         <div>
+                            <label for="reg-zip" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">PLZ</label>
+                            <input type="text" id="reg-zip" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" pattern="[0-9]{5}" title="5-stellige PLZ">
+                        </div>
+                         <div class="col-span-2">
+                            <label for="reg-city" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Ort</label>
+                            <input type="text" id="reg-city" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="reg-phone" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Telefon</label>
+                        <input type="tel" id="reg-phone" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark">
+                    </div>
+                    <div>
+                        <label for="reg-email" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">E-Mail <span class="text-red-500">*</span></label>
+                        <input type="email" id="reg-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.validateEmailField(this.value)">
+                        <div id="email-feedback" class="form-feedback"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="reg-password" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Passwort <span class="text-red-500">*</span></label>
+                            <input type="password" id="reg-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.updatePasswordStrength(this.value)">
+                            <!-- Password Strength Indicator -->
+                            <div class="mt-2 bg-gray-200 rounded-full h-1 overflow-hidden">
+                                <div id="password-strength-bar" class="password-strength-bar h-full"></div>
+                            </div>
+                            <p id="password-strength-text" class="text-xs mt-1"></p>
+                        </div>
+                        <div>
+                            <label for="reg-password-confirm" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Wiederholen <span class="text-red-500">*</span></label>
+                            <input type="password" id="reg-password-confirm" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.validatePasswordMatchField()">
+                            <div id="password-match-feedback" class="form-feedback"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="app.handleAuth()" id="auth-submit-btn" class="w-full gold-gradient text-brand-dark font-bold py-3 uppercase text-xs hover:shadow-lg transition mt-6">Anmelden</button>
+            </form>
+
+            <div id="auth-error" class="text-red-500 text-xs mt-4 text-center hidden p-2 bg-red-50 border border-red-100 rounded" role="alert"></div>
+            <div id="auth-success" class="text-green-600 text-xs mt-4 text-center hidden p-2 bg-green-50 border border-green-100 rounded font-bold" role="status"></div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: ENHANCED DASHBOARD -->
+    <div id="view-dashboard" class="hidden fade-in flex-grow bg-gray-50">
+        <!-- Dashboard Header mit Profilbild -->
+        <div class="bg-brand-dark text-white py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                    <div class="flex items-center gap-6">
+                        <!-- Profilbild Upload -->
+                        <div class="relative group">
+                            <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-brand-gold shadow-lg cursor-pointer">
+                                <img id="profile-picture" src="https://randomuser.me/api/portraits/men/46.jpg" alt="Profilbild" class="w-full h-full object-cover">
+                            </div>
+                            <label for="profile-picture-upload" class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                                <i class="fas fa-camera text-white text-xl" aria-hidden="true"></i>
+                            </label>
+                            <input type="file" id="profile-picture-upload" accept="image/*" class="hidden" onchange="app.handleProfilePictureUpload(this)">
+                        </div>
+                        <div>
+                            <h1 class="font-serif text-3xl mb-1">Willkommen, <span id="dash-username">User</span></h1>
+                            <div id="member-discount-badge" class="mt-2 bg-brand-gold text-brand-dark text-xs px-3 py-1 inline-block rounded font-bold">
+                                <i class="fas fa-tag mr-1" aria-hidden="true"></i> 10% Mitglieder-Rabatt
+                            </div>
+                            <div id="verification-warning" class="hidden mt-2 bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 inline-block rounded">Bitte E-Mail bestätigen!</div>
+                        </div>
+                    </div>
+                    <button onclick="app.handleLogout()" class="text-xs border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition">Abmelden</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Hauptbereich -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Bestellstatus / Bestellübersicht -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 class="font-bold text-brand-dark">Meine Bestellungen</h3>
+                        <span id="order-count-badge" class="bg-brand-gold text-brand-dark text-xs px-2 py-1 rounded font-bold">0</span>
+                    </div>
+                    <div id="orders-list">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-3 text-gray-300" aria-hidden="true"></i>
+                            <p class="text-sm">Noch keine Bestellungen</p>
+                            <button onclick="app.navigateToSection('home', 'cv-packages')" class="mt-4 text-brand-gold font-bold text-xs uppercase hover:underline">
+                                Pakete ansehen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terminkalender (nur sichtbar bei Coach-Buchung) -->
+                <div id="appointment-calendar" class="hidden bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4 border-b pb-2">
+                        <i class="fas fa-calendar-alt mr-2 text-brand-gold" aria-hidden="true"></i>
+                        Termin mit <span id="coach-name-calendar">Mentor</span> buchen
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Wählen Sie einen verfügbaren Termin für Ihre 1:1 Session:</p>
+                    <div id="calendar-slots" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Calendar slots werden hier dynamisch eingefügt -->
+                    </div>
+                </div>
+
+                <!-- Secure Data Vault -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4">
+                        <i class="fas fa-shield-alt mr-2 text-brand-gold" aria-hidden="true"></i>
+                        Secure Data Vault
+                    </h3>
+                    <div class="border-2 border-dashed border-gray-300 p-8 text-center bg-gray-50 hover:bg-gray-100 transition relative">
+                        <input type="file" id="file-upload" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="app.handleFileUpload(this)" aria-label="Datei hochladen">
+                        <div id="upload-ui-default">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2" aria-hidden="true"></i>
+                            <p class="text-sm">Dokumente hier ablegen (PDF)</p>
+                            <p class="text-xs text-gray-400 mt-1">Max. 10MB</p>
+                        </div>
+                        <div id="upload-ui-loading" class="hidden">
+                            <div class="loader"></div>
+                            <p class="text-xs mt-2">Uploading...</p>
+                        </div>
+                    </div>
+                    <div id="file-list" class="mt-4 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-8">
+
+                <!-- Quick Actions -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <button onclick="app.navigateToSection('home', 'cv-packages')" class="w-full bg-brand-gold text-brand-dark text-xs font-bold py-3 uppercase hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fas fa-file-alt" aria-hidden="true"></i>
+                            CV-Pakete ansehen
+                        </button>
+                        <button onclick="app.navigateToSection('home', 'coaches')" class="w-full border-2 border-brand-dark text-brand-dark text-xs font-bold py-3 uppercase hover:bg-brand-dark hover:text-white transition flex items-center justify-center gap-2">
+                            <i class="fas fa-user-tie" aria-hidden="true"></i>
+                            Mentoren ansehen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mitglieder-Vorteile -->
+                <div class="bg-brand-dark text-white p-6 rounded-sm shadow-lg">
+                    <h3 class="font-serif text-lg font-bold mb-4">
+                        <i class="fas fa-crown text-brand-gold mr-2" aria-hidden="true"></i>
+                        Ihre Vorteile
+                    </h3>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span><strong>10% Rabatt</strong> auf alle Pakete</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span>Prioritäts-Support</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span>Exklusive Insights</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-brand-gold mt-1" aria-hidden="true"></i>
+                            <span>Secure Document Storage</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Concierge Service -->
+                <div class="bg-white p-6 rounded-sm shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider">Concierge Service</h3>
+                    <p class="text-xs text-gray-600 mb-4">Ihr persönlicher Ansprechpartner für Terminbuchungen und Rückfragen.</p>
+                    <div class="space-y-2">
+                        <button class="w-full border border-brand-dark text-brand-dark text-xs font-bold py-3 uppercase hover:bg-brand-dark hover:text-white transition">
+                            <i class="fas fa-envelope mr-2" aria-hidden="true"></i>
+                            Nachricht senden
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin: Über uns Bild verwalten -->
+                <div class="bg-gradient-to-br from-brand-gold/10 to-brand-dark/5 p-6 rounded-sm shadow-sm border-2 border-brand-gold/30">
+                    <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-brand-gold" aria-hidden="true"></i>
+                        Admin: "Über uns" Bild
+                    </h3>
+                    <p class="text-xs text-gray-600 mb-4">Bild für die "Über uns" Seite verwalten.</p>
+
+                    <div class="space-y-3">
+                        <!-- Option 1: URL eingeben -->
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-2">Option 1: Bild-URL eingeben</label>
+                            <input type="url" id="about-image-url" placeholder="https://example.com/image.jpg" class="w-full text-xs p-2 border border-gray-300 rounded focus:border-brand-gold outline-none">
+                            <button onclick="app.updateAboutImage(document.getElementById('about-image-url').value)" class="w-full mt-2 bg-brand-gold text-brand-dark text-xs font-bold py-2 uppercase hover:shadow-lg transition">
+                                <i class="fas fa-link mr-1" aria-hidden="true"></i>
+                                URL Speichern
+                            </button>
+                        </div>
+
+                        <div class="text-center text-xs text-gray-400">- ODER -</div>
+
+                        <!-- Option 2: Bild hochladen -->
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-2">Option 2: Bild hochladen</label>
+                            <label for="about-image-upload" class="w-full bg-brand-dark text-white text-xs font-bold py-2 uppercase cursor-pointer hover:bg-opacity-90 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                                Datei wählen & hochladen
+                            </label>
+                            <input type="file" id="about-image-upload" accept="image/*" class="hidden" onchange="if(this.files[0]) app.uploadAboutImage(this.files[0])">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- OTHER VIEWS (Journal, About, Details, Coach Detail) -->
+    <div id="view-journal" class="hidden fade-in min-h-screen bg-gray-50">
+        <header class="bg-brand-dark text-white py-20 relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 relative z-10 text-center">
+                <span class="text-brand-gold uppercase tracking-[0.2em] text-xs font-bold block mb-4">APEX Journal</span>
+                <h1 class="font-serif text-4xl mb-4">Executive Insights</h1>
+                <p class="text-gray-400 text-sm max-w-2xl mx-auto">Marktanalysen, Strategien und Insider-Wissen für die moderne Führungskraft.</p>
+            </div>
+        </header>
+        <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div id="journal-grid" class="grid md:grid-cols-3 gap-8"></div>
+        </section>
+    </div>
+
+    <div id="view-about" class="hidden fade-in min-h-screen bg-white">
+        <div class="py-20 max-w-4xl mx-auto px-4 text-center">
+            <h1 class="font-serif text-3xl mb-6">Über uns</h1>
+            <div class="prose mx-auto text-gray-600 mb-12">
+                <div class="grid md:grid-cols-2 gap-12 items-center mb-24 text-left">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-brand-gold/10 transform translate-x-4 translate-y-4"></div>
+                        <img id="about-founder-image" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Gründer" class="relative z-10 w-full rounded-sm shadow-xl grayscale hover:grayscale-0 transition duration-700" loading="lazy">
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-4">Vom CIO zum Enabler</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">"Als CIO habe ich hunderte Bewerbungen gesehen. Das Problem: Die meisten Dienstleister verstehen die Sprache des C-Levels nicht. Die Idee zu APEX entstand aus dem Bedürfnis, eine Brücke zu bauen. Zwischen ambitionierten Talenten und der Realität in den Vorstandsetagen."</p>
+                        <div class="border-l-4 border-brand-gold pl-4 py-2 bg-gray-50">
+                            <p class="text-sm italic text-gray-800 font-serif">"Unser Ziel ist es, Ihnen nicht nur einen Job zu verschaffen, sondern eine Karriere-Strategie."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 text-sm text-center">
+                <div class="p-6 bg-gray-50">
+                    <i class="fas fa-handshake text-brand-gold text-2xl mb-4" aria-hidden="true"></i>
+                    <h4 class="font-bold mb-2">Integrität</h4>
+                    Wir versprechen keine Wunder, sondern harte Arbeit an Ihrer Positionierung.
+                </div>
+                <div class="p-6 bg-gray-50">
+                    <i class="fas fa-chess-queen text-brand-gold text-2xl mb-4" aria-hidden="true"></i>
+                    <h4 class="font-bold mb-2">Strategie</h4>
+                    Ein CV ist kein Lebenslauf, sondern ein Verkaufsprospekt.
+                </div>
+                <div class="p-6 bg-gray-50">
+                    <i class="fas fa-network-wired text-brand-gold text-2xl mb-4" aria-hidden="true"></i>
+                    <h4 class="font-bold mb-2">Netzwerk</h4>
+                    Zugang zu einem Kreis von Entscheidern.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-package-details" class="hidden fade-in min-h-screen bg-white">
+        <div class="py-20 text-center">
+            <h1 class="font-serif text-3xl mb-8">Detail-Vergleich</h1>
+            <div class="max-w-4xl mx-auto mt-8 px-4 overflow-x-auto">
+                <table class="w-full text-left text-sm border">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="p-4 w-1/4">Feature</th>
+                            <th class="p-4 text-center w-1/4">Young</th>
+                            <th class="p-4 text-center w-1/4 font-bold text-brand-gold">Senior</th>
+                            <th class="p-4 text-center w-1/4 bg-brand-dark text-white">Exec</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr class="hover:bg-gray-50"><td class="p-4">CV Erstellung</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">✓</td></tr>
+                        <tr class="hover:bg-gray-50"><td class="p-4">Anschreiben</td><td class="p-4 text-center">Template</td><td class="p-4 text-center">Individuell</td><td class="p-4 text-center">Pitch Deck</td></tr>
+                        <tr class="hover:bg-gray-50"><td class="p-4">LinkedIn Opt.</td><td class="p-4 text-center">-</td><td class="p-4 text-center">✓</td><td class="p-4 text-center">Full Rebrand</td></tr>
+                        <tr class="hover:bg-gray-50"><td class="p-4">Strategie-Call</td><td class="p-4 text-center">-</td><td class="p-4 text-center">30 Min</td><td class="p-4 text-center">60 Min</td></tr>
+                        <tr class="hover:bg-gray-50"><td class="p-4">Headhunter Intro</td><td class="p-4 text-center">-</td><td class="p-4 text-center">-</td><td class="p-4 text-center">Top-Tier</td></tr>
+                        <tr class="hover:bg-gray-50"><td class="p-4">Korrekturschleifen</td><td class="p-4 text-center">1</td><td class="p-4 text-center">2</td><td class="p-4 text-center">Unbegrenzt</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="app.navigateToSection('home', 'cv-packages')" class="mt-8 text-brand-gold font-bold underline hover:no-underline">Zurück zur Paket-Übersicht</button>
+        </div>
+    </div>
+
+    <div id="view-coach-detail" class="hidden fade-in min-h-screen bg-white">
+        <div class="py-20 max-w-4xl mx-auto px-4" id="coach-detail-content"></div>
+    </div>
+
+    <div id="view-article-detail" class="hidden fade-in min-h-screen bg-white">
+        <div class="py-20 max-w-3xl mx-auto px-4" id="article-content-area"></div>
+    </div>
+
+    <div id="view-impressum" class="hidden fade-in min-h-screen bg-white">
+        <div class="max-w-4xl mx-auto px-4 py-20">
+            <h1 class="font-serif text-3xl mb-8">Impressum</h1>
+            <div class="space-y-4 text-sm text-gray-600">
+                <p><strong>Angaben gemäß § 5 TMG</strong><br>APEX Executive GmbH<br>Musterstraße 1<br>10115 Berlin</p>
+                <p><strong>Kontakt</strong><br>Telefon: +49 (0) 30 12345678<br>E-Mail: kontakt@apex-executive.de</p>
+                <p><strong>Registereintrag</strong><br>Eintragung im Handelsregister.<br>Registergericht: Amtsgericht Berlin-Charlottenburg<br>Registernummer: HRB 123456</p>
+                <p><strong>Umsatzsteuer-ID</strong><br>DE 123 456 789</p>
+                <p><strong>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:</strong><br>Max Mustermann<br>Musterstraße 1<br>10115 Berlin</p>
+            </div>
+            <div class="mt-8"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold hover:underline">Zurück zur Startseite</button></div>
+        </div>
+    </div>
+
+    </main>
+
+    <footer class="bg-white pt-10 pb-6 border-t mt-auto text-center text-xs text-gray-500">
+        &copy; 2024 APEX Executive GmbH |
+        <button onclick="app.navigateTo('impressum')" class="hover:text-brand-gold underline">Impressum</button> |
+        v3.4 (Enhanced Dashboard)
+    </footer>
+
+    <!-- Modals -->
+    <div id="cart-overlay" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/50" onclick="app.toggleCart()"></div>
+        <div id="cart-sidebar" class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+            <div class="p-6 border-b flex justify-between">
+                <h3 class="font-serif text-xl">Portfolio</h3>
+                <button onclick="app.toggleCart()" aria-label="Warenkorb schließen">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div id="cart-items" class="flex-grow p-6 overflow-y-auto"></div>
+            <div class="p-6 border-t">
+                <span id="cart-total" class="font-serif text-2xl block mb-4">€0</span>
+                <button onclick="app.checkout()" class="w-full bg-brand-dark text-white py-4 font-bold uppercase text-xs hover:bg-brand-accent transition">Kostenpflichtig bestellen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-brand-dark text-white px-6 py-4 rounded shadow-lg transform translate-y-20 transition-transform duration-300 z-[70]" role="status" aria-live="polite">
+        Hinzugefügt
+    </div>
+
+    <!-- APP LOGIC -->
+    <script type="module">
+        // Import modules
+        import * as Core from './js/core.js';
+        import * as App from './js/app.js';
+
+        // Make functions globally accessible
+        window.app = {
+            state: {
+                user: null,
+                cart: [],
+                currentView: 'home',
+                coaches: [],
+                articles: [],
+                isLoginMode: true
+            },
+
+            // Core functions
+            navigateTo: Core.navigateTo,
+            scrollToSection: Core.scrollToSection,
+            navigateToSection: Core.navigateToSection,
+            showToast: Core.showToast,
+            toggleMobileMenu: Core.toggleMobileMenu,
+            toggleFaq: Core.toggleFaq,
+            openPackageDetail: Core.openPackageDetail,
+
+            // Auth functions
+            updateAuthUI: () => App.updateAuthUI(window.app.state),
+            toggleAuthMode: (mode) => {
+                window.app.state.isLoginMode = (mode === 'login');
+                App.toggleAuthMode(window.app.state.isLoginMode);
+            },
+            handleAuth: () => App.handleAuth(window.app.state.isLoginMode, window.app.state, Core.navigateTo),
+            handleLogout: () => App.handleLogout(window.app.state, Core.navigateTo),
+            resetAuthToLogin: () => {
+                window.app.state.isLoginMode = true;
+                App.resetAuthToLogin();
+            },
+            validateEmailField: (email) => App.validateEmailField(email),
+            updatePasswordStrength: (password) => App.updatePasswordStrength(password),
+            validatePasswordMatchField: () => App.validatePasswordMatchField(),
+
+            // Cart functions
+            addToCart: (name, price) => App.addToCart(window.app.state, name, price),
+            removeFromCart: (index) => App.removeFromCart(window.app.state, index),
+            updateCartUI: () => App.updateCartUI(window.app.state),
+            toggleCart: App.toggleCart,
+            checkout: () => App.checkout(window.app.state, Core.navigateTo),
+
+            // Dashboard functions
+            loadUserOrders: () => App.loadUserOrders(window.app.state),
+            handleProfilePictureUpload: (input) => App.handleProfilePictureUpload(window.app.state, input),
+            showAppointmentCalendar: (orderId) => App.showAppointmentCalendar(orderId),
+            bookAppointment: (orderId, datetime) => App.bookAppointment(window.app.state, orderId, datetime),
+            handleFileUpload: (input) => App.handleFileUpload(window.app.state, input),
+
+            // Coaches & Articles functions
+            filterCoaches: () => App.filterCoaches(window.app.state),
+            openCoachDetail: (id) => App.openCoachDetail(window.app.state, id, Core.navigateTo),
+            renderArticles: () => App.renderArticles(window.app.state),
+            openArticle: (id) => App.openArticle(window.app.state, id, Core.navigateTo),
+            initData: () => App.initData(window.app.state),
+
+            // About Section
+            loadAboutImage: () => App.loadAboutImage(),
+            updateAboutImage: (url) => App.updateAboutImage(url),
+            uploadAboutImage: (file) => App.uploadAboutImage(file)
+        };
+
+        // Initialize Firebase auth observer
+        if (Core.auth) {
+            Core.onAuthStateChanged(Core.auth, (user) => {
+                if (user) {
+                    if (!user.emailVerified) {
+                        Core.showToast('Bitte verifizieren Sie Ihre E-Mail-Adresse.', 'warning');
+                    }
+                    app.state.user = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email.split('@')[0],
+                        emailVerified: user.emailVerified
+                    };
+                    app.updateAuthUI();
+                    if (app.state.currentView === 'dashboard') {
+                        app.loadUserOrders();
+                    }
+                } else {
+                    app.state.user = null;
+                    app.updateAuthUI();
+                }
+            });
+        }
+
+        // Initialize debounced functions
+        window.app.debouncedFilterCoaches = Core.debounce(() => window.app.filterCoaches(), 200);
+
+        // Load Initial Data
+        document.addEventListener('DOMContentLoaded', () => {
+            app.initData();
+            app.updateCartUI();
+            app.loadAboutImage(); // Load dynamic "Über uns" image
+            console.log('✅ APEX Executive Platform loaded successfully');
+        });
+    </script>
+</body>
+</html>
