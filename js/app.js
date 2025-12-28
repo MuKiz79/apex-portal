@@ -506,6 +506,119 @@ export function addToCartWithExpress(state, title, basePrice, expressPrice, chec
     if (checkbox) checkbox.checked = false;
 }
 
+// Package Configuration Modal State
+let packageConfigState = {
+    packageName: '',
+    basePrice: 0,
+    expressPrice: 99, // Default Express Aufpreis
+    bilingualPrice: 99, // Zweisprachig Aufpreis
+    standardDelivery: '5-7 Werktage'
+};
+
+// Package-specific settings
+const packageSettings = {
+    'Young Professional CV': { expressPrice: 99, standardDelivery: '3-5 Werktage' },
+    'Senior Professional CV': { expressPrice: 149, standardDelivery: '5-7 Werktage' },
+    'Executive C-Suite CV': { expressPrice: 299, standardDelivery: '5-7 Werktage' },
+    'CV Quick-Check': { expressPrice: 49, standardDelivery: '2-3 Werktage' }
+};
+
+export function openPackageConfigModal(state, packageName, basePrice) {
+    const modal = document.getElementById('package-config-modal');
+    if (!modal) return;
+
+    // Get package-specific settings
+    const settings = packageSettings[packageName] || { expressPrice: 99, standardDelivery: '5-7 Werktage' };
+
+    // Set state
+    packageConfigState = {
+        packageName: packageName,
+        basePrice: basePrice,
+        expressPrice: settings.expressPrice,
+        bilingualPrice: 99,
+        standardDelivery: settings.standardDelivery
+    };
+
+    // Update UI
+    document.getElementById('config-modal-title').textContent = packageName;
+    document.getElementById('config-base-price').textContent = '€' + basePrice;
+    document.getElementById('config-express-price').textContent = '+€' + settings.expressPrice;
+    document.getElementById('config-standard-time').textContent = settings.standardDelivery;
+
+    // Reset selections
+    document.querySelector('input[name="language"][value="de"]').checked = true;
+    document.querySelector('input[name="delivery"][value="standard"]').checked = true;
+
+    // Update total price
+    updatePackageConfigTotal();
+
+    // Add event listeners for price updates
+    modal.querySelectorAll('input[name="language"], input[name="delivery"]').forEach(input => {
+        input.addEventListener('change', updatePackageConfigTotal);
+    });
+
+    // Show modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+export function closePackageConfigModal() {
+    const modal = document.getElementById('package-config-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function updatePackageConfigTotal() {
+    let total = packageConfigState.basePrice;
+
+    // Check language selection
+    const language = document.querySelector('input[name="language"]:checked')?.value;
+    if (language === 'both') {
+        total += packageConfigState.bilingualPrice;
+    }
+
+    // Check delivery selection
+    const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
+    if (delivery === 'express') {
+        total += packageConfigState.expressPrice;
+    }
+
+    // Update total display
+    document.getElementById('config-total-price').textContent = '€' + total;
+}
+
+export function confirmPackageConfig(state) {
+    const language = document.querySelector('input[name="language"]:checked')?.value;
+    const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
+
+    let total = packageConfigState.basePrice;
+    let titleParts = [packageConfigState.packageName];
+
+    // Add language suffix
+    if (language === 'en') {
+        titleParts.push('(Englisch)');
+    } else if (language === 'both') {
+        titleParts.push('(DE + EN)');
+        total += packageConfigState.bilingualPrice;
+    }
+
+    // Add express suffix
+    if (delivery === 'express') {
+        titleParts.push('+ Express 48h');
+        total += packageConfigState.expressPrice;
+    }
+
+    const finalTitle = titleParts.join(' ');
+
+    // Add to cart
+    addToCart(state, finalTitle, total);
+
+    // Close modal
+    closePackageConfigModal();
+}
+
 export function removeFromCart(state, id) {
     state.cart = state.cart.filter(x => x.id !== id);
     updateCartUI(state);

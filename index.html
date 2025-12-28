@@ -397,7 +397,7 @@
 
                         <div class="text-center text-xs text-gray-400 mb-5">1. Entwurf in 3-5 Werktagen</div>
 
-                        <button onclick="app.addToCart('Young Professional CV', 249)" class="w-full border border-gray-200 text-brand-dark py-3.5 text-sm font-semibold tracking-wide hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 rounded-full">
+                        <button onclick="app.openPackageConfigModal('Young Professional CV', 249)" class="w-full border border-gray-200 text-brand-dark py-3.5 text-sm font-semibold tracking-wide hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 rounded-full">
                             Paket wählen
                         </button>
 
@@ -448,7 +448,7 @@
 
                         <div class="text-center text-xs text-gray-400 mb-5">1. Entwurf in 5-7 Werktagen</div>
 
-                        <button onclick="app.addToCart('Senior Professional CV', 490)" class="w-full bg-brand-gold text-brand-dark py-3.5 text-sm font-semibold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full shadow-lg shadow-brand-gold/20">
+                        <button onclick="app.openPackageConfigModal('Senior Professional CV', 490)" class="w-full bg-brand-gold text-brand-dark py-3.5 text-sm font-semibold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full shadow-lg shadow-brand-gold/20">
                             Paket wählen
                         </button>
 
@@ -498,7 +498,7 @@
 
                         <div class="text-center text-xs text-gray-400 mb-5">1. Entwurf in 5-7 Werktagen</div>
 
-                        <button onclick="app.addToCart('Executive C-Suite CV', 990)" class="w-full border border-white/30 text-white py-3.5 text-sm font-semibold tracking-wide hover:bg-white hover:text-brand-dark transition-all duration-300 rounded-full">
+                        <button onclick="app.openPackageConfigModal('Executive C-Suite CV', 990)" class="w-full border border-white/30 text-white py-3.5 text-sm font-semibold tracking-wide hover:bg-white hover:text-brand-dark transition-all duration-300 rounded-full">
                             Paket wählen
                         </button>
 
@@ -533,7 +533,7 @@
                         </div>
                         <div class="flex-shrink-0 text-center">
                             <div class="text-3xl font-serif text-brand-dark mb-3">€99</div>
-                            <button onclick="app.addToCart('CV Quick-Check', 99)" class="bg-brand-gold text-brand-dark px-10 py-4 uppercase text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition rounded-lg shadow-lg whitespace-nowrap">
+                            <button onclick="app.openPackageConfigModal('CV Quick-Check', 99)" class="bg-brand-gold text-brand-dark px-10 py-4 uppercase text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition rounded-lg shadow-lg whitespace-nowrap">
                                 Quick-Check starten
                             </button>
                         </div>
@@ -3071,6 +3071,111 @@
         </div>
     </div>
 
+    <!-- CV Package Configuration Modal -->
+    <div id="package-config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-brand-dark to-brand-accent p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="config-modal-title" class="font-serif text-2xl text-white mb-1">Paket konfigurieren</h2>
+                        <p class="text-gray-300 text-sm">Passen Sie Ihr Paket an Ihre Bedürfnisse an</p>
+                    </div>
+                    <button onclick="app.closePackageConfigModal()" class="text-white/60 hover:text-white text-2xl leading-none" aria-label="Schließen">&times;</button>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 space-y-6">
+                <!-- Basispreis Anzeige -->
+                <div class="flex justify-between items-center pb-4 border-b border-gray-100">
+                    <span class="text-gray-600">Basispreis</span>
+                    <span id="config-base-price" class="font-serif text-xl text-brand-dark">€0</span>
+                </div>
+
+                <!-- Sprachauswahl -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">
+                        <i class="fas fa-globe text-brand-gold mr-2"></i>Sprache
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="language" value="de" checked class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <span class="text-gray-700 group-hover:text-brand-dark transition">Deutsch</span>
+                            </div>
+                            <span class="text-sm text-gray-400">inkl.</span>
+                        </label>
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="language" value="en" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <span class="text-gray-700 group-hover:text-brand-dark transition">Englisch</span>
+                            </div>
+                            <span class="text-sm text-gray-400">inkl.</span>
+                        </label>
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="language" value="both" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <span class="text-gray-700 group-hover:text-brand-dark transition">Zweisprachig <span class="text-xs text-gray-400">(DE + EN)</span></span>
+                            </div>
+                            <span class="text-sm text-brand-gold font-medium">+€99</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Express Option -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">
+                        <i class="fas fa-bolt text-brand-gold mr-2"></i>Lieferzeit
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="delivery" value="standard" checked class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <div>
+                                    <span class="text-gray-700 group-hover:text-brand-dark transition block">Standard</span>
+                                    <span id="config-standard-time" class="text-xs text-gray-400">5-7 Werktage</span>
+                                </div>
+                            </div>
+                            <span class="text-sm text-gray-400">inkl.</span>
+                        </label>
+                        <label class="flex items-center justify-between p-4 border border-brand-gold/30 bg-brand-gold/5 rounded-xl cursor-pointer hover:border-brand-gold transition group">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="delivery" value="express" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <div>
+                                    <span class="text-gray-700 group-hover:text-brand-dark transition block font-medium">
+                                        <i class="fas fa-bolt text-brand-gold mr-1"></i>Express
+                                    </span>
+                                    <span class="text-xs text-gray-500">48 Stunden Lieferung</span>
+                                </div>
+                            </div>
+                            <span id="config-express-price" class="text-sm text-brand-gold font-medium">+€99</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Gesamtpreis -->
+                <div class="bg-gray-50 rounded-xl p-4 mt-6">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 font-medium">Gesamtpreis</span>
+                        <span id="config-total-price" class="font-serif text-2xl text-brand-dark">€0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 pt-0">
+                <button onclick="app.confirmPackageConfig()" class="w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold uppercase tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full shadow-lg">
+                    In den Warenkorb
+                </button>
+                <p class="text-center text-xs text-gray-400 mt-3">
+                    <i class="fas fa-shield-halved mr-1"></i>
+                    Sichere Bezahlung mit Stripe
+                </p>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="fixed bottom-5 right-5 bg-brand-dark text-white px-6 py-4 rounded shadow-lg transform translate-y-20 transition-transform duration-300 z-[70]" role="status" aria-live="polite">
         Hinzugefügt
     </div>
@@ -3147,6 +3252,9 @@
             // Cart functions
             addToCart: (name, price) => App.addToCart(window.app.state, name, price),
             addToCartWithExpress: (name, basePrice, expressPrice, checkboxId) => App.addToCartWithExpress(window.app.state, name, basePrice, expressPrice, checkboxId),
+            openPackageConfigModal: (name, price) => App.openPackageConfigModal(window.app.state, name, price),
+            closePackageConfigModal: App.closePackageConfigModal,
+            confirmPackageConfig: () => App.confirmPackageConfig(window.app.state),
             removeFromCart: (index) => App.removeFromCart(window.app.state, index),
             updateCartUI: () => App.updateCartUI(window.app.state),
             toggleCart: App.toggleCart,
