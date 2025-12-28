@@ -1,5 +1,5 @@
-// APEX Executive - Application Module
-// Contains: Auth, Cart, Dashboard, Coaches, Articles, Data
+// APEX Executive - Application Module v2.0
+// Contains: Auth, Cart, Dashboard, Coaches, Articles, Data, Password Reset
 
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
