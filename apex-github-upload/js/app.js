@@ -1731,6 +1731,35 @@ export async function uploadAboutImage(file) {
     }
 }
 
+// Load dynamic mentoring slots text from Firestore
+export async function loadMentoringSlotsText() {
+    try {
+        if (!db) {
+            console.warn('Firestore not available for mentoring slots text');
+            return;
+        }
+
+        const docRef = doc(db, 'settings', 'mentoring');
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const slotsText = data.slotsText;
+
+            if (slotsText) {
+                // Update all elements with class 'mentoring-slots-text'
+                const elements = document.querySelectorAll('.mentoring-slots-text');
+                elements.forEach(el => {
+                    el.textContent = slotsText;
+                });
+                console.log('✅ Mentoring slots text loaded from Firestore');
+            }
+        }
+    } catch (error) {
+        console.warn('Could not load mentoring slots text:', error.message);
+    }
+}
+
 // ========== INNER CIRCLE - WAITLIST ==========
 
 // Submit Inner Circle waitlist form
@@ -2372,8 +2401,8 @@ export async function saveProfile(state) {
 
 export async function changePassword(state) {
     const currentPassword = document.getElementById('current-password')?.value || '';
-    const newPassword = document.getElementById('new-password')?.value || '';
-    const confirmPassword = document.getElementById('confirm-new-password')?.value || '';
+    const newPassword = document.getElementById('dashboard-new-password')?.value || '';
+    const confirmPassword = document.getElementById('dashboard-confirm-password')?.value || '';
 
     if (!currentPassword || !newPassword || !confirmPassword) {
         showToast('❌ Bitte füllen Sie alle Passwort-Felder aus.', 'error');

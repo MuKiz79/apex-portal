@@ -1592,11 +1592,11 @@
                             <div class="p-6 space-y-4">
                                 <div>
                                     <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Neues Passwort</label>
-                                    <input type="password" id="new-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none">
+                                    <input type="password" id="dashboard-new-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none">
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Passwort bestätigen</label>
-                                    <input type="password" id="confirm-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none">
+                                    <input type="password" id="dashboard-confirm-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none">
                                 </div>
                                 <button onclick="app.changePassword()" class="btn-secondary">
                                     <i class="fas fa-key" aria-hidden="true"></i>
@@ -3417,8 +3417,8 @@
     <!-- APP LOGIC -->
     <script type="module">
         // Import modules
-        import * as Core from './js/core.js?v=20251228c';
-        import * as App from './js/app.js?v=20251228c';
+        import * as Core from './js/core.js?v=20251228d';
+        import * as App from './js/app.js?v=20251228d';
 
         // Make functions globally accessible
         window.app = {
