@@ -492,6 +492,20 @@ export function addToCart(state, title, price) {
     }
 }
 
+export function addToCartWithExpress(state, title, basePrice, expressPrice, checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    const isExpress = checkbox && checkbox.checked;
+
+    if (isExpress) {
+        addToCart(state, title + ' + Express (24h)', basePrice + expressPrice);
+    } else {
+        addToCart(state, title, basePrice);
+    }
+
+    // Checkbox zurücksetzen
+    if (checkbox) checkbox.checked = false;
+}
+
 export function removeFromCart(state, id) {
     state.cart = state.cart.filter(x => x.id !== id);
     updateCartUI(state);
@@ -1320,7 +1334,7 @@ export function filterCoaches(state) {
         const name = sanitizeHTML(coach.name);
         const role = sanitizeHTML(coach.role);
         const experience = sanitizeHTML(coach.experience || '15+ Jahre');
-        return '<div class="group bg-white rounded-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:border-brand-gold/30 transition-all duration-300 cursor-pointer"><div class="relative h-24 bg-brand-dark overflow-hidden"><div class="absolute inset-0 bg-brand-gold/10"></div></div><div class="px-6 pb-6 relative"><div class="-mt-12 mb-4"><img src="' + coach.image + '" class="w-20 h-20 rounded-sm object-cover border-4 border-white shadow-md" alt="' + name + '" loading="lazy"></div><div onclick="app.openCoachDetail(\'' + coach.id + '\')"><h4 class="font-serif text-lg text-brand-dark font-bold hover:text-brand-gold transition cursor-pointer">' + name + '</h4><p class="text-xs text-brand-gold font-bold uppercase tracking-widest mt-1">' + role + '</p></div><div class="mt-4 pt-4 border-t flex justify-between items-center"><div class="text-xs text-gray-500">' + experience + ' Erfahrung</div><div class="flex gap-2"><button onclick="app.openCoachDetail(\'' + coach.id + '\')" class="text-gray-400 hover:text-brand-dark transition" aria-label="Mentor-Details ansehen"><i class="far fa-eye text-lg" aria-hidden="true"></i></button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350)" class="text-brand-dark hover:text-brand-gold transition" aria-label="Session buchen"><i class="fas fa-plus-circle text-lg" aria-hidden="true"></i></button></div></div></div></div>';
+        return '<div class="group bg-brand-gold/[0.06] backdrop-blur-xl rounded-2xl border border-brand-gold/15 overflow-hidden hover:bg-brand-gold/[0.1] hover:border-brand-gold/25 transition-all duration-500 cursor-pointer" onclick="app.openCoachDetail(\'' + coach.id + '\')"><div class="relative h-32 bg-gradient-to-r from-brand-gold/10 to-transparent"></div><div class="px-8 pb-8 relative"><div class="-mt-16 mb-6"><img src="' + coach.image + '" class="w-28 h-28 rounded-2xl object-cover border-2 border-brand-gold/40 shadow-lg" alt="' + name + '" loading="lazy"></div><h4 class="font-serif text-xl text-white mb-1">' + name + '</h4><p class="text-xs text-brand-gold/80 font-medium uppercase tracking-wider">' + role + '</p><p class="text-xs text-white/50 mt-4">' + experience + ' Erfahrung</p></div></div>';
     }).join('');
 }
 

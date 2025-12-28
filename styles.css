@@ -2,10 +2,10 @@
 
         /* Gradients */
         .gold-gradient {
-            background: linear-gradient(135deg, #C6A87C 0%, #E2D1B3 50%, #C6A87C 100%);
+            background: linear-gradient(135deg, #C9B99A 0%, #D8CCAF 50%, #C9B99A 100%);
         }
         .text-gold-gradient {
-            background: linear-gradient(135deg, #C6A87C 0%, #E2D1B3 50%, #C6A87C 100%);
+            background: linear-gradient(135deg, #C9B99A 0%, #D8CCAF 50%, #C9B99A 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -41,7 +41,7 @@
         /* Loader Spinner */
         .loader {
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #C6A87C;
+            border-top: 3px solid #C9B99A;
             border-radius: 50%;
             width: 20px;
             height: 20px;
@@ -77,7 +77,7 @@
         a:focus-visible,
         input:focus-visible,
         select:focus-visible {
-            outline: 2px solid #C6A87C;
+            outline: 2px solid #C9B99A;
             outline-offset: 2px;
         }
 
