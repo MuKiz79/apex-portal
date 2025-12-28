@@ -517,10 +517,10 @@ let packageConfigState = {
 
 // Package-specific settings
 const packageSettings = {
-    'Young Professional CV': { expressPrice: 99, standardDelivery: '3-5 Werktage' },
-    'Senior Professional CV': { expressPrice: 149, standardDelivery: '5-7 Werktage' },
-    'Executive C-Suite CV': { expressPrice: 299, standardDelivery: '5-7 Werktage' },
-    'CV Quick-Check': { expressPrice: 49, standardDelivery: '2-3 Werktage' }
+    'Young Professional CV': { expressPrice: 99, standardDelivery: '3-5 Werktage', bilingualIncluded: false },
+    'Senior Professional CV': { expressPrice: 149, standardDelivery: '5-7 Werktage', bilingualIncluded: false },
+    'Executive C-Suite CV': { expressPrice: 299, standardDelivery: '5-7 Werktage', bilingualIncluded: true },
+    'CV Quick-Check': { expressPrice: 49, standardDelivery: '2-3 Werktage', bilingualIncluded: false }
 };
 
 export function openPackageConfigModal(state, packageName, basePrice) {
@@ -528,14 +528,15 @@ export function openPackageConfigModal(state, packageName, basePrice) {
     if (!modal) return;
 
     // Get package-specific settings
-    const settings = packageSettings[packageName] || { expressPrice: 99, standardDelivery: '5-7 Werktage' };
+    const settings = packageSettings[packageName] || { expressPrice: 99, standardDelivery: '5-7 Werktage', bilingualIncluded: false };
 
     // Set state
     packageConfigState = {
         packageName: packageName,
         basePrice: basePrice,
         expressPrice: settings.expressPrice,
-        bilingualPrice: 99,
+        bilingualPrice: settings.bilingualIncluded ? 0 : 99,
+        bilingualIncluded: settings.bilingualIncluded,
         standardDelivery: settings.standardDelivery
     };
 
@@ -544,6 +545,20 @@ export function openPackageConfigModal(state, packageName, basePrice) {
     document.getElementById('config-base-price').textContent = '€' + basePrice;
     document.getElementById('config-express-price').textContent = '+€' + settings.expressPrice;
     document.getElementById('config-standard-time').textContent = settings.standardDelivery;
+
+    // Handle language section for Executive (bilingual included)
+    const languageSection = document.getElementById('config-language-section');
+    const languageIncludedNote = document.getElementById('config-language-included');
+
+    if (settings.bilingualIncluded) {
+        // Executive C-Suite: Hide language selection, show "included" note
+        if (languageSection) languageSection.classList.add('hidden');
+        if (languageIncludedNote) languageIncludedNote.classList.remove('hidden');
+    } else {
+        // Other packages: Show language selection
+        if (languageSection) languageSection.classList.remove('hidden');
+        if (languageIncludedNote) languageIncludedNote.classList.add('hidden');
+    }
 
     // Reset selections
     document.querySelector('input[name="language"][value="de"]').checked = true;
@@ -573,10 +588,12 @@ export function closePackageConfigModal() {
 function updatePackageConfigTotal() {
     let total = packageConfigState.basePrice;
 
-    // Check language selection
-    const language = document.querySelector('input[name="language"]:checked')?.value;
-    if (language === 'both') {
-        total += packageConfigState.bilingualPrice;
+    // Check language selection (only if not already included)
+    if (!packageConfigState.bilingualIncluded) {
+        const language = document.querySelector('input[name="language"]:checked')?.value;
+        if (language === 'both') {
+            total += packageConfigState.bilingualPrice;
+        }
     }
 
     // Check delivery selection
@@ -596,8 +613,10 @@ export function confirmPackageConfig(state) {
     let total = packageConfigState.basePrice;
     let titleParts = [packageConfigState.packageName];
 
-    // Add language suffix
-    if (language === 'en') {
+    // Add language suffix (Executive already includes DE+EN)
+    if (packageConfigState.bilingualIncluded) {
+        titleParts.push('(DE + EN)');
+    } else if (language === 'en') {
         titleParts.push('(Englisch)');
     } else if (language === 'both') {
         titleParts.push('(DE + EN)');
