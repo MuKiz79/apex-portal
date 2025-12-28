@@ -211,7 +211,23 @@
     <div id="view-home" class="fade-in">
         <!-- Hero + Zwei Wege -->
         <header id="two-paths" class="bg-[#0B1120] text-white relative overflow-hidden">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+            <!-- Dezente Hintergrund-Illustration -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                <!-- Abstraktes Dokument-Symbol (rechts) -->
+                <svg class="absolute -right-20 top-1/2 -translate-y-1/2 w-[500px] h-[600px] opacity-[0.03]" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="20" y="20" width="160" height="200" rx="8" stroke="#C9B99A" stroke-width="2"/>
+                    <path d="M140 20V60H180" stroke="#C9B99A" stroke-width="2"/>
+                    <line x1="50" y1="80" x2="150" y2="80" stroke="#C9B99A" stroke-width="2"/>
+                    <line x1="50" y1="110" x2="150" y2="110" stroke="#C9B99A" stroke-width="2"/>
+                    <line x1="50" y1="140" x2="120" y2="140" stroke="#C9B99A" stroke-width="2"/>
+                    <line x1="50" y1="170" x2="140" y2="170" stroke="#C9B99A" stroke-width="2"/>
+                    <circle cx="70" cy="200" r="15" stroke="#C9B99A" stroke-width="2"/>
+                    <path d="M62 200L68 206L80 194" stroke="#C9B99A" stroke-width="2"/>
+                </svg>
+                <!-- Gradient-Overlay für Tiefe -->
+                <div class="absolute inset-0 bg-gradient-to-r from-[#0B1120] via-transparent to-[#0B1120]"></div>
+            </div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 relative z-10">
                 <!-- Hero Text -->
                 <div class="text-center mb-12 md:mb-16">
                     <div class="inline-block border-l-2 border-brand-gold pl-4 mb-6">
