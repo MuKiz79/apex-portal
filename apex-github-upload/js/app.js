@@ -3,7 +3,7 @@
 
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
@@ -126,6 +126,155 @@ export async function sendPasswordReset() {
             resetBtn.innerText = originalText || 'Link senden';
             resetBtn.disabled = false;
         }
+    }
+}
+
+// Check URL for password reset code and handle it
+export async function handlePasswordResetFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const oobCode = urlParams.get('oobCode');
+
+    if (mode === 'resetPassword' && oobCode) {
+        // Show the new password form
+        showNewPasswordForm(oobCode);
+        return true;
+    }
+    return false;
+}
+
+// Show the form to enter a new password
+export function showNewPasswordForm(oobCode) {
+    // Navigate to auth view first
+    navigateTo('auth');
+
+    // Hide login/register fields, show new password fields
+    document.getElementById('login-fields')?.classList.add('hidden');
+    document.getElementById('register-fields')?.classList.add('hidden');
+    document.getElementById('password-reset-fields')?.classList.add('hidden');
+    document.getElementById('auth-tabs')?.classList.add('hidden');
+    document.getElementById('auth-submit-btn')?.classList.add('hidden');
+    document.getElementById('auth-error')?.classList.add('hidden');
+    document.getElementById('auth-success')?.classList.add('hidden');
+
+    // Show new password form
+    const newPasswordFields = document.getElementById('new-password-fields');
+    if (newPasswordFields) {
+        newPasswordFields.classList.remove('hidden');
+        // Store the oobCode for later use
+        newPasswordFields.dataset.oobCode = oobCode;
+    }
+}
+
+// Confirm the new password
+export async function confirmNewPassword() {
+    const errorDiv = document.getElementById('auth-error');
+    const successDiv = document.getElementById('auth-success');
+    const newPasswordFields = document.getElementById('new-password-fields');
+    const submitBtn = document.getElementById('new-password-submit-btn');
+
+    const oobCode = newPasswordFields?.dataset.oobCode;
+    const newPassword = document.getElementById('new-password')?.value;
+    const confirmPassword = document.getElementById('confirm-new-password')?.value;
+
+    errorDiv?.classList.add('hidden');
+    successDiv?.classList.add('hidden');
+
+    // Validate passwords
+    if (!newPassword || newPassword.length < 6) {
+        if (errorDiv) {
+            errorDiv.textContent = 'Das Passwort muss mindestens 6 Zeichen lang sein.';
+            errorDiv.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        if (errorDiv) {
+            errorDiv.textContent = 'Die Passwörter stimmen nicht überein.';
+            errorDiv.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // Show loading state
+    const originalText = submitBtn?.innerText;
+    if (submitBtn) {
+        submitBtn.innerText = 'Wird gespeichert...';
+        submitBtn.disabled = true;
+    }
+
+    try {
+        if (!auth || !oobCode) {
+            throw new Error('Ungültiger Reset-Link');
+        }
+
+        // Verify the code first
+        await verifyPasswordResetCode(auth, oobCode);
+
+        // Confirm the password reset
+        await confirmPasswordReset(auth, oobCode, newPassword);
+
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        if (successDiv) {
+            successDiv.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+                    <h3 class="text-lg font-bold text-brand-dark mb-2">Passwort erfolgreich geändert</h3>
+                    <p class="text-gray-600 mb-4">Sie können sich jetzt mit Ihrem neuen Passwort anmelden.</p>
+                </div>
+            `;
+            successDiv.classList.remove('hidden');
+        }
+
+        newPasswordFields?.classList.add('hidden');
+
+        // Show login button
+        setTimeout(() => {
+            showLoginForm();
+        }, 3000);
+
+        showToast('Passwort erfolgreich geändert');
+
+    } catch (error) {
+        console.error('Password reset confirmation error:', error);
+        let errorMessage = getFirebaseErrorMessage(error.code);
+
+        if (error.code === 'auth/expired-action-code') {
+            errorMessage = 'Dieser Link ist abgelaufen. Bitte fordern Sie einen neuen Link an.';
+        } else if (error.code === 'auth/invalid-action-code') {
+            errorMessage = 'Dieser Link ist ungültig oder wurde bereits verwendet.';
+        }
+
+        if (errorDiv) {
+            errorDiv.textContent = errorMessage;
+            errorDiv.classList.remove('hidden');
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.innerText = originalText || 'Passwort speichern';
+            submitBtn.disabled = false;
+        }
+    }
+}
+
+// Handle Firebase email actions (verify email, reset password)
+export async function handleEmailAction() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const oobCode = urlParams.get('oobCode');
+
+    if (!mode || !oobCode) return;
+
+    if (mode === 'resetPassword') {
+        // Show the new password form
+        showNewPasswordForm(oobCode);
+    } else if (mode === 'verifyEmail') {
+        // Email verification is handled automatically by Firebase
+        // Just show a success message
+        showToast('E-Mail-Adresse wurde bestätigt');
     }
 }
 

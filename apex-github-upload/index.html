@@ -1143,6 +1143,27 @@
                     </button>
                 </div>
 
+                <!-- New Password Fields (shown when clicking reset link from email) -->
+                <div id="new-password-fields" class="hidden space-y-4">
+                    <div class="mb-4 p-4 bg-green-50 border border-green-100 rounded-lg">
+                        <p class="text-sm text-green-800">
+                            <i class="fas fa-lock mr-2"></i>
+                            Bitte geben Sie Ihr neues Passwort ein.
+                        </p>
+                    </div>
+                    <div>
+                        <label for="new-password" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Neues Passwort</label>
+                        <input type="password" id="new-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Mindestens 6 Zeichen" required>
+                    </div>
+                    <div>
+                        <label for="confirm-new-password" class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Passwort bestätigen</label>
+                        <input type="password" id="confirm-new-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Passwort wiederholen" required>
+                    </div>
+                    <button type="button" onclick="app.confirmNewPassword()" id="new-password-submit-btn" class="w-full gold-gradient text-brand-dark font-bold py-3 uppercase text-xs hover:shadow-lg transition">
+                        Passwort speichern
+                    </button>
+                </div>
+
                 <div id="register-fields" class="hidden space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                          <div>
@@ -3396,8 +3417,8 @@
     <!-- APP LOGIC -->
     <script type="module">
         // Import modules
-        import * as Core from './js/core.js?v=20241228b';
-        import * as App from './js/app.js?v=20241228b';
+        import * as Core from './js/core.js?v=20241228';
+        import * as App from './js/app.js?v=20241228';
 
         // Make functions globally accessible
         window.app = {
@@ -3450,6 +3471,9 @@
             showPasswordReset: () => App.showPasswordReset(),
             showLoginForm: () => App.showLoginForm(),
             sendPasswordReset: () => App.sendPasswordReset(),
+            handlePasswordResetFromURL: () => App.handlePasswordResetFromURL(),
+            showNewPasswordForm: (oobCode) => App.showNewPasswordForm(oobCode),
+            confirmNewPassword: () => App.confirmNewPassword(),
 
             // Cart functions
             addToCart: (name, price) => App.addToCart(window.app.state, name, price),
@@ -3524,7 +3548,7 @@
             // Email Verification
             checkEmailVerification: () => App.checkEmailVerification(),
             closeEmailVerifiedModal: () => App.closeEmailVerifiedModal(),
-            handleEmailAction: () => App.handleEmailAction(Core.navigateTo),
+            handleEmailAction: () => App.handleEmailAction(),
 
             // UX Helper Functions
             updatePackageButton: (packageId, basePrice, expressPrice, isExpress) => {
