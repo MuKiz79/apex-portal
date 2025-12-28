@@ -145,25 +145,38 @@ export async function handlePasswordResetFromURL() {
 
 // Show the form to enter a new password
 export function showNewPasswordForm(oobCode) {
-    // Navigate to auth view first
-    navigateTo('auth');
+    console.log('🔑 showNewPasswordForm called with oobCode:', oobCode ? 'present' : 'missing');
 
-    // Hide login/register fields, show new password fields
-    document.getElementById('login-fields')?.classList.add('hidden');
-    document.getElementById('register-fields')?.classList.add('hidden');
-    document.getElementById('password-reset-fields')?.classList.add('hidden');
-    document.getElementById('auth-tabs')?.classList.add('hidden');
-    document.getElementById('auth-submit-btn')?.classList.add('hidden');
-    document.getElementById('auth-error')?.classList.add('hidden');
-    document.getElementById('auth-success')?.classList.add('hidden');
+    // Navigate to login view first
+    console.log('   Navigating to login view...');
+    navigateTo('login');
 
-    // Show new password form
-    const newPasswordFields = document.getElementById('new-password-fields');
-    if (newPasswordFields) {
-        newPasswordFields.classList.remove('hidden');
-        // Store the oobCode for later use
-        newPasswordFields.dataset.oobCode = oobCode;
-    }
+    // Small delay to ensure view is visible
+    setTimeout(() => {
+        console.log('   Hiding other fields...');
+
+        // Hide login/register fields, show new password fields
+        document.getElementById('login-fields')?.classList.add('hidden');
+        document.getElementById('register-fields')?.classList.add('hidden');
+        document.getElementById('password-reset-fields')?.classList.add('hidden');
+        document.getElementById('auth-tabs')?.classList.add('hidden');
+        document.getElementById('auth-submit-btn')?.classList.add('hidden');
+        document.getElementById('auth-error')?.classList.add('hidden');
+        document.getElementById('auth-success')?.classList.add('hidden');
+
+        // Show new password form
+        const newPasswordFields = document.getElementById('new-password-fields');
+        console.log('   new-password-fields element:', newPasswordFields ? 'found' : 'NOT FOUND');
+
+        if (newPasswordFields) {
+            newPasswordFields.classList.remove('hidden');
+            // Store the oobCode for later use
+            newPasswordFields.dataset.oobCode = oobCode;
+            console.log('✅ New password form is now visible');
+        } else {
+            console.error('❌ new-password-fields element not found in DOM!');
+        }
+    }, 50);
 }
 
 // Confirm the new password
@@ -262,15 +275,27 @@ export async function confirmNewPassword() {
 
 // Handle Firebase email actions (verify email, reset password)
 export async function handleEmailAction() {
+    const fullUrl = window.location.href;
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
 
-    if (!mode || !oobCode) return;
+    console.log('🔗 handleEmailAction called');
+    console.log('   Full URL:', fullUrl);
+    console.log('   mode:', mode);
+    console.log('   oobCode:', oobCode ? oobCode.substring(0, 10) + '...' : 'missing');
+
+    if (!mode || !oobCode) {
+        console.log('📝 No email action parameters found in URL');
+        return;
+    }
 
     if (mode === 'resetPassword') {
-        // Show the new password form
-        showNewPasswordForm(oobCode);
+        console.log('🔄 Password reset mode detected, showing form...');
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+            showNewPasswordForm(oobCode);
+        }, 100);
     } else if (mode === 'verifyEmail') {
         // Email verification is handled automatically by Firebase
         // Just show a success message
@@ -1495,6 +1520,9 @@ export async function handleFileUpload(state, input) {
 // Note: db and sanitizeHTML already imported at top of file
 
 export async function initData(state) {
+    console.log('🔄 initData called - loading data from Firestore...');
+    console.log('   db status:', db ? 'initialized' : 'NOT INITIALIZED');
+
     // Load coaches from Firestore ONLY (no fallback to sample data)
     const dbCoaches = await fetchCollection('coaches');
     state.coaches = dbCoaches;
@@ -1607,9 +1635,10 @@ export function openArticle(state, id, navigateTo) {
 
 // Load "Über uns" image from Firestore
 export async function loadAboutImage() {
+    console.log('🔄 loadAboutImage called');
     try {
         if (!db) {
-            console.warn('Firestore not available, using default image');
+            console.error('❌ Firestore (db) not available - cannot load about image');
             return;
         }
 

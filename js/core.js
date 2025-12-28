@@ -17,13 +17,18 @@ const firebaseConfig = {
 // Initialize Firebase
 let auth, db, storage;
 try {
+    console.log("🔄 Initializing Firebase...");
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
     console.log("✅ Firebase initialized successfully");
+    console.log("   auth:", auth ? "OK" : "MISSING");
+    console.log("   db:", db ? "OK" : "MISSING");
+    console.log("   storage:", storage ? "OK" : "MISSING");
 } catch(e) {
-    console.warn("⚠️ Firebase initialization failed - running in demo mode", e);
+    console.error("❌ Firebase initialization failed:", e);
+    console.warn("⚠️ Running in demo mode - no data will load");
 }
 
 export { auth, db, storage, onAuthStateChanged };
