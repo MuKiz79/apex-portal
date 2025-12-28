@@ -1520,6 +1520,9 @@ export async function handleFileUpload(state, input) {
 // Note: db and sanitizeHTML already imported at top of file
 
 export async function initData(state) {
+    console.log('🔄 initData called - loading data from Firestore...');
+    console.log('   db status:', db ? 'initialized' : 'NOT INITIALIZED');
+
     // Load coaches from Firestore ONLY (no fallback to sample data)
     const dbCoaches = await fetchCollection('coaches');
     state.coaches = dbCoaches;
@@ -1632,9 +1635,10 @@ export function openArticle(state, id, navigateTo) {
 
 // Load "Über uns" image from Firestore
 export async function loadAboutImage() {
+    console.log('🔄 loadAboutImage called');
     try {
         if (!db) {
-            console.warn('Firestore not available, using default image');
+            console.error('❌ Firestore (db) not available - cannot load about image');
             return;
         }
 
