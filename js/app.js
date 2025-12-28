@@ -2788,3 +2788,29 @@ export async function loadDeliveredDocuments(state) {
         `;
     }
 }
+
+// Cookie Consent Functions
+export function checkCookieConsent() {
+    const consent = localStorage.getItem('apex-cookie-consent');
+    const banner = document.getElementById('cookie-banner');
+
+    if (!banner) return;
+
+    if (consent === 'accepted' || consent === 'declined') {
+        banner.classList.add('hidden');
+    } else {
+        banner.classList.remove('hidden');
+    }
+}
+
+export function acceptCookies() {
+    localStorage.setItem('apex-cookie-consent', 'accepted');
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.classList.add('hidden');
+}
+
+export function declineCookies() {
+    localStorage.setItem('apex-cookie-consent', 'declined');
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.classList.add('hidden');
+}
