@@ -3,7 +3,7 @@
 
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
@@ -35,6 +35,98 @@ export function toggleAuthMode(isLoginMode) {
     if(btn) btn.innerText = isLoginMode ? "Anmelden" : "Kostenlos Registrieren";
 
     document.getElementById('auth-error')?.classList.add('hidden');
+
+    // Hide password reset fields when switching modes
+    document.getElementById('password-reset-fields')?.classList.add('hidden');
+    document.getElementById('auth-tabs')?.classList.remove('hidden');
+    document.getElementById('auth-submit-btn')?.classList.remove('hidden');
+}
+
+// Show Password Reset Form
+export function showPasswordReset() {
+    document.getElementById('login-fields')?.classList.add('hidden');
+    document.getElementById('register-fields')?.classList.add('hidden');
+    document.getElementById('password-reset-fields')?.classList.remove('hidden');
+    document.getElementById('auth-tabs')?.classList.add('hidden');
+    document.getElementById('auth-submit-btn')?.classList.add('hidden');
+    document.getElementById('auth-error')?.classList.add('hidden');
+    document.getElementById('auth-success')?.classList.add('hidden');
+
+    // Copy email from login field if present
+    const loginEmail = document.getElementById('login-email')?.value;
+    if (loginEmail) {
+        const resetEmail = document.getElementById('reset-email');
+        if (resetEmail) resetEmail.value = loginEmail;
+    }
+}
+
+// Show Login Form (back from password reset)
+export function showLoginForm() {
+    document.getElementById('password-reset-fields')?.classList.add('hidden');
+    document.getElementById('login-fields')?.classList.remove('hidden');
+    document.getElementById('auth-tabs')?.classList.remove('hidden');
+    document.getElementById('auth-submit-btn')?.classList.remove('hidden');
+    document.getElementById('auth-error')?.classList.add('hidden');
+    document.getElementById('auth-success')?.classList.add('hidden');
+}
+
+// Send Password Reset Email
+export async function sendPasswordReset() {
+    const errorDiv = document.getElementById('auth-error');
+    const successDiv = document.getElementById('auth-success');
+    const resetBtn = document.getElementById('reset-submit-btn');
+    const email = document.getElementById('reset-email')?.value?.trim();
+
+    errorDiv?.classList.add('hidden');
+    successDiv?.classList.add('hidden');
+
+    if (!email || !validateEmail(email)) {
+        if (errorDiv) {
+            errorDiv.textContent = 'Bitte geben Sie eine gültige E-Mail-Adresse ein.';
+            errorDiv.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // Show loading state
+    const originalText = resetBtn?.innerText;
+    if (resetBtn) {
+        resetBtn.innerText = 'Wird gesendet...';
+        resetBtn.disabled = true;
+    }
+
+    try {
+        if (!auth) {
+            // Demo mode
+            if (successDiv) {
+                successDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.';
+                successDiv.classList.remove('hidden');
+            }
+            return;
+        }
+
+        await sendPasswordResetEmail(auth, email);
+
+        if (successDiv) {
+            successDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen an <strong>' + email + '</strong> gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.';
+            successDiv.classList.remove('hidden');
+        }
+
+        showToast('E-Mail wurde gesendet');
+
+    } catch (error) {
+        console.error('Password reset error:', error);
+        // For security, always show success message (don't reveal if email exists)
+        if (successDiv) {
+            successDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.';
+            successDiv.classList.remove('hidden');
+        }
+    } finally {
+        if (resetBtn) {
+            resetBtn.innerText = originalText || 'Link senden';
+            resetBtn.disabled = false;
+        }
+    }
 }
 
 export async function handleAuth(isLoginMode, state, navigateTo) {
