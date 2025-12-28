@@ -578,7 +578,7 @@
                     <div class="text-center mb-10">
                         <span class="inline-block text-brand-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">Maximieren Sie Ihren Erfolg</span>
                         <h3 class="font-serif text-2xl md:text-3xl text-brand-dark">Optionale Add-ons</h3>
-                        <p class="text-gray-500 mt-3 max-w-xl mx-auto">Der CV bringt das Interview. Das Interview bringt den Job. Gehen Sie vorbereitet in die nächste Runde.</p>
+                        <p class="text-gray-500 mt-3 max-w-xl mx-auto">Der CV bringt das Interview. Das Interview bringt den Job. Wählen Sie Add-ons direkt beim Paket-Kauf oder buchen Sie einzeln.</p>
                     </div>
 
                     <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
@@ -600,7 +600,7 @@
                                         <li><i class="fas fa-check text-brand-gold mr-2"></i>Schriftliches Feedback-Protokoll</li>
                                     </ul>
                                     <button onclick="app.addToCart('Interview-Simulation (60 Min.)', 199)" class="text-sm text-brand-gold font-semibold hover:text-brand-dark transition flex items-center gap-2">
-                                        <i class="fas fa-plus"></i> Zum Warenkorb hinzufügen
+                                        <i class="fas fa-shopping-cart"></i> Einzeln buchen
                                     </button>
                                 </div>
                             </div>
@@ -624,7 +624,7 @@
                                         <li><i class="fas fa-check text-brand-gold mr-2"></i>Tipps für etwaige Nachbesserungen</li>
                                     </ul>
                                     <button onclick="app.addToCart('Zeugnis-Analyse', 49)" class="text-sm text-brand-gold font-semibold hover:text-brand-dark transition flex items-center gap-2">
-                                        <i class="fas fa-plus"></i> Zum Warenkorb hinzufügen
+                                        <i class="fas fa-shopping-cart"></i> Einzeln buchen
                                     </button>
                                 </div>
                             </div>
@@ -3246,6 +3246,41 @@
                     </div>
                 </div>
 
+                <!-- Add-ons Section (nur bei CV-Paketen, nicht bei Quick-Check) -->
+                <div id="config-addons-section">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">
+                        <i class="fas fa-plus-circle text-brand-gold mr-2"></i>Optionale Add-ons
+                    </label>
+                    <div class="space-y-2">
+                        <!-- Interview-Simulation -->
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" name="addon-interview" value="199" class="w-4 h-4 text-brand-gold border-gray-300 rounded focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
+                                <div>
+                                    <span class="text-gray-700 group-hover:text-brand-dark transition block font-medium">
+                                        <i class="fas fa-comments text-brand-gold mr-1"></i>Interview-Simulation
+                                    </span>
+                                    <span class="text-xs text-gray-500">60 Min. Live-Training mit Feedback</span>
+                                </div>
+                            </div>
+                            <span class="text-sm text-brand-gold font-medium">+€199</span>
+                        </label>
+                        <!-- Zeugnis-Analyse -->
+                        <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" name="addon-zeugnis" value="49" class="w-4 h-4 text-brand-gold border-gray-300 rounded focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
+                                <div>
+                                    <span class="text-gray-700 group-hover:text-brand-dark transition block font-medium">
+                                        <i class="fas fa-file-contract text-brand-gold mr-1"></i>Zeugnis-Analyse
+                                    </span>
+                                    <span class="text-xs text-gray-500">Professionelle Dekodierung Ihrer Zeugnisse</span>
+                                </div>
+                            </div>
+                            <span class="text-sm text-brand-gold font-medium">+€49</span>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- Gesamtpreis -->
                 <div class="bg-gray-50 rounded-xl p-4 mt-6">
                     <div class="flex justify-between items-center">
@@ -3347,6 +3382,7 @@
             openPackageConfigModal: (name, price) => App.openPackageConfigModal(window.app.state, name, price),
             closePackageConfigModal: App.closePackageConfigModal,
             confirmPackageConfig: () => App.confirmPackageConfig(window.app.state),
+            updatePackageConfigTotal: App.updatePackageConfigTotal,
             removeFromCart: (index) => App.removeFromCart(window.app.state, index),
             updateCartUI: () => App.updateCartUI(window.app.state),
             toggleCart: App.toggleCart,

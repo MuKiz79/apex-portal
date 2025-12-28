@@ -564,6 +564,22 @@ export function openPackageConfigModal(state, packageName, basePrice) {
     document.querySelector('input[name="language"][value="de"]').checked = true;
     document.querySelector('input[name="delivery"][value="standard"]').checked = true;
 
+    // Reset add-on checkboxes
+    const addonInterview = document.querySelector('input[name="addon-interview"]');
+    const addonZeugnis = document.querySelector('input[name="addon-zeugnis"]');
+    if (addonInterview) addonInterview.checked = false;
+    if (addonZeugnis) addonZeugnis.checked = false;
+
+    // Hide add-ons for Quick-Check (makes no sense for a quick check)
+    const addonsSection = document.getElementById('config-addons-section');
+    if (addonsSection) {
+        if (packageName === 'CV Quick-Check') {
+            addonsSection.classList.add('hidden');
+        } else {
+            addonsSection.classList.remove('hidden');
+        }
+    }
+
     // Update total price
     updatePackageConfigTotal();
 
@@ -602,16 +618,32 @@ function updatePackageConfigTotal() {
         total += packageConfigState.expressPrice;
     }
 
+    // Check add-ons
+    const addonInterview = document.querySelector('input[name="addon-interview"]');
+    const addonZeugnis = document.querySelector('input[name="addon-zeugnis"]');
+    if (addonInterview?.checked) {
+        total += 199;
+    }
+    if (addonZeugnis?.checked) {
+        total += 49;
+    }
+
     // Update total display
     document.getElementById('config-total-price').textContent = '€' + total;
 }
 
+// Make updatePackageConfigTotal globally accessible
+export { updatePackageConfigTotal };
+
 export function confirmPackageConfig(state) {
     const language = document.querySelector('input[name="language"]:checked')?.value;
     const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
+    const addonInterview = document.querySelector('input[name="addon-interview"]');
+    const addonZeugnis = document.querySelector('input[name="addon-zeugnis"]');
 
     let total = packageConfigState.basePrice;
     let titleParts = [packageConfigState.packageName];
+    let addons = [];
 
     // Add language suffix (Executive already includes DE+EN)
     if (packageConfigState.bilingualIncluded) {
@@ -629,7 +661,21 @@ export function confirmPackageConfig(state) {
         total += packageConfigState.expressPrice;
     }
 
-    const finalTitle = titleParts.join(' ');
+    // Check add-ons
+    if (addonInterview?.checked) {
+        addons.push('Interview-Simulation');
+        total += 199;
+    }
+    if (addonZeugnis?.checked) {
+        addons.push('Zeugnis-Analyse');
+        total += 49;
+    }
+
+    // Build final title with add-ons
+    let finalTitle = titleParts.join(' ');
+    if (addons.length > 0) {
+        finalTitle += ' + ' + addons.join(' + ');
+    }
 
     // Add to cart
     addToCart(state, finalTitle, total);
