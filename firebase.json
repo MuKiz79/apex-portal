@@ -10,12 +10,13 @@
     "runtime": "nodejs20"
   },
   "hosting": {
-    "public": ".",
+    "public": "apex-github-upload",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      "functions/**"
+      "*.md",
+      "*.sh"
     ],
     "rewrites": [
       {
