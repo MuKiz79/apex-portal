@@ -51,32 +51,33 @@ export const sanitizeHTML = (str) => {
 export const getFirebaseErrorMessage = (errorCode) => {
     const errorMessages = {
         // Login Errors
-        'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.',
-        'auth/invalid-email': 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
-        'auth/user-disabled': 'Dieses Konto wurde deaktiviert. Bitte kontaktieren Sie den Support.',
-        'auth/user-not-found': 'Kein Konto mit dieser E-Mail-Adresse gefunden.',
-        'auth/wrong-password': 'Das eingegebene Passwort ist falsch.',
+        'auth/invalid-credential': 'Die eingegebenen Anmeldedaten sind ungültig. Bitte überprüfen Sie E-Mail und Passwort.',
+        'auth/invalid-login-credentials': 'Die eingegebenen Anmeldedaten sind ungültig. Bitte überprüfen Sie E-Mail und Passwort.',
+        'auth/invalid-email': 'Die E-Mail-Adresse hat ein ungültiges Format.',
+        'auth/user-disabled': 'Dieses Benutzerkonto wurde deaktiviert. Bitte kontaktieren Sie unseren Support.',
+        'auth/user-not-found': 'Es existiert kein Konto mit dieser E-Mail-Adresse.',
+        'auth/wrong-password': 'Das eingegebene Passwort ist nicht korrekt.',
 
         // Registration Errors
-        'auth/email-already-in-use': 'Diese E-Mail-Adresse ist bereits registriert.',
-        'auth/operation-not-allowed': 'Diese Anmeldemethode ist nicht aktiviert.',
-        'auth/weak-password': 'Das Passwort muss mindestens 6 Zeichen lang sein.',
+        'auth/email-already-in-use': 'Ein Konto mit dieser E-Mail-Adresse existiert bereits.',
+        'auth/operation-not-allowed': 'Diese Anmeldemethode ist derzeit nicht verfügbar.',
+        'auth/weak-password': 'Das Passwort ist zu schwach. Bitte wählen Sie mindestens 6 Zeichen.',
 
         // Rate Limiting
-        'auth/too-many-requests': 'Zu viele fehlgeschlagene Versuche. Bitte warten Sie einige Minuten.',
+        'auth/too-many-requests': 'Zu viele Anmeldeversuche. Bitte warten Sie einige Minuten und versuchen Sie es erneut.',
 
         // Network
-        'auth/network-request-failed': 'Keine Internetverbindung. Bitte prüfen Sie Ihre Verbindung.',
+        'auth/network-request-failed': 'Verbindungsfehler. Bitte überprüfen Sie Ihre Internetverbindung.',
 
         // Password Reset
-        'auth/expired-action-code': 'Der Link ist abgelaufen. Bitte fordern Sie einen neuen an.',
-        'auth/invalid-action-code': 'Der Link ist ungültig. Bitte fordern Sie einen neuen an.',
+        'auth/expired-action-code': 'Dieser Link ist abgelaufen. Bitte fordern Sie einen neuen Link an.',
+        'auth/invalid-action-code': 'Dieser Link ist ungültig oder wurde bereits verwendet.',
 
         // Generic
-        'auth/internal-error': 'Ein interner Fehler ist aufgetreten. Bitte versuchen Sie es erneut.',
-        'auth/requires-recent-login': 'Bitte melden Sie sich erneut an, um fortzufahren.'
+        'auth/internal-error': 'Ein technischer Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
+        'auth/requires-recent-login': 'Aus Sicherheitsgründen müssen Sie sich erneut anmelden.'
     };
-    return errorMessages[errorCode] || `Ein Fehler ist aufgetreten. (${errorCode || 'Unbekannt'})`;
+    return errorMessages[errorCode] || 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
 };
 
 // Show Toast Notification
