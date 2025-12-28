@@ -3149,9 +3149,9 @@
 
     <!-- CV Package Configuration Modal -->
     <div id="package-config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col transform transition-all">
             <!-- Header -->
-            <div class="bg-gradient-to-r from-brand-dark to-brand-accent p-6">
+            <div class="bg-gradient-to-r from-brand-dark to-brand-accent p-6 flex-shrink-0">
                 <div class="flex justify-between items-start">
                     <div>
                         <h2 id="config-modal-title" class="font-serif text-2xl text-white mb-1">Paket konfigurieren</h2>
@@ -3162,7 +3162,7 @@
             </div>
 
             <!-- Content -->
-            <div class="p-6 space-y-6">
+            <div class="p-6 space-y-6 overflow-y-auto flex-grow">
                 <!-- Basispreis Anzeige -->
                 <div class="flex justify-between items-center pb-4 border-b border-gray-100">
                     <span class="text-gray-600">Basispreis</span>
@@ -3281,17 +3281,16 @@
                     </div>
                 </div>
 
-                <!-- Gesamtpreis -->
-                <div class="bg-gray-50 rounded-xl p-4 mt-6">
+            </div>
+
+            <!-- Footer mit Gesamtpreis (immer sichtbar) -->
+            <div class="p-6 pt-4 flex-shrink-0 border-t border-gray-100 bg-white">
+                <div class="bg-gray-50 rounded-xl p-4 mb-4">
                     <div class="flex justify-between items-center">
                         <span class="text-gray-600 font-medium">Gesamtpreis</span>
                         <span id="config-total-price" class="font-serif text-2xl text-brand-dark">€0</span>
                     </div>
                 </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="p-6 pt-0">
                 <button onclick="app.confirmPackageConfig()" class="w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold uppercase tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full shadow-lg">
                     In den Warenkorb
                 </button>
