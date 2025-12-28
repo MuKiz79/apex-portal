@@ -464,8 +464,12 @@ export function addToCart(state, title, price) {
             !item.title.includes('Retainer')
         );
     } else if (category === 'addon') {
-        // Prüfe ob dieses Add-on bereits im Warenkorb ist
-        const alreadyInCart = state.cart.some(item => item.title === sanitizedTitle);
+        // Prüfe ob dieses Add-on bereits im Warenkorb ist (einzeln oder als Teil eines Pakets)
+        const addonName = sanitizedTitle.includes('Interview') ? 'Interview-Simulation' : 'Zeugnis-Analyse';
+        const alreadyInCart = state.cart.some(item =>
+            item.title === sanitizedTitle || // Exakt gleicher Titel
+            item.title.includes(addonName)   // Als Teil eines Pakets (z.B. "Senior CV + Interview-Simulation")
+        );
         if (alreadyInCart) {
             showToast('⚠️ Dieses Add-on ist bereits im Warenkorb');
             return;
