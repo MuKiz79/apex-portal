@@ -41,10 +41,10 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // Coaches/Mentors Collection - Öffentlich lesbar (MUSS VOR catch-all kommen!)
+    // Coaches/Mentors Collection - Öffentlich lesbar, Admins können bearbeiten
     match /coaches/{coachId} {
       allow read: if true; // Öffentlich
-      allow write: if false; // Nur Admins (manuell in Console)
+      allow write: if isAdmin(); // Admins können Coaches bearbeiten
     }
 
     // Articles Collection - Öffentlich lesbar
