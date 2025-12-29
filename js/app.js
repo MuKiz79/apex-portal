@@ -2610,8 +2610,6 @@ export async function changePassword(state) {
 
 // ========== ADMIN FUNCTIONS ==========
 
-const ADMIN_EMAILS = ['muammer.kizilaslan@gmail.com'];
-
 export function isAdmin(email) {
     return ADMIN_EMAILS.includes(email?.toLowerCase());
 }
