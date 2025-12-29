@@ -3224,3 +3224,4 @@ export async function saveMentoringSlots() {
         showToast('Fehler beim Speichern');
     }
 }
+
