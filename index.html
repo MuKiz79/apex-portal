@@ -3639,7 +3639,7 @@
             loadAllOrders: () => App.loadAllOrders(),
             filterAdminOrders: () => App.filterAdminOrders(),
             updateOrderStatus: (orderId, status) => App.updateOrderStatus(orderId, status),
-            uploadDocumentToUser: (userId, orderId, file) => App.uploadDocumentToUser(userId, orderId, file),
+            uploadDocumentToUser: (userId, orderId, file, customerEmail, customerName) => App.uploadDocumentToUser(userId, orderId, file, customerEmail, customerName),
             switchAdminTab: (tabName) => App.switchAdminTab(tabName),
             loadAdminUsers: () => App.loadAdminUsers(),
             verifyUserEmail: (email) => App.verifyUserEmail(email),

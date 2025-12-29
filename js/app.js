@@ -1725,6 +1725,22 @@ export async function acceptAppointmentProposal(state, orderId, datetime) {
                 appointmentStatus: 'confirmed'
             });
 
+            // Notify admin via email
+            try {
+                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminAppointmentAccepted', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerName: state.user.displayName || state.user.email,
+                        customerEmail: state.user.email,
+                        datetime: datetime,
+                        orderId: orderId
+                    })
+                });
+            } catch (emailErr) {
+                logger.warn('Failed to send admin notification:', emailErr);
+            }
+
             showToast('✅ Termin bestätigt!');
             await loadUserOrders(state);
         }
@@ -1744,6 +1760,22 @@ export async function declineAllAppointmentProposals(state, orderId) {
                 appointmentDeclineReason: reason || 'Keine Angabe',
                 appointmentDeclinedAt: new Date()
             });
+
+            // Notify admin via email
+            try {
+                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminAppointmentDeclined', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerName: state.user.displayName || state.user.email,
+                        customerEmail: state.user.email,
+                        reason: reason || 'Keine Angabe',
+                        orderId: orderId
+                    })
+                });
+            } catch (emailErr) {
+                logger.warn('Failed to send admin notification:', emailErr);
+            }
 
             showToast('Terminvorschläge abgelehnt. Wir melden uns mit neuen Vorschlägen.');
             await loadUserOrders(state);
@@ -1945,6 +1977,21 @@ export async function handleFileUpload(state, input) {
         if (storage && state.user) {
             const storageRef = ref(storage, `users/${state.user.uid}/${Date.now()}_${file.name}`);
             await uploadBytes(storageRef, file);
+
+            // Notify admin via email
+            try {
+                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminDocumentUploaded', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerName: state.user.displayName || state.user.email,
+                        customerEmail: state.user.email,
+                        documentName: file.name
+                    })
+                });
+            } catch (emailErr) {
+                logger.warn('Failed to send admin notification:', emailErr);
+            }
         } else {
             await new Promise(r => setTimeout(r, 1500));
         }
@@ -3489,7 +3536,7 @@ function renderAdminOrders(orders) {
                             <label class="cursor-pointer bg-brand-gold text-brand-dark px-4 py-2 rounded-sm text-xs font-bold uppercase hover:bg-yellow-500 transition">
                                 <i class="fas fa-upload mr-2"></i>Dokument hochladen
                                 <input type="file" class="hidden" accept=".pdf,.doc,.docx"
-                                       onchange="app.uploadDocumentToUser('${order.userId}', '${order.id}', this.files[0])">
+                                       onchange="app.uploadDocumentToUser('${order.userId}', '${order.id}', this.files[0], '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')">
                             </label>
                         </div>
                     </div>
@@ -3642,7 +3689,7 @@ export async function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-export async function uploadDocumentToUser(userId, orderId, file) {
+export async function uploadDocumentToUser(userId, orderId, file, customerEmail, customerName) {
     if (!file || !storage || !userId) {
         showToast('❌ Upload nicht möglich', 3000);
         return;
@@ -3656,6 +3703,23 @@ export async function uploadDocumentToUser(userId, orderId, file) {
         const storageRef = ref(storage, `delivered/${userId}/${fileName}`);
 
         await uploadBytes(storageRef, file);
+
+        // Notify customer via email
+        if (customerEmail) {
+            try {
+                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyCustomerDocumentReady', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerEmail: customerEmail,
+                        customerName: customerName || 'Kunde',
+                        documentName: file.name
+                    })
+                });
+            } catch (emailErr) {
+                logger.warn('Failed to send customer notification:', emailErr);
+            }
+        }
 
         showToast('✅ Dokument erfolgreich hochgeladen');
 

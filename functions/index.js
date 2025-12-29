@@ -609,6 +609,286 @@ exports.sendAppointmentProposalEmail = onRequest({
     }
 });
 
+// ========== NOTIFY ADMIN: CUSTOMER ACCEPTED APPOINTMENT ==========
+exports.notifyAdminAppointmentAccepted = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { customerName, customerEmail, datetime, orderId } = req.body;
+        const ADMIN_EMAIL = 'muammer.kizilaslan@gmail.com';
+
+        const dateStr = new Date(datetime).toLocaleDateString('de-DE', {
+            weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+        });
+        const timeStr = new Date(datetime).toLocaleTimeString('de-DE', {
+            hour: '2-digit', minute: '2-digit'
+        });
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 587,
+            secure: false,
+            auth: { user: smtpUser.value(), pass: smtpPass.value() }
+        });
+
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+    </div>
+    <div style="padding: 30px 0;">
+        <h2 style="color: #22c55e; margin-bottom: 10px;">✅ Termin bestätigt!</h2>
+        <p>Großartige Neuigkeiten! Ein Kunde hat einen Termin bestätigt:</p>
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Kunde:</strong> ${customerName}</p>
+            <p style="margin: 5px 0;"><strong>E-Mail:</strong> ${customerEmail}</p>
+            <p style="margin: 5px 0;"><strong>Termin:</strong> ${dateStr} um ${timeStr} Uhr</p>
+        </div>
+        <p style="text-align: center;">
+            <a href="https://apex-executive.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+                Zum Admin-Bereich
+            </a>
+        </p>
+    </div>
+</body>
+</html>`;
+
+        await transporter.sendMail({
+            from: '"APEX Executive" <noreply@apex-executive.de>',
+            to: ADMIN_EMAIL,
+            subject: `✅ Termin bestätigt von ${customerName} | APEX Executive`,
+            html: emailHtml
+        });
+
+        console.log(`Admin notified: appointment accepted by ${customerEmail}`);
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Failed to notify admin:', error);
+        return res.status(500).json({ error: 'Failed to send email' });
+    }
+});
+
+// ========== NOTIFY ADMIN: CUSTOMER DECLINED APPOINTMENTS ==========
+exports.notifyAdminAppointmentDeclined = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { customerName, customerEmail, reason, orderId } = req.body;
+        const ADMIN_EMAIL = 'muammer.kizilaslan@gmail.com';
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 587,
+            secure: false,
+            auth: { user: smtpUser.value(), pass: smtpPass.value() }
+        });
+
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+    </div>
+    <div style="padding: 30px 0;">
+        <h2 style="color: #f59e0b; margin-bottom: 10px;">⏳ Neue Terminvorschläge benötigt</h2>
+        <p>Ein Kunde hat die vorgeschlagenen Termine abgelehnt und bittet um neue Vorschläge:</p>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Kunde:</strong> ${customerName}</p>
+            <p style="margin: 5px 0;"><strong>E-Mail:</strong> ${customerEmail}</p>
+            ${reason && reason !== 'Keine Angabe' ? `<p style="margin: 5px 0;"><strong>Grund:</strong> "${reason}"</p>` : ''}
+        </div>
+        <p>Bitte senden Sie dem Kunden neue Terminvorschläge.</p>
+        <p style="text-align: center;">
+            <a href="https://apex-executive.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+                Neue Termine vorschlagen
+            </a>
+        </p>
+    </div>
+</body>
+</html>`;
+
+        await transporter.sendMail({
+            from: '"APEX Executive" <noreply@apex-executive.de>',
+            to: ADMIN_EMAIL,
+            subject: `⏳ Neue Terminvorschläge benötigt von ${customerName} | APEX Executive`,
+            html: emailHtml
+        });
+
+        console.log(`Admin notified: appointments declined by ${customerEmail}`);
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Failed to notify admin:', error);
+        return res.status(500).json({ error: 'Failed to send email' });
+    }
+});
+
+// ========== NOTIFY CUSTOMER: DOCUMENT UPLOADED BY ADMIN ==========
+exports.notifyCustomerDocumentReady = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { customerEmail, customerName, documentName } = req.body;
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 587,
+            secure: false,
+            auth: { user: smtpUser.value(), pass: smtpPass.value() }
+        });
+
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+    </div>
+    <div style="padding: 30px 0;">
+        <h2 style="color: #22c55e; margin-bottom: 10px;">📄 Neues Dokument für Sie!</h2>
+        <p>Hallo ${customerName || 'geschätzter Kunde'},</p>
+        <p>wir freuen uns, Ihnen mitzuteilen, dass ein neues Dokument für Sie bereitsteht:</p>
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+            <p style="font-size: 18px; font-weight: bold; color: #1a1a2e; margin: 0;">📎 ${documentName}</p>
+        </div>
+        <p>Sie können das Dokument jetzt in Ihrem Dashboard unter "Ihre Ergebnisse" herunterladen.</p>
+        <p style="text-align: center;">
+            <a href="https://apex-executive.de/#dashboard" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+                Zum Dashboard
+            </a>
+        </p>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.<br>
+            Herzliche Grüße,<br>
+            <strong>Ihr APEX Executive Team</strong>
+        </p>
+    </div>
+</body>
+</html>`;
+
+        await transporter.sendMail({
+            from: '"APEX Executive" <noreply@apex-executive.de>',
+            to: customerEmail,
+            subject: '📄 Neues Dokument für Sie bereit | APEX Executive',
+            html: emailHtml
+        });
+
+        console.log(`Customer notified: document ready for ${customerEmail}`);
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Failed to notify customer:', error);
+        return res.status(500).json({ error: 'Failed to send email' });
+    }
+});
+
+// ========== NOTIFY ADMIN: CUSTOMER UPLOADED DOCUMENT ==========
+exports.notifyAdminDocumentUploaded = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { customerName, customerEmail, documentName } = req.body;
+        const ADMIN_EMAIL = 'muammer.kizilaslan@gmail.com';
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 587,
+            secure: false,
+            auth: { user: smtpUser.value(), pass: smtpPass.value() }
+        });
+
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+    </div>
+    <div style="padding: 30px 0;">
+        <h2 style="color: #3b82f6; margin-bottom: 10px;">📤 Neues Dokument hochgeladen</h2>
+        <p>Ein Kunde hat ein neues Dokument hochgeladen:</p>
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Kunde:</strong> ${customerName}</p>
+            <p style="margin: 5px 0;"><strong>E-Mail:</strong> ${customerEmail}</p>
+            <p style="margin: 5px 0;"><strong>Dokument:</strong> ${documentName}</p>
+        </div>
+        <p style="text-align: center;">
+            <a href="https://apex-executive.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+                Im Admin-Bereich ansehen
+            </a>
+        </p>
+    </div>
+</body>
+</html>`;
+
+        await transporter.sendMail({
+            from: '"APEX Executive" <noreply@apex-executive.de>',
+            to: ADMIN_EMAIL,
+            subject: `📤 Neues Dokument von ${customerName} | APEX Executive`,
+            html: emailHtml
+        });
+
+        console.log(`Admin notified: document uploaded by ${customerEmail}`);
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Failed to notify admin:', error);
+        return res.status(500).json({ error: 'Failed to send email' });
+    }
+});
+
 // ========== ADMIN: SET EMAIL VERIFIED ==========
 exports.setEmailVerified = onRequest({
     invoker: 'public'
