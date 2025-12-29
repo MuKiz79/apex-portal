@@ -1974,11 +1974,8 @@ export async function loadAvailability(state) {
         );
         const ordersSnapshot = await getDocs(ordersQuery);
 
-        console.log(`[Appointments] Found ${ordersSnapshot.size} orders for user`);
-
         ordersSnapshot.forEach(docSnap => {
             const order = docSnap.data();
-            console.log(`[Appointments] Order ${docSnap.id}: status=${order.appointmentStatus}, appointment=`, order.appointment);
 
             // Filter for confirmed appointments client-side
             // Check both appointmentStatus AND appointment.confirmed for robustness
@@ -1987,7 +1984,6 @@ export async function loadAvailability(state) {
 
             if (hasConfirmedAppointment) {
                 const appointmentDate = new Date(order.appointment.datetime);
-                console.log(`[Appointments] Confirmed appointment date: ${appointmentDate}, now: ${now}, isFuture: ${appointmentDate >= now}`);
                 if (appointmentDate >= now) {
                     confirmedAppointments.push({
                         datetime: order.appointment.datetime,
@@ -1997,8 +1993,6 @@ export async function loadAvailability(state) {
                 }
             }
         });
-
-        console.log(`[Appointments] Found ${confirmedAppointments.length} confirmed future appointments`);
 
         // Sort confirmed appointments by date
         confirmedAppointments.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
