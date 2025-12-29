@@ -1379,71 +1379,108 @@ export function renderOrders(orders) {
                     </p>
                 </div>
 
-                <!-- Appointment Section -->
+                <!-- Professional Appointment Section -->
                 ${order.appointment?.confirmed ? `
-                    <!-- Confirmed Appointment -->
-                    <div class="bg-green-50 border border-green-200 px-4 py-3 rounded-lg flex items-center gap-3">
-                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-check text-green-600"></i>
-                        </div>
-                        <div>
-                            <span class="text-xs text-green-600 font-bold uppercase">Termin bestätigt</span>
-                            <p class="text-sm text-gray-700 font-medium">${new Date(order.appointment.datetime).toLocaleString('de-DE', {
-                                weekday: 'long',
-                                day: '2-digit',
-                                month: 'long',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })} Uhr</p>
+                    <!-- Confirmed Appointment - Premium Design -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 shadow-sm">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-check text-white text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-xs font-bold text-green-700 uppercase tracking-wider bg-green-100 px-2 py-1 rounded">Termin bestätigt</span>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <i class="fas fa-calendar-day text-green-600"></i>
+                                        <span class="font-semibold text-gray-800">${new Date(order.appointment.datetime).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-clock text-green-600"></i>
+                                        <span class="font-semibold text-gray-800">${new Date(order.appointment.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-green-600 mt-3 flex items-center gap-1">
+                                    <i class="fas fa-info-circle"></i>
+                                    Wir freuen uns auf Sie!
+                                </p>
+                            </div>
                         </div>
                     </div>
                 ` : order.appointmentProposals?.length > 0 && order.appointmentStatus === 'pending' ? `
-                    <!-- Pending Proposals - Customer needs to select -->
-                    <div class="bg-brand-gold/10 border border-brand-gold/30 rounded-lg p-4">
-                        <div class="flex items-center gap-2 mb-3">
-                            <i class="fas fa-calendar-check text-brand-gold"></i>
-                            <span class="font-bold text-brand-dark text-sm">Terminvorschläge für Sie</span>
+                    <!-- Pending Proposals - Premium Selection UI -->
+                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-5 shadow-sm">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-brand-gold to-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-calendar-alt text-white text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-brand-dark text-lg mb-1">Terminvorschläge für Sie</h4>
+                                <p class="text-sm text-gray-600">Bitte wählen Sie Ihren bevorzugten Termin</p>
+                            </div>
                         </div>
                         ${order.appointmentProposalMessage ? `
-                            <p class="text-sm text-gray-600 mb-3 italic">"${sanitizeHTML(order.appointmentProposalMessage)}"</p>
+                            <div class="bg-white/80 rounded-lg p-4 mb-4 border border-amber-100">
+                                <p class="text-sm text-gray-700 italic flex items-start gap-2">
+                                    <i class="fas fa-quote-left text-brand-gold text-xs mt-1"></i>
+                                    ${sanitizeHTML(order.appointmentProposalMessage)}
+                                </p>
+                            </div>
                         ` : ''}
-                        <div class="space-y-2 mb-3">
+                        <div class="space-y-3 mb-4">
                             ${order.appointmentProposals.map((p, idx) => `
                                 <button onclick="app.acceptAppointmentProposal('${order.id}', '${p.datetime}')"
-                                        class="w-full flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition group">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-brand-gold/20 rounded-full flex items-center justify-center text-brand-gold font-bold text-sm">
+                                        class="w-full flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 hover:shadow-md transition-all duration-200 group">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-brand-gold to-amber-400 rounded-full flex items-center justify-center text-white font-bold shadow-sm group-hover:from-green-500 group-hover:to-emerald-600 transition-all duration-200">
                                             ${idx + 1}
                                         </div>
                                         <div class="text-left">
-                                            <p class="font-medium text-brand-dark text-sm">${new Date(p.datetime).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
-                                            <p class="text-xs text-gray-500">${new Date(p.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
+                                            <p class="font-semibold text-brand-dark">${new Date(p.datetime).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                                            <p class="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                                                <i class="fas fa-clock text-xs"></i>
+                                                ${new Date(p.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                                            </p>
                                         </div>
                                     </div>
-                                    <span class="text-xs text-green-600 font-bold opacity-0 group-hover:opacity-100 transition">
-                                        <i class="fas fa-check mr-1"></i>Auswählen
+                                    <span class="text-sm text-green-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2">
+                                        <i class="fas fa-check-circle"></i>Auswählen
                                     </span>
                                 </button>
                             `).join('')}
                         </div>
-                        <button onclick="app.declineAllAppointmentProposals('${order.id}')"
-                                class="w-full text-center text-xs text-gray-500 hover:text-red-600 transition py-2">
-                            <i class="fas fa-times mr-1"></i>Keiner der Termine passt
-                        </button>
+                        <div class="border-t border-amber-200 pt-4">
+                            <button onclick="app.declineAllAppointmentProposals('${order.id}')"
+                                    class="w-full text-center text-sm text-gray-500 hover:text-red-600 transition py-2 flex items-center justify-center gap-2">
+                                <i class="fas fa-calendar-times"></i>
+                                Keiner der Termine passt mir
+                            </button>
+                        </div>
                     </div>
                 ` : order.appointmentStatus === 'declined' ? `
-                    <!-- Declined - Waiting for new proposals -->
-                    <div class="bg-yellow-50 border border-yellow-200 px-4 py-3 rounded-lg">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-clock text-yellow-600"></i>
-                            <span class="text-sm text-yellow-700">Wir senden Ihnen neue Terminvorschläge</span>
+                    <!-- Declined - Waiting for new proposals - Premium Design -->
+                    <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-5 shadow-sm">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-hourglass-half text-white text-xl animate-pulse"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-orange-800 text-lg mb-1">Neue Termine werden geprüft</h4>
+                                <p class="text-sm text-orange-700">Wir arbeiten daran, Ihnen passende Alternativen anzubieten.</p>
+                                <p class="text-xs text-orange-600 mt-3 flex items-center gap-1">
+                                    <i class="fas fa-bell"></i>
+                                    Sie werden per E-Mail benachrichtigt
+                                </p>
+                            </div>
                         </div>
                     </div>
                 ` : hasCoach && !hasAppointment ? `
-                    <!-- No proposals yet, show availability form link -->
-                    <button onclick="app.switchDashboardTab('appointments')" class="w-full bg-brand-gold/10 text-brand-dark font-bold text-sm py-3 px-4 rounded-lg hover:bg-brand-gold/20 transition flex items-center justify-center gap-2">
-                        <i class="fas fa-calendar-alt"></i>
-                        Wunschtermine angeben
+                    <!-- No proposals yet - Premium CTA -->
+                    <button onclick="app.switchDashboardTab('appointments')"
+                            class="w-full bg-gradient-to-r from-brand-gold/20 to-amber-100 text-brand-dark font-bold py-4 px-5 rounded-xl hover:from-brand-gold/30 hover:to-amber-200 transition-all duration-200 flex items-center justify-center gap-3 border border-brand-gold/30 shadow-sm">
+                        <i class="fas fa-calendar-plus text-lg"></i>
+                        <span>Wunschtermine angeben</span>
                     </button>
                 ` : ''}
             </div>
@@ -3541,21 +3578,107 @@ function renderAdminOrders(orders) {
                         </div>
                     </div>
 
-                    <!-- Appointment Status -->
-                    ${order.appointmentProposals ? `
-                        <div class="mt-4 p-3 rounded-lg ${order.appointment?.confirmed ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}">
-                            ${order.appointment?.confirmed ? `
-                                <p class="text-sm text-green-700">
-                                    <i class="fas fa-check-circle mr-2"></i>
-                                    <strong>Termin bestätigt:</strong>
-                                    ${new Date(order.appointment.datetime).toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr
-                                </p>
-                            ` : `
-                                <p class="text-sm text-yellow-700">
-                                    <i class="fas fa-clock mr-2"></i>
-                                    <strong>Terminvorschläge gesendet</strong> - Warte auf Kundenbestätigung
-                                </p>
-                            `}
+                    <!-- Professional Appointment Timeline -->
+                    ${order.appointmentProposals || order.appointment || order.appointmentStatus ? `
+                        <div class="mt-6 border-t border-gray-100 pt-6">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-calendar-alt text-brand-gold"></i>
+                                Terminplanung
+                            </h4>
+
+                            ${order.appointmentStatus === 'confirmed' && order.appointment?.confirmed ? `
+                                <!-- Confirmed State -->
+                                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-5 shadow-sm">
+                                    <div class="flex items-start gap-4">
+                                        <div class="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                                            <i class="fas fa-check text-white text-lg"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-bold text-green-800 text-lg mb-1">Termin bestätigt</p>
+                                            <div class="bg-white rounded-md px-4 py-3 border border-green-200 mt-2">
+                                                <div class="flex items-center gap-3">
+                                                    <i class="fas fa-calendar-check text-green-600"></i>
+                                                    <span class="font-medium text-gray-800">
+                                                        ${new Date(order.appointment.datetime).toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center gap-3 mt-2">
+                                                    <i class="fas fa-clock text-green-600"></i>
+                                                    <span class="font-medium text-gray-800">
+                                                        ${new Date(order.appointment.datetime).toLocaleString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            ${order.appointment.confirmedAt ? `
+                                                <p class="text-xs text-green-600 mt-3">
+                                                    <i class="fas fa-check-double mr-1"></i>
+                                                    Bestätigt am ${new Date(order.appointment.confirmedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : order.appointmentStatus === 'declined' ? `
+                                <!-- Declined State -->
+                                <div class="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-5 shadow-sm">
+                                    <div class="flex items-start gap-4">
+                                        <div class="flex-shrink-0 w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center shadow-md">
+                                            <i class="fas fa-times text-white text-lg"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-bold text-orange-800 text-lg mb-1">Termine abgelehnt</p>
+                                            <p class="text-sm text-orange-700 mb-3">Der Kunde hat alle vorgeschlagenen Termine abgelehnt.</p>
+                                            ${order.appointmentDeclineReason ? `
+                                                <div class="bg-white rounded-md px-4 py-3 border border-orange-200 mb-3">
+                                                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Begründung des Kunden:</p>
+                                                    <p class="text-gray-700 italic">"${sanitizeHTML(order.appointmentDeclineReason)}"</p>
+                                                </div>
+                                            ` : ''}
+                                            ${order.appointmentDeclinedAt ? `
+                                                <p class="text-xs text-orange-600 mb-3">
+                                                    <i class="fas fa-calendar-times mr-1"></i>
+                                                    Abgelehnt am ${new Date(order.appointmentDeclinedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            ` : ''}
+                                            <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
+                                                    class="bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-orange-700 transition shadow-sm">
+                                                <i class="fas fa-calendar-plus mr-2"></i>Neue Termine vorschlagen
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : order.appointmentProposals ? `
+                                <!-- Pending State -->
+                                <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-5 shadow-sm">
+                                    <div class="flex items-start gap-4">
+                                        <div class="flex-shrink-0 w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center shadow-md animate-pulse">
+                                            <i class="fas fa-hourglass-half text-white text-lg"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-bold text-yellow-800 text-lg mb-1">Warte auf Kundenbestätigung</p>
+                                            <p class="text-sm text-yellow-700 mb-3">Terminvorschläge wurden gesendet. Der Kunde muss noch auswählen.</p>
+                                            <div class="bg-white rounded-md border border-yellow-200 overflow-hidden">
+                                                <p class="text-xs text-gray-500 uppercase tracking-wider px-4 py-2 bg-yellow-100 border-b border-yellow-200">Vorgeschlagene Termine:</p>
+                                                <div class="p-4 space-y-2">
+                                                    ${order.appointmentProposals.map((prop, idx) => `
+                                                        <div class="flex items-center gap-3 text-sm text-gray-700">
+                                                            <span class="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-700 font-bold text-xs">${idx + 1}</span>
+                                                            <i class="fas fa-calendar text-yellow-600"></i>
+                                                            <span>${new Date(prop).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span>
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                            ${order.appointmentProposalsSentAt ? `
+                                                <p class="text-xs text-yellow-600 mt-3">
+                                                    <i class="fas fa-paper-plane mr-1"></i>
+                                                    Gesendet am ${new Date(order.appointmentProposalsSentAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
 
