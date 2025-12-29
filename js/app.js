@@ -2185,7 +2185,7 @@ export function filterCoaches(state) {
             <div class="group cursor-pointer" onclick="app.openCoachDetail('${coach.id}')">
                 <div class="relative bg-gradient-to-b from-[#0D1321] to-[#1A1F2E] rounded-2xl overflow-hidden border border-white/[0.08] hover:border-brand-gold/30 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-gold/10 hover:-translate-y-1">
                     <!-- Large Image Area -->
-                    <div class="relative aspect-[4/5] overflow-hidden">
+                    <div class="relative aspect-[3/4] overflow-hidden">
                         <img src="${coach.image}"
                              class="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                              alt="${name}" loading="lazy">
