@@ -3,7 +3,7 @@
 
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, reload, applyActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
@@ -167,7 +167,7 @@ export async function sendPasswordReset() {
     }
 }
 
-// Check URL for password reset code and handle it
+// Check URL for password reset code or email verification and handle it
 export async function handlePasswordResetFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
@@ -178,7 +178,105 @@ export async function handlePasswordResetFromURL() {
         showNewPasswordForm(oobCode);
         return true;
     }
+
+    if (mode === 'verifyEmail' && oobCode) {
+        // Handle email verification
+        await handleEmailVerification(oobCode);
+        return true;
+    }
+
     return false;
+}
+
+// Handle email verification from URL
+async function handleEmailVerification(oobCode) {
+    logger.log('📧 Handling email verification with oobCode:', oobCode ? 'present' : 'missing');
+
+    // Navigate to login view
+    navigateTo('login');
+
+    try {
+        if (!auth) {
+            throw new Error('Auth nicht verfügbar');
+        }
+
+        // Apply the action code to verify the email
+        await applyActionCode(auth, oobCode);
+
+        logger.log('✅ Email verification successful');
+
+        // Show success message
+        setTimeout(() => {
+            const successDiv = document.getElementById('auth-success');
+            const authForm = document.getElementById('auth-form');
+            const authTabs = document.getElementById('auth-tabs');
+
+            if (authForm) authForm.classList.add('hidden');
+            if (authTabs) authTabs.classList.add('hidden');
+
+            if (successDiv) {
+                successDiv.innerHTML = `
+                    <div class="text-center py-6 px-4">
+                        <div class="mb-6">
+                            <i class="fas fa-check-circle text-5xl text-green-500 mb-4 block"></i>
+                            <h3 class="text-2xl font-serif text-brand-dark mb-3">E-Mail bestätigt!</h3>
+                        </div>
+
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 text-left">
+                            <p class="text-gray-700 mb-3">
+                                Ihre E-Mail-Adresse wurde erfolgreich verifiziert.
+                            </p>
+                            <p class="text-sm text-gray-600">
+                                Sie können sich jetzt mit Ihrem Konto anmelden.
+                            </p>
+                        </div>
+
+                        <button
+                            onclick="app.resetAuthToLogin()"
+                            class="bg-brand-gold text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:shadow-lg transition"
+                        >
+                            Jetzt anmelden
+                        </button>
+                    </div>
+                `;
+                successDiv.classList.remove('hidden');
+            }
+
+            showToast('✅ E-Mail erfolgreich verifiziert!');
+
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 100);
+
+    } catch (error) {
+        logger.error('❌ Email verification failed:', error);
+
+        let errorMessage = 'Die E-Mail-Verifizierung ist fehlgeschlagen.';
+
+        if (error.code === 'auth/invalid-action-code') {
+            errorMessage = 'Der Verifizierungslink ist ungültig oder bereits verwendet worden.';
+        } else if (error.code === 'auth/expired-action-code') {
+            errorMessage = 'Der Verifizierungslink ist abgelaufen. Bitte fordern Sie einen neuen an.';
+        }
+
+        setTimeout(() => {
+            const errorDiv = document.getElementById('auth-error');
+            if (errorDiv) {
+                errorDiv.innerHTML = `
+                    <div class="text-red-600 text-sm">
+                        <p class="mb-2">${errorMessage}</p>
+                        <p class="text-xs text-gray-600">Fehlercode: ${error.code || 'unbekannt'}</p>
+                    </div>
+                `;
+                errorDiv.classList.remove('hidden');
+            }
+        }, 100);
+
+        showToast('❌ ' + errorMessage);
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 }
 
 // Show the form to enter a new password
@@ -335,9 +433,24 @@ export async function handleEmailAction() {
             showNewPasswordForm(oobCode);
         }, 100);
     } else if (mode === 'verifyEmail') {
-        // Email verification is handled automatically by Firebase
-        // Just show a success message
-        showToast('E-Mail-Adresse wurde bestätigt');
+        // Apply the verification code
+        try {
+            await applyActionCode(auth, oobCode);
+            logger.log('✅ Email verified successfully');
+            showToast('✅ E-Mail-Adresse wurde bestätigt! Sie können sich jetzt anmelden.');
+
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error) {
+            logger.error('❌ Email verification failed:', error);
+            if (error.code === 'auth/invalid-action-code') {
+                showToast('❌ Der Link ist ungültig oder wurde bereits verwendet.');
+            } else if (error.code === 'auth/expired-action-code') {
+                showToast('❌ Der Link ist abgelaufen. Bitte fordern Sie einen neuen an.');
+            } else {
+                showToast('❌ Verifizierung fehlgeschlagen: ' + error.message);
+            }
+        }
     }
 }
 
@@ -373,10 +486,40 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
             }
 
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-            if (!userCredential.user.emailVerified) {
+            // Reload user to get latest emailVerified status from Firebase
+            await reload(user);
+
+            // Nach reload den aktuellen User aus auth.currentUser holen
+            const currentUser = auth.currentUser;
+
+            console.log('Email verified status:', currentUser?.emailVerified);
+
+            if (!currentUser || !currentUser.emailVerified) {
+                // Speichere Email für "erneut senden" Funktion
+                window._pendingVerificationEmail = email;
+                window._pendingVerificationPassword = password;
                 await signOut(auth);
-                throw new Error("Bitte bestätigen Sie erst Ihre E-Mail-Adresse.");
+
+                // Zeige spezielle Fehlermeldung mit Option zum erneuten Senden
+                const errorDiv = document.getElementById('auth-error');
+                if (errorDiv) {
+                    errorDiv.innerHTML = `
+                        <div class="text-red-600 text-sm">
+                            <p class="mb-2">Bitte bestätigen Sie erst Ihre E-Mail-Adresse.</p>
+                            <p class="text-xs text-gray-600 mb-3">Prüfen Sie auch Ihren Spam-Ordner.</p>
+                            <button
+                                onclick="app.resendVerificationEmail()"
+                                class="text-brand-gold underline text-xs font-semibold hover:text-brand-dark"
+                            >
+                                Bestätigungs-E-Mail erneut senden
+                            </button>
+                        </div>
+                    `;
+                    errorDiv.classList.remove('hidden');
+                }
+                return; // Nicht throw, damit die spezielle Fehlermeldung angezeigt wird
             }
 
             showToast('✅ Erfolgreich angemeldet');
@@ -436,7 +579,7 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
 
             // Send verification email with action URL
             const actionCodeSettings = {
-                url: window.location.origin + '/index-modular.html',
+                url: window.location.origin + window.location.pathname,
                 handleCodeInApp: false
             };
             await sendEmailVerification(user, actionCodeSettings);
@@ -675,6 +818,44 @@ export function resetAuthToLogin() {
     toggleAuthMode(true);
 }
 
+// Funktion zum erneuten Senden der Bestätigungs-E-Mail
+export async function resendVerificationEmail() {
+    const email = window._pendingVerificationEmail;
+    const password = window._pendingVerificationPassword;
+
+    if (!email || !password) {
+        showToast('❌ Bitte melden Sie sich erneut an');
+        return;
+    }
+
+    try {
+        // Kurz einloggen um E-Mail zu senden
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(userCredential.user);
+        await signOut(auth);
+
+        showToast('✅ Bestätigungs-E-Mail wurde erneut gesendet!');
+
+        // Verstecke die Fehlermeldung
+        const errorDiv = document.getElementById('auth-error');
+        if (errorDiv) {
+            errorDiv.innerHTML = `
+                <div class="text-green-600 text-sm">
+                    <p>Bestätigungs-E-Mail wurde gesendet!</p>
+                    <p class="text-xs text-gray-600 mt-1">Prüfen Sie Ihr Postfach und klicken Sie auf den Link.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Resend verification error:', error);
+        if (error.code === 'auth/too-many-requests') {
+            showToast('⚠️ Zu viele Anfragen. Bitte warten Sie einige Minuten.');
+        } else {
+            showToast('❌ Fehler beim Senden: ' + error.message);
+        }
+    }
+}
+
 export function setupAuthListener(state, navigateTo) {
     if(auth) {
         onAuthStateChanged(auth, (user) => {
@@ -750,7 +931,7 @@ export function addToCart(state, title, price) {
 
     // Entferne existierende Items aus derselben Kategorie
     if (category === 'cv-package') {
-        // Entferne alle CV-Pakete (Young, Senior, Executive)
+        // Entferne alle CV-Pakete (Add-ons werden in confirmPackageConfig separat behandelt)
         state.cart = state.cart.filter(item =>
             !item.title.includes('CV') || item.title.includes('Komplettpaket')
         );
@@ -762,12 +943,14 @@ export function addToCart(state, title, price) {
             !(item.title.includes('Session') && !item.title.includes('Komplettpaket'))
         );
     } else if (category === 'bundle') {
-        // Komplettpaket ersetzt ALLES (CV + Mentoring)
+        // Komplettpaket ersetzt ALLES (CV + Mentoring + Add-ons)
         state.cart = state.cart.filter(item =>
             !item.title.includes('CV') &&
             !item.title.includes('Executive Mentoring') &&
             !item.title.includes('Session') &&
-            !item.title.includes('Retainer')
+            !item.title.includes('Retainer') &&
+            !item.title.includes('Interview-Simulation') &&
+            !item.title.includes('Zeugnis-Analyse')
         );
     }
 
@@ -3203,20 +3386,20 @@ export function confirmPackageConfig(state) {
         finalName = `${baseName} (${nameSuffix.join(', ')})`;
     }
 
-    // Add main package
+    // WICHTIG: Zuerst alle alten Add-ons entfernen (Interview-Simulation, Zeugnis-Analyse)
+    // bevor das neue Paket hinzugefügt wird
+    state.cart = state.cart.filter(item =>
+        !item.title.includes('Interview-Simulation') &&
+        !item.title.includes('Zeugnis-Analyse')
+    );
+
+    // Add main package (addToCart entfernt auch alte CV-Pakete)
     addToCart(state, finalName, total - getAddonsTotal(addonCheckboxes));
 
-    // Add add-ons separately to cart (only if not already in cart)
+    // Add add-ons separately to cart (diese sind jetzt definitiv neu)
     addonCheckboxes.forEach(cb => {
         const addonName = cb.name === 'addon-interview' ? 'Interview-Simulation (60 Min.)' : 'Zeugnis-Analyse';
         const addonPrice = parseInt(cb.value) || 0;
-
-        // Check if add-on already exists in cart
-        const alreadyInCart = state.cart.some(item => item.title === addonName);
-        if (alreadyInCart) {
-            showToast(`${addonName} ist bereits im Warenkorb`);
-            return;
-        }
 
         // Add as separate item with unique integer ID
         state.cart.push({
@@ -3344,7 +3527,10 @@ export async function loadAdminUsers() {
                         <p class="text-sm text-gray-400">${user.email || user.id}</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <button onclick="app.verifyUserEmail('${user.email}')" class="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition" title="E-Mail als verifiziert markieren">
+                        <i class="fas fa-check-circle mr-1"></i>Verifizieren
+                    </button>
                     <span class="text-xs px-2 py-1 rounded ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'bg-green-500/20 text-green-400' : user.cookieConsent === 'essential' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}">
                         ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'Alle Cookies' : user.cookieConsent === 'essential' ? 'Nur notwendige' : 'Keine Auswahl'}
                     </span>
@@ -3357,6 +3543,42 @@ export async function loadAdminUsers() {
     } catch (e) {
         logger.error('Error loading users:', e);
         container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Benutzer.</p>';
+    }
+}
+
+// Admin: E-Mail eines Users als verifiziert markieren
+export async function verifyUserEmail(email) {
+    if (!email) {
+        showToast('❌ Keine E-Mail angegeben');
+        return;
+    }
+
+    // Hole Admin-Email aus aktuellem User
+    const adminEmail = auth?.currentUser?.email;
+    if (!adminEmail) {
+        showToast('❌ Nicht als Admin eingeloggt');
+        return;
+    }
+
+    try {
+        showToast('⏳ Verifiziere E-Mail...');
+
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/setEmailVerified', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, adminEmail })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(`✅ ${email} wurde verifiziert!`);
+        } else {
+            showToast(`❌ Fehler: ${result.message || result.error}`);
+        }
+    } catch (error) {
+        console.error('Verify email error:', error);
+        showToast('❌ Fehler beim Verifizieren');
     }
 }
 
