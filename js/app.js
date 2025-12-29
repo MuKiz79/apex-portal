@@ -2187,10 +2187,12 @@ export function filterCoaches(state) {
                     <!-- Large Image Area -->
                     <div class="relative aspect-[3/4] overflow-hidden">
                         <img src="${coach.image}"
-                             class="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                             class="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
                              alt="${name}" loading="lazy">
                         <!-- Gradient Overlay -->
                         <div class="absolute inset-0 bg-gradient-to-t from-[#0D1321] via-transparent to-transparent"></div>
+                        <!-- Gold tint on hover -->
+                        <div class="absolute inset-0 bg-brand-gold/0 group-hover:bg-brand-gold/10 transition-all duration-500"></div>
                         <!-- Experience Badge -->
                         <div class="absolute top-4 right-4 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
                             <span class="text-[10px] text-white/80 font-medium uppercase tracking-wider">${experience}</span>
