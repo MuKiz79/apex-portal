@@ -3417,8 +3417,8 @@
     <!-- APP LOGIC -->
     <script type="module">
         // Import modules
-        import * as Core from './js/core.js?v=20251229b';
-        import * as App from './js/app.js?v=20251229b';
+        import * as Core from './js/core.js?v=20251229c';
+        import * as App from './js/app.js?v=20251229c';
 
         // Make functions globally accessible
         window.app = {
@@ -3465,6 +3465,7 @@
                 window.app.state.isLoginMode = true;
                 App.resetAuthToLogin();
             },
+            resendVerificationEmail: () => App.resendVerificationEmail(),
             validateEmailField: (email) => App.validateEmailField(email),
             updatePasswordStrength: (password) => App.updatePasswordStrength(password),
             validatePasswordMatchField: () => App.validatePasswordMatchField(),
@@ -3524,6 +3525,7 @@
             uploadDocumentToUser: (userId, orderId, file) => App.uploadDocumentToUser(userId, orderId, file),
             switchAdminTab: (tabName) => App.switchAdminTab(tabName),
             loadAdminUsers: () => App.loadAdminUsers(),
+            verifyUserEmail: (email) => App.verifyUserEmail(email),
             loadStrategyCalls: () => App.loadStrategyCalls(),
             updateStrategyCallStatus: (callId, status) => App.updateStrategyCallStatus(callId, status),
             loadAdminSettings: () => App.loadAdminSettings(),
