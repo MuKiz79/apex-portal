@@ -3525,6 +3525,93 @@ export async function loadDeliveredDocuments(state) {
     }
 }
 
+// Load user uploaded documents for user dashboard
+export async function loadUserUploads(state) {
+    logger.log('Loading user uploads for user:', state.user?.uid);
+
+    if (!state.user || !storage) {
+        logger.log('No user or storage available');
+        return;
+    }
+
+    const container = document.getElementById('user-uploads-list');
+    if (!container) {
+        logger.log('User uploads container not found');
+        return;
+    }
+
+    try {
+        const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
+        const storagePath = `users/${state.user.uid}`;
+        logger.log('Checking user uploads path:', storagePath);
+        const listRef = ref(storage, storagePath);
+        const result = await listAll(listRef);
+        logger.log('Found user uploads:', result.items.length);
+
+        if (result.items.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-300 mb-3"></i>
+                    <p class="text-sm">Noch keine Dokumente hochgeladen</p>
+                </div>
+            `;
+            return;
+        }
+
+        const docs = await Promise.all(result.items.map(async item => {
+            const url = await getDownloadURL(item);
+            const metadata = await item.getMetadata();
+            // Extract original filename (remove timestamp prefix)
+            const nameParts = item.name.split('_');
+            const displayName = nameParts.length > 1 ? nameParts.slice(1).join('_') : item.name;
+            return {
+                name: displayName,
+                fullName: item.name,
+                url,
+                uploadedAt: metadata.timeCreated || null
+            };
+        }));
+
+        // Sort by date (newest first)
+        docs.sort((a, b) => {
+            const dateA = a.uploadedAt ? new Date(a.uploadedAt) : new Date(0);
+            const dateB = b.uploadedAt ? new Date(b.uploadedAt) : new Date(0);
+            return dateB - dateA;
+        });
+
+        container.innerHTML = `
+            <div class="space-y-3">
+                ${docs.map(doc => `
+                    <a href="${doc.url}" target="_blank" download="${doc.name}"
+                       class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-alt text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-brand-dark">${sanitizeHTML(doc.name)}</p>
+                                <p class="text-xs text-gray-500">
+                                    ${doc.uploadedAt ? 'Hochgeladen am ' + new Date(doc.uploadedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Hochgeladen'}
+                                </p>
+                            </div>
+                        </div>
+                        <i class="fas fa-download text-blue-600 group-hover:scale-110 transition-transform"></i>
+                    </a>
+                `).join('')}
+            </div>
+        `;
+
+    } catch (e) {
+        logger.error('Failed to load user uploads:', e);
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-cloud-upload-alt text-3xl text-gray-300 mb-3"></i>
+                <p class="text-sm">Noch keine Dokumente hochgeladen</p>
+            </div>
+        `;
+    }
+}
+
 // Cookie Consent Functions
 export function checkCookieConsent() {
     const consent = localStorage.getItem('apex-cookie-consent');

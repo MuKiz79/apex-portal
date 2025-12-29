@@ -1441,11 +1441,25 @@
                             </div>
                         </div>
 
+                        <!-- User Uploads Section -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+                            <div class="p-6 border-b border-gray-100">
+                                <h2 class="font-serif text-xl text-brand-dark">📤 Ihre Uploads</h2>
+                                <p class="text-sm text-gray-600 mt-1">Dokumente, die Sie hochgeladen haben</p>
+                            </div>
+                            <div id="user-uploads-list" class="p-6">
+                                <div class="text-center py-8 text-gray-600">
+                                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-300 mb-3" aria-hidden="true"></i>
+                                    <p class="text-sm">Noch keine Dokumente hochgeladen</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Downloads Section -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
                             <div class="p-6 border-b border-gray-100">
-                                <h2 class="font-serif text-xl text-brand-dark">Ihre Ergebnisse</h2>
-                                <p class="text-sm text-gray-600 mt-1">Fertige Dokumente zum Download</p>
+                                <h2 class="font-serif text-xl text-brand-dark">📥 Ihre Ergebnisse</h2>
+                                <p class="text-sm text-gray-600 mt-1">Fertige Dokumente von APEX zum Download</p>
                             </div>
                             <div id="downloads-list" class="p-6">
                                 <div class="text-center py-8 text-gray-600">
@@ -3518,7 +3532,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20251229e';
-        import * as App from './js/app.js?v=20251229i';
+        import * as App from './js/app.js?v=20251229j';
 
         // Make functions globally accessible
         window.app = {
@@ -3538,6 +3552,7 @@
                 // Load orders and documents when navigating to dashboard
                 if (viewId === 'dashboard' && window.app.state.user) {
                     window.app.loadUserOrders();
+                    window.app.loadUserUploads();
                     window.app.loadDeliveredDocuments();
                 }
                 // Load all orders when navigating to admin panel
@@ -3640,6 +3655,7 @@
 
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),
+            loadUserUploads: () => App.loadUserUploads(window.app.state),
 
             // Strategy Call Modal
             openStrategyModal: () => App.openStrategyModal(),
@@ -3736,12 +3752,14 @@
                     if (isPaymentSuccess) {
                         setTimeout(() => {
                             app.loadUserOrders();
+                            app.loadUserUploads();
                             app.loadDeliveredDocuments();
                         }, 2000);
                         app.state.justPaid = false; // Reset flag
                     } else {
                         // Immer laden wenn User eingeloggt ist (für Dashboard-Bereitschaft)
                         app.loadUserOrders();
+                        app.loadUserUploads();
                         app.loadDeliveredDocuments();
                     }
                 } else {
