@@ -1967,23 +1967,23 @@ export async function loadAvailability(state) {
         let pendingSlots = [];
         let availabilityNotes = '';
 
-        // 1. Load confirmed appointments from orders
+        // 1. Load confirmed appointments from orders (filter client-side due to Firestore rules)
         const ordersQuery = query(
             collection(db, "orders"),
-            where("userId", "==", state.user.uid),
-            where("appointmentStatus", "==", "confirmed")
+            where("userId", "==", state.user.uid)
         );
         const ordersSnapshot = await getDocs(ordersQuery);
 
-        ordersSnapshot.forEach(doc => {
-            const order = doc.data();
-            if (order.appointment?.confirmed && order.appointment?.datetime) {
+        ordersSnapshot.forEach(docSnap => {
+            const order = docSnap.data();
+            // Filter for confirmed appointments client-side
+            if (order.appointmentStatus === 'confirmed' && order.appointment?.confirmed && order.appointment?.datetime) {
                 const appointmentDate = new Date(order.appointment.datetime);
                 if (appointmentDate >= now) {
                     confirmedAppointments.push({
                         datetime: order.appointment.datetime,
                         packageName: order.packageName || order.items?.[0]?.name || 'Termin',
-                        orderId: doc.id
+                        orderId: docSnap.id
                     });
                 }
             }
