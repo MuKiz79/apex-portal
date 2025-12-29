@@ -41,9 +41,9 @@ const ALLOWED_FILE_TYPES = {
 
 // Production Logger - suppresses logs in production
 const logger = {
-    log: (...args) => { if (!IS_PRODUCTION) logger.log(...args); },
-    warn: (...args) => { if (!IS_PRODUCTION) logger.warn(...args); },
-    error: (...args) => logger.error(...args), // Always log errors
+    log: (...args) => { if (!IS_PRODUCTION) console.log(...args); },
+    warn: (...args) => { if (!IS_PRODUCTION) console.warn(...args); },
+    error: (...args) => console.error(...args), // Always log errors
     debug: (...args) => { if (!IS_PRODUCTION) console.debug(...args); }
 };
 
