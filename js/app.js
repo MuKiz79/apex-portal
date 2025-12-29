@@ -3307,23 +3307,68 @@ export function checkCookieConsent() {
 
     if (!banner) return;
 
-    if (consent === 'accepted' || consent === 'declined') {
+    // Akzeptiere auch alte Werte 'accepted' und 'declined'
+    if (consent === 'all' || consent === 'essential' || consent === 'accepted' || consent === 'declined') {
         banner.classList.add('hidden');
+
+        // Migriere alte Werte zu neuen
+        if (consent === 'accepted') {
+            localStorage.setItem('apex-cookie-consent', 'all');
+        } else if (consent === 'declined') {
+            localStorage.setItem('apex-cookie-consent', 'essential');
+        }
     } else {
+        // Zeige Banner mit Animation
         banner.classList.remove('hidden');
+        setTimeout(() => {
+            banner.style.transform = 'translateY(0)';
+        }, 100);
     }
 }
 
-export function acceptCookies() {
-    localStorage.setItem('apex-cookie-consent', 'accepted');
+export async function acceptAllCookies() {
+    localStorage.setItem('apex-cookie-consent', 'all');
     const banner = document.getElementById('cookie-banner');
     if (banner) banner.classList.add('hidden');
+
+    // Speichere in Firestore wenn User eingeloggt ist
+    await saveCookieConsentToFirestore('all');
+    showToast('✅ Cookie-Einstellungen gespeichert');
+}
+
+export async function acceptEssentialCookies() {
+    localStorage.setItem('apex-cookie-consent', 'essential');
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.classList.add('hidden');
+
+    // Speichere in Firestore wenn User eingeloggt ist
+    await saveCookieConsentToFirestore('essential');
+    showToast('✅ Cookie-Einstellungen gespeichert');
+}
+
+// Legacy-Funktionen für Kompatibilität
+export function acceptCookies() {
+    acceptAllCookies();
 }
 
 export function declineCookies() {
-    localStorage.setItem('apex-cookie-consent', 'declined');
-    const banner = document.getElementById('cookie-banner');
-    if (banner) banner.classList.add('hidden');
+    acceptEssentialCookies();
+}
+
+// Speichere Cookie-Consent in Firestore
+async function saveCookieConsentToFirestore(consentType) {
+    try {
+        const user = auth?.currentUser;
+        if (!user || !db) return;
+
+        await updateDoc(doc(db, 'users', user.uid), {
+            cookieConsent: consentType,
+            cookieConsentDate: new Date()
+        });
+        console.log('Cookie consent saved to Firestore:', consentType);
+    } catch (error) {
+        console.error('Error saving cookie consent:', error);
+    }
 }
 
 // ========== STRATEGY CALL MODAL ==========
