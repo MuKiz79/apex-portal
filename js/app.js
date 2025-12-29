@@ -2455,6 +2455,19 @@ export async function loadAdminCoaches() {
             return;
         }
 
+        // Update statistics
+        const totalCoaches = coaches.length;
+        const visibleCoaches = coaches.filter(c => c.visible !== false).length;
+        const hiddenCoaches = coaches.filter(c => c.visible === false).length;
+
+        const statTotal = document.getElementById('admin-stat-coaches-total');
+        const statVisible = document.getElementById('admin-stat-coaches-visible');
+        const statHidden = document.getElementById('admin-stat-coaches-hidden');
+
+        if (statTotal) statTotal.textContent = totalCoaches;
+        if (statVisible) statVisible.textContent = visibleCoaches;
+        if (statHidden) statHidden.textContent = hiddenCoaches;
+
         container.innerHTML = coaches.map(coach => `
             <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -3170,6 +3183,19 @@ export async function loadAdminUsers() {
             return;
         }
 
+        // Update statistics
+        const totalUsers = users.length;
+        const cookiesAll = users.filter(u => u.cookieConsent === 'all' || u.cookieConsent === true).length;
+        const cookiesEssential = users.filter(u => u.cookieConsent === 'essential').length;
+
+        const statUsers = document.getElementById('admin-stat-users');
+        const statCookiesAll = document.getElementById('admin-stat-cookies-all');
+        const statCookiesEssential = document.getElementById('admin-stat-cookies-essential');
+
+        if (statUsers) statUsers.textContent = totalUsers;
+        if (statCookiesAll) statCookiesAll.textContent = cookiesAll;
+        if (statCookiesEssential) statCookiesEssential.textContent = cookiesEssential;
+
         container.innerHTML = users.map(user => `
             <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -3181,8 +3207,13 @@ export async function loadAdminUsers() {
                         <p class="text-sm text-gray-400">${user.email || user.id}</p>
                     </div>
                 </div>
-                <div class="text-sm text-gray-400">
-                    ${user.company || ''}
+                <div class="flex items-center gap-4">
+                    <span class="text-xs px-2 py-1 rounded ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'bg-green-500/20 text-green-400' : user.cookieConsent === 'essential' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}">
+                        ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'Alle Cookies' : user.cookieConsent === 'essential' ? 'Nur notwendige' : 'Keine Auswahl'}
+                    </span>
+                    <div class="text-sm text-gray-400">
+                        ${user.company || ''}
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -3214,6 +3245,19 @@ export async function loadStrategyCalls() {
 
         // Sort by date (newest first)
         calls.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Update statistics
+        const totalCalls = calls.length;
+        const newCalls = calls.filter(c => !c.status || c.status === 'new').length;
+        const doneCalls = calls.filter(c => c.status === 'completed').length;
+
+        const statTotal = document.getElementById('admin-stat-strategy-total');
+        const statNew = document.getElementById('admin-stat-strategy-new');
+        const statDone = document.getElementById('admin-stat-strategy-done');
+
+        if (statTotal) statTotal.textContent = totalCalls;
+        if (statNew) statNew.textContent = newCalls;
+        if (statDone) statDone.textContent = doneCalls;
 
         container.innerHTML = calls.map(call => `
             <div class="bg-brand-dark/50 rounded-lg p-4">
