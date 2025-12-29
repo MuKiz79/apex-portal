@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>APEX Icon Generator</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f0f0f0; }
+    .preview { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+    .icon-box { text-align: center; background: white; padding: 10px; border-radius: 8px; }
+    canvas { border: 1px solid #ccc; }
+    button { padding: 10px 20px; background: #1a1a2e; color: #C9B99A; border: none; cursor: pointer; margin: 5px; border-radius: 4px; }
+    button:hover { background: #16213e; }
+  </style>
+</head>
+<body>
+  <h1>APEX Executive - PWA Icon Generator</h1>
+  <p>Click on each button to download the icon, or use "Download All"</p>
+
+  <div id="buttons"></div>
+  <div class="preview" id="preview"></div>
+
+  <script>
+    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+
+    function drawIcon(ctx, size) {
+      const scale = size / 512;
+
+      // Background gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, size, size);
+      bgGrad.addColorStop(0, '#1a1a2e');
+      bgGrad.addColorStop(1, '#16213e');
+
+      // Gold gradient
+      const goldGrad = ctx.createLinearGradient(0, 0, size, size);
+      goldGrad.addColorStop(0, '#D4C4A5');
+      goldGrad.addColorStop(0.5, '#C9B99A');
+      goldGrad.addColorStop(1, '#B8A88A');
+
+      // Draw rounded rectangle background
+      const radius = 96 * scale;
+      ctx.fillStyle = bgGrad;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, radius);
+      ctx.fill();
+
+      // Draw border
+      ctx.strokeStyle = goldGrad;
+      ctx.lineWidth = 2 * scale;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.roundRect(8 * scale, 8 * scale, size - 16 * scale, size - 16 * scale, (radius - 8) * scale);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Draw "A" letter
+      ctx.fillStyle = goldGrad;
+      ctx.beginPath();
+      ctx.moveTo(256 * scale, 100 * scale);
+      ctx.lineTo(156 * scale, 400 * scale);
+      ctx.lineTo(196 * scale, 400 * scale);
+      ctx.lineTo(216 * scale, 340 * scale);
+      ctx.lineTo(296 * scale, 340 * scale);
+      ctx.lineTo(316 * scale, 400 * scale);
+      ctx.lineTo(356 * scale, 400 * scale);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner triangle (cut out)
+      ctx.fillStyle = bgGrad;
+      ctx.beginPath();
+      ctx.moveTo(236 * scale, 300 * scale);
+      ctx.lineTo(256 * scale, 240 * scale);
+      ctx.lineTo(276 * scale, 300 * scale);
+      ctx.closePath();
+      ctx.fill();
+
+      // Decorative line
+      ctx.fillStyle = goldGrad;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.roundRect(156 * scale, 420 * scale, 200 * scale, 4 * scale, 2 * scale);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    function createCanvas(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      drawIcon(ctx, size);
+      return canvas;
+    }
+
+    function downloadIcon(size) {
+      const canvas = createCanvas(size);
+      const link = document.createElement('a');
+      link.download = `icon-${size}x${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadAll() {
+      sizes.forEach((size, index) => {
+        setTimeout(() => downloadIcon(size), index * 200);
+      });
+    }
+
+    // Create buttons
+    const buttonsDiv = document.getElementById('buttons');
+    const downloadAllBtn = document.createElement('button');
+    downloadAllBtn.textContent = 'Download All Icons';
+    downloadAllBtn.onclick = downloadAll;
+    downloadAllBtn.style.background = '#C9B99A';
+    downloadAllBtn.style.color = '#1a1a2e';
+    downloadAllBtn.style.fontWeight = 'bold';
+    buttonsDiv.appendChild(downloadAllBtn);
+
+    sizes.forEach(size => {
+      const btn = document.createElement('button');
+      btn.textContent = `${size}x${size}`;
+      btn.onclick = () => downloadIcon(size);
+      buttonsDiv.appendChild(btn);
+    });
+
+    // Create previews
+    const previewDiv = document.getElementById('preview');
+    sizes.forEach(size => {
+      const box = document.createElement('div');
+      box.className = 'icon-box';
+      const canvas = createCanvas(size);
+      canvas.style.width = Math.min(size, 128) + 'px';
+      canvas.style.height = Math.min(size, 128) + 'px';
+      box.appendChild(canvas);
+      box.appendChild(document.createElement('br'));
+      box.appendChild(document.createTextNode(`${size}x${size}`));
+      previewDiv.appendChild(box);
+    });
+  </script>
+</body>
+</html>

@@ -2180,7 +2180,43 @@ export function filterCoaches(state) {
         const name = sanitizeHTML(coach.name);
         const role = sanitizeHTML(coach.role);
         const experience = sanitizeHTML(coach.experience || '15+ Jahre');
-        return '<div class="group bg-white rounded-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:border-brand-gold/30 transition-all duration-300 cursor-pointer"><div class="relative h-24 bg-brand-dark overflow-hidden"><div class="absolute inset-0 bg-brand-gold/10"></div></div><div class="px-6 pb-6 relative"><div class="-mt-12 mb-4"><img src="' + coach.image + '" class="w-20 h-20 rounded-sm object-cover border-4 border-white shadow-md" alt="' + name + '" loading="lazy"></div><div onclick="app.openCoachDetail(\'' + coach.id + '\')"><h4 class="font-serif text-lg text-brand-dark font-bold hover:text-brand-gold transition cursor-pointer">' + name + '</h4><p class="text-xs text-brand-gold font-bold uppercase tracking-widest mt-1">' + role + '</p></div><div class="mt-4 pt-4 border-t flex justify-between items-center"><div class="text-xs text-gray-500">' + experience + ' Erfahrung</div><div class="flex gap-2"><button onclick="app.openCoachDetail(\'' + coach.id + '\')" class="text-gray-400 hover:text-brand-dark transition" aria-label="Mentor-Details ansehen"><i class="far fa-eye text-lg" aria-hidden="true"></i></button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350)" class="text-brand-dark hover:text-brand-gold transition" aria-label="Session buchen"><i class="fas fa-plus-circle text-lg" aria-hidden="true"></i></button></div></div></div></div>';
+        const expertise = Array.isArray(coach.expertise) ? coach.expertise.slice(0, 2) : [];
+        return `
+            <div class="group cursor-pointer" onclick="app.openCoachDetail('${coach.id}')">
+                <div class="relative bg-gradient-to-b from-[#0D1321] to-[#1A1F2E] rounded-2xl overflow-hidden border border-white/[0.08] hover:border-brand-gold/30 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-gold/10 hover:-translate-y-1">
+                    <!-- Large Image Area -->
+                    <div class="relative aspect-[4/5] overflow-hidden">
+                        <img src="${coach.image}"
+                             class="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                             alt="${name}" loading="lazy">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0D1321] via-transparent to-transparent"></div>
+                        <!-- Experience Badge -->
+                        <div class="absolute top-4 right-4 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
+                            <span class="text-[10px] text-white/80 font-medium uppercase tracking-wider">${experience}</span>
+                        </div>
+                    </div>
+                    <!-- Content -->
+                    <div class="relative px-6 pb-6 -mt-16">
+                        <!-- Name & Role -->
+                        <h4 class="font-serif text-xl text-white mb-1 group-hover:text-brand-gold transition-colors duration-300">${name}</h4>
+                        <p class="text-brand-gold text-xs font-semibold uppercase tracking-[0.15em] mb-4">${role}</p>
+                        <!-- Expertise Tags -->
+                        ${expertise.length > 0 ? `
+                        <div class="flex flex-wrap gap-2 mb-5">
+                            ${expertise.map(e => `<span class="text-[10px] text-white/50 border border-white/10 rounded-full px-3 py-1 uppercase tracking-wider">${sanitizeHTML(e)}</span>`).join('')}
+                        </div>
+                        ` : ''}
+                        <!-- Action Button -->
+                        <button onclick="event.stopPropagation(); app.addToCart('Executive Mentoring - Single Session', 350)"
+                                class="w-full bg-white/[0.05] hover:bg-brand-gold border border-white/10 hover:border-brand-gold text-white hover:text-brand-dark font-semibold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                            <span>Session buchen</span>
+                            <i class="fas fa-arrow-right text-[10px] group-hover/btn:translate-x-1 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
     }).join('');
 }
 
