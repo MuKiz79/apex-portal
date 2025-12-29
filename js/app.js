@@ -5,7 +5,7 @@
 import { auth, db, storage, navigateTo } from './core.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, reload, applyActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import { ref, uploadBytes, getDownloadURL, getMetadata } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
 import { sampleArticles } from './data.js';
 
@@ -1974,11 +1974,16 @@ export async function loadAvailability(state) {
         );
         const ordersSnapshot = await getDocs(ordersQuery);
 
+        logger.log(`[Appointments] Found ${ordersSnapshot.size} orders for user`);
+
         ordersSnapshot.forEach(docSnap => {
             const order = docSnap.data();
+            logger.log(`[Appointments] Order ${docSnap.id}: status=${order.appointmentStatus}, appointment=`, order.appointment);
+
             // Filter for confirmed appointments client-side
             if (order.appointmentStatus === 'confirmed' && order.appointment?.confirmed && order.appointment?.datetime) {
                 const appointmentDate = new Date(order.appointment.datetime);
+                logger.log(`[Appointments] Confirmed appointment date: ${appointmentDate}, now: ${now}, isFuture: ${appointmentDate >= now}`);
                 if (appointmentDate >= now) {
                     confirmedAppointments.push({
                         datetime: order.appointment.datetime,
@@ -1988,6 +1993,8 @@ export async function loadAvailability(state) {
                 }
             }
         });
+
+        logger.log(`[Appointments] Found ${confirmedAppointments.length} confirmed future appointments`);
 
         // Sort confirmed appointments by date
         confirmedAppointments.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
@@ -4137,7 +4144,7 @@ export async function loadUserUploads(state) {
 
         const docs = await Promise.all(result.items.map(async item => {
             const url = await getDownloadURL(item);
-            const metadata = await item.getMetadata();
+            const metadata = await getMetadata(item);
             // Extract original filename (remove timestamp prefix)
             const nameParts = item.name.split('_');
             const displayName = nameParts.length > 1 ? nameParts.slice(1).join('_') : item.name;
