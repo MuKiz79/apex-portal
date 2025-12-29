@@ -735,6 +735,17 @@ export function addToCart(state, title, price) {
         category = 'mentoring';
     } else if (sanitizedTitle.includes('Komplettpaket')) {
         category = 'bundle';
+    } else if (sanitizedTitle.includes('Interview-Simulation') || sanitizedTitle.includes('Zeugnis-Analyse')) {
+        category = 'addon';
+    }
+
+    // Add-ons: Prüfe auf Duplikate
+    if (category === 'addon') {
+        const alreadyInCart = state.cart.some(item => item.title === sanitizedTitle);
+        if (alreadyInCart) {
+            showToast(`⚠️ ${sanitizedTitle} ist bereits im Warenkorb`);
+            return;
+        }
     }
 
     // Entferne existierende Items aus derselben Kategorie
@@ -784,6 +795,8 @@ export function addToCart(state, title, price) {
         showToast('✅ Mentoring-Paket ausgewählt (vorheriges ersetzt)');
     } else if (category === 'bundle') {
         showToast('✅ Komplettpaket ausgewählt (ersetzt CV + Mentoring)');
+    } else if (category === 'addon') {
+        showToast('✅ Add-on hinzugefügt');
     } else {
         showToast('✅ Zur Auswahl hinzugefügt');
     }
@@ -3191,10 +3204,18 @@ export function confirmPackageConfig(state) {
     // Add main package
     addToCart(state, finalName, total - getAddonsTotal(addonCheckboxes));
 
-    // Add add-ons separately to cart
+    // Add add-ons separately to cart (only if not already in cart)
     addonCheckboxes.forEach(cb => {
         const addonName = cb.name === 'addon-interview' ? 'Interview-Simulation (60 Min.)' : 'Zeugnis-Analyse';
         const addonPrice = parseInt(cb.value) || 0;
+
+        // Check if add-on already exists in cart
+        const alreadyInCart = state.cart.some(item => item.title === addonName);
+        if (alreadyInCart) {
+            showToast(`${addonName} ist bereits im Warenkorb`);
+            return;
+        }
+
         // Add as separate item
         state.cart.push({
             title: addonName,
