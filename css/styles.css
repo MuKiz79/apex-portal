@@ -62,8 +62,10 @@
             gap: 0.625rem;
         }
         .btn-secondary:hover {
-            background-color: rgba(201, 185, 154, 0.1);
+            background-color: rgba(201, 185, 154, 0.18);
             border-color: var(--color-gold);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(201, 185, 154, 0.15);
         }
 
         /* Ghost Button - Minimal (Links) */
@@ -102,6 +104,10 @@
         }
         .card:hover {
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        }
+        .card:focus-within {
+            outline: 2px solid var(--color-gold);
+            outline-offset: 4px;
         }
 
         /* Card Featured (Hervorgehoben) */
@@ -530,4 +536,73 @@
         /* Mobile Sticky Bar Animation */
         #mobile-sticky-cta {
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ========== WCAG AA CONTRAST IMPROVEMENTS ========== */
+
+        /* Better contrast for light text on dark backgrounds */
+        .text-contrast-high {
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .text-contrast-medium {
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        /* Improved gray text for better readability */
+        .text-gray-improved {
+            color: #4B5563; /* gray-600 instead of gray-500 */
+        }
+
+        /* ========== MOBILE TYPOGRAPHY IMPROVEMENTS ========== */
+
+        /* Base font size 16px minimum on mobile */
+        @media (max-width: 768px) {
+            html {
+                font-size: 16px;
+            }
+            body {
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+            p, li, span {
+                font-size: max(1rem, 16px);
+            }
+            /* Slightly larger touch targets for text links */
+            a:not(.btn-primary):not(.btn-secondary) {
+                padding: 0.25rem 0;
+            }
+        }
+
+        /* ========== ENHANCED INTERACTIVE STATES ========== */
+
+        /* Better hover feedback for clickable cards */
+        .card-interactive {
+            cursor: pointer;
+        }
+        .card-interactive:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+        .card-interactive:active {
+            transform: translateY(0);
+        }
+
+        /* Smooth transitions for all interactive elements */
+        a, button, input, select, textarea, .card, .card-glass {
+            transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+            transition-duration: 0.2s;
+            transition-timing-function: ease-out;
+        }
+
+        /* ========== DARK SECTION TEXT UTILITIES ========== */
+
+        /* Use these instead of white/50 for WCAG compliance */
+        .dark-section-text {
+            color: rgba(255, 255, 255, 0.78);
+        }
+        .dark-section-text-muted {
+            color: rgba(255, 255, 255, 0.65);
+        }
+        .dark-section-text-subtle {
+            color: rgba(255, 255, 255, 0.55);
         }
