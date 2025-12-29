@@ -57,7 +57,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -79,6 +78,10 @@
                     fontFamily: {
                         serif: ['"Playfair Display"', 'Georgia', 'serif'],
                         sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                    },
+                    fontSize: {
+                        'body': ['1rem', { lineHeight: '1.6' }],
+                        'body-sm': ['0.9375rem', { lineHeight: '1.6' }],
                     },
                     borderRadius: {
                         'apple': '1rem',
@@ -265,7 +268,7 @@
                             Professionelle Einschätzung Ihrer aktuellen Unterlagen.
                         </p>
                         <div class="text-white text-2xl font-serif mb-6">€99</div>
-                        <button onclick="app.openPackageConfigModal('CV Quick-Check', 99)" class="w-full border border-white/20 text-white/80 px-6 py-3 text-xs font-semibold tracking-wider hover:bg-white/10 hover:text-white transition-all duration-300 rounded-full mt-auto">
+                        <button onclick="app.openPackageConfigModal('CV Quick-Check', 99)" class="w-full border border-white/20 text-white/80 px-6 py-3 text-sm font-semibold tracking-wider hover:bg-white/10 hover:text-white transition-all duration-300 rounded-xl mt-auto">
                             Jetzt buchen
                         </button>
                     </div>
@@ -279,7 +282,7 @@
                             CV, LinkedIn & Anschreiben – professionell erstellt.
                         </p>
                         <div class="text-brand-gold text-2xl font-serif mb-6">Ab €249</div>
-                        <button onclick="app.scrollToSection('cv-packages')" class="w-full bg-brand-gold text-brand-dark px-6 py-3 text-xs font-bold tracking-wider hover:bg-white transition-all duration-300 rounded-full mt-auto">
+                        <button onclick="app.scrollToSection('cv-packages')" class="w-full bg-brand-gold text-brand-dark px-6 py-3 text-sm font-bold tracking-wider hover:bg-white transition-all duration-300 rounded-xl mt-auto">
                             Pakete ansehen
                         </button>
                     </div>
@@ -292,7 +295,7 @@
                             1:1 Sparring mit erfahrenen Führungskräften.
                         </p>
                         <div class="text-white text-2xl font-serif mb-6">Ab €350</div>
-                        <button onclick="app.scrollToSection('coaches')" class="w-full border border-white/20 text-white/80 px-6 py-3 text-xs font-semibold tracking-wider hover:bg-white/10 hover:text-white transition-all duration-300 rounded-full mt-auto">
+                        <button onclick="app.scrollToSection('coaches')" class="w-full border border-white/20 text-white/80 px-6 py-3 text-sm font-semibold tracking-wider hover:bg-white/10 hover:text-white transition-all duration-300 rounded-xl mt-auto">
                             Mentoren ansehen
                         </button>
                     </div>
@@ -301,7 +304,7 @@
         </header>
 
         <!-- Testimonials Section -->
-        <section class="py-16 md:py-20 bg-white" id="testimonials">
+        <section class="py-20 md:py-28 bg-white" id="testimonials">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Erfahrungen</span>
@@ -1095,7 +1098,7 @@
         </section>
 
         <!-- Inner Circle Teaser -->
-        <section id="inner-circle-teaser" class="py-16 md:py-20 bg-brand-dark">
+        <section id="inner-circle-teaser" class="py-20 md:py-28 bg-brand-dark">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <div class="inline-flex items-center gap-2 bg-brand-gold/10 border border-brand-gold/30 px-4 py-2 rounded-full mb-6">
                     <i class="fas fa-crown text-brand-gold text-sm"></i>
@@ -1114,7 +1117,7 @@
         </section>
 
         <!-- FAQ -->
-        <section id="faq" class="py-16 md:py-20 bg-white">
+        <section id="faq" class="py-20 md:py-28 bg-white">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <span class="text-brand-gold uppercase tracking-widest text-xs font-bold mb-2 block">Häufige Fragen</span>
