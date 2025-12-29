@@ -2689,6 +2689,9 @@
                 <button onclick="app.switchAdminTab('coaches')" id="admin-tab-coaches" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
                     <i class="fas fa-user-tie mr-2"></i>Mentoren
                 </button>
+                <button onclick="app.switchAdminTab('documents')" id="admin-tab-documents" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
+                    <i class="fas fa-folder-open mr-2"></i>Dokumente
+                </button>
                 <button onclick="app.switchAdminTab('settings')" id="admin-tab-settings" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
                     <i class="fas fa-cog mr-2"></i>Einstellungen
                 </button>
@@ -2854,6 +2857,41 @@
                         <div class="p-8 text-center text-gray-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
                             <p class="text-sm">Lade Mentoren...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Tab Content -->
+            <div id="admin-content-documents" class="hidden">
+                <!-- Documents Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Hochgeladene Dokumente</p>
+                        <p id="admin-stat-docs-uploaded" class="text-3xl font-serif text-brand-dark">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Ausgelieferte Dokumente</p>
+                        <p id="admin-stat-docs-delivered" class="text-3xl font-serif text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Benutzer mit Dokumenten</p>
+                        <p id="admin-stat-docs-users" class="text-3xl font-serif text-blue-600">0</p>
+                    </div>
+                </div>
+
+                <!-- Documents List -->
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-brand-dark">Alle Dokumente</h3>
+                        <button onclick="app.loadAdminDocuments()" class="text-brand-gold text-sm hover:underline">
+                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
+                        </button>
+                    </div>
+                    <div id="admin-documents-list" class="divide-y divide-gray-100">
+                        <div class="p-8 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p class="text-sm">Lade Dokumente...</p>
                         </div>
                     </div>
                 </div>
@@ -3440,7 +3478,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20251229e';
-        import * as App from './js/app.js?v=20251229e';
+        import * as App from './js/app.js?v=20251229f';
 
         // Make functions globally accessible
         window.app = {
@@ -3558,6 +3596,7 @@
             loadMentoringSlotsText: () => App.loadMentoringSlotsText(),
             loadAdminCoaches: () => App.loadAdminCoaches(),
             toggleCoachVisibility: (coachId, visible) => App.toggleCoachVisibility(coachId, visible),
+            loadAdminDocuments: () => App.loadAdminDocuments(),
 
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),

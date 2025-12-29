@@ -2617,8 +2617,8 @@ export function switchDashboardTab(tabName, state) {
 
 // Switch Admin Panel Tabs
 export function switchAdminTab(tabName) {
-    // Tab names: orders, users, strategy, coaches, settings
-    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'settings'];
+    // Tab names: orders, users, strategy, coaches, documents, settings
+    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings'];
 
     // Update tab buttons
     tabIds.forEach(id => {
@@ -2655,6 +2655,8 @@ export function switchAdminTab(tabName) {
         loadStrategyCalls();
     } else if (tabName === 'orders') {
         loadAllOrders();
+    } else if (tabName === 'documents') {
+        loadAdminDocuments();
     }
 }
 
@@ -2746,6 +2748,175 @@ export async function toggleCoachVisibility(coachId) {
     } catch (e) {
         logger.error('Error toggling coach visibility:', e);
         showToast('Fehler beim Aktualisieren');
+    }
+}
+
+// Load all documents for admin panel
+export async function loadAdminDocuments() {
+    const container = document.getElementById('admin-documents-list');
+    if (!container || !storage) {
+        logger.log('Documents container or storage not available');
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="p-8 text-center text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p class="text-sm">Lade Dokumente...</p>
+        </div>
+    `;
+
+    try {
+        const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
+
+        // Load all users to get their info
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const usersMap = {};
+        usersSnapshot.forEach(doc => {
+            usersMap[doc.id] = doc.data();
+        });
+
+        let allDocuments = [];
+        let uploadedCount = 0;
+        let deliveredCount = 0;
+        const usersWithDocs = new Set();
+
+        // Load uploaded documents (from users folder - users/{userId}/)
+        const usersRef = ref(storage, 'users');
+        try {
+            const usersResult = await listAll(usersRef);
+
+            // Each folder is a userId
+            for (const userFolder of usersResult.prefixes) {
+                const userId = userFolder.name;
+                usersWithDocs.add(userId);
+
+                // List all files in user folder
+                const userFiles = await listAll(userFolder);
+
+                for (const file of userFiles.items) {
+                    uploadedCount++;
+                    const url = await getDownloadURL(file);
+                    const metadata = await file.getMetadata();
+                    allDocuments.push({
+                        type: 'uploaded',
+                        userId,
+                        orderId: null,
+                        fileName: file.name,
+                        url,
+                        size: metadata.size || 0,
+                        createdAt: metadata.timeCreated || null,
+                        userEmail: usersMap[userId]?.email || 'Unbekannt',
+                        userName: `${usersMap[userId]?.firstname || ''} ${usersMap[userId]?.lastname || ''}`.trim() || 'Unbekannt'
+                    });
+                }
+            }
+        } catch (e) {
+            logger.log('No users folder or error:', e.message);
+        }
+
+        // Load delivered documents (from admin to users)
+        const deliveredRef = ref(storage, 'delivered');
+        try {
+            const deliveredResult = await listAll(deliveredRef);
+
+            for (const userFolder of deliveredResult.prefixes) {
+                const userId = userFolder.name;
+                usersWithDocs.add(userId);
+
+                const userDelivered = await listAll(userFolder);
+                for (const file of userDelivered.items) {
+                    deliveredCount++;
+                    const url = await getDownloadURL(file);
+                    const metadata = await file.getMetadata();
+                    allDocuments.push({
+                        type: 'delivered',
+                        userId,
+                        orderId: null,
+                        fileName: file.name,
+                        url,
+                        size: metadata.size || 0,
+                        createdAt: metadata.timeCreated || null,
+                        userEmail: usersMap[userId]?.email || 'Unbekannt',
+                        userName: `${usersMap[userId]?.firstname || ''} ${usersMap[userId]?.lastname || ''}`.trim() || 'Unbekannt'
+                    });
+                }
+            }
+        } catch (e) {
+            logger.log('No delivered folder or error:', e.message);
+        }
+
+        // Update statistics
+        const statUploaded = document.getElementById('admin-stat-docs-uploaded');
+        const statDelivered = document.getElementById('admin-stat-docs-delivered');
+        const statUsers = document.getElementById('admin-stat-docs-users');
+
+        if (statUploaded) statUploaded.textContent = uploadedCount;
+        if (statDelivered) statDelivered.textContent = deliveredCount;
+        if (statUsers) statUsers.textContent = usersWithDocs.size;
+
+        if (allDocuments.length === 0) {
+            container.innerHTML = `
+                <div class="p-8 text-center text-gray-400">
+                    <i class="fas fa-folder-open text-3xl mb-3"></i>
+                    <p class="text-sm">Noch keine Dokumente vorhanden</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Sort by date (newest first)
+        allDocuments.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+            const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+            return dateB - dateA;
+        });
+
+        // Format file size
+        const formatSize = (bytes) => {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        };
+
+        container.innerHTML = allDocuments.map(doc => `
+            <div class="p-4 hover:bg-gray-50 transition">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center ${doc.type === 'uploaded' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
+                            <i class="fas ${doc.type === 'uploaded' ? 'fa-upload' : 'fa-file-download'}"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-brand-dark text-sm">${sanitizeHTML(doc.fileName)}</p>
+                            <p class="text-xs text-gray-500">
+                                <span class="font-medium">${sanitizeHTML(doc.userName)}</span>
+                                (${sanitizeHTML(doc.userEmail)})
+                                ${doc.orderId ? ` • Bestellung: ${doc.orderId.substring(0, 8)}...` : ''}
+                            </p>
+                            <p class="text-xs text-gray-400">
+                                ${doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Datum unbekannt'}
+                                • ${formatSize(doc.size)}
+                                • <span class="${doc.type === 'uploaded' ? 'text-blue-600' : 'text-green-600'}">${doc.type === 'uploaded' ? 'Hochgeladen' : 'Ausgeliefert'}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <a href="${doc.url}" target="_blank" download="${doc.fileName}"
+                       class="px-4 py-2 bg-brand-dark text-white text-sm rounded hover:bg-gray-800 transition flex items-center gap-2">
+                        <i class="fas fa-download"></i>
+                        Download
+                    </a>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (e) {
+        logger.error('Error loading admin documents:', e);
+        container.innerHTML = `
+            <div class="p-8 text-center text-red-500">
+                <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
+                <p class="text-sm">Fehler beim Laden der Dokumente: ${e.message}</p>
+            </div>
+        `;
     }
 }
 
