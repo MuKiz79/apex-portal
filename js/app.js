@@ -803,7 +803,9 @@ export function addToCart(state, title, price) {
 }
 
 export function removeFromCart(state, id) {
-    state.cart = state.cart.filter(x => x.id !== id);
+    // Convert to string for comparison (handles both string and number IDs)
+    const idStr = String(id);
+    state.cart = state.cart.filter(x => String(x.id) !== idStr);
     updateCartUI(state);
     saveCartToLocalStorage(state.cart);
 }
@@ -830,7 +832,7 @@ export function updateCartUI(state) {
                     <span class="font-bold text-sm block">${sanitizeHTML(item.title)}</span>
                     <span class="text-xs text-gray-500">€${Number(item.price).toFixed(2)}</span>
                 </div>
-                <button onclick="app.removeFromCart(${parseInt(item.id, 10)})" class="text-red-500 hover:text-red-700 ml-4" aria-label="Artikel entfernen">
+                <button onclick="app.removeFromCart('${item.id}')" class="text-red-500 hover:text-red-700 ml-4" aria-label="Artikel entfernen">
                     <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
             </div>
@@ -3216,11 +3218,11 @@ export function confirmPackageConfig(state) {
             return;
         }
 
-        // Add as separate item
+        // Add as separate item with unique integer ID
         state.cart.push({
             title: addonName,
             price: addonPrice,
-            id: Date.now() + Math.random()
+            id: Date.now() + Math.floor(Math.random() * 1000)
         });
     });
 
