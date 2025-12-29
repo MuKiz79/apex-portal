@@ -594,87 +594,63 @@
                     </div>
                 </div>
 
-                <!-- Add-ons Section: Die "Money Maker" -->
-                <div class="mt-16 border-t border-gray-200 pt-12">
-                    <div class="text-center mb-10">
-                        <span class="inline-block text-brand-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">Maximieren Sie Ihren Erfolg</span>
-                        <h3 class="font-serif text-2xl md:text-3xl text-brand-dark">Optionale Add-ons</h3>
-                        <p class="text-gray-600 mt-3 max-w-xl mx-auto">Der CV bringt das Interview. Das Interview bringt den Job. Wählen Sie Add-ons direkt beim Paket-Kauf oder buchen Sie einzeln.</p>
+                <!-- Add-ons Section -->
+                <div class="mt-20 border-t border-gray-100 pt-16">
+                    <div class="text-center mb-12">
+                        <span class="inline-block text-brand-gold uppercase tracking-[0.2em] text-xs font-semibold mb-4">Extras</span>
+                        <h3 class="font-serif text-3xl md:text-4xl text-brand-dark mb-4">Add-ons für Ihren Erfolg</h3>
+                        <p class="text-gray-500 max-w-xl mx-auto">Wählen Sie Add-ons beim Paket-Kauf oder buchen Sie einzeln.</p>
                     </div>
 
-                    <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                        <!-- Interview-Training Add-on -->
-                        <div class="bg-gradient-to-br from-brand-gold/5 to-brand-gold/10 border border-brand-gold/20 rounded-2xl p-6 hover:border-brand-gold/40 transition-all duration-300 group">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-xl bg-brand-gold flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-comments text-brand-dark text-lg"></i>
-                                </div>
-                                <div class="flex-grow">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h4 class="font-serif text-lg text-brand-dark">Interview-Simulation</h4>
-                                        <span class="text-brand-dark font-bold">+€199</span>
-                                    </div>
-                                    <p class="text-sm text-gray-600 mb-4">60-minütiges Live-Training mit echten Fragen aus Ihrer Zielbranche. Feedback zu Körpersprache, Formulierungen und Selbstpräsentation.</p>
-                                    <ul class="text-xs text-gray-600 space-y-1 mb-4">
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Branchenspezifische Fragen</li>
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Video-Aufzeichnung zum Nachschauen</li>
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Schriftliches Feedback-Protokoll</li>
-                                    </ul>
-                                    <button onclick="app.addToCart('Interview-Simulation (60 Min.)', 199)" class="text-sm text-brand-gold font-semibold hover:text-brand-dark transition flex items-center gap-2">
-                                        <i class="fas fa-shopping-cart"></i> Einzeln buchen
-                                    </button>
-                                </div>
+                    <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                        <!-- Zeugnis-Analyse -->
+                        <div class="bg-white border border-gray-200 rounded-2xl p-6 hover:border-brand-gold/40 hover:shadow-xl transition-all duration-300 group flex flex-col">
+                            <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-5 group-hover:bg-brand-gold/10 transition-colors">
+                                <i class="fas fa-file-alt text-brand-dark text-lg group-hover:text-brand-gold transition-colors"></i>
                             </div>
+                            <h4 class="font-serif text-xl text-brand-dark mb-2">Zeugnis-Analyse</h4>
+                            <p class="text-sm text-gray-500 mb-4 flex-grow">Dekodierung Ihrer Arbeitszeugnisse mit Bewertung und Optimierungstipps.</p>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-2xl font-bold text-brand-dark">€49</span>
+                            </div>
+                            <button onclick="app.addToCart('Zeugnis-Analyse', 49)" class="w-full bg-gray-100 hover:bg-brand-gold text-brand-dark font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                                <span>Hinzufügen</span>
+                                <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform"></i>
+                            </button>
                         </div>
 
-                        <!-- Zeugnis-Check Add-on -->
-                        <div class="bg-white border border-gray-200 rounded-2xl p-6 hover:border-brand-gold/40 hover:shadow-lg transition-all duration-300 group">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-xl bg-brand-dark flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-file-contract text-brand-gold text-lg"></i>
-                                </div>
-                                <div class="flex-grow">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h4 class="font-serif text-lg text-brand-dark">Zeugnis-Analyse</h4>
-                                        <span class="text-brand-dark font-bold">+€49</span>
-                                    </div>
-                                    <p class="text-sm text-gray-600 mb-4">Professionelle Dekodierung Ihrer Arbeitszeugnisse. Erfahren Sie, was wirklich zwischen den Zeilen steht – und wie Personaler es lesen.</p>
-                                    <ul class="text-xs text-gray-600 space-y-1 mb-4">
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Dekodierung der Zeugnis-Codes</li>
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Bewertung nach Schulnoten-System</li>
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Tipps für etwaige Nachbesserungen</li>
-                                    </ul>
-                                    <button onclick="app.addToCart('Zeugnis-Analyse', 49)" class="text-sm text-brand-gold font-semibold hover:text-brand-dark transition flex items-center gap-2">
-                                        <i class="fas fa-shopping-cart"></i> Einzeln buchen
-                                    </button>
-                                </div>
+                        <!-- Interview-Training (Featured) -->
+                        <div class="bg-gradient-to-b from-brand-gold/5 to-brand-gold/15 border-2 border-brand-gold/30 rounded-2xl p-6 hover:border-brand-gold hover:shadow-xl transition-all duration-300 group flex flex-col relative">
+                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-dark text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">Beliebt</div>
+                            <div class="w-12 h-12 rounded-xl bg-brand-gold flex items-center justify-center mb-5">
+                                <i class="fas fa-comments text-brand-dark text-lg"></i>
                             </div>
+                            <h4 class="font-serif text-xl text-brand-dark mb-2">Interview-Training</h4>
+                            <p class="text-sm text-gray-600 mb-4 flex-grow">60 Min. Live-Simulation mit Video-Aufzeichnung und Feedback-Protokoll.</p>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-2xl font-bold text-brand-dark">€199</span>
+                            </div>
+                            <button onclick="app.addToCart('Interview-Simulation (60 Min.)', 199)" class="w-full bg-brand-gold hover:bg-brand-dark text-brand-dark hover:text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                                <span>Hinzufügen</span>
+                                <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform"></i>
+                            </button>
                         </div>
 
-                        <!-- Executive Landing Page Add-on -->
-                        <div class="bg-gradient-to-br from-brand-dark to-brand-accent border-2 border-brand-gold rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 group relative overflow-hidden">
-                            <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-xs font-bold px-3 py-1 rounded-bl-lg">PREMIUM</div>
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-xl bg-brand-gold flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-globe text-brand-dark text-lg"></i>
-                                </div>
-                                <div class="flex-grow">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h4 class="font-serif text-lg text-white">Executive Landing Page</h4>
-                                        <span class="text-brand-gold font-bold">+€499</span>
-                                    </div>
-                                    <p class="text-sm text-gray-300 mb-4">Ihre persönliche Website als digitale Visitenkarte. One-Pager mit Bio, Expertise, Karriere-Highlights und Kontaktmöglichkeit.</p>
-                                    <ul class="text-xs text-gray-400 space-y-1 mb-4">
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Eigene Domain (vorname-nachname.de)</li>
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Professionelles Design, mobil-optimiert</li>
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>SEO-Grundoptimierung</li>
-                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Kontaktformular & Social Links</li>
-                                    </ul>
-                                    <button onclick="app.addToCart('Executive Landing Page', 499)" class="text-sm text-brand-gold font-semibold hover:text-white transition flex items-center gap-2">
-                                        <i class="fas fa-shopping-cart"></i> Einzeln buchen
-                                    </button>
-                                </div>
+                        <!-- Executive Landing Page (Premium) -->
+                        <div class="bg-gradient-to-br from-brand-dark to-[#0D1321] border border-brand-gold/30 rounded-2xl p-6 hover:border-brand-gold hover:shadow-xl hover:shadow-brand-gold/10 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">Premium</div>
+                            <div class="w-12 h-12 rounded-xl bg-brand-gold/20 flex items-center justify-center mb-5 group-hover:bg-brand-gold/30 transition-colors">
+                                <i class="fas fa-globe text-brand-gold text-lg"></i>
                             </div>
+                            <h4 class="font-serif text-xl text-white mb-2">Executive Landing Page</h4>
+                            <p class="text-sm text-gray-400 mb-4 flex-grow">Persönliche Website mit eigener Domain, Bio und Kontaktformular.</p>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-2xl font-bold text-white">€499</span>
+                            </div>
+                            <button onclick="app.addToCart('Executive Landing Page', 499)" class="w-full bg-brand-gold hover:bg-white text-brand-dark font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                                <span>Hinzufügen</span>
+                                <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
