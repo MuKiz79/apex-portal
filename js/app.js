@@ -3583,9 +3583,9 @@ export async function loadUserUploads(state) {
             <div class="space-y-3">
                 ${docs.map(doc => `
                     <a href="${doc.url}" target="_blank" download="${doc.name}"
-                       class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition group">
+                       class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition group">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <div class="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-file-alt text-white"></i>
                             </div>
                             <div>
@@ -3595,7 +3595,7 @@ export async function loadUserUploads(state) {
                                 </p>
                             </div>
                         </div>
-                        <i class="fas fa-download text-blue-600 group-hover:scale-110 transition-transform"></i>
+                        <i class="fas fa-download text-gray-600 group-hover:scale-110 transition-transform"></i>
                     </a>
                 `).join('')}
             </div>
