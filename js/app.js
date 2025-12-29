@@ -1981,7 +1981,11 @@ export async function loadAvailability(state) {
             console.log(`[Appointments] Order ${docSnap.id}: status=${order.appointmentStatus}, appointment=`, order.appointment);
 
             // Filter for confirmed appointments client-side
-            if (order.appointmentStatus === 'confirmed' && order.appointment?.confirmed && order.appointment?.datetime) {
+            // Check both appointmentStatus AND appointment.confirmed for robustness
+            const hasConfirmedAppointment = (order.appointmentStatus === 'confirmed' || order.appointment?.confirmed === true)
+                && order.appointment?.datetime;
+
+            if (hasConfirmedAppointment) {
                 const appointmentDate = new Date(order.appointment.datetime);
                 console.log(`[Appointments] Confirmed appointment date: ${appointmentDate}, now: ${now}, isFuture: ${appointmentDate >= now}`);
                 if (appointmentDate >= now) {
