@@ -439,8 +439,9 @@ export async function handleEmailAction() {
             logger.log('✅ Email verified successfully');
             showToast('✅ E-Mail-Adresse wurde bestätigt! Sie können sich jetzt anmelden.');
 
-            // Clean URL
+            // Clean URL and navigate to login
             window.history.replaceState({}, document.title, window.location.pathname);
+            navigateTo('login');
         } catch (error) {
             logger.error('❌ Email verification failed:', error);
             if (error.code === 'auth/invalid-action-code') {
@@ -450,6 +451,8 @@ export async function handleEmailAction() {
             } else {
                 showToast('❌ Verifizierung fehlgeschlagen: ' + error.message);
             }
+            // Navigate to login anyway so user can request new verification
+            navigateTo('login');
         }
     }
 }
@@ -1237,7 +1240,24 @@ export async function loadUserOrders(state) {
 
     } catch (e) {
         logger.error('Failed to load orders:', e);
-        renderOrders([]);
+        // Show empty state instead of infinite loader
+        const container = document.getElementById('orders-list');
+        if (container) {
+            container.innerHTML = `
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shopping-bag text-2xl text-gray-400" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-700 mb-2">Noch keine Bestellungen</h3>
+                    <p class="text-sm text-gray-500 mb-4">Entdecken Sie unsere Premium-Services</p>
+                    <button onclick="app.navigateToSection('home', 'cv-packages')" class="btn-primary">
+                        <i class="fas fa-arrow-right mr-2"></i>Pakete ansehen
+                    </button>
+                </div>
+            `;
+        }
+        const badge = document.getElementById('order-count-badge');
+        if (badge) badge.textContent = '0';
     }
 }
 
