@@ -2,7 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
+    // ========== HELPER FUNCTIONS ==========
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -15,109 +16,70 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.email == 'muammer.kizilaslan@gmail.com';
     }
 
+    // ========== USER DATA ==========
+
     // Users Collection - Users können nur ihr eigenes Profil lesen/schreiben
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if false; // Keine Löschung erlaubt
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if false;
     }
 
-    // Orders Collection - Users können nur eigene Bestellungen lesen, Admins alle
+    // ========== ORDERS ==========
+
+    // Orders Collection - Users lesen eigene, Admins lesen/schreiben alle
     match /orders/{orderId} {
-      // Admins können alle Orders lesen und updaten
-      allow read: if isAdmin() || (isSignedIn() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.customerEmail == request.auth.token.email
-      ));
-      allow create: if false; // Nur Functions dürfen Orders erstellen
-      allow update: if isAdmin(); // Admins können Status ändern
-      allow delete: if false; // Keine Löschung
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if false; // Nur Cloud Functions
+      allow update: if isAdmin(); // Admin kann Status ändern
+      allow delete: if false;
     }
 
-    // Availability Collection - Users können nur eigene Verfügbarkeit lesen/schreiben
-    match /availability/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+    // ========== APPOINTMENTS & AVAILABILITY ==========
+
+    match /availability/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
     }
 
-    // Coaches/Mentors Collection - Öffentlich lesbar, Admins können bearbeiten
+    // ========== PUBLIC CONTENT ==========
+
+    // Coaches/Mentors - Öffentlich lesbar, Admin kann ändern
     match /coaches/{coachId} {
-      allow read: if true; // Öffentlich
-      allow write: if isAdmin(); // Admins können Coaches bearbeiten
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Articles Collection - Öffentlich lesbar
+    // Articles - Öffentlich lesbar, Admin kann ändern
     match /articles/{articleId} {
-      allow read: if true; // Öffentlich
-      allow write: if false; // Nur Admins
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Settings Collection - Öffentlich lesbar, Admins können schreiben
+    // Settings - Öffentlich lesbar, Admin kann ändern
     match /settings/{document} {
-      allow read: if true; // Öffentlich lesbar
-      allow write: if isAdmin(); // Admins können Einstellungen ändern
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Waitlist Collection - Jeder kann sich eintragen, nur Admins können lesen
+    // Strategy Calls - Jeder kann erstellen, Admin kann lesen/ändern
+    match /strategyCalls/{callId} {
+      allow create: if true; // Kontaktformular
+      allow read: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // Waitlist - Jeder kann sich eintragen
     match /waitlist/{entryId} {
-      allow create: if true; // Jeder kann sich auf Warteliste setzen
-      allow read, update, delete: if false; // Nur Admins (manuell in Console)
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
 
-    // Strategy Calls Collection - Kontaktanfragen für Strategiegespräche
-    match /strategy_calls/{callId} {
-      allow create: if true; // Jeder kann eine Anfrage stellen
-      allow read: if isAdmin(); // Nur Admins können lesen
-      allow update, delete: if isAdmin(); // Nur Admins können bearbeiten
-    }
+    // ========== CATCH-ALL: DENY ==========
 
-    // Members Collection - Inner Circle Members
-    match /members/{memberId} {
-      allow read: if isSignedIn() && request.auth.uid == memberId;
-      allow write: if false; // Nur Admins
-    }
-
-    // Headhunters Collection - Members können lesen
-    match /headhunters/{headhunterId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn(); // Members können Headhunter hinzufügen
-      allow update, delete: if false; // Nur Admins
-    }
-
-    // Headhunter Reviews - Members können lesen und schreiben
-    match /headhunter_reviews/{reviewId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.reviewerId;
-      allow update: if isSignedIn() && request.auth.uid == resource.data.reviewerId;
-      allow delete: if false; // Reviews können nicht gelöscht werden
-    }
-
-    // Opportunities - Members können lesen und teilen
-    match /opportunities/{opportunityId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.sharedBy;
-      allow update: if isSignedIn() && request.auth.uid == resource.data.sharedBy;
-      allow delete: if isSignedIn() && request.auth.uid == resource.data.sharedBy;
-    }
-
-    // Forum Posts - Members können lesen und schreiben
-    match /forum_posts/{postId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.authorId;
-      allow update: if isSignedIn() && request.auth.uid == resource.data.authorId;
-      allow delete: if isSignedIn() && request.auth.uid == resource.data.authorId;
-    }
-
-    // Forum Replies - Members können lesen und schreiben
-    match /forum_replies/{replyId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.authorId;
-      allow update: if isSignedIn() && request.auth.uid == resource.data.authorId;
-      allow delete: if isSignedIn() && request.auth.uid == resource.data.authorId;
-    }
-
-    // Alle anderen Collections: Komplett gesperrt (MUSS AM ENDE sein!)
     match /{document=**} {
       allow read, write: if false;
     }

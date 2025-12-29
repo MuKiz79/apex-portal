@@ -107,24 +107,31 @@ exports.stripeWebhook = onRequest({
     secrets: [stripeSecretKey, stripeWebhookSecret, smtpHost, smtpUser, smtpPass],
     invoker: 'public'
 }, async (req, res) => {
+    console.log('🔔 Webhook received! Method:', req.method);
+
     const sig = req.headers['stripe-signature'];
+    console.log('📝 Stripe signature present:', !!sig);
 
     let event;
 
     try {
         const stripe = require('stripe')(stripeSecretKey.value());
+        const webhookSecret = stripeWebhookSecret.value();
+        console.log('🔑 Webhook secret starts with:', webhookSecret ? webhookSecret.substring(0, 10) + '...' : 'NOT SET');
 
         event = stripe.webhooks.constructEvent(
             req.rawBody,
             sig,
-            stripeWebhookSecret.value()
+            webhookSecret
         );
+        console.log('✅ Webhook signature verified! Event type:', event.type);
     } catch (err) {
-        console.error('Webhook signature verification failed:', err.message);
+        console.error('❌ Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
+        console.log('🛒 Processing checkout.session.completed event');
         const session = event.data.object;
 
         try {
@@ -189,34 +196,42 @@ exports.stripeWebhook = onRequest({
             }
 
             // Order in Firestore speichern
+            // WICHTIG: Firestore akzeptiert keine undefined-Werte, also filtern wir sie raus
             const orderData = {
                 userId: userId || `guest_${session.id}`,
-                customerEmail: customerEmail,
-                customerName: customerName,
-                items: JSON.parse(session.metadata.items),
+                customerEmail: customerEmail || null,
+                customerName: customerName || 'Kunde',
+                items: JSON.parse(session.metadata.items || '[]'),
                 total: session.amount_total / 100,
-                currency: session.currency,
+                currency: session.currency || 'eur',
                 paymentStatus: 'paid',
                 stripeSessionId: session.id,
-                stripePaymentIntent: session.payment_intent,
-                stripeCustomerId: session.customer,
+                stripePaymentIntent: session.payment_intent || null,
+                stripeCustomerId: session.customer || null,
                 status: 'confirmed',
                 date: admin.firestore.FieldValue.serverTimestamp(),
-                billingDetails: session.customer_details,
-                shippingDetails: session.shipping_details,
-                paymentMethod: session.payment_method_types[0] || 'card'
+                billingDetails: session.customer_details || null,
+                paymentMethod: session.payment_method_types?.[0] || 'card'
             };
+
+            // Nur hinzufügen wenn vorhanden (vermeidet undefined)
+            if (session.shipping_details) {
+                orderData.shippingDetails = session.shipping_details;
+            }
 
             const orderRef = await admin.firestore().collection('orders').add(orderData);
 
-            console.log('Order saved successfully:', session.id, 'User:', userId);
+            console.log('📦 Order saved successfully:', orderRef.id, 'Session:', session.id, 'User:', userId);
 
             // Sende Bestellbestätigung mit PDF-Rechnung
             try {
+                console.log('📧 Sending order confirmation email to:', customerEmail);
+                console.log('📧 SMTP Config - Host:', smtpHost.value() || 'NOT SET', 'User:', smtpUser.value() ? smtpUser.value().substring(0, 5) + '***' : 'NOT SET');
                 await sendOrderConfirmationEmail(orderData, orderRef.id, session.id);
-                console.log('Order confirmation email sent to:', customerEmail);
+                console.log('✅ Order confirmation email sent successfully to:', customerEmail);
             } catch (emailError) {
-                console.error('Failed to send order confirmation email:', emailError);
+                console.error('❌ Failed to send order confirmation email:', emailError.message);
+                console.error('❌ Email error details:', JSON.stringify(emailError));
                 // Wir werfen den Fehler nicht, da die Bestellung trotzdem gespeichert wurde
             }
 
@@ -234,19 +249,31 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
     const pdfBuffer = await generateInvoicePDF(orderData, orderId, sessionId);
 
     // Konfiguriere SMTP-Transport
-    // HINWEIS: SMTP-Credentials müssen als Firebase Secrets gesetzt werden
-    const host = smtpHost.value() || 'smtpout.secureserver.net';
-    const isGodaddy = host.includes('secureserver.net');
+    const host = smtpHost.value() || 'smtp.gmail.com';
+    const user = smtpUser.value();
+    const pass = smtpPass.value();
 
-    const transporter = nodemailer.createTransport({
+    // Gmail-spezifische Konfiguration
+    const isGmail = host.includes('gmail.com');
+
+    const transportConfig = {
         host: host,
-        port: isGodaddy ? 465 : 587,
-        secure: isGodaddy, // true für Port 465, false für Port 587
+        port: isGmail ? 587 : 465,
+        secure: !isGmail, // Gmail braucht TLS (secure: false), andere SSL (secure: true)
         auth: {
-            user: smtpUser.value(),
-            pass: smtpPass.value()
+            user: user,
+            pass: pass
         }
-    });
+    };
+
+    // Gmail braucht explizit STARTTLS
+    if (isGmail) {
+        transportConfig.requireTLS = true;
+    }
+
+    const transporter = nodemailer.createTransport(transportConfig);
+
+    console.log(`Email configured: host=${host}, user=${user ? user.substring(0, 5) + '***' : 'NOT SET'}`);
 
     const shortOrderId = 'APEX-' + sessionId.slice(-8).toUpperCase();
 
