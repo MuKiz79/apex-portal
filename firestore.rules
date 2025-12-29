@@ -19,11 +19,13 @@ service cloud.firestore {
     // ========== USER DATA ==========
 
     // Users Collection - Users können nur ihr eigenes Profil lesen/schreiben
+    // Admin kann alle User lesen (für Admin-Panel)
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if false;
+      // Hinweis: Admin-Leseberechtigung erlaubt auch Collection-Queries
     }
 
     // ========== ORDERS ==========
