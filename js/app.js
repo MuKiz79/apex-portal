@@ -2431,6 +2431,12 @@ export function switchAdminTab(tabName) {
     // Load data for specific tabs
     if (tabName === 'coaches') {
         loadAdminCoaches();
+    } else if (tabName === 'users') {
+        loadAdminUsers();
+    } else if (tabName === 'strategy') {
+        loadStrategyCalls();
+    } else if (tabName === 'orders') {
+        loadAllOrders();
     }
 }
 
