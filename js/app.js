@@ -1379,108 +1379,102 @@ export function renderOrders(orders) {
                     </p>
                 </div>
 
-                <!-- Professional Appointment Section -->
+                <!-- Professional Appointment Section - Mobile Optimized -->
                 ${order.appointment?.confirmed ? `
-                    <!-- Confirmed Appointment - Premium Design -->
-                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 shadow-sm">
-                        <div class="flex items-start gap-4">
-                            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
-                                <i class="fas fa-check text-white text-xl"></i>
+                    <!-- Confirmed Appointment - Mobile-Optimized Design -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                        <div class="flex items-start gap-3 sm:gap-4">
+                            <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-check text-white text-base sm:text-xl"></i>
                             </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-xs font-bold text-green-700 uppercase tracking-wider bg-green-100 px-2 py-1 rounded">Termin bestätigt</span>
-                                </div>
-                                <div class="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <i class="fas fa-calendar-day text-green-600"></i>
-                                        <span class="font-semibold text-gray-800">${new Date(order.appointment.datetime).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                            <div class="flex-1 min-w-0">
+                                <span class="inline-block text-xs font-bold text-green-700 uppercase tracking-wider bg-green-100 px-2 py-1 rounded mb-2">Bestätigt</span>
+                                <div class="bg-white rounded-lg p-3 sm:p-4 border border-green-100 shadow-sm">
+                                    <div class="flex items-center gap-2 sm:gap-3 mb-2">
+                                        <i class="fas fa-calendar-day text-green-600 text-sm"></i>
+                                        <span class="font-semibold text-gray-800 text-sm sm:text-base">${new Date(order.appointment.datetime).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</span>
                                     </div>
-                                    <div class="flex items-center gap-3">
-                                        <i class="fas fa-clock text-green-600"></i>
-                                        <span class="font-semibold text-gray-800">${new Date(order.appointment.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <i class="fas fa-clock text-green-600 text-sm"></i>
+                                        <span class="font-semibold text-gray-800 text-sm sm:text-base">${new Date(order.appointment.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
                                     </div>
                                 </div>
-                                <p class="text-xs text-green-600 mt-3 flex items-center gap-1">
-                                    <i class="fas fa-info-circle"></i>
+                                <p class="text-xs text-green-600 mt-2 sm:mt-3 flex items-center gap-1">
+                                    <i class="fas fa-heart"></i>
                                     Wir freuen uns auf Sie!
                                 </p>
                             </div>
                         </div>
                     </div>
                 ` : order.appointmentProposals?.length > 0 && order.appointmentStatus === 'pending' ? `
-                    <!-- Pending Proposals - Premium Selection UI -->
-                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-5 shadow-sm">
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-brand-gold to-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                                <i class="fas fa-calendar-alt text-white text-xl"></i>
+                    <!-- Pending Proposals - Mobile-Optimized Selection UI -->
+                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                        <div class="flex items-start gap-3 sm:gap-4 mb-4">
+                            <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-brand-gold to-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-calendar-alt text-white text-base sm:text-xl"></i>
                             </div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-brand-dark text-lg mb-1">Terminvorschläge für Sie</h4>
-                                <p class="text-sm text-gray-600">Bitte wählen Sie Ihren bevorzugten Termin</p>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-brand-dark text-base sm:text-lg mb-1">Terminvorschläge</h4>
+                                <p class="text-xs sm:text-sm text-gray-600">Wählen Sie Ihren Termin</p>
                             </div>
                         </div>
                         ${order.appointmentProposalMessage ? `
-                            <div class="bg-white/80 rounded-lg p-4 mb-4 border border-amber-100">
-                                <p class="text-sm text-gray-700 italic flex items-start gap-2">
-                                    <i class="fas fa-quote-left text-brand-gold text-xs mt-1"></i>
+                            <div class="bg-white/80 rounded-lg p-3 sm:p-4 mb-4 border border-amber-100">
+                                <p class="text-xs sm:text-sm text-gray-700 italic">
                                     ${sanitizeHTML(order.appointmentProposalMessage)}
                                 </p>
                             </div>
                         ` : ''}
-                        <div class="space-y-3 mb-4">
+                        <div class="space-y-2 sm:space-y-3 mb-4">
                             ${order.appointmentProposals.map((p, idx) => `
                                 <button onclick="app.acceptAppointmentProposal('${order.id}', '${p.datetime}')"
-                                        class="w-full flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 hover:shadow-md transition-all duration-200 group">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 bg-gradient-to-br from-brand-gold to-amber-400 rounded-full flex items-center justify-center text-white font-bold shadow-sm group-hover:from-green-500 group-hover:to-emerald-600 transition-all duration-200">
-                                            ${idx + 1}
-                                        </div>
-                                        <div class="text-left">
-                                            <p class="font-semibold text-brand-dark">${new Date(p.datetime).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                                            <p class="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                                                <i class="fas fa-clock text-xs"></i>
-                                                ${new Date(p.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
-                                            </p>
-                                        </div>
+                                        class="w-full flex items-center p-3 sm:p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 active:bg-green-100 transition-all duration-200 group">
+                                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-brand-gold to-amber-400 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base shadow-sm group-hover:from-green-500 group-hover:to-emerald-600 transition-all duration-200 flex-shrink-0">
+                                        ${idx + 1}
                                     </div>
-                                    <span class="text-sm text-green-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2">
-                                        <i class="fas fa-check-circle"></i>Auswählen
-                                    </span>
+                                    <div class="flex-1 text-left ml-3 min-w-0">
+                                        <p class="font-semibold text-brand-dark text-sm sm:text-base truncate">${new Date(p.datetime).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' })}</p>
+                                        <p class="text-xs sm:text-sm text-gray-500">
+                                            ${new Date(p.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                                        </p>
+                                    </div>
+                                    <div class="flex-shrink-0 ml-2">
+                                        <i class="fas fa-chevron-right text-gray-300 group-hover:text-green-500 transition-colors"></i>
+                                    </div>
                                 </button>
                             `).join('')}
                         </div>
-                        <div class="border-t border-amber-200 pt-4">
+                        <div class="border-t border-amber-200 pt-3 sm:pt-4">
                             <button onclick="app.declineAllAppointmentProposals('${order.id}')"
-                                    class="w-full text-center text-sm text-gray-500 hover:text-red-600 transition py-2 flex items-center justify-center gap-2">
-                                <i class="fas fa-calendar-times"></i>
-                                Keiner der Termine passt mir
+                                    class="w-full text-center text-xs sm:text-sm text-gray-500 hover:text-red-600 active:text-red-700 transition py-2 flex items-center justify-center gap-2">
+                                <i class="fas fa-times"></i>
+                                Keiner passt
                             </button>
                         </div>
                     </div>
                 ` : order.appointmentStatus === 'declined' ? `
-                    <!-- Declined - Waiting for new proposals - Premium Design -->
-                    <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-5 shadow-sm">
-                        <div class="flex items-start gap-4">
-                            <div class="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                                <i class="fas fa-hourglass-half text-white text-xl animate-pulse"></i>
+                    <!-- Declined - Mobile-Optimized Waiting State -->
+                    <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                        <div class="flex items-start gap-3 sm:gap-4">
+                            <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-hourglass-half text-white text-base sm:text-xl animate-pulse"></i>
                             </div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-orange-800 text-lg mb-1">Neue Termine werden geprüft</h4>
-                                <p class="text-sm text-orange-700">Wir arbeiten daran, Ihnen passende Alternativen anzubieten.</p>
-                                <p class="text-xs text-orange-600 mt-3 flex items-center gap-1">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-orange-800 text-base sm:text-lg mb-1">Neue Termine</h4>
+                                <p class="text-xs sm:text-sm text-orange-700">Wir senden Ihnen neue Vorschläge.</p>
+                                <p class="text-xs text-orange-600 mt-2 flex items-center gap-1">
                                     <i class="fas fa-bell"></i>
-                                    Sie werden per E-Mail benachrichtigt
+                                    Per E-Mail
                                 </p>
                             </div>
                         </div>
                     </div>
                 ` : hasCoach && !hasAppointment ? `
-                    <!-- No proposals yet - Premium CTA -->
+                    <!-- No proposals yet - Mobile-Optimized CTA -->
                     <button onclick="app.switchDashboardTab('appointments')"
-                            class="w-full bg-gradient-to-r from-brand-gold/20 to-amber-100 text-brand-dark font-bold py-4 px-5 rounded-xl hover:from-brand-gold/30 hover:to-amber-200 transition-all duration-200 flex items-center justify-center gap-3 border border-brand-gold/30 shadow-sm">
-                        <i class="fas fa-calendar-plus text-lg"></i>
-                        <span>Wunschtermine angeben</span>
+                            class="w-full bg-gradient-to-r from-brand-gold/20 to-amber-100 text-brand-dark font-bold py-3 sm:py-4 px-4 sm:px-5 rounded-xl hover:from-brand-gold/30 hover:to-amber-200 active:from-brand-gold/40 transition-all duration-200 flex items-center justify-center gap-2 sm:gap-3 border border-brand-gold/30 shadow-sm text-sm sm:text-base">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Wunschtermine</span>
                     </button>
                 ` : ''}
             </div>
