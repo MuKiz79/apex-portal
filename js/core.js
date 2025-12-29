@@ -1,8 +1,19 @@
-// Firebase Configuration & Initialization - v2.0
+// Firebase Configuration & Initialization - v2.1
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+// Environment Detection
+const IS_PRODUCTION = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+
+// Production Logger
+const logger = {
+    log: (...args) => { if (!IS_PRODUCTION) console.log(...args); },
+    warn: (...args) => { if (!IS_PRODUCTION) console.warn(...args); },
+    error: (...args) => console.error(...args),
+    debug: (...args) => { if (!IS_PRODUCTION) console.debug(...args); }
+};
 
 const firebaseConfig = {
     apiKey: "AIzaSyBZ970mA7-2pJzhbxyFjjmzO97YKZhrSmU",
@@ -17,18 +28,18 @@ const firebaseConfig = {
 // Initialize Firebase
 let auth, db, storage;
 try {
-    console.log("🔄 Initializing Firebase...");
+    logger.log("🔄 Initializing Firebase...");
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
-    console.log("✅ Firebase initialized successfully");
-    console.log("   auth:", auth ? "OK" : "MISSING");
-    console.log("   db:", db ? "OK" : "MISSING");
-    console.log("   storage:", storage ? "OK" : "MISSING");
+    logger.log("✅ Firebase initialized successfully");
+    logger.log("   auth:", auth ? "OK" : "MISSING");
+    logger.log("   db:", db ? "OK" : "MISSING");
+    logger.log("   storage:", storage ? "OK" : "MISSING");
 } catch(e) {
-    console.error("❌ Firebase initialization failed:", e);
-    console.warn("⚠️ Running in demo mode - no data will load");
+    logger.error("❌ Firebase initialization failed:", e);
+    logger.warn("⚠️ Running in demo mode - no data will load");
 }
 
 export { auth, db, storage, onAuthStateChanged };
@@ -142,7 +153,7 @@ export const saveCartToLocalStorage = (cart) => {
     try {
         localStorage.setItem('apex-cart', JSON.stringify(cart));
     } catch (e) {
-        console.error('LocalStorage save failed:', e);
+        logger.error('LocalStorage save failed:', e);
     }
 };
 
@@ -152,7 +163,7 @@ export const loadCartFromLocalStorage = () => {
         const saved = localStorage.getItem('apex-cart');
         return saved ? JSON.parse(saved) : [];
     } catch (e) {
-        console.error('LocalStorage load failed:', e);
+        logger.error('LocalStorage load failed:', e);
         return [];
     }
 };

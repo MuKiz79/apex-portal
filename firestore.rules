@@ -40,7 +40,7 @@ service cloud.firestore {
 
     match /availability/{docId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow write: if isAdmin(); // Nur Admin kann Verfügbarkeiten ändern
     }
 
     // ========== PUBLIC CONTENT ==========
@@ -63,19 +63,36 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Strategy Calls - Jeder kann erstellen, Admin kann lesen/ändern
+    // Strategy Calls - Erstellen nur mit validen Daten, Admin kann lesen/ändern
     match /strategyCalls/{callId} {
-      allow create: if true; // Kontaktformular
+      // Rate-Limiting: Max 5 Einträge pro Stunde pro IP (wird in Cloud Function geprüft)
+      // Basis-Validierung: Name und Email müssen vorhanden sein
+      allow create: if request.resource.data.keys().hasAll(['name', 'email'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() < 100
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 5
+                    && request.resource.data.email.size() < 100;
       allow read: if isAdmin();
       allow update: if isAdmin();
       allow delete: if false;
     }
 
-    // Waitlist - Jeder kann sich eintragen
+    // Waitlist - Erstellen nur mit valider Email
     match /waitlist/{entryId} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasAll(['email'])
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 5
+                    && request.resource.data.email.size() < 100;
       allow read: if isAdmin();
       allow update, delete: if false;
+    }
+
+    // Admin Config - Nur Admin kann lesen/schreiben
+    match /config/{document} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
 
     // ========== CATCH-ALL: DENY ==========

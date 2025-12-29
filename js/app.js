@@ -1,4 +1,4 @@
-// APEX Executive - Application Module v2.0
+// APEX Executive - Application Module v2.1
 // Contains: Auth, Cart, Dashboard, Coaches, Articles, Data, Password Reset
 
 // Features Module: Authentication, Cart, Dashboard
@@ -8,6 +8,44 @@ import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orde
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
 import { sampleArticles } from './data.js';
+
+// ========== CONSTANTS ==========
+
+// Environment Detection
+const IS_PRODUCTION = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+
+// Order Status Constants
+const ORDER_STATUS = {
+    PENDING: 'pending',
+    CONFIRMED: 'confirmed',
+    PROCESSING: 'processing',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled'
+};
+
+// Admin Emails (fallback - primary source is Firestore config/admins)
+const ADMIN_EMAILS = ['muammer.kizilaslan@gmail.com'];
+
+// File Size Limits (in bytes)
+const FILE_LIMITS = {
+    PROFILE_PICTURE: 5 * 1024 * 1024,    // 5MB
+    USER_DOCUMENT: 10 * 1024 * 1024,      // 10MB
+    ADMIN_DOCUMENT: 20 * 1024 * 1024      // 20MB
+};
+
+// Allowed File Types
+const ALLOWED_FILE_TYPES = {
+    IMAGES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    DOCUMENTS: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+};
+
+// Production Logger - suppresses logs in production
+const logger = {
+    log: (...args) => { if (!IS_PRODUCTION) logger.log(...args); },
+    warn: (...args) => { if (!IS_PRODUCTION) logger.warn(...args); },
+    error: (...args) => logger.error(...args), // Always log errors
+    debug: (...args) => { if (!IS_PRODUCTION) console.debug(...args); }
+};
 
 // ========== AUTHENTICATION ==========
 
@@ -115,7 +153,7 @@ export async function sendPasswordReset() {
         showToast('E-Mail wurde gesendet');
 
     } catch (error) {
-        console.error('Password reset error:', error);
+        logger.error('Password reset error:', error);
         // For security, always show success message (don't reveal if email exists)
         if (successDiv) {
             successDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.';
@@ -145,15 +183,15 @@ export async function handlePasswordResetFromURL() {
 
 // Show the form to enter a new password
 export function showNewPasswordForm(oobCode) {
-    console.log('🔑 showNewPasswordForm called with oobCode:', oobCode ? 'present' : 'missing');
+    logger.log('🔑 showNewPasswordForm called with oobCode:', oobCode ? 'present' : 'missing');
 
     // Navigate to login view first
-    console.log('   Navigating to login view...');
+    logger.log('   Navigating to login view...');
     navigateTo('login');
 
     // Small delay to ensure view is visible
     setTimeout(() => {
-        console.log('   Hiding other fields...');
+        logger.log('   Hiding other fields...');
 
         // Hide login/register fields, show new password fields
         document.getElementById('login-fields')?.classList.add('hidden');
@@ -166,15 +204,15 @@ export function showNewPasswordForm(oobCode) {
 
         // Show new password form
         const newPasswordFields = document.getElementById('new-password-fields');
-        console.log('   new-password-fields element:', newPasswordFields ? 'found' : 'NOT FOUND');
+        logger.log('   new-password-fields element:', newPasswordFields ? 'found' : 'NOT FOUND');
 
         if (newPasswordFields) {
             newPasswordFields.classList.remove('hidden');
             // Store the oobCode for later use
             newPasswordFields.dataset.oobCode = oobCode;
-            console.log('✅ New password form is now visible');
+            logger.log('✅ New password form is now visible');
         } else {
-            console.error('❌ new-password-fields element not found in DOM!');
+            logger.error('❌ new-password-fields element not found in DOM!');
         }
     }, 50);
 }
@@ -252,7 +290,7 @@ export async function confirmNewPassword() {
         showToast('Passwort erfolgreich geändert');
 
     } catch (error) {
-        console.error('Password reset confirmation error:', error);
+        logger.error('Password reset confirmation error:', error);
         let errorMessage = getFirebaseErrorMessage(error.code);
 
         if (error.code === 'auth/expired-action-code') {
@@ -280,18 +318,18 @@ export async function handleEmailAction() {
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
 
-    console.log('🔗 handleEmailAction called');
-    console.log('   Full URL:', fullUrl);
-    console.log('   mode:', mode);
-    console.log('   oobCode:', oobCode ? oobCode.substring(0, 10) + '...' : 'missing');
+    logger.log('🔗 handleEmailAction called');
+    logger.log('   Full URL:', fullUrl);
+    logger.log('   mode:', mode);
+    logger.log('   oobCode:', oobCode ? oobCode.substring(0, 10) + '...' : 'missing');
 
     if (!mode || !oobCode) {
-        console.log('📝 No email action parameters found in URL');
+        logger.log('📝 No email action parameters found in URL');
         return;
     }
 
     if (mode === 'resetPassword') {
-        console.log('🔄 Password reset mode detected, showing form...');
+        logger.log('🔄 Password reset mode detected, showing form...');
         // Small delay to ensure DOM is ready
         setTimeout(() => {
             showNewPasswordForm(oobCode);
@@ -529,7 +567,7 @@ async function loadProfilePicture(state) {
             }
         }
     } catch (e) {
-        console.error('Failed to load profile picture:', e);
+        logger.error('Failed to load profile picture:', e);
         // On error - show icon
         img.classList.add('hidden');
         icon.classList.remove('hidden');
@@ -776,10 +814,10 @@ export function updateCartUI(state) {
         listEl.innerHTML = state.cart.map(item => `
             <div class="flex justify-between items-center p-4 border-b hover:bg-gray-50 transition">
                 <div class="flex-1">
-                    <span class="font-bold text-sm block">${item.title}</span>
-                    <span class="text-xs text-gray-500">€${item.price}</span>
+                    <span class="font-bold text-sm block">${sanitizeHTML(item.title)}</span>
+                    <span class="text-xs text-gray-500">€${Number(item.price).toFixed(2)}</span>
                 </div>
-                <button onclick="app.removeFromCart(${item.id})" class="text-red-500 hover:text-red-700 ml-4" aria-label="Artikel entfernen">
+                <button onclick="app.removeFromCart(${parseInt(item.id, 10)})" class="text-red-500 hover:text-red-700 ml-4" aria-label="Artikel entfernen">
                     <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
             </div>
@@ -871,7 +909,7 @@ export async function checkout(state, navigateTo) {
         window.location.href = url;
 
     } catch(e) {
-        console.error("Stripe Checkout failed:", e);
+        logger.error("Stripe Checkout failed:", e);
         showToast('❌ Zahlung konnte nicht gestartet werden. Bitte später erneut versuchen.', 4000);
     }
 }
@@ -941,7 +979,7 @@ export async function handleProfilePictureUpload(state, input) {
             showToast('✅ Profilbild aktualisiert (Demo-Modus)');
         }
     } catch (e) {
-        console.error('Profile picture upload failed:', e);
+        logger.error('Profile picture upload failed:', e);
         showToast('❌ Upload fehlgeschlagen', 3000);
     } finally {
         input.value = '';
@@ -1000,7 +1038,7 @@ export async function loadUserOrders(state) {
         updateDashboardStats(orders);
 
     } catch (e) {
-        console.error('Failed to load orders:', e);
+        logger.error('Failed to load orders:', e);
         renderOrders([]);
     }
 }
@@ -1300,7 +1338,7 @@ export async function bookAppointment(state, orderId, datetime) {
         document.getElementById('appointment-calendar')?.classList.add('hidden');
         await loadUserOrders(state);
     } catch (e) {
-        console.error('Appointment booking failed:', e);
+        logger.error('Appointment booking failed:', e);
         showToast('❌ Terminbuchung fehlgeschlagen', 3000);
     }
 }
@@ -1361,7 +1399,7 @@ export async function saveAvailability(state) {
         clearAvailabilityForm();
 
     } catch (e) {
-        console.error('Availability save failed:', e);
+        logger.error('Availability save failed:', e);
         showToast('❌ Speichern fehlgeschlagen', 3000);
     }
 }
@@ -1451,7 +1489,7 @@ export async function loadAvailability(state) {
             </div>
         `;
     } catch (e) {
-        console.error('Failed to load availability:', e);
+        logger.error('Failed to load availability:', e);
     }
 }
 
@@ -1507,7 +1545,7 @@ export async function handleFileUpload(state, input) {
 
         showToast('✅ Datei erfolgreich hochgeladen');
     } catch(e) {
-        console.error('Upload error:', e);
+        logger.error('Upload error:', e);
         showToast('❌ Upload fehlgeschlagen', 3000);
     } finally {
         uiDefault.classList.remove('hidden');
@@ -1520,13 +1558,13 @@ export async function handleFileUpload(state, input) {
 // Note: db and sanitizeHTML already imported at top of file
 
 export async function initData(state) {
-    console.log('🔄 initData called - loading data from Firestore...');
-    console.log('   db status:', db ? 'initialized' : 'NOT INITIALIZED');
+    logger.log('🔄 initData called - loading data from Firestore...');
+    logger.log('   db status:', db ? 'initialized' : 'NOT INITIALIZED');
 
     // Load coaches from Firestore ONLY (no fallback to sample data)
     const dbCoaches = await fetchCollection('coaches');
     state.coaches = dbCoaches;
-    console.log('✅ Loaded', dbCoaches.length, 'coaches from Firestore');
+    logger.log('✅ Loaded', dbCoaches.length, 'coaches from Firestore');
     filterCoaches(state);
 
     // Load articles from Firestore and fill up to minimum 3 with sample data
@@ -1536,29 +1574,29 @@ export async function initData(state) {
     if(dbArticles.length >= MIN_ARTICLES) {
         // Genug echte Artikel vorhanden
         state.articles = dbArticles;
-        console.log('✅ Loaded', dbArticles.length, 'articles from Firestore');
+        logger.log('✅ Loaded', dbArticles.length, 'articles from Firestore');
     } else {
         // Auffüllen mit Sample-Artikeln bis mindestens 3
         const neededSamples = MIN_ARTICLES - dbArticles.length;
         const fillArticles = sampleArticles.slice(0, neededSamples);
         state.articles = [...dbArticles, ...fillArticles];
-        console.log(`✅ Loaded ${dbArticles.length} real + ${fillArticles.length} sample articles (total: ${state.articles.length})`);
+        logger.log(`✅ Loaded ${dbArticles.length} real + ${fillArticles.length} sample articles (total: ${state.articles.length})`);
     }
     renderArticles(state);
 }
 
 export async function fetchCollection(colName) {
     if(!db) {
-        console.error('❌ Firestore (db) ist nicht initialisiert!');
+        logger.error('❌ Firestore (db) ist nicht initialisiert!');
         return [];
     }
     try {
-        console.log('🔄 Lade Collection:', colName);
+        logger.log('🔄 Lade Collection:', colName);
         const snap = await getDocs(collection(db, colName));
-        console.log('✅ Collection geladen:', colName, '- Anzahl:', snap.docs.length);
+        logger.log('✅ Collection geladen:', colName, '- Anzahl:', snap.docs.length);
         return snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
     } catch(e) {
-        console.error('❌ Failed to fetch ' + colName + ':', e);
+        logger.error('❌ Failed to fetch ' + colName + ':', e);
         return [];
     }
 }
@@ -1639,10 +1677,10 @@ export function openArticle(state, id, navigateTo) {
 
 // Load "Über uns" image from Firestore
 export async function loadAboutImage() {
-    console.log('🔄 loadAboutImage called');
+    logger.log('🔄 loadAboutImage called');
     try {
         if (!db) {
-            console.error('❌ Firestore (db) not available - cannot load about image');
+            logger.error('❌ Firestore (db) not available - cannot load about image');
             return;
         }
 
@@ -1666,11 +1704,11 @@ export async function loadAboutImage() {
                 preloadImg.onload = () => {
                     imgElement.src = imageUrl;
                     imgElement.style.opacity = '1';
-                    console.log('✅ About image loaded from Firestore');
+                    logger.log('✅ About image loaded from Firestore');
                 };
                 preloadImg.onerror = () => {
                     imgElement.style.opacity = '1';
-                    console.warn('Failed to preload about image');
+                    logger.warn('Failed to preload about image');
                 };
                 preloadImg.src = imageUrl;
             } else {
@@ -1678,10 +1716,10 @@ export async function loadAboutImage() {
             }
         } else {
             imgElement.style.opacity = '1';
-            console.log('No about image in Firestore, using default');
+            logger.log('No about image in Firestore, using default');
         }
     } catch (error) {
-        console.error('Error loading about image:', error);
+        logger.error('Error loading about image:', error);
         const imgElement = document.getElementById('about-founder-image');
         if (imgElement) imgElement.style.opacity = '1';
     }
@@ -1702,7 +1740,7 @@ export async function updateAboutImage(imageUrl) {
         showToast('✅ Über uns Bild aktualisiert');
         loadAboutImage();
     } catch (error) {
-        console.error('Error updating about image:', error);
+        logger.error('Error updating about image:', error);
         showToast('❌ Fehler beim Aktualisieren des Bildes', 'error');
     }
 }
@@ -1729,7 +1767,7 @@ export async function uploadAboutImage(file) {
 
         return downloadURL;
     } catch (error) {
-        console.error('Error uploading about image:', error);
+        logger.error('Error uploading about image:', error);
         showToast('❌ ' + error.message, 'error');
         throw error;
     }
@@ -1739,7 +1777,7 @@ export async function uploadAboutImage(file) {
 export async function loadMentoringSlotsText() {
     try {
         if (!db) {
-            console.warn('Firestore not available for mentoring slots text');
+            logger.warn('Firestore not available for mentoring slots text');
             return;
         }
 
@@ -1756,11 +1794,11 @@ export async function loadMentoringSlotsText() {
                 elements.forEach(el => {
                     el.textContent = slotsText;
                 });
-                console.log('✅ Mentoring slots text loaded from Firestore');
+                logger.log('✅ Mentoring slots text loaded from Firestore');
             }
         }
     } catch (error) {
-        console.warn('Could not load mentoring slots text:', error.message);
+        logger.warn('Could not load mentoring slots text:', error.message);
     }
 }
 
@@ -1812,7 +1850,7 @@ export async function submitWaitlist(event) {
         }, 3000);
 
     } catch (error) {
-        console.error('Error submitting waitlist:', error);
+        logger.error('Error submitting waitlist:', error);
         showToast('❌ Fehler beim Absenden. Bitte versuchen Sie es später erneut.', 'error');
     }
 }
@@ -1872,8 +1910,8 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
 
         const cartItemsHTML = cart.map(item => `
             <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <span class="text-sm text-gray-700">${item.title}</span>
-                <span class="text-sm font-bold text-brand-dark">€${item.price.toFixed(2)}</span>
+                <span class="text-sm text-gray-700">${sanitizeHTML(item.title)}</span>
+                <span class="text-sm font-bold text-brand-dark">€${Number(item.price).toFixed(2)}</span>
             </div>
         `).join('');
 
@@ -2166,7 +2204,7 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                     });
 
                 } catch (error) {
-                    console.error('Registration error:', error);
+                    logger.error('Registration error:', error);
                     btnRegisterAndPay.disabled = false;
                     btnRegisterAndPay.innerHTML = '<i class="fas fa-user-check mr-2"></i>Registrieren & zur Kasse';
 
@@ -2204,7 +2242,7 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                     resolve({ loggedIn: true, user: userCredential.user });
 
                 } catch (error) {
-                    console.error('Login error:', error);
+                    logger.error('Login error:', error);
                     btnLoginAndPay.disabled = false;
                     btnLoginAndPay.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Anmelden & zur Kasse';
 
@@ -2434,7 +2472,7 @@ export async function loadAdminCoaches() {
             </div>
         `).join('');
     } catch (e) {
-        console.error('Error loading admin coaches:', e);
+        logger.error('Error loading admin coaches:', e);
         container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Mentoren.</p>';
     }
 }
@@ -2469,7 +2507,7 @@ export async function toggleCoachVisibility(coachId) {
             filterCoaches(window.app.state);
         }
     } catch (e) {
-        console.error('Error toggling coach visibility:', e);
+        logger.error('Error toggling coach visibility:', e);
         showToast('Fehler beim Aktualisieren');
     }
 }
@@ -2513,7 +2551,7 @@ export async function saveProfile(state) {
             showToast('✅ Profil gespeichert (Demo-Modus)');
         }
     } catch (error) {
-        console.error('Error saving profile:', error);
+        logger.error('Error saving profile:', error);
         showToast('❌ Fehler beim Speichern. Bitte versuchen Sie es erneut.', 'error');
     }
 }
@@ -2561,7 +2599,7 @@ export async function changePassword(state) {
             showToast('✅ Passwort geändert (Demo-Modus)');
         }
     } catch (error) {
-        console.error('Error changing password:', error);
+        logger.error('Error changing password:', error);
         if (error.code === 'auth/wrong-password') {
             showToast('❌ Das aktuelle Passwort ist falsch.', 'error');
         } else {
@@ -2583,7 +2621,7 @@ let allAdminOrders = [];
 
 export async function loadAllOrders() {
     if (!db) {
-        console.error('Database not available');
+        logger.error('Database not available');
         return;
     }
 
@@ -2617,7 +2655,7 @@ export async function loadAllOrders() {
         renderAdminOrders(allAdminOrders);
 
     } catch (e) {
-        console.error('Failed to load orders:', e);
+        logger.error('Failed to load orders:', e);
         container.innerHTML = `
             <div class="bg-white p-12 rounded-sm shadow-sm text-center text-red-500">
                 <i class="fas fa-exclamation-circle text-3xl mb-4"></i>
@@ -2782,7 +2820,7 @@ async function loadOrderDocuments(userId, orderId) {
         `).join('');
 
     } catch (e) {
-        console.error('Failed to load documents:', e);
+        logger.error('Failed to load documents:', e);
         container.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
     }
 }
@@ -2805,7 +2843,7 @@ export async function updateOrderStatus(orderId, newStatus) {
         showToast(`✅ Status auf "${newStatus}" geändert`);
 
     } catch (e) {
-        console.error('Failed to update status:', e);
+        logger.error('Failed to update status:', e);
         showToast('❌ Status-Update fehlgeschlagen', 3000);
     }
 }
@@ -2831,33 +2869,33 @@ export async function uploadDocumentToUser(userId, orderId, file) {
         loadOrderDocuments(userId, orderId);
 
     } catch (e) {
-        console.error('Upload failed:', e);
+        logger.error('Upload failed:', e);
         showToast('❌ Upload fehlgeschlagen: ' + e.message, 3000);
     }
 }
 
 // Load delivered documents for user dashboard
 export async function loadDeliveredDocuments(state) {
-    console.log('Loading delivered documents for user:', state.user?.uid);
+    logger.log('Loading delivered documents for user:', state.user?.uid);
 
     if (!state.user || !storage) {
-        console.log('No user or storage available');
+        logger.log('No user or storage available');
         return;
     }
 
     const container = document.getElementById('downloads-list');
     if (!container) {
-        console.log('Downloads container not found');
+        logger.log('Downloads container not found');
         return;
     }
 
     try {
         const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
         const storagePath = `delivered/${state.user.uid}`;
-        console.log('Checking storage path:', storagePath);
+        logger.log('Checking storage path:', storagePath);
         const listRef = ref(storage, storagePath);
         const result = await listAll(listRef);
-        console.log('Found documents:', result.items.length);
+        logger.log('Found documents:', result.items.length);
 
         if (result.items.length === 0) {
             container.innerHTML = `
@@ -2898,7 +2936,7 @@ export async function loadDeliveredDocuments(state) {
         `;
 
     } catch (e) {
-        console.error('Failed to load delivered documents:', e);
+        logger.error('Failed to load delivered documents:', e);
         container.innerHTML = `
             <div class="text-center py-8 text-red-500">
                 <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
@@ -2988,7 +3026,7 @@ export async function submitStrategyCall(event) {
         closeStrategyModal();
 
     } catch (error) {
-        console.error('Error submitting strategy call:', error);
+        logger.error('Error submitting strategy call:', error);
         showToast('Fehler beim Senden. Bitte versuchen Sie es erneut.');
     } finally {
         if (submitBtn) {
@@ -3145,7 +3183,7 @@ export async function loadAdminUsers() {
             </div>
         `).join('');
     } catch (e) {
-        console.error('Error loading users:', e);
+        logger.error('Error loading users:', e);
         container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Benutzer.</p>';
     }
 }
@@ -3195,7 +3233,7 @@ export async function loadStrategyCalls() {
             </div>
         `).join('');
     } catch (e) {
-        console.error('Error loading strategy calls:', e);
+        logger.error('Error loading strategy calls:', e);
         container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Anfragen.</p>';
     }
 }
@@ -3210,7 +3248,7 @@ export async function updateStrategyCallStatus(callId, status) {
         await updateDoc(doc(db, 'strategyCalls', callId), { status });
         showToast('Status aktualisiert');
     } catch (e) {
-        console.error('Error updating strategy call:', e);
+        logger.error('Error updating strategy call:', e);
         showToast('Fehler beim Aktualisieren');
     }
 }
@@ -3235,7 +3273,7 @@ export async function saveMentoringSlots() {
         await setDoc(doc(db, 'settings', 'mentoring'), { slotsText: text });
         showToast('Einstellung gespeichert');
     } catch (e) {
-        console.error('Error saving mentoring slots:', e);
+        logger.error('Error saving mentoring slots:', e);
         showToast('Fehler beim Speichern');
     }
 }

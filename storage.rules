@@ -17,7 +17,15 @@ service firebase.storage {
     }
 
     function isImage() {
-      return request.resource.contentType.matches('image/.*');
+      return request.resource.contentType.matches('image/jpeg') ||
+             request.resource.contentType.matches('image/png') ||
+             request.resource.contentType.matches('image/gif') ||
+             request.resource.contentType.matches('image/webp');
+    }
+
+    // Validate filename (prevent path traversal)
+    function hasValidFilename() {
+      return request.resource.name.matches('^[a-zA-Z0-9._-]+$');
     }
 
     function isPDF() {
