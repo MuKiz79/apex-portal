@@ -3479,7 +3479,7 @@ export async function loadDeliveredDocuments(state) {
         if (result.items.length === 0) {
             container.innerHTML = `
                 <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-file-download text-3xl text-gray-300 mb-3"></i>
+                    <i class="fas fa-award text-3xl text-gray-300 mb-3"></i>
                     <p class="text-sm">Noch keine fertigen Dokumente verfügbar</p>
                 </div>
             `;
@@ -3551,7 +3551,7 @@ export async function loadUserUploads(state) {
         if (result.items.length === 0) {
             container.innerHTML = `
                 <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-300 mb-3"></i>
+                    <i class="fas fa-folder-open text-3xl text-gray-300 mb-3"></i>
                     <p class="text-sm">Noch keine Dokumente hochgeladen</p>
                 </div>
             `;
@@ -3605,7 +3605,7 @@ export async function loadUserUploads(state) {
         logger.error('Failed to load user uploads:', e);
         container.innerHTML = `
             <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-cloud-upload-alt text-3xl text-gray-300 mb-3"></i>
+                <i class="fas fa-folder-open text-3xl text-gray-300 mb-3"></i>
                 <p class="text-sm">Noch keine Dokumente hochgeladen</p>
             </div>
         `;
