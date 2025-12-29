@@ -2918,3 +2918,309 @@ export function declineCookies() {
     const banner = document.getElementById('cookie-banner');
     if (banner) banner.classList.add('hidden');
 }
+
+// ========== STRATEGY CALL MODAL ==========
+
+export function openStrategyModal() {
+    const modal = document.getElementById('strategy-call-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+export function closeStrategyModal() {
+    const modal = document.getElementById('strategy-call-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    // Reset form
+    const form = document.getElementById('strategy-call-form');
+    if (form) form.reset();
+}
+
+export async function submitStrategyCall(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn?.textContent;
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Wird gesendet...';
+    }
+
+    try {
+        const formData = {
+            name: form.querySelector('[name="name"]')?.value || '',
+            email: form.querySelector('[name="email"]')?.value || '',
+            phone: form.querySelector('[name="phone"]')?.value || '',
+            message: form.querySelector('[name="message"]')?.value || '',
+            createdAt: new Date().toISOString(),
+            status: 'new'
+        };
+
+        if (!db) {
+            showToast('Fehler: Datenbank nicht verfügbar');
+            return;
+        }
+
+        await addDoc(collection(db, 'strategyCalls'), formData);
+
+        showToast('Anfrage erfolgreich gesendet!');
+        closeStrategyModal();
+
+    } catch (error) {
+        console.error('Error submitting strategy call:', error);
+        showToast('Fehler beim Senden. Bitte versuchen Sie es erneut.');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    }
+}
+
+// ========== PACKAGE CONFIG MODAL ==========
+
+export function openPackageConfigModal(state, name, price) {
+    const modal = document.getElementById('package-config-modal');
+    if (!modal) {
+        // Fallback: direkt zum Warenkorb hinzufügen
+        addToCart(state, name, price);
+        return;
+    }
+
+    // Set package info
+    const titleEl = modal.querySelector('.package-title');
+    const priceEl = modal.querySelector('.package-price');
+
+    if (titleEl) titleEl.textContent = name;
+    if (priceEl) priceEl.textContent = `€${price}`;
+
+    // Store in modal data
+    modal.dataset.packageName = name;
+    modal.dataset.packagePrice = price;
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    checkModalScroll();
+}
+
+export function closePackageConfigModal() {
+    const modal = document.getElementById('package-config-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+export function checkModalScroll() {
+    const modal = document.getElementById('package-config-modal');
+    if (!modal) return;
+
+    const content = modal.querySelector('.modal-content');
+    if (!content) return;
+
+    const scrollIndicator = modal.querySelector('.scroll-indicator');
+    if (scrollIndicator) {
+        if (content.scrollHeight > content.clientHeight) {
+            scrollIndicator.classList.remove('hidden');
+        } else {
+            scrollIndicator.classList.add('hidden');
+        }
+    }
+}
+
+export function confirmPackageConfig(state) {
+    const modal = document.getElementById('package-config-modal');
+    if (!modal) return;
+
+    const name = modal.dataset.packageName;
+    const price = parseInt(modal.dataset.packagePrice) || 0;
+
+    // Check for express option
+    const expressCheckbox = modal.querySelector('[name="express"]');
+    const expressPrice = expressCheckbox?.checked ? 150 : 0;
+
+    const totalPrice = price + expressPrice;
+    const finalName = expressCheckbox?.checked ? `${name} (Express)` : name;
+
+    addToCart(state, finalName, totalPrice);
+    closePackageConfigModal();
+}
+
+export function updatePackageConfigTotal() {
+    const modal = document.getElementById('package-config-modal');
+    if (!modal) return;
+
+    const basePrice = parseInt(modal.dataset.packagePrice) || 0;
+    const expressCheckbox = modal.querySelector('[name="express"]');
+    const expressPrice = expressCheckbox?.checked ? 150 : 0;
+
+    const totalEl = modal.querySelector('.package-total');
+    if (totalEl) {
+        totalEl.textContent = `€${basePrice + expressPrice}`;
+    }
+}
+
+export function addToCartWithExpress(state, name, basePrice, expressPrice, checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    const isExpress = checkbox?.checked || false;
+
+    const finalPrice = isExpress ? basePrice + expressPrice : basePrice;
+    const finalName = isExpress ? `${name} (Express)` : name;
+
+    addToCart(state, finalName, finalPrice);
+}
+
+// ========== EMAIL VERIFICATION ==========
+
+export function checkEmailVerification() {
+    // This is called to check if email was recently verified
+    // Usually handled by handleEmailAction
+}
+
+export function closeEmailVerifiedModal() {
+    const modal = document.getElementById('email-verified-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// ========== ADMIN FUNCTIONS ==========
+
+export async function loadAdminUsers() {
+    const container = document.getElementById('admin-users-list');
+    if (!container) return;
+
+    container.innerHTML = '<p class="text-gray-400">Lade Benutzer...</p>';
+
+    try {
+        if (!db) {
+            container.innerHTML = '<p class="text-red-400">Datenbank nicht verfügbar</p>';
+            return;
+        }
+
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (users.length === 0) {
+            container.innerHTML = '<p class="text-gray-400">Keine Benutzer gefunden.</p>';
+            return;
+        }
+
+        container.innerHTML = users.map(user => `
+            <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center">
+                        <span class="text-brand-gold font-bold">${(user.firstname || user.email || '?')[0].toUpperCase()}</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white">${user.firstname || ''} ${user.lastname || ''}</h4>
+                        <p class="text-sm text-gray-400">${user.email || user.id}</p>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-400">
+                    ${user.company || ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Error loading users:', e);
+        container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Benutzer.</p>';
+    }
+}
+
+export async function loadStrategyCalls() {
+    const container = document.getElementById('admin-strategy-list');
+    if (!container) return;
+
+    container.innerHTML = '<p class="text-gray-400">Lade Anfragen...</p>';
+
+    try {
+        if (!db) {
+            container.innerHTML = '<p class="text-red-400">Datenbank nicht verfügbar</p>';
+            return;
+        }
+
+        const callsSnap = await getDocs(collection(db, 'strategyCalls'));
+        const calls = callsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (calls.length === 0) {
+            container.innerHTML = '<p class="text-gray-400">Keine Anfragen gefunden.</p>';
+            return;
+        }
+
+        // Sort by date (newest first)
+        calls.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        container.innerHTML = calls.map(call => `
+            <div class="bg-brand-dark/50 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h4 class="font-bold text-white">${call.name || 'Unbekannt'}</h4>
+                        <p class="text-sm text-gray-400">${call.email || ''}</p>
+                        ${call.phone ? `<p class="text-sm text-gray-400">${call.phone}</p>` : ''}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select onchange="app.updateStrategyCallStatus('${call.id}', this.value)"
+                                class="bg-brand-dark border border-gray-600 rounded px-2 py-1 text-sm text-white">
+                            <option value="new" ${call.status === 'new' ? 'selected' : ''}>Neu</option>
+                            <option value="contacted" ${call.status === 'contacted' ? 'selected' : ''}>Kontaktiert</option>
+                            <option value="completed" ${call.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
+                        </select>
+                    </div>
+                </div>
+                ${call.message ? `<p class="text-sm text-gray-300 mt-2">${call.message}</p>` : ''}
+                <p class="text-xs text-gray-500 mt-2">${new Date(call.createdAt).toLocaleString('de-DE')}</p>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Error loading strategy calls:', e);
+        container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Anfragen.</p>';
+    }
+}
+
+export async function updateStrategyCallStatus(callId, status) {
+    try {
+        if (!db) {
+            showToast('Datenbank nicht verfügbar');
+            return;
+        }
+
+        await updateDoc(doc(db, 'strategyCalls', callId), { status });
+        showToast('Status aktualisiert');
+    } catch (e) {
+        console.error('Error updating strategy call:', e);
+        showToast('Fehler beim Aktualisieren');
+    }
+}
+
+export async function loadAdminSettings() {
+    // Load mentoring slots text
+    await loadMentoringSlotsText();
+}
+
+export async function saveMentoringSlots() {
+    const input = document.getElementById('mentoring-slots-input');
+    if (!input) return;
+
+    const text = input.value.trim();
+
+    try {
+        if (!db) {
+            showToast('Datenbank nicht verfügbar');
+            return;
+        }
+
+        await setDoc(doc(db, 'settings', 'mentoring'), { slotsText: text });
+        showToast('Einstellung gespeichert');
+    } catch (e) {
+        console.error('Error saving mentoring slots:', e);
+        showToast('Fehler beim Speichern');
+    }
+}
