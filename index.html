@@ -2734,6 +2734,9 @@
                     <button onclick="app.loadAllOrders()" class="bg-brand-dark text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition">
                         <i class="fas fa-sync-alt mr-2"></i>Aktualisieren
                     </button>
+                    <button onclick="app.exportOrdersToCSV()" class="bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition">
+                        <i class="fas fa-file-csv mr-2"></i>CSV Export
+                    </button>
                 </div>
             </div>
 
@@ -2768,9 +2771,14 @@
                 <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div class="p-4 border-b border-gray-100 flex justify-between items-center">
                         <h3 class="font-bold text-brand-dark">Benutzer mit Cookie-Einstellungen</h3>
-                        <button onclick="app.loadAdminUsers()" class="text-brand-gold text-sm hover:underline">
-                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="app.exportUsersToCSV()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">
+                                <i class="fas fa-file-csv mr-1"></i>CSV Export
+                            </button>
+                            <button onclick="app.loadAdminUsers()" class="text-brand-gold text-sm hover:underline px-4 py-2">
+                                <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
+                            </button>
+                        </div>
                     </div>
                     <div id="admin-users-list" class="divide-y divide-gray-100">
                         <div class="p-8 text-center text-gray-400">
@@ -3417,8 +3425,8 @@
     <!-- APP LOGIC -->
     <script type="module">
         // Import modules
-        import * as Core from './js/core.js?v=20251229c';
-        import * as App from './js/app.js?v=20251229c';
+        import * as Core from './js/core.js?v=20251229d';
+        import * as App from './js/app.js?v=20251229d';
 
         // Make functions globally accessible
         window.app = {
@@ -3526,6 +3534,9 @@
             switchAdminTab: (tabName) => App.switchAdminTab(tabName),
             loadAdminUsers: () => App.loadAdminUsers(),
             verifyUserEmail: (email) => App.verifyUserEmail(email),
+            deleteUser: (userId, email) => App.deleteUser(userId, email),
+            exportOrdersToCSV: () => App.exportOrdersToCSV(),
+            exportUsersToCSV: () => App.exportUsersToCSV(),
             loadStrategyCalls: () => App.loadStrategyCalls(),
             updateStrategyCallStatus: (callId, status) => App.updateStrategyCallStatus(callId, status),
             loadAdminSettings: () => App.loadAdminSettings(),

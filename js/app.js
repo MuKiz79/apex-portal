@@ -2917,6 +2917,125 @@ function updateAdminStats(orders) {
     if (revenueEl) revenueEl.textContent = `€${revenue.toLocaleString('de-DE')}`;
 }
 
+// ========== ADMIN EXPORT FUNKTIONEN ==========
+
+// CSV Export für Bestellungen
+export function exportOrdersToCSV() {
+    if (allAdminOrders.length === 0) {
+        showToast('❌ Keine Bestellungen zum Exportieren');
+        return;
+    }
+
+    const headers = ['Bestellnummer', 'Datum', 'Kunde', 'Email', 'Produkte', 'Betrag', 'Status'];
+    const rows = allAdminOrders.map(order => {
+        const date = order.date?.seconds
+            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE')
+            : '-';
+        const items = order.items?.map(i => i.title).join('; ') || '-';
+        const status = {
+            'processing': 'In Bearbeitung',
+            'confirmed': 'Bestätigt',
+            'completed': 'Abgeschlossen',
+            'cancelled': 'Storniert'
+        }[order.status] || order.status;
+
+        return [
+            order.id.substring(0, 8).toUpperCase(),
+            date,
+            order.customerName || '-',
+            order.customerEmail || '-',
+            items,
+            `€${(order.total || 0).toFixed(2)}`,
+            status
+        ];
+    });
+
+    const csvContent = [
+        headers.join(';'),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `APEX_Bestellungen_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    showToast('✅ CSV-Export erfolgreich');
+}
+
+// CSV Export für Benutzer
+export function exportUsersToCSV() {
+    const container = document.getElementById('admin-users-list');
+    if (!container || !window._adminUsers || window._adminUsers.length === 0) {
+        showToast('❌ Keine Benutzer zum Exportieren');
+        return;
+    }
+
+    const users = window._adminUsers;
+    const headers = ['Vorname', 'Nachname', 'Email', 'Telefon', 'Unternehmen', 'Cookie-Consent', 'Registriert'];
+    const rows = users.map(user => {
+        const joined = user.joined?.seconds
+            ? new Date(user.joined.seconds * 1000).toLocaleDateString('de-DE')
+            : '-';
+        const consent = user.cookieConsent === 'all' || user.cookieConsent === true
+            ? 'Alle Cookies'
+            : user.cookieConsent === 'essential' ? 'Nur notwendige' : 'Keine Auswahl';
+
+        return [
+            user.firstname || '-',
+            user.lastname || '-',
+            user.email || '-',
+            user.phone || '-',
+            user.company || '-',
+            consent,
+            joined
+        ];
+    });
+
+    const csvContent = [
+        headers.join(';'),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `APEX_Benutzer_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    showToast('✅ CSV-Export erfolgreich');
+}
+
+// ========== ADMIN BENUTZER-VERWALTUNG ==========
+
+// Benutzer löschen (mit Bestätigung)
+export async function deleteUser(userId, email) {
+    if (!confirm(`Möchten Sie den Benutzer "${email}" wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`)) {
+        return;
+    }
+
+    try {
+        showToast('⏳ Lösche Benutzer...');
+
+        // Lösche aus Firestore
+        await updateDoc(doc(db, 'users', userId), {
+            deleted: true,
+            deletedAt: new Date()
+        });
+
+        showToast('✅ Benutzer wurde deaktiviert');
+        loadAdminUsers(); // Refresh list
+    } catch (error) {
+        console.error('Delete user error:', error);
+        showToast('❌ Fehler beim Löschen: ' + error.message);
+    }
+}
+
 export function filterAdminOrders() {
     const searchTerm = document.getElementById('admin-search')?.value.toLowerCase() || '';
     const statusFilter = document.getElementById('admin-filter-status')?.value || '';
@@ -3516,7 +3635,12 @@ export async function loadAdminUsers() {
         }
 
         const usersSnap = await getDocs(collection(db, 'users'));
-        const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const users = usersSnap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(u => !u.deleted); // Gelöschte Benutzer ausblenden
+
+        // Speichere für Export
+        window._adminUsers = users;
 
         if (users.length === 0) {
             container.innerHTML = '<p class="text-gray-400">Keine Benutzer gefunden.</p>';
@@ -3550,6 +3674,9 @@ export async function loadAdminUsers() {
                 <div class="flex items-center gap-3">
                     <button onclick="app.verifyUserEmail('${user.email}')" class="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition" title="E-Mail als verifiziert markieren">
                         <i class="fas fa-check-circle mr-1"></i>Verifizieren
+                    </button>
+                    <button onclick="app.deleteUser('${user.id}', '${user.email}')" class="text-xs px-3 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition" title="Benutzer deaktivieren">
+                        <i class="fas fa-trash mr-1"></i>Löschen
                     </button>
                     <span class="text-xs px-2 py-1 rounded ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'bg-green-500/20 text-green-400' : user.cookieConsent === 'essential' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}">
                         ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'Alle Cookies' : user.cookieConsent === 'essential' ? 'Nur notwendige' : 'Keine Auswahl'}
