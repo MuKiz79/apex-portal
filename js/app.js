@@ -1761,13 +1761,22 @@ export function showAppointmentConfirmModal(orderId, datetime) {
         hour: '2-digit', minute: '2-digit'
     }) + ' Uhr';
 
-    document.getElementById('confirm-modal-date').textContent = dateStr;
-    document.getElementById('confirm-modal-time').textContent = timeStr;
-    document.getElementById('appointment-confirm-modal').classList.remove('hidden');
+    const dateEl = document.getElementById('confirm-modal-date');
+    const timeEl = document.getElementById('confirm-modal-time');
+    const modal = document.getElementById('appointment-confirm-modal');
+
+    if (dateEl) dateEl.textContent = dateStr;
+    if (timeEl) timeEl.textContent = timeStr;
+    if (modal) {
+        modal.classList.remove('hidden');
+    } else {
+        logger.error('Confirm modal not found');
+    }
 }
 
 export function closeAppointmentConfirmModal() {
-    document.getElementById('appointment-confirm-modal').classList.add('hidden');
+    const modal = document.getElementById('appointment-confirm-modal');
+    if (modal) modal.classList.add('hidden');
     pendingAppointmentConfirm = { orderId: null, datetime: null };
 }
 
@@ -1815,12 +1824,20 @@ export async function confirmAppointmentFromModal(state) {
 
 export function showAppointmentDeclineModal(orderId) {
     pendingAppointmentDecline = { orderId };
-    document.getElementById('decline-reason-input').value = '';
-    document.getElementById('appointment-decline-modal').classList.remove('hidden');
+    const reasonInput = document.getElementById('decline-reason-input');
+    const modal = document.getElementById('appointment-decline-modal');
+
+    if (reasonInput) reasonInput.value = '';
+    if (modal) {
+        modal.classList.remove('hidden');
+    } else {
+        logger.error('Decline modal not found');
+    }
 }
 
 export function closeAppointmentDeclineModal() {
-    document.getElementById('appointment-decline-modal').classList.add('hidden');
+    const modal = document.getElementById('appointment-decline-modal');
+    if (modal) modal.classList.add('hidden');
     pendingAppointmentDecline = { orderId: null };
 }
 
