@@ -564,13 +564,6 @@
                 font-size: 1rem;
                 line-height: 1.6;
             }
-            p, li, span {
-                font-size: max(1rem, 16px);
-            }
-            /* Slightly larger touch targets for text links */
-            a:not(.btn-primary):not(.btn-secondary) {
-                padding: 0.25rem 0;
-            }
         }
 
         /* ========== ENHANCED INTERACTIVE STATES ========== */
@@ -578,6 +571,7 @@
         /* Better hover feedback for clickable cards */
         .card-interactive {
             cursor: pointer;
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
         }
         .card-interactive:hover {
             transform: translateY(-2px);
@@ -585,13 +579,6 @@
         }
         .card-interactive:active {
             transform: translateY(0);
-        }
-
-        /* Smooth transitions for all interactive elements */
-        a, button, input, select, textarea, .card, .card-glass {
-            transition-property: color, background-color, border-color, box-shadow, transform, opacity;
-            transition-duration: 0.2s;
-            transition-timing-function: ease-out;
         }
 
         /* ========== DARK SECTION TEXT UTILITIES ========== */
