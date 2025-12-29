@@ -2884,19 +2884,19 @@ export async function loadAdminDocuments() {
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 rounded-lg flex items-center justify-center ${doc.type === 'uploaded' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
-                            <i class="fas ${doc.type === 'uploaded' ? 'fa-upload' : 'fa-file-download'}"></i>
+                            <i class="fas ${doc.type === 'uploaded' ? 'fa-user' : 'fa-user-shield'}"></i>
                         </div>
                         <div>
                             <p class="font-bold text-brand-dark text-sm">${sanitizeHTML(doc.fileName)}</p>
                             <p class="text-xs text-gray-500">
+                                ${doc.type === 'uploaded' ? 'Kunde: ' : 'An: '}
                                 <span class="font-medium">${sanitizeHTML(doc.userName)}</span>
                                 (${sanitizeHTML(doc.userEmail)})
-                                ${doc.orderId ? ` • Bestellung: ${doc.orderId.substring(0, 8)}...` : ''}
                             </p>
                             <p class="text-xs text-gray-400">
                                 ${doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Datum unbekannt'}
                                 • ${formatSize(doc.size)}
-                                • <span class="${doc.type === 'uploaded' ? 'text-blue-600' : 'text-green-600'}">${doc.type === 'uploaded' ? 'Hochgeladen' : 'Ausgeliefert'}</span>
+                                • <span class="font-semibold ${doc.type === 'uploaded' ? 'text-blue-600' : 'text-green-600'}">${doc.type === 'uploaded' ? '📥 Vom Kunden hochgeladen' : '📤 Von dir gesendet'}</span>
                             </p>
                         </div>
                     </div>
