@@ -493,6 +493,182 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
     });
 }
 
+// ========== SEND APPOINTMENT PROPOSAL EMAIL ==========
+exports.sendAppointmentProposalEmail = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { orderId, userId, customerEmail, proposals, message } = req.body;
+
+        if (!customerEmail || !proposals || proposals.length === 0) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Format proposals for email
+        const proposalsList = proposals.map((p, idx) => {
+            const date = new Date(p.datetime);
+            const dateStr = date.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+            const timeStr = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            return `<tr>
+                <td style="padding: 12px; background: ${idx % 2 === 0 ? '#f9fafb' : '#ffffff'}; border-bottom: 1px solid #e5e7eb;">
+                    <strong style="color: #1f2937;">Option ${idx + 1}:</strong> ${dateStr} um ${timeStr} Uhr
+                </td>
+            </tr>`;
+        }).join('');
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 587,
+            secure: false,
+            auth: {
+                user: smtpUser.value(),
+                pass: smtpPass.value()
+            }
+        });
+
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 30px 0; border-bottom: 2px solid #C9B99A; }
+        .logo { font-size: 28px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px; }
+        .logo-sub { font-size: 10px; color: #C9B99A; letter-spacing: 2px; text-transform: uppercase; }
+        .content { padding: 30px 0; }
+        .proposals-table { width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+        .cta-button { display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; margin: 20px 0; }
+        .footer { text-align: center; padding: 20px 0; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; }
+        .message-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">APEX</div>
+            <div class="logo-sub">Executive</div>
+        </div>
+
+        <div class="content">
+            <h2 style="color: #1a1a2e; margin-bottom: 10px;">Terminvorschläge für Sie</h2>
+            <p>Wir haben folgende Terminvorschläge für Ihr Coaching-Gespräch:</p>
+
+            ${message ? `<div class="message-box">"${message}"</div>` : ''}
+
+            <table class="proposals-table">
+                ${proposalsList}
+            </table>
+
+            <p style="text-align: center;">
+                <a href="https://apex-executive.de/#dashboard" class="cta-button">
+                    Termin auswählen
+                </a>
+            </p>
+
+            <p style="color: #6b7280; font-size: 14px;">
+                Klicken Sie auf den Button oben, um einen der vorgeschlagenen Termine zu bestätigen.
+                Falls keiner der Termine passt, können Sie dies ebenfalls in Ihrem Dashboard angeben.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>APEX Executive | Premium Career Services</p>
+            <p>Diese E-Mail wurde automatisch gesendet.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+        await transporter.sendMail({
+            from: '"APEX Executive" <noreply@apex-executive.de>',
+            to: customerEmail,
+            subject: 'Terminvorschläge für Ihr Coaching | APEX Executive',
+            html: emailHtml
+        });
+
+        console.log(`Appointment proposal email sent to ${customerEmail} for order ${orderId}`);
+        return res.status(200).json({ success: true });
+
+    } catch (error) {
+        console.error('Failed to send appointment proposal email:', error);
+        return res.status(500).json({ error: 'Failed to send email', message: error.message });
+    }
+});
+
+// ========== ADMIN: SET EMAIL VERIFIED ==========
+exports.setEmailVerified = onRequest({
+    invoker: 'public'
+}, async (req, res) => {
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { uid, email, adminEmail } = req.body;
+
+        // Prüfe ob Anfrage von Admin kommt (einfache Prüfung)
+        const ADMIN_EMAILS = ['muammer.kizilaslan@gmx.de', 'kizilaslaneva@gmail.com'];
+        if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail)) {
+            return res.status(403).json({ error: 'Unauthorized - Admin access required' });
+        }
+
+        let userToUpdate;
+
+        if (uid) {
+            userToUpdate = await admin.auth().getUser(uid);
+        } else if (email) {
+            userToUpdate = await admin.auth().getUserByEmail(email);
+        } else {
+            return res.status(400).json({ error: 'uid or email required' });
+        }
+
+        // Setze emailVerified auf true
+        await admin.auth().updateUser(userToUpdate.uid, {
+            emailVerified: true
+        });
+
+        console.log(`Email verified set to true for user: ${userToUpdate.email}`);
+
+        return res.status(200).json({
+            success: true,
+            message: `Email verified für ${userToUpdate.email} wurde auf true gesetzt`,
+            user: {
+                uid: userToUpdate.uid,
+                email: userToUpdate.email,
+                emailVerified: true
+            }
+        });
+
+    } catch (error) {
+        console.error('Error setting email verified:', error);
+        return res.status(500).json({
+            error: 'Failed to update user',
+            message: error.message
+        });
+    }
+});
+
 // ========== GET ORDER BY SESSION ID ==========
 exports.getOrderBySessionId = onCall(async (request) => {
     // Check authentication

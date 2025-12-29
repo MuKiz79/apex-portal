@@ -47,7 +47,13 @@ service cloud.firestore {
         )
       );
       allow create: if false; // Nur Cloud Functions
-      allow update: if isAdmin(); // Admin kann Status ändern
+      // Update: Admin kann alles ändern, User kann nur Termine bestätigen/ablehnen
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        // Nur appointment-bezogene Felder dürfen geändert werden
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['appointment', 'appointmentStatus', 'appointmentDeclineReason', 'appointmentDeclinedAt'])
+      );
       allow delete: if false;
     }
 

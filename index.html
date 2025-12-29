@@ -3605,6 +3605,12 @@
             handleProfilePictureUpload: (input) => App.handleProfilePictureUpload(window.app.state, input),
             showAppointmentCalendar: (orderId) => App.showAppointmentCalendar(orderId),
             bookAppointment: (orderId, datetime) => App.bookAppointment(window.app.state, orderId, datetime),
+            // Appointment Proposals
+            showAppointmentProposalModal: (orderId, userId, customerName, customerEmail) => App.showAppointmentProposalModal(orderId, userId, customerName, customerEmail),
+            closeAppointmentProposalModal: () => App.closeAppointmentProposalModal(),
+            sendAppointmentProposals: () => App.sendAppointmentProposals(window.app.state),
+            acceptAppointmentProposal: (orderId, datetime) => App.acceptAppointmentProposal(window.app.state, orderId, datetime),
+            declineAllAppointmentProposals: (orderId) => App.declineAllAppointmentProposals(window.app.state, orderId),
             handleFileUpload: (input) => App.handleFileUpload(window.app.state, input),
             switchDashboardTab: (tabName) => App.switchDashboardTab(tabName, window.app.state),
             saveProfile: () => App.saveProfile(window.app.state),
@@ -3930,6 +3936,67 @@
             <p class="text-xs text-gray-400 mt-4">
                 <button onclick="app.closeEmailVerifiedModal()" class="hover:text-brand-gold transition">Schließen</button>
             </p>
+        </div>
+    </div>
+
+    <!-- APPOINTMENT PROPOSAL MODAL (Admin) -->
+    <div id="appointment-proposal-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-serif text-xl text-brand-dark">Terminvorschläge senden</h3>
+                    <button onclick="app.closeAppointmentProposalModal()" class="text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">an <span id="proposal-customer-name" class="font-medium text-brand-dark">Kunde</span></p>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">Wähle bis zu 3 Terminvorschläge. Der Kunde erhält eine E-Mail und kann einen davon annehmen.</p>
+
+                <!-- Proposal 1 -->
+                <div class="mb-4">
+                    <label class="text-sm font-medium text-gray-700 mb-2 block">Vorschlag 1 *</label>
+                    <div class="flex gap-2">
+                        <input type="date" id="proposal-date-1" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold" required>
+                        <input type="time" id="proposal-time-1" class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold" required>
+                    </div>
+                </div>
+
+                <!-- Proposal 2 -->
+                <div class="mb-4">
+                    <label class="text-sm font-medium text-gray-700 mb-2 block">Vorschlag 2 (optional)</label>
+                    <div class="flex gap-2">
+                        <input type="date" id="proposal-date-2" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                        <input type="time" id="proposal-time-2" class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                    </div>
+                </div>
+
+                <!-- Proposal 3 -->
+                <div class="mb-4">
+                    <label class="text-sm font-medium text-gray-700 mb-2 block">Vorschlag 3 (optional)</label>
+                    <div class="flex gap-2">
+                        <input type="date" id="proposal-date-3" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                        <input type="time" id="proposal-time-3" class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                    </div>
+                </div>
+
+                <!-- Optional message -->
+                <div class="mb-6">
+                    <label class="text-sm font-medium text-gray-700 mb-2 block">Nachricht (optional)</label>
+                    <textarea id="proposal-message" rows="2" placeholder="z.B. Bitte wählen Sie einen passenden Termin für unser Gespräch..."
+                              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none"></textarea>
+                </div>
+
+                <input type="hidden" id="proposal-order-id">
+                <input type="hidden" id="proposal-user-id">
+                <input type="hidden" id="proposal-customer-email">
+
+                <button onclick="app.sendAppointmentProposals()"
+                        class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-paper-plane mr-2"></i>Terminvorschläge senden
+                </button>
+            </div>
         </div>
     </div>
 

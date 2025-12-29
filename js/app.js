@@ -1379,19 +1379,15 @@ export function renderOrders(orders) {
                     </p>
                 </div>
 
-                <!-- Actions -->
-                ${hasCoach && !hasAppointment ? `
-                    <button onclick="app.showAppointmentCalendar('${order.id}')" class="w-full bg-brand-gold/10 text-brand-dark font-bold text-sm py-3 px-4 rounded-lg hover:bg-brand-gold/20 transition flex items-center justify-center gap-2">
-                        <i class="fas fa-calendar-alt"></i>
-                        Coach-Termin buchen
-                    </button>
-                ` : hasAppointment ? `
+                <!-- Appointment Section -->
+                ${order.appointment?.confirmed ? `
+                    <!-- Confirmed Appointment -->
                     <div class="bg-green-50 border border-green-200 px-4 py-3 rounded-lg flex items-center gap-3">
                         <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <i class="fas fa-check text-green-600"></i>
                         </div>
                         <div>
-                            <span class="text-xs text-green-600 font-bold uppercase">Termin gebucht</span>
+                            <span class="text-xs text-green-600 font-bold uppercase">Termin bestätigt</span>
                             <p class="text-sm text-gray-700 font-medium">${new Date(order.appointment.datetime).toLocaleString('de-DE', {
                                 weekday: 'long',
                                 day: '2-digit',
@@ -1401,6 +1397,54 @@ export function renderOrders(orders) {
                             })} Uhr</p>
                         </div>
                     </div>
+                ` : order.appointmentProposals?.length > 0 && order.appointmentStatus === 'pending' ? `
+                    <!-- Pending Proposals - Customer needs to select -->
+                    <div class="bg-brand-gold/10 border border-brand-gold/30 rounded-lg p-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-calendar-check text-brand-gold"></i>
+                            <span class="font-bold text-brand-dark text-sm">Terminvorschläge für Sie</span>
+                        </div>
+                        ${order.appointmentProposalMessage ? `
+                            <p class="text-sm text-gray-600 mb-3 italic">"${sanitizeHTML(order.appointmentProposalMessage)}"</p>
+                        ` : ''}
+                        <div class="space-y-2 mb-3">
+                            ${order.appointmentProposals.map((p, idx) => `
+                                <button onclick="app.acceptAppointmentProposal('${order.id}', '${p.datetime}')"
+                                        class="w-full flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition group">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 bg-brand-gold/20 rounded-full flex items-center justify-center text-brand-gold font-bold text-sm">
+                                            ${idx + 1}
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="font-medium text-brand-dark text-sm">${new Date(p.datetime).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
+                                            <p class="text-xs text-gray-500">${new Date(p.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-green-600 font-bold opacity-0 group-hover:opacity-100 transition">
+                                        <i class="fas fa-check mr-1"></i>Auswählen
+                                    </span>
+                                </button>
+                            `).join('')}
+                        </div>
+                        <button onclick="app.declineAllAppointmentProposals('${order.id}')"
+                                class="w-full text-center text-xs text-gray-500 hover:text-red-600 transition py-2">
+                            <i class="fas fa-times mr-1"></i>Keiner der Termine passt
+                        </button>
+                    </div>
+                ` : order.appointmentStatus === 'declined' ? `
+                    <!-- Declined - Waiting for new proposals -->
+                    <div class="bg-yellow-50 border border-yellow-200 px-4 py-3 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                            <span class="text-sm text-yellow-700">Wir senden Ihnen neue Terminvorschläge</span>
+                        </div>
+                    </div>
+                ` : hasCoach && !hasAppointment ? `
+                    <!-- No proposals yet, show availability form link -->
+                    <button onclick="app.switchDashboardTab('appointments')" class="w-full bg-brand-gold/10 text-brand-dark font-bold text-sm py-3 px-4 rounded-lg hover:bg-brand-gold/20 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-calendar-alt"></i>
+                        Wunschtermine angeben
+                    </button>
                 ` : ''}
             </div>
         `;
@@ -1558,6 +1602,155 @@ export async function bookAppointment(state, orderId, datetime) {
     } catch (e) {
         logger.error('Appointment booking failed:', e);
         showToast('❌ Terminbuchung fehlgeschlagen', 3000);
+    }
+}
+
+// ========== APPOINTMENT PROPOSALS (Admin) ==========
+
+export function showAppointmentProposalModal(orderId, userId, customerName, customerEmail) {
+    const modal = document.getElementById('appointment-proposal-modal');
+    if (!modal) return;
+
+    // Set hidden fields
+    document.getElementById('proposal-order-id').value = orderId;
+    document.getElementById('proposal-user-id').value = userId;
+    document.getElementById('proposal-customer-email').value = customerEmail;
+    document.getElementById('proposal-customer-name').textContent = customerName;
+
+    // Clear previous inputs
+    document.getElementById('proposal-date-1').value = '';
+    document.getElementById('proposal-time-1').value = '';
+    document.getElementById('proposal-date-2').value = '';
+    document.getElementById('proposal-time-2').value = '';
+    document.getElementById('proposal-date-3').value = '';
+    document.getElementById('proposal-time-3').value = '';
+    document.getElementById('proposal-message').value = '';
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('proposal-date-1').min = today;
+    document.getElementById('proposal-date-2').min = today;
+    document.getElementById('proposal-date-3').min = today;
+
+    modal.classList.remove('hidden');
+}
+
+export function closeAppointmentProposalModal() {
+    const modal = document.getElementById('appointment-proposal-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+export async function sendAppointmentProposals(state) {
+    const orderId = document.getElementById('proposal-order-id')?.value;
+    const userId = document.getElementById('proposal-user-id')?.value;
+    const customerEmail = document.getElementById('proposal-customer-email')?.value;
+    const message = document.getElementById('proposal-message')?.value || '';
+
+    const date1 = document.getElementById('proposal-date-1')?.value;
+    const time1 = document.getElementById('proposal-time-1')?.value;
+    const date2 = document.getElementById('proposal-date-2')?.value;
+    const time2 = document.getElementById('proposal-time-2')?.value;
+    const date3 = document.getElementById('proposal-date-3')?.value;
+    const time3 = document.getElementById('proposal-time-3')?.value;
+
+    if (!date1 || !time1) {
+        showToast('⚠️ Bitte mindestens Vorschlag 1 ausfüllen', 3000);
+        return;
+    }
+
+    const proposals = [];
+    if (date1 && time1) proposals.push({ date: date1, time: time1, datetime: `${date1}T${time1}` });
+    if (date2 && time2) proposals.push({ date: date2, time: time2, datetime: `${date2}T${time2}` });
+    if (date3 && time3) proposals.push({ date: date3, time: time3, datetime: `${date3}T${time3}` });
+
+    try {
+        if (db) {
+            // Save proposals to order
+            await updateDoc(doc(db, "orders", orderId), {
+                appointmentProposals: proposals,
+                appointmentProposalMessage: message,
+                appointmentProposalSentAt: new Date(),
+                appointmentStatus: 'pending'
+            });
+
+            // Call Cloud Function to send email
+            try {
+                const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/sendAppointmentProposalEmail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId,
+                        userId,
+                        customerEmail,
+                        proposals,
+                        message
+                    })
+                });
+                if (!response.ok) {
+                    logger.warn('Email notification failed but proposals saved');
+                }
+            } catch (emailErr) {
+                logger.warn('Email notification failed:', emailErr);
+            }
+
+            showToast('✅ Terminvorschläge gesendet!');
+            closeAppointmentProposalModal();
+
+            // Reload admin orders to show updated status
+            if (typeof loadAdminOrders === 'function') {
+                await loadAdminOrders(state);
+            }
+        }
+    } catch (e) {
+        logger.error('Failed to send appointment proposals:', e);
+        showToast('❌ Fehler beim Senden', 3000);
+    }
+}
+
+// ========== CUSTOMER: Accept/Decline Proposals ==========
+
+export async function acceptAppointmentProposal(state, orderId, datetime) {
+    if (!confirm(`Termin am ${new Date(datetime).toLocaleString('de-DE', {weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'})} Uhr bestätigen?`)) {
+        return;
+    }
+
+    try {
+        if (db && state.user) {
+            await updateDoc(doc(db, "orders", orderId), {
+                appointment: {
+                    datetime: datetime,
+                    confirmed: true,
+                    confirmedAt: new Date()
+                },
+                appointmentStatus: 'confirmed'
+            });
+
+            showToast('✅ Termin bestätigt!');
+            await loadUserOrders(state);
+        }
+    } catch (e) {
+        logger.error('Failed to accept appointment:', e);
+        showToast('❌ Fehler beim Bestätigen', 3000);
+    }
+}
+
+export async function declineAllAppointmentProposals(state, orderId) {
+    const reason = prompt('Warum passen die Termine nicht? (optional)');
+
+    try {
+        if (db && state.user) {
+            await updateDoc(doc(db, "orders", orderId), {
+                appointmentStatus: 'declined',
+                appointmentDeclineReason: reason || 'Keine Angabe',
+                appointmentDeclinedAt: new Date()
+            });
+
+            showToast('Terminvorschläge abgelehnt. Wir melden uns mit neuen Vorschlägen.');
+            await loadUserOrders(state);
+        }
+    } catch (e) {
+        logger.error('Failed to decline appointments:', e);
+        showToast('❌ Fehler', 3000);
     }
 }
 
@@ -3289,6 +3482,10 @@ function renderAdminOrders(orders) {
                         </div>
 
                         <div class="flex items-center gap-2">
+                            <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
+                                    class="bg-green-600 text-white px-4 py-2 rounded-sm text-xs font-bold uppercase hover:bg-green-700 transition">
+                                <i class="fas fa-calendar-plus mr-2"></i>Termin vorschlagen
+                            </button>
                             <label class="cursor-pointer bg-brand-gold text-brand-dark px-4 py-2 rounded-sm text-xs font-bold uppercase hover:bg-yellow-500 transition">
                                 <i class="fas fa-upload mr-2"></i>Dokument hochladen
                                 <input type="file" class="hidden" accept=".pdf,.doc,.docx"
@@ -3296,6 +3493,24 @@ function renderAdminOrders(orders) {
                             </label>
                         </div>
                     </div>
+
+                    <!-- Appointment Status -->
+                    ${order.appointmentProposals ? `
+                        <div class="mt-4 p-3 rounded-lg ${order.appointment?.confirmed ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}">
+                            ${order.appointment?.confirmed ? `
+                                <p class="text-sm text-green-700">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    <strong>Termin bestätigt:</strong>
+                                    ${new Date(order.appointment.datetime).toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr
+                                </p>
+                            ` : `
+                                <p class="text-sm text-yellow-700">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    <strong>Terminvorschläge gesendet</strong> - Warte auf Kundenbestätigung
+                                </p>
+                            `}
+                        </div>
+                    ` : ''}
 
                     <!-- Documents Section -->
                     <div id="docs-${order.id}" class="mt-4 border-t border-gray-100 pt-4">
