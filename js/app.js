@@ -1570,7 +1570,11 @@ export function filterCoaches(state) {
     const filterSelect = document.getElementById('industry-filter');
     const filter = filterSelect?.value || 'all';
 
-    const filteredCoaches = filter === 'all' ? state.coaches : state.coaches.filter(c => c.industry === filter);
+    // First filter out hidden coaches (visible !== false means visible)
+    const visibleCoaches = state.coaches.filter(c => c.visible !== false);
+
+    // Then apply industry filter
+    const filteredCoaches = filter === 'all' ? visibleCoaches : visibleCoaches.filter(c => c.industry === filter);
 
     // Zeige Nachricht wenn keine Coaches vorhanden
     if(filteredCoaches.length === 0) {
@@ -2451,8 +2455,19 @@ export async function toggleCoachVisibility(coachId) {
 
         showToast(currentVisible ? 'Mentor versteckt' : 'Mentor sichtbar');
 
-        // Reload the coaches list
+        // Reload the admin coaches list
         loadAdminCoaches();
+
+        // Also refresh the public coaches list if state is available
+        if (window.app && window.app.state) {
+            // Update the coach in state
+            const coachIndex = window.app.state.coaches.findIndex(c => c.id === coachId);
+            if (coachIndex !== -1) {
+                window.app.state.coaches[coachIndex].visible = !currentVisible;
+            }
+            // Re-render the public coach grid
+            filterCoaches(window.app.state);
+        }
     } catch (e) {
         console.error('Error toggling coach visibility:', e);
         showToast('Fehler beim Aktualisieren');

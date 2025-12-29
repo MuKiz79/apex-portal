@@ -228,3 +228,22 @@ export function toggleFaq(id) {
         button.setAttribute('aria-expanded', isOpen.toString());
     }
 }
+
+// Toggle collapsible sections (CV-Process, Mentoring-Process, etc.)
+export function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if(!section) return;
+
+    const isHidden = section.classList.contains('hidden');
+    section.classList.toggle('hidden');
+
+    // Rotate the chevron icon
+    const icon = document.getElementById(sectionId + '-icon');
+    if(icon) {
+        if(isHidden) {
+            icon.classList.add('rotate-180');
+        } else {
+            icon.classList.remove('rotate-180');
+        }
+    }
+}
