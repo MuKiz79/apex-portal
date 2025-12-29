@@ -1746,10 +1746,36 @@ export async function sendAppointmentProposals(state) {
 
 // ========== CUSTOMER: Accept/Decline Proposals ==========
 
-export async function acceptAppointmentProposal(state, orderId, datetime) {
-    if (!confirm(`Termin am ${new Date(datetime).toLocaleString('de-DE', {weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'})} Uhr bestätigen?`)) {
-        return;
-    }
+// Store pending appointment data for modal confirmation
+let pendingAppointmentConfirm = { orderId: null, datetime: null };
+let pendingAppointmentDecline = { orderId: null };
+
+export function showAppointmentConfirmModal(orderId, datetime) {
+    pendingAppointmentConfirm = { orderId, datetime };
+
+    // Format date and time for display
+    const dateStr = new Date(datetime).toLocaleDateString('de-DE', {
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+    });
+    const timeStr = new Date(datetime).toLocaleTimeString('de-DE', {
+        hour: '2-digit', minute: '2-digit'
+    }) + ' Uhr';
+
+    document.getElementById('confirm-modal-date').textContent = dateStr;
+    document.getElementById('confirm-modal-time').textContent = timeStr;
+    document.getElementById('appointment-confirm-modal').classList.remove('hidden');
+}
+
+export function closeAppointmentConfirmModal() {
+    document.getElementById('appointment-confirm-modal').classList.add('hidden');
+    pendingAppointmentConfirm = { orderId: null, datetime: null };
+}
+
+export async function confirmAppointmentFromModal(state) {
+    const { orderId, datetime } = pendingAppointmentConfirm;
+    if (!orderId || !datetime) return;
+
+    closeAppointmentConfirmModal();
 
     try {
         if (db && state.user) {
@@ -1787,8 +1813,23 @@ export async function acceptAppointmentProposal(state, orderId, datetime) {
     }
 }
 
-export async function declineAllAppointmentProposals(state, orderId) {
-    const reason = prompt('Warum passen die Termine nicht? (optional)');
+export function showAppointmentDeclineModal(orderId) {
+    pendingAppointmentDecline = { orderId };
+    document.getElementById('decline-reason-input').value = '';
+    document.getElementById('appointment-decline-modal').classList.remove('hidden');
+}
+
+export function closeAppointmentDeclineModal() {
+    document.getElementById('appointment-decline-modal').classList.add('hidden');
+    pendingAppointmentDecline = { orderId: null };
+}
+
+export async function confirmDeclineFromModal(state) {
+    const { orderId } = pendingAppointmentDecline;
+    if (!orderId) return;
+
+    const reason = document.getElementById('decline-reason-input').value.trim();
+    closeAppointmentDeclineModal();
 
     try {
         if (db && state.user) {
@@ -1814,13 +1855,22 @@ export async function declineAllAppointmentProposals(state, orderId) {
                 logger.warn('Failed to send admin notification:', emailErr);
             }
 
-            showToast('Terminvorschläge abgelehnt. Wir melden uns mit neuen Vorschlägen.');
+            showToast('Wir melden uns mit neuen Terminvorschlägen.');
             await loadUserOrders(state);
         }
     } catch (e) {
         logger.error('Failed to decline appointments:', e);
         showToast('❌ Fehler', 3000);
     }
+}
+
+// Legacy function names for backwards compatibility
+export function acceptAppointmentProposal(state, orderId, datetime) {
+    showAppointmentConfirmModal(orderId, datetime);
+}
+
+export function declineAllAppointmentProposals(state, orderId) {
+    showAppointmentDeclineModal(orderId);
 }
 
 // ========== AVAILABILITY ==========

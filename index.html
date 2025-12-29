@@ -3605,12 +3605,19 @@
             handleProfilePictureUpload: (input) => App.handleProfilePictureUpload(window.app.state, input),
             showAppointmentCalendar: (orderId) => App.showAppointmentCalendar(orderId),
             bookAppointment: (orderId, datetime) => App.bookAppointment(window.app.state, orderId, datetime),
-            // Appointment Proposals
+            // Appointment Proposals (Admin)
             showAppointmentProposalModal: (orderId, userId, customerName, customerEmail) => App.showAppointmentProposalModal(orderId, userId, customerName, customerEmail),
             closeAppointmentProposalModal: () => App.closeAppointmentProposalModal(),
             sendAppointmentProposals: () => App.sendAppointmentProposals(window.app.state),
+            // Appointment Confirmation/Decline (Customer)
             acceptAppointmentProposal: (orderId, datetime) => App.acceptAppointmentProposal(window.app.state, orderId, datetime),
             declineAllAppointmentProposals: (orderId) => App.declineAllAppointmentProposals(window.app.state, orderId),
+            showAppointmentConfirmModal: (orderId, datetime) => App.showAppointmentConfirmModal(orderId, datetime),
+            closeAppointmentConfirmModal: () => App.closeAppointmentConfirmModal(),
+            confirmAppointmentFromModal: () => App.confirmAppointmentFromModal(window.app.state),
+            showAppointmentDeclineModal: (orderId) => App.showAppointmentDeclineModal(orderId),
+            closeAppointmentDeclineModal: () => App.closeAppointmentDeclineModal(),
+            confirmDeclineFromModal: () => App.confirmDeclineFromModal(window.app.state),
             handleFileUpload: (input) => App.handleFileUpload(window.app.state, input),
             switchDashboardTab: (tabName) => App.switchDashboardTab(tabName, window.app.state),
             saveProfile: () => App.saveProfile(window.app.state),
@@ -3996,6 +4003,106 @@
                         class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">
                     <i class="fas fa-paper-plane mr-2"></i>Terminvorschläge senden
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPOINTMENT CONFIRMATION MODAL (Customer) -->
+    <div id="appointment-confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+            <!-- Header with gradient -->
+            <div class="bg-gradient-to-r from-brand-dark to-brand-dark/90 px-6 py-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-check text-brand-gold text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-xl text-white">Termin bestätigen</h3>
+                        <p class="text-brand-gold/80 text-sm">APEX Executive</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6">
+                <p class="text-gray-600 mb-4">Möchten Sie folgenden Termin verbindlich bestätigen?</p>
+
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 mb-6">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="fas fa-calendar-day text-green-600 text-lg"></i>
+                        <span id="confirm-modal-date" class="font-semibold text-gray-800 text-lg">Samstag, 03. Januar 2026</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-clock text-green-600 text-lg"></i>
+                        <span id="confirm-modal-time" class="font-semibold text-gray-800 text-lg">23:51 Uhr</span>
+                    </div>
+                </div>
+
+                <p class="text-xs text-gray-500 mb-6 flex items-start gap-2">
+                    <i class="fas fa-info-circle text-brand-gold mt-0.5"></i>
+                    Nach der Bestätigung erhalten Sie und unser Team eine Bestätigungsmail.
+                </p>
+
+                <!-- Buttons -->
+                <div class="flex gap-3">
+                    <button onclick="app.closeAppointmentConfirmModal()"
+                            class="flex-1 px-5 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition">
+                        Abbrechen
+                    </button>
+                    <button onclick="app.confirmAppointmentFromModal()"
+                            class="flex-1 px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition shadow-lg shadow-green-500/30">
+                        <i class="fas fa-check mr-2"></i>Bestätigen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPOINTMENT DECLINE MODAL (Customer) -->
+    <div id="appointment-decline-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+            <!-- Header with gradient -->
+            <div class="bg-gradient-to-r from-brand-dark to-brand-dark/90 px-6 py-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-times text-orange-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-xl text-white">Termine ablehnen</h3>
+                        <p class="text-brand-gold/80 text-sm">APEX Executive</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6">
+                <p class="text-gray-600 mb-4">Die vorgeschlagenen Termine passen nicht für Sie? Kein Problem!</p>
+
+                <div class="mb-5">
+                    <label class="text-sm font-medium text-gray-700 mb-2 block">
+                        Möchten Sie uns mitteilen, warum? <span class="text-gray-400">(optional)</span>
+                    </label>
+                    <textarea id="decline-reason-input" rows="3"
+                              placeholder="z.B. Ich bin in dieser Woche im Urlaub, bitte Termine ab dem 15. Januar..."
+                              class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-gold transition resize-none"></textarea>
+                </div>
+
+                <p class="text-xs text-gray-500 mb-6 flex items-start gap-2">
+                    <i class="fas fa-info-circle text-brand-gold mt-0.5"></i>
+                    Wir senden Ihnen zeitnah neue Terminvorschläge per E-Mail zu.
+                </p>
+
+                <!-- Buttons -->
+                <div class="flex gap-3">
+                    <button onclick="app.closeAppointmentDeclineModal()"
+                            class="flex-1 px-5 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition">
+                        Abbrechen
+                    </button>
+                    <button onclick="app.confirmDeclineFromModal()"
+                            class="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-amber-600 transition shadow-lg shadow-orange-500/30">
+                        <i class="fas fa-paper-plane mr-2"></i>Absenden
+                    </button>
+                </div>
             </div>
         </div>
     </div>
