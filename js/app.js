@@ -3550,9 +3550,9 @@ export async function loadUserUploads(state) {
 
         if (result.items.length === 0) {
             container.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-folder-open text-3xl text-gray-300 mb-3"></i>
-                    <p class="text-sm">Noch keine Dokumente hochgeladen</p>
+                <div class="flex items-center gap-3 text-gray-400">
+                    <i class="fas fa-folder-open text-lg"></i>
+                    <span class="text-sm">Keine Uploads vorhanden</span>
                 </div>
             `;
             return;
@@ -3580,22 +3580,26 @@ export async function loadUserUploads(state) {
         });
 
         container.innerHTML = `
-            <div class="space-y-3">
+            <div class="flex items-center gap-2 text-gray-500 mb-3">
+                <i class="fas fa-folder-open text-lg"></i>
+                <span class="text-sm font-medium">Ihre Uploads (${docs.length})</span>
+            </div>
+            <div class="space-y-2">
                 ${docs.map(doc => `
                     <a href="${doc.url}" target="_blank" download="${doc.name}"
-                       class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition group">
+                       class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition group">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-file-alt text-white"></i>
+                            <div class="w-8 h-8 bg-gray-400 rounded flex items-center justify-center">
+                                <i class="fas fa-file-alt text-white text-sm"></i>
                             </div>
                             <div>
-                                <p class="font-bold text-brand-dark">${sanitizeHTML(doc.name)}</p>
-                                <p class="text-xs text-gray-500">
-                                    ${doc.uploadedAt ? 'Hochgeladen am ' + new Date(doc.uploadedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Hochgeladen'}
+                                <p class="font-medium text-brand-dark text-sm">${sanitizeHTML(doc.name)}</p>
+                                <p class="text-xs text-gray-400">
+                                    ${doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
                                 </p>
                             </div>
                         </div>
-                        <i class="fas fa-download text-gray-600 group-hover:scale-110 transition-transform"></i>
+                        <i class="fas fa-download text-gray-400 group-hover:text-gray-600 group-hover:scale-110 transition-all"></i>
                     </a>
                 `).join('')}
             </div>
@@ -3604,9 +3608,9 @@ export async function loadUserUploads(state) {
     } catch (e) {
         logger.error('Failed to load user uploads:', e);
         container.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-folder-open text-3xl text-gray-300 mb-3"></i>
-                <p class="text-sm">Noch keine Dokumente hochgeladen</p>
+            <div class="flex items-center gap-3 text-gray-400">
+                <i class="fas fa-folder-open text-lg"></i>
+                <span class="text-sm">Keine Uploads vorhanden</span>
             </div>
         `;
     }
