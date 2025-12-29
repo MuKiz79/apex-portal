@@ -2355,6 +2355,110 @@ export function switchDashboardTab(tabName, state) {
     }
 }
 
+// Switch Admin Panel Tabs
+export function switchAdminTab(tabName) {
+    // Tab names: orders, users, strategy, coaches, settings
+    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'settings'];
+
+    // Update tab buttons
+    tabIds.forEach(id => {
+        const tabBtn = document.getElementById(`admin-tab-${id}`);
+        const content = document.getElementById(`admin-content-${id}`);
+
+        if (tabBtn) {
+            if (id === tabName) {
+                // Active tab styling
+                tabBtn.classList.add('text-brand-dark', 'border-brand-gold');
+                tabBtn.classList.remove('text-gray-400', 'border-transparent');
+            } else {
+                // Inactive tab styling
+                tabBtn.classList.remove('text-brand-dark', 'border-brand-gold');
+                tabBtn.classList.add('text-gray-400', 'border-transparent');
+            }
+        }
+
+        if (content) {
+            if (id === tabName) {
+                content.classList.remove('hidden');
+            } else {
+                content.classList.add('hidden');
+            }
+        }
+    });
+
+    // Load data for specific tabs
+    if (tabName === 'coaches') {
+        loadAdminCoaches();
+    }
+}
+
+// Load coaches for admin panel
+export async function loadAdminCoaches() {
+    const container = document.getElementById('admin-coaches-list');
+    if (!container) return;
+
+    container.innerHTML = '<p class="text-gray-400">Lade Mentoren...</p>';
+
+    try {
+        const coaches = await fetchCollection('coaches');
+
+        if (coaches.length === 0) {
+            container.innerHTML = '<p class="text-gray-400">Keine Mentoren gefunden.</p>';
+            return;
+        }
+
+        container.innerHTML = coaches.map(coach => `
+            <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <img src="${coach.image || 'https://via.placeholder.com/50'}"
+                         alt="${coach.name}"
+                         class="w-12 h-12 rounded-full object-cover">
+                    <div>
+                        <h4 class="font-bold text-white">${coach.name}</h4>
+                        <p class="text-sm text-gray-400">${coach.role || ''}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm ${coach.visible !== false ? 'text-green-400' : 'text-red-400'}">
+                        ${coach.visible !== false ? 'Sichtbar' : 'Versteckt'}
+                    </span>
+                    <button onclick="app.toggleCoachVisibility('${coach.id}')"
+                            class="px-4 py-2 text-sm rounded ${coach.visible !== false ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'} transition">
+                        ${coach.visible !== false ? 'Verstecken' : 'Anzeigen'}
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Error loading admin coaches:', e);
+        container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Mentoren.</p>';
+    }
+}
+
+// Toggle coach visibility
+export async function toggleCoachVisibility(coachId) {
+    try {
+        const coachRef = doc(db, 'coaches', coachId);
+        const coachSnap = await getDoc(coachRef);
+
+        if (!coachSnap.exists()) {
+            showToast('Mentor nicht gefunden');
+            return;
+        }
+
+        const currentVisible = coachSnap.data().visible !== false;
+        await updateDoc(coachRef, { visible: !currentVisible });
+
+        showToast(currentVisible ? 'Mentor versteckt' : 'Mentor sichtbar');
+
+        // Reload the coaches list
+        loadAdminCoaches();
+    } catch (e) {
+        console.error('Error toggling coach visibility:', e);
+        showToast('Fehler beim Aktualisieren');
+    }
+}
+
 export async function saveProfile(state) {
     const firstnameInput = document.getElementById('profile-firstname');
     const lastnameInput = document.getElementById('profile-lastname');
