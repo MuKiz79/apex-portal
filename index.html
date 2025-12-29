@@ -632,6 +632,32 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Executive Landing Page Add-on -->
+                        <div class="bg-gradient-to-br from-brand-dark to-brand-accent border-2 border-brand-gold rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 group relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-brand-gold text-brand-dark text-xs font-bold px-3 py-1 rounded-bl-lg">PREMIUM</div>
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-brand-gold flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-globe text-brand-dark text-lg"></i>
+                                </div>
+                                <div class="flex-grow">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="font-serif text-lg text-white">Executive Landing Page</h4>
+                                        <span class="text-brand-gold font-bold">+€499</span>
+                                    </div>
+                                    <p class="text-sm text-gray-300 mb-4">Ihre persönliche Website als digitale Visitenkarte. One-Pager mit Bio, Expertise, Karriere-Highlights und Kontaktmöglichkeit.</p>
+                                    <ul class="text-xs text-gray-400 space-y-1 mb-4">
+                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Eigene Domain (vorname-nachname.de)</li>
+                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Professionelles Design, mobil-optimiert</li>
+                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>SEO-Grundoptimierung</li>
+                                        <li><i class="fas fa-check text-brand-gold mr-2"></i>Kontaktformular & Social Links</li>
+                                    </ul>
+                                    <button onclick="app.addToCart('Executive Landing Page', 499)" class="text-sm text-brand-gold font-semibold hover:text-white transition flex items-center gap-2">
+                                        <i class="fas fa-shopping-cart"></i> Einzeln buchen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -3410,6 +3436,20 @@
                             </div>
                             <span class="text-sm text-brand-gold font-medium">+€49</span>
                         </label>
+                        <!-- Executive Landing Page -->
+                        <label class="flex items-center justify-between p-4 border-2 border-brand-gold/30 rounded-xl cursor-pointer hover:border-brand-gold hover:shadow-lg transition group bg-gradient-to-r from-brand-gold/5 to-transparent">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" name="addon-website" value="499" class="w-4 h-4 text-brand-gold border-gray-300 rounded focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
+                                <div>
+                                    <span class="text-gray-700 group-hover:text-brand-dark transition block font-medium">
+                                        <i class="fas fa-globe text-brand-gold mr-1"></i>Executive Landing Page
+                                        <span class="ml-2 text-xs bg-brand-gold text-brand-dark px-2 py-0.5 rounded-full font-bold">PREMIUM</span>
+                                    </span>
+                                    <span class="text-xs text-gray-600">Professionelle One-Pager Website mit eigener Domain</span>
+                                </div>
+                            </div>
+                            <span class="text-sm text-brand-gold font-bold">+€499</span>
+                        </label>
                     </div>
                 </div>
 
@@ -3478,7 +3518,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20251229e';
-        import * as App from './js/app.js?v=20251229h';
+        import * as App from './js/app.js?v=20251229i';
 
         // Make functions globally accessible
         window.app = {

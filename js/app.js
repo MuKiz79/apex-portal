@@ -3807,7 +3807,16 @@ export function confirmPackageConfig(state) {
 
     // Add add-ons separately to cart (diese sind jetzt definitiv neu)
     addonCheckboxes.forEach(cb => {
-        const addonName = cb.name === 'addon-interview' ? 'Interview-Simulation (60 Min.)' : 'Zeugnis-Analyse';
+        let addonName;
+        if (cb.name === 'addon-interview') {
+            addonName = 'Interview-Simulation (60 Min.)';
+        } else if (cb.name === 'addon-zeugnis') {
+            addonName = 'Zeugnis-Analyse';
+        } else if (cb.name === 'addon-website') {
+            addonName = 'Executive Landing Page';
+        } else {
+            addonName = 'Add-on';
+        }
         const addonPrice = parseInt(cb.value) || 0;
 
         // Add as separate item with unique integer ID
