@@ -3297,11 +3297,21 @@ function renderAdminOrders(orders) {
                         </div>
                     </div>
 
-                    <!-- Uploaded Documents -->
+                    <!-- Documents Section -->
                     <div id="docs-${order.id}" class="mt-4 border-t border-gray-100 pt-4">
-                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Hochgeladene Dokumente</p>
-                        <div id="doc-list-${order.id}" class="space-y-2">
-                            <p class="text-xs text-gray-400 italic">Lade Dokumente...</p>
+                        <!-- Customer uploaded documents -->
+                        <div class="mb-4">
+                            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">📥 Vom Kunden hochgeladen</p>
+                            <div id="doc-list-customer-${order.id}" class="space-y-2">
+                                <p class="text-xs text-gray-400 italic">Lade...</p>
+                            </div>
+                        </div>
+                        <!-- Admin delivered documents -->
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">📤 Von dir gesendet</p>
+                            <div id="doc-list-admin-${order.id}" class="space-y-2">
+                                <p class="text-xs text-gray-400 italic">Lade...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3318,35 +3328,79 @@ function renderAdminOrders(orders) {
 }
 
 async function loadOrderDocuments(userId, orderId) {
-    const container = document.getElementById(`doc-list-${orderId}`);
-    if (!container || !storage) return;
+    const customerContainer = document.getElementById(`doc-list-customer-${orderId}`);
+    const adminContainer = document.getElementById(`doc-list-admin-${orderId}`);
+    if (!storage) return;
 
     try {
         const { listAll } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js");
-        const listRef = ref(storage, `delivered/${userId}`);
-        const result = await listAll(listRef);
 
-        if (result.items.length === 0) {
-            container.innerHTML = '<p class="text-xs text-gray-400 italic">Noch keine Dokumente hochgeladen</p>';
-            return;
+        // Load customer uploaded documents (from users/{userId}/)
+        if (customerContainer) {
+            try {
+                const customerRef = ref(storage, `users/${userId}`);
+                const customerResult = await listAll(customerRef);
+
+                if (customerResult.items.length === 0) {
+                    customerContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Keine Dokumente</p>';
+                } else {
+                    const docs = await Promise.all(customerResult.items.map(async item => {
+                        const url = await getDownloadURL(item);
+                        // Extract original filename (remove timestamp prefix)
+                        const nameParts = item.name.split('_');
+                        const displayName = nameParts.length > 1 ? nameParts.slice(1).join('_') : item.name;
+                        return { name: displayName, fullName: item.name, url };
+                    }));
+
+                    customerContainer.innerHTML = docs.map(d => `
+                        <a href="${d.url}" target="_blank" download="${d.name}"
+                           class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition bg-blue-50 px-3 py-2 rounded">
+                            <i class="fas fa-file-alt"></i>
+                            <span>${sanitizeHTML(d.name)}</span>
+                            <i class="fas fa-download text-xs ml-auto"></i>
+                        </a>
+                    `).join('');
+                }
+            } catch (e) {
+                customerContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Keine Dokumente</p>';
+            }
         }
 
-        const docs = await Promise.all(result.items.map(async item => {
-            const url = await getDownloadURL(item);
-            return { name: item.name, url };
-        }));
+        // Load admin delivered documents (from delivered/{userId}/)
+        if (adminContainer) {
+            try {
+                const adminRef = ref(storage, `delivered/${userId}`);
+                const adminResult = await listAll(adminRef);
 
-        container.innerHTML = docs.map(d => `
-            <a href="${d.url}" target="_blank" class="flex items-center gap-2 text-sm text-brand-gold hover:text-brand-dark transition">
-                <i class="fas fa-file-pdf"></i>
-                <span>${sanitizeHTML(d.name)}</span>
-                <i class="fas fa-external-link-alt text-xs"></i>
-            </a>
-        `).join('');
+                if (adminResult.items.length === 0) {
+                    adminContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Noch nichts gesendet</p>';
+                } else {
+                    const docs = await Promise.all(adminResult.items.map(async item => {
+                        const url = await getDownloadURL(item);
+                        // Extract original filename (remove timestamp prefix)
+                        const nameParts = item.name.split('_');
+                        const displayName = nameParts.length > 1 ? nameParts.slice(1).join('_') : item.name;
+                        return { name: displayName, fullName: item.name, url };
+                    }));
+
+                    adminContainer.innerHTML = docs.map(d => `
+                        <a href="${d.url}" target="_blank" download="${d.name}"
+                           class="flex items-center gap-2 text-sm text-green-600 hover:text-green-800 transition bg-green-50 px-3 py-2 rounded">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>${sanitizeHTML(d.name)}</span>
+                            <i class="fas fa-download text-xs ml-auto"></i>
+                        </a>
+                    `).join('');
+                }
+            } catch (e) {
+                adminContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Noch nichts gesendet</p>';
+            }
+        }
 
     } catch (e) {
         logger.error('Failed to load documents:', e);
-        container.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
+        if (customerContainer) customerContainer.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
+        if (adminContainer) adminContainer.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
     }
 }
 
