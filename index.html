@@ -3263,21 +3263,21 @@
                     <div class="space-y-2">
                         <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
                             <div class="flex items-center gap-3">
-                                <input type="radio" name="language" value="de" checked class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <input type="radio" name="language" value="de" checked class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
                                 <span class="text-gray-700 group-hover:text-brand-dark transition">Deutsch</span>
                             </div>
                             <span class="text-sm text-gray-400">inkl.</span>
                         </label>
                         <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
                             <div class="flex items-center gap-3">
-                                <input type="radio" name="language" value="en" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <input type="radio" name="language" value="en" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
                                 <span class="text-gray-700 group-hover:text-brand-dark transition">Englisch</span>
                             </div>
                             <span class="text-sm text-gray-400">inkl.</span>
                         </label>
                         <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
                             <div class="flex items-center gap-3">
-                                <input type="radio" name="language" value="both" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <input type="radio" name="language" value="both" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
                                 <span class="text-gray-700 group-hover:text-brand-dark transition">Zweisprachig <span class="text-xs text-gray-400">(DE + EN)</span></span>
                             </div>
                             <span class="text-sm text-brand-gold font-medium">+€99</span>
@@ -3309,7 +3309,7 @@
                     <div class="space-y-2">
                         <label class="flex items-center justify-between p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-brand-gold/50 transition group">
                             <div class="flex items-center gap-3">
-                                <input type="radio" name="delivery" value="standard" checked class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <input type="radio" name="delivery" value="standard" checked class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
                                 <div>
                                     <span class="text-gray-700 group-hover:text-brand-dark transition block">Standard</span>
                                     <span id="config-standard-time" class="text-xs text-gray-400">5-7 Werktage</span>
@@ -3319,7 +3319,7 @@
                         </label>
                         <label class="flex items-center justify-between p-4 border border-brand-gold/30 bg-brand-gold/5 rounded-xl cursor-pointer hover:border-brand-gold transition group">
                             <div class="flex items-center gap-3">
-                                <input type="radio" name="delivery" value="express" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold">
+                                <input type="radio" name="delivery" value="express" class="w-4 h-4 text-brand-gold border-gray-300 focus:ring-brand-gold" onchange="app.updatePackageConfigTotal()">
                                 <div>
                                     <span class="text-gray-700 group-hover:text-brand-dark transition block font-medium">
                                         <i class="fas fa-bolt text-brand-gold mr-1"></i>Express

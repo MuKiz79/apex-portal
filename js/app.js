@@ -3063,16 +3063,39 @@ export function openPackageConfigModal(state, name, price) {
         return;
     }
 
-    // Set package info
-    const titleEl = modal.querySelector('.package-title');
-    const priceEl = modal.querySelector('.package-price');
+    // Set package info - use IDs from HTML
+    const titleEl = document.getElementById('config-modal-title');
+    const basePriceEl = document.getElementById('config-base-price');
+    const totalPriceEl = document.getElementById('config-total-price');
 
     if (titleEl) titleEl.textContent = name;
-    if (priceEl) priceEl.textContent = `€${price}`;
+    if (basePriceEl) basePriceEl.textContent = `€${price}`;
+    if (totalPriceEl) totalPriceEl.textContent = `€${price}`;
 
     // Store in modal data
     modal.dataset.packageName = name;
     modal.dataset.packagePrice = price;
+
+    // Reset all options to default
+    const languageRadios = modal.querySelectorAll('input[name="language"]');
+    const deliveryRadios = modal.querySelectorAll('input[name="delivery"]');
+    const addonCheckboxes = modal.querySelectorAll('input[type="checkbox"]');
+
+    languageRadios.forEach(r => r.checked = r.value === 'de');
+    deliveryRadios.forEach(r => r.checked = r.value === 'standard');
+    addonCheckboxes.forEach(c => c.checked = false);
+
+    // Show/hide sections based on package
+    const isQuickCheck = name.includes('Quick-Check');
+    const isExecutive = name.includes('Executive') || name.includes('C-Suite');
+
+    const languageSection = document.getElementById('config-language-section');
+    const languageIncluded = document.getElementById('config-language-included');
+    const addonsSection = document.getElementById('config-addons-section');
+
+    if (languageSection) languageSection.classList.toggle('hidden', isExecutive || isQuickCheck);
+    if (languageIncluded) languageIncluded.classList.toggle('hidden', !isExecutive);
+    if (addonsSection) addonsSection.classList.toggle('hidden', isQuickCheck);
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -3109,18 +3132,69 @@ export function confirmPackageConfig(state) {
     const modal = document.getElementById('package-config-modal');
     if (!modal) return;
 
-    const name = modal.dataset.packageName;
-    const price = parseInt(modal.dataset.packagePrice) || 0;
+    const baseName = modal.dataset.packageName;
+    const basePrice = parseInt(modal.dataset.packagePrice) || 0;
+    let total = basePrice;
+    let nameSuffix = [];
 
-    // Check for express option
-    const expressCheckbox = modal.querySelector('[name="express"]');
-    const expressPrice = expressCheckbox?.checked ? 150 : 0;
+    // Check language option (bilingual = +99)
+    const languageRadio = modal.querySelector('input[name="language"]:checked');
+    if (languageRadio?.value === 'both') {
+        total += 99;
+        nameSuffix.push('Zweisprachig');
+    } else if (languageRadio?.value === 'en') {
+        nameSuffix.push('Englisch');
+    }
 
-    const totalPrice = price + expressPrice;
-    const finalName = expressCheckbox?.checked ? `${name} (Express)` : name;
+    // Check delivery option (express = +99)
+    const deliveryRadio = modal.querySelector('input[name="delivery"]:checked');
+    if (deliveryRadio?.value === 'express') {
+        total += 99;
+        nameSuffix.push('Express');
+    }
 
-    addToCart(state, finalName, totalPrice);
+    // Check add-ons
+    const addonCheckboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
+    addonCheckboxes.forEach(cb => {
+        const addonPrice = parseInt(cb.value) || 0;
+        total += addonPrice;
+    });
+
+    // Build final name
+    let finalName = baseName;
+    if (nameSuffix.length > 0) {
+        finalName = `${baseName} (${nameSuffix.join(', ')})`;
+    }
+
+    // Add main package
+    addToCart(state, finalName, total - getAddonsTotal(addonCheckboxes));
+
+    // Add add-ons separately to cart
+    addonCheckboxes.forEach(cb => {
+        const addonName = cb.name === 'addon-interview' ? 'Interview-Simulation (60 Min.)' : 'Zeugnis-Analyse';
+        const addonPrice = parseInt(cb.value) || 0;
+        // Add as separate item
+        state.cart.push({
+            title: addonName,
+            price: addonPrice,
+            id: Date.now() + Math.random()
+        });
+    });
+
+    if (addonCheckboxes.length > 0) {
+        updateCartUI(state);
+        saveCartToLocalStorage(state.cart);
+    }
+
     closePackageConfigModal();
+}
+
+function getAddonsTotal(checkboxes) {
+    let total = 0;
+    checkboxes.forEach(cb => {
+        total += parseInt(cb.value) || 0;
+    });
+    return total;
 }
 
 export function updatePackageConfigTotal() {
@@ -3128,12 +3202,30 @@ export function updatePackageConfigTotal() {
     if (!modal) return;
 
     const basePrice = parseInt(modal.dataset.packagePrice) || 0;
-    const expressCheckbox = modal.querySelector('[name="express"]');
-    const expressPrice = expressCheckbox?.checked ? 150 : 0;
+    let total = basePrice;
 
-    const totalEl = modal.querySelector('.package-total');
+    // Check language option (bilingual = +99)
+    const languageRadio = modal.querySelector('input[name="language"]:checked');
+    if (languageRadio?.value === 'both') {
+        total += 99;
+    }
+
+    // Check delivery option (express = +99)
+    const deliveryRadio = modal.querySelector('input[name="delivery"]:checked');
+    if (deliveryRadio?.value === 'express') {
+        total += 99;
+    }
+
+    // Check add-ons
+    const addonCheckboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
+    addonCheckboxes.forEach(cb => {
+        const addonPrice = parseInt(cb.value) || 0;
+        total += addonPrice;
+    });
+
+    const totalEl = document.getElementById('config-total-price');
     if (totalEl) {
-        totalEl.textContent = `€${basePrice + expressPrice}`;
+        totalEl.textContent = `€${total}`;
     }
 }
 
