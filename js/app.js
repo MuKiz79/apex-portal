@@ -3098,7 +3098,12 @@ export function openPackageConfigModal(state, name, price) {
     if (addonsSection) addonsSection.classList.toggle('hidden', isQuickCheck);
 
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+
+    // Scroll content to top
+    const content = document.getElementById('config-modal-content');
+    if (content) content.scrollTop = 0;
 
     checkModalScroll();
 }
@@ -3107,20 +3112,22 @@ export function closePackageConfigModal() {
     const modal = document.getElementById('package-config-modal');
     if (modal) {
         modal.classList.add('hidden');
+        modal.style.display = 'none';
         document.body.style.overflow = '';
     }
 }
 
 export function checkModalScroll() {
-    const modal = document.getElementById('package-config-modal');
-    if (!modal) return;
-
-    const content = modal.querySelector('.modal-content');
+    const content = document.getElementById('config-modal-content');
     if (!content) return;
 
-    const scrollIndicator = modal.querySelector('.scroll-indicator');
+    const scrollIndicator = document.getElementById('config-scroll-indicator');
     if (scrollIndicator) {
-        if (content.scrollHeight > content.clientHeight) {
+        // Show indicator if there's more content to scroll
+        const hasMoreContent = content.scrollHeight > content.clientHeight + 10;
+        const isAtBottom = content.scrollTop + content.clientHeight >= content.scrollHeight - 10;
+
+        if (hasMoreContent && !isAtBottom) {
             scrollIndicator.classList.remove('hidden');
         } else {
             scrollIndicator.classList.add('hidden');
