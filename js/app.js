@@ -1624,7 +1624,7 @@ export function showAppointmentProposalModal(orderId, userId, customerName, cust
     document.getElementById('proposal-time-2').value = '';
     document.getElementById('proposal-date-3').value = '';
     document.getElementById('proposal-time-3').value = '';
-    document.getElementById('proposal-message').value = '';
+    document.getElementById('proposal-message').value = 'Vielen Dank für Ihre Bestellung! Bitte wählen Sie einen der folgenden Termine für unser persönliches Gespräch. Wir freuen uns auf Sie!';
 
     // Set minimum date to today
     const today = new Date().toISOString().split('T')[0];
