@@ -3144,20 +3144,35 @@ export function confirmPackageConfig(state) {
     let total = basePrice;
     let nameSuffix = [];
 
-    // Check language option (bilingual = +99)
+    // Check if this is a package that has language options
+    const languageSection = document.getElementById('config-language-section');
+    const languageIncluded = document.getElementById('config-language-included');
+    const hasLanguageOption = languageSection && !languageSection.classList.contains('hidden');
+    const isExecutive = languageIncluded && !languageIncluded.classList.contains('hidden');
+
+    // Check language option
     const languageRadio = modal.querySelector('input[name="language"]:checked');
-    if (languageRadio?.value === 'both') {
-        total += 99;
-        nameSuffix.push('Zweisprachig');
-    } else if (languageRadio?.value === 'en') {
-        nameSuffix.push('Englisch');
+    if (isExecutive) {
+        // Executive packages have bilingual included
+        nameSuffix.push('DE/EN');
+    } else if (hasLanguageOption && languageRadio) {
+        if (languageRadio.value === 'both') {
+            total += 99;
+            nameSuffix.push('DE/EN');
+        } else if (languageRadio.value === 'en') {
+            nameSuffix.push('EN');
+        } else {
+            nameSuffix.push('DE');
+        }
     }
 
-    // Check delivery option (express = +99)
+    // Check delivery option - always show
     const deliveryRadio = modal.querySelector('input[name="delivery"]:checked');
     if (deliveryRadio?.value === 'express') {
         total += 99;
         nameSuffix.push('Express');
+    } else {
+        nameSuffix.push('Standard');
     }
 
     // Check add-ons
