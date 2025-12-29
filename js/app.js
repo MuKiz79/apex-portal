@@ -1962,61 +1962,137 @@ export async function loadAvailability(state) {
     if (!container) return;
 
     try {
+        const now = new Date();
+        let confirmedAppointments = [];
+        let pendingSlots = [];
+        let availabilityNotes = '';
+
+        // 1. Load confirmed appointments from orders
+        const ordersQuery = query(
+            collection(db, "orders"),
+            where("userId", "==", state.user.uid),
+            where("appointmentStatus", "==", "confirmed")
+        );
+        const ordersSnapshot = await getDocs(ordersQuery);
+
+        ordersSnapshot.forEach(doc => {
+            const order = doc.data();
+            if (order.appointment?.confirmed && order.appointment?.datetime) {
+                const appointmentDate = new Date(order.appointment.datetime);
+                if (appointmentDate >= now) {
+                    confirmedAppointments.push({
+                        datetime: order.appointment.datetime,
+                        packageName: order.packageName || order.items?.[0]?.name || 'Termin',
+                        orderId: doc.id
+                    });
+                }
+            }
+        });
+
+        // Sort confirmed appointments by date
+        confirmedAppointments.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
+        // 2. Load availability/wish slots
         const availDoc = await getDoc(doc(db, "availability", state.user.uid));
         if (availDoc.exists()) {
             const data = availDoc.data();
             const slots = data.slots || [];
+            availabilityNotes = data.notes || '';
+            pendingSlots = slots.filter(slot => new Date(slot.datetime) >= now);
+        }
 
-            if (slots.length > 0) {
-                // Filter nur zukünftige Termine
-                const now = new Date();
-                const futureSlots = slots.filter(slot => new Date(slot.datetime) >= now);
+        // 3. Render both sections
+        if (confirmedAppointments.length > 0 || pendingSlots.length > 0) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    ${confirmedAppointments.length > 0 ? `
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
+                                <i class="fas fa-calendar-check text-green-600 mr-2"></i>
+                                Bestätigte Termine
+                            </h3>
+                            <div class="space-y-3">
+                                ${confirmedAppointments.map(apt => {
+                                    const date = new Date(apt.datetime);
+                                    const dateStr = date.toLocaleDateString('de-DE', {
+                                        weekday: 'long',
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    });
+                                    const timeStr = date.toLocaleTimeString('de-DE', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                    return `
+                                        <div class="flex items-center gap-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                                            <div class="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-check text-white text-lg"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="font-semibold text-gray-900">${dateStr}</div>
+                                                <div class="text-sm text-gray-600">${timeStr} Uhr</div>
+                                                <div class="text-xs text-green-700 mt-1 truncate">${apt.packageName}</div>
+                                            </div>
+                                            <div class="flex-shrink-0">
+                                                <span class="inline-flex items-center gap-1.5 text-xs bg-green-600 text-white px-3 py-1.5 rounded-full font-medium">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Bestätigt
+                                                </span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
 
-                if (futureSlots.length > 0) {
-                    container.innerHTML = `
-                        <div class="space-y-3">
+                    ${pendingSlots.length > 0 ? `
+                        <div>
                             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
                                 <i class="fas fa-clock text-brand-gold mr-2"></i>
                                 Ihre Wunschtermine
                             </h3>
-                            ${futureSlots.map((slot, index) => {
-                                const date = new Date(slot.datetime);
-                                const dateStr = date.toLocaleDateString('de-DE', {
-                                    weekday: 'long',
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric'
-                                });
-                                const timeStr = date.toLocaleTimeString('de-DE', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                });
-                                return `
-                                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                        <div class="w-10 h-10 bg-brand-gold/20 rounded-lg flex items-center justify-center">
-                                            <span class="text-brand-gold font-bold">${index + 1}</span>
+                            <div class="space-y-3">
+                                ${pendingSlots.map((slot, index) => {
+                                    const date = new Date(slot.datetime);
+                                    const dateStr = date.toLocaleDateString('de-DE', {
+                                        weekday: 'long',
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    });
+                                    const timeStr = date.toLocaleTimeString('de-DE', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                    return `
+                                        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                            <div class="w-10 h-10 bg-brand-gold/20 rounded-lg flex items-center justify-center">
+                                                <span class="text-brand-gold font-bold">${index + 1}</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-medium text-gray-900">${dateStr}</div>
+                                                <div class="text-sm text-gray-500">${timeStr} Uhr</div>
+                                            </div>
+                                            <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium">
+                                                Wartet auf Bestätigung
+                                            </span>
                                         </div>
-                                        <div class="flex-1">
-                                            <div class="font-medium text-gray-900">${dateStr}</div>
-                                            <div class="text-sm text-gray-500">${timeStr} Uhr</div>
-                                        </div>
-                                        <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium">
-                                            Wartet auf Bestätigung
-                                        </span>
-                                    </div>
-                                `;
-                            }).join('')}
-                            ${data.notes ? `
+                                    `;
+                                }).join('')}
+                            </div>
+                            ${availabilityNotes ? `
                                 <div class="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
                                     <i class="fas fa-info-circle mr-2"></i>
-                                    <strong>Hinweis:</strong> ${data.notes}
+                                    <strong>Hinweis:</strong> ${availabilityNotes}
                                 </div>
                             ` : ''}
                         </div>
-                    `;
-                    return;
-                }
-            }
+                    ` : ''}
+                </div>
+            `;
+            return;
         }
 
         // Empty state wenn keine Termine
