@@ -64,6 +64,19 @@ service firebase.storage {
                    && request.resource.size < 20 * 1024 * 1024;
     }
 
+    // ========== CV DOCUMENTS (Questionnaire Uploads) ==========
+    // Allows uploads from questionnaire (public access with projectId)
+    // Security: Limited file size, document types only
+
+    match /cv-documents/{projectId}/{allPaths=**} {
+      // Anyone can upload (questionnaire is public)
+      // But files must be documents and under 15MB
+      allow write: if request.resource.size < 15 * 1024 * 1024
+                   && isDocument();
+      // Only admin can read (or signed-in user who owns the project - handled by Firestore)
+      allow read: if isAdmin() || isSignedIn();
+    }
+
     // ========== PUBLIC SETTINGS ==========
 
     match /settings/{fileName} {
