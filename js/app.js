@@ -2563,6 +2563,116 @@ export function closeBookingConfirmModal() {
     }
 }
 
+// Show compliance check modal before adding mentoring session to cart
+export function bookSessionWithComplianceCheck(productName, price, coachName) {
+    // Create modal
+    let confirmModal = document.getElementById('booking-confirm-modal');
+    if (!confirmModal) {
+        confirmModal = document.createElement('div');
+        confirmModal.id = 'booking-confirm-modal';
+        document.body.appendChild(confirmModal);
+    }
+
+    confirmModal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]" onclick="if(event.target === this) app.closeBookingConfirmModal()">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-brand-dark to-gray-900 text-white p-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-tie text-brand-gold text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-serif text-lg font-bold">Mentoring Session</h3>
+                            <p class="text-gray-300 text-sm">${coachName ? `mit ${coachName}` : 'Executive Coaching'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="p-6">
+                    <!-- Product Details -->
+                    <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-brand-dark">${productName}</p>
+                                <p class="text-sm text-gray-500">60 Minuten 1:1 Session</p>
+                            </div>
+                            <p class="text-xl font-bold text-brand-gold">€${price}</p>
+                        </div>
+                    </div>
+
+                    <!-- Compliance Check Info Box -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <i class="fas fa-shield-alt text-amber-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-amber-800 text-sm mb-1">Compliance-Check erforderlich</h4>
+                                <p class="text-amber-700 text-xs leading-relaxed">
+                                    Nach Ihrer Bestellung führen wir einen Compliance-Check durch, um Interessenkonflikte
+                                    auszuschließen (z.B. gleiche Branche, Wettbewerber). Nach erfolgreicher Prüfung wird
+                                    Ihnen ein passender Mentor zugewiesen.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compliance Consent Checkbox -->
+                    <label class="flex items-start gap-3 cursor-pointer mb-6 group">
+                        <input type="checkbox" id="compliance-consent-checkbox"
+                               onchange="app.toggleSessionBookingButton()"
+                               class="w-5 h-5 mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold cursor-pointer">
+                        <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
+                            Ich stimme dem <strong>Compliance-Check</strong> zu und verstehe, dass mir nach
+                            erfolgreicher Prüfung ein passender Mentor zugewiesen wird.
+                        </span>
+                    </label>
+
+                    <!-- Buttons -->
+                    <div class="flex gap-3">
+                        <button onclick="app.closeBookingConfirmModal()"
+                                class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
+                            Abbrechen
+                        </button>
+                        <button id="confirm-session-btn"
+                                onclick="app.confirmSessionBooking('${productName}', ${price})"
+                                disabled
+                                class="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all duration-200">
+                            <i class="fas fa-shopping-cart mr-2"></i>In den Warenkorb
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    confirmModal.classList.remove('hidden');
+}
+
+// Toggle session booking button based on compliance consent
+export function toggleSessionBookingButton() {
+    const checkbox = document.getElementById('compliance-consent-checkbox');
+    const button = document.getElementById('confirm-session-btn');
+
+    if (checkbox && button) {
+        if (checkbox.checked) {
+            button.disabled = false;
+            button.className = 'flex-1 px-4 py-3 bg-brand-gold text-brand-dark rounded-xl hover:bg-brand-gold/90 transition-all duration-200 font-medium cursor-pointer';
+        } else {
+            button.disabled = true;
+            button.className = 'flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all duration-200';
+        }
+    }
+}
+
+// Confirm session booking after compliance consent
+export function confirmSessionBooking(productName, price) {
+    closeBookingConfirmModal();
+    addToCart(productName, price);
+    showToast('✅ Session zum Warenkorb hinzugefügt');
+}
+
 // Actually confirm and save the booking
 export async function confirmBooking(orderId, datetime) {
     const confirmBtn = document.querySelector('#booking-confirm-modal button:last-child');
@@ -3752,7 +3862,7 @@ export function filterCoaches(state) {
                         </div>
                         ` : ''}
                         <!-- Action Button -->
-                        <button onclick="event.stopPropagation(); app.addToCart('Executive Mentoring - Single Session', 350)"
+                        <button onclick="event.stopPropagation(); app.bookSessionWithComplianceCheck('Executive Mentoring - Single Session', 350, '${name}')"
                                 class="w-full bg-white/[0.05] hover:bg-brand-gold border border-white/10 hover:border-brand-gold text-white hover:text-brand-dark font-semibold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 group/btn">
                             <span>Session buchen</span>
                             <i class="fas fa-arrow-right text-[10px] group-hover/btn:translate-x-1 transition-transform"></i>
