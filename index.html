@@ -2795,91 +2795,155 @@
     </div>
 
     <!-- === VIEW: ADMIN PANEL === -->
-    <div id="view-admin" class="hidden fade-in min-h-screen bg-gray-100">
-        <div class="bg-brand-dark text-white py-6">
-            <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-                <div>
-                    <h1 class="font-serif text-2xl">Admin-Panel</h1>
-                    <p class="text-gray-400 text-sm">Bestellungen & Dokumentenverwaltung</p>
+    <div id="view-admin" class="hidden fade-in min-h-screen bg-gray-50">
+        <!-- Professional Admin Header -->
+        <div class="bg-gradient-to-r from-brand-dark to-gray-900 text-white">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <!-- Top Bar -->
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-brand-gold rounded-lg flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-brand-dark text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-serif text-xl font-bold">Admin-Panel</h1>
+                            <p class="text-gray-400 text-xs">APEX Executive Verwaltung</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 hidden md:block">Angemeldet als Admin</span>
+                        <button onclick="app.navigateTo('home')" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition text-sm">
+                            <i class="fas fa-home"></i>
+                            <span class="hidden md:inline">Zur Website</span>
+                        </button>
+                    </div>
                 </div>
-                <button onclick="app.navigateTo('home')" class="text-brand-gold hover:text-white transition">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+
+                <!-- Navigation Tabs - Professional Style -->
+                <div class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+                    <button onclick="app.switchAdminTab('orders')" id="admin-tab-orders"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium bg-gray-50 text-brand-dark transition-all">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Bestellungen</span>
+                    </button>
+                    <button onclick="app.switchAdminTab('users')" id="admin-tab-users"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                        <i class="fas fa-users"></i>
+                        <span>Benutzer</span>
+                    </button>
+                    <button onclick="app.switchAdminTab('strategy')" id="admin-tab-strategy"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>Anfragen</span>
+                    </button>
+                    <button onclick="app.switchAdminTab('coaches')" id="admin-tab-coaches"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Mentoren</span>
+                    </button>
+                    <button onclick="app.switchAdminTab('documents')" id="admin-tab-documents"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                        <i class="fas fa-folder-open"></i>
+                        <span>Dokumente</span>
+                    </button>
+                    <button onclick="app.switchAdminTab('settings')" id="admin-tab-settings"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                        <i class="fas fa-cog"></i>
+                        <span>Einstellungen</span>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 py-8">
-            <!-- Admin Tabs -->
-            <div class="flex gap-2 mb-6 border-b border-gray-200">
-                <button onclick="app.switchAdminTab('orders')" id="admin-tab-orders" class="px-6 py-3 text-sm font-bold text-brand-dark border-b-2 border-brand-gold">
-                    <i class="fas fa-shopping-cart mr-2"></i>Bestellungen
-                </button>
-                <button onclick="app.switchAdminTab('users')" id="admin-tab-users" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
-                    <i class="fas fa-users mr-2"></i>Benutzer & Cookies
-                </button>
-                <button onclick="app.switchAdminTab('strategy')" id="admin-tab-strategy" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
-                    <i class="fas fa-phone mr-2"></i>Erstgespräch-Anfragen
-                </button>
-                <button onclick="app.switchAdminTab('coaches')" id="admin-tab-coaches" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
-                    <i class="fas fa-user-tie mr-2"></i>Mentoren
-                </button>
-                <button onclick="app.switchAdminTab('documents')" id="admin-tab-documents" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
-                    <i class="fas fa-folder-open mr-2"></i>Dokumente
-                </button>
-                <button onclick="app.switchAdminTab('settings')" id="admin-tab-settings" class="px-6 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-brand-dark transition">
-                    <i class="fas fa-cog mr-2"></i>Einstellungen
-                </button>
-            </div>
+        <div class="max-w-7xl mx-auto px-4 py-6">
 
             <!-- Orders Tab Content -->
             <div id="admin-content-orders">
-                <!-- Stats Overview -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Gesamt Bestellungen</p>
-                        <p id="admin-stat-total" class="text-3xl font-serif text-brand-dark">0</p>
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">Bestellungen</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-72 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Bestellungsverwaltung</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• Status ändern durch Klick auf Aktionen</li>
+                                    <li>• Mentor zuweisen bei Sessions</li>
+                                    <li>• Dokumente hochladen/senden</li>
+                                    <li>• Terminvorschläge verwalten</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">In Bearbeitung</p>
-                        <p id="admin-stat-processing" class="text-3xl font-serif text-yellow-600">0</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Abgeschlossen</p>
-                        <p id="admin-stat-completed" class="text-3xl font-serif text-green-600">0</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Umsatz (Gesamt)</p>
-                        <p id="admin-stat-revenue" class="text-3xl font-serif text-brand-dark">€0</p>
+                    <div class="flex gap-2">
+                        <button onclick="app.loadAllOrders()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-brand-dark border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                            <i class="fas fa-sync-alt"></i>
+                            <span class="hidden sm:inline">Aktualisieren</span>
+                        </button>
+                        <button onclick="app.exportOrdersToCSV()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg transition">
+                            <i class="fas fa-download"></i>
+                            <span class="hidden sm:inline">CSV Export</span>
+                        </button>
                     </div>
                 </div>
 
-            <!-- Search & Filter -->
-            <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
-                <div class="flex flex-col md:flex-row gap-4">
-                    <div class="flex-1">
-                        <input type="text" id="admin-search" placeholder="Suche nach Name, Email oder Bestellnummer..."
-                               class="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-brand-gold"
-                               onkeyup="app.filterAdminOrders()">
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Gesamt</span>
+                            <i class="fas fa-shopping-bag text-gray-300"></i>
+                        </div>
+                        <p id="admin-stat-total" class="text-2xl font-bold text-brand-dark">0</p>
                     </div>
-                    <select id="admin-filter-status" onchange="app.filterAdminOrders()"
-                            class="border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-brand-gold">
-                        <option value="">Alle Status</option>
-                        <option value="processing">In Bearbeitung</option>
-                        <option value="confirmed">Bestätigt</option>
-                        <option value="completed">Abgeschlossen</option>
-                    </select>
-                    <button onclick="app.loadAllOrders()" class="bg-brand-dark text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition">
-                        <i class="fas fa-sync-alt mr-2"></i>Aktualisieren
-                    </button>
-                    <button onclick="app.exportOrdersToCSV()" class="bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition">
-                        <i class="fas fa-file-csv mr-2"></i>CSV Export
-                    </button>
+                    <div class="bg-white p-4 rounded-xl border border-yellow-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">In Bearbeitung</span>
+                            <i class="fas fa-clock text-yellow-400"></i>
+                        </div>
+                        <p id="admin-stat-processing" class="text-2xl font-bold text-yellow-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-green-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Abgeschlossen</span>
+                            <i class="fas fa-check-circle text-green-400"></i>
+                        </div>
+                        <p id="admin-stat-completed" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-brand-gold/20 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Umsatz</span>
+                            <i class="fas fa-euro-sign text-brand-gold"></i>
+                        </div>
+                        <p id="admin-stat-revenue" class="text-2xl font-bold text-brand-dark">€0</p>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Search & Filter -->
+                <div class="bg-white p-4 rounded-xl border border-gray-100 mb-6">
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <div class="flex-1 relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="admin-search" placeholder="Suche nach Name, Email oder Bestellnummer..."
+                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                                   onkeyup="app.filterAdminOrders()">
+                        </div>
+                        <select id="admin-filter-status" onchange="app.filterAdminOrders()"
+                                class="border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold bg-white min-w-[160px]">
+                            <option value="">Alle Status</option>
+                            <option value="processing">In Bearbeitung</option>
+                            <option value="confirmed">Bestätigt</option>
+                            <option value="completed">Abgeschlossen</option>
+                        </select>
+                    </div>
+                </div>
 
                 <!-- Orders List -->
-                <div id="admin-orders-list" class="space-y-4">
-                    <div class="bg-white p-12 rounded-lg shadow-sm text-center text-gray-400">
+                <div id="admin-orders-list" class="space-y-3">
+                    <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
                         <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
                         <p>Lade Bestellungen...</p>
                     </div>
@@ -2888,35 +2952,64 @@
 
             <!-- Users & Cookies Tab Content -->
             <div id="admin-content-users" class="hidden">
-                <!-- Cookie Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Registrierte Benutzer</p>
-                        <p id="admin-stat-users" class="text-3xl font-serif text-brand-dark">0</p>
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">Benutzer</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-72 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Benutzerverwaltung</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• Registrierte Benutzer einsehen</li>
+                                    <li>• Cookie-Einwilligungen verwalten</li>
+                                    <li>• E-Mail-Verifizierung manuell setzen</li>
+                                    <li>• Benutzerdaten als CSV exportieren</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Cookies akzeptiert (Alle)</p>
-                        <p id="admin-stat-cookies-all" class="text-3xl font-serif text-green-600">0</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Nur notwendige Cookies</p>
-                        <p id="admin-stat-cookies-essential" class="text-3xl font-serif text-yellow-600">0</p>
+                    <div class="flex gap-2">
+                        <button onclick="app.loadAdminUsers()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-brand-dark border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                            <i class="fas fa-sync-alt"></i>
+                            <span class="hidden sm:inline">Aktualisieren</span>
+                        </button>
+                        <button onclick="app.exportUsersToCSV()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg transition">
+                            <i class="fas fa-download"></i>
+                            <span class="hidden sm:inline">CSV Export</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Users List with Cookie Consent -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                        <h3 class="font-bold text-brand-dark">Benutzer mit Cookie-Einstellungen</h3>
-                        <div class="flex gap-2">
-                            <button onclick="app.exportUsersToCSV()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">
-                                <i class="fas fa-file-csv mr-1"></i>CSV Export
-                            </button>
-                            <button onclick="app.loadAdminUsers()" class="text-brand-gold text-sm hover:underline px-4 py-2">
-                                <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
-                            </button>
+                <!-- Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Registrierte Benutzer</span>
+                            <i class="fas fa-user text-gray-300"></i>
                         </div>
+                        <p id="admin-stat-users" class="text-2xl font-bold text-brand-dark">0</p>
                     </div>
+                    <div class="bg-white p-4 rounded-xl border border-green-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Alle Cookies akzeptiert</span>
+                            <i class="fas fa-cookie text-green-400"></i>
+                        </div>
+                        <p id="admin-stat-cookies-all" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-yellow-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Nur notwendige</span>
+                            <i class="fas fa-cookie-bite text-yellow-400"></i>
+                        </div>
+                        <p id="admin-stat-cookies-essential" class="text-2xl font-bold text-yellow-600">0</p>
+                    </div>
+                </div>
+
+                <!-- Users List -->
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
                     <div id="admin-users-list" class="divide-y divide-gray-100">
                         <div class="p-8 text-center text-gray-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
@@ -2928,30 +3021,58 @@
 
             <!-- Strategy Calls Tab Content -->
             <div id="admin-content-strategy" class="hidden">
-                <!-- Strategy Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Gesamt Anfragen</p>
-                        <p id="admin-stat-strategy-total" class="text-3xl font-serif text-brand-dark">0</p>
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">Erstgespräch-Anfragen</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-72 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Erstgespräch-Anfragen</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• Kostenlose Erstgespräch-Anfragen</li>
+                                    <li>• Status ändern (Neu/Kontaktiert/Erledigt)</li>
+                                    <li>• Kontaktdaten und Nachricht einsehen</li>
+                                    <li>• Zeitstempel der Anfrage</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Neue (unbearbeitet)</p>
-                        <p id="admin-stat-strategy-new" class="text-3xl font-serif text-red-500">0</p>
+                    <button onclick="app.loadStrategyCalls()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-brand-dark border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="hidden sm:inline">Aktualisieren</span>
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Gesamt Anfragen</span>
+                            <i class="fas fa-phone-alt text-gray-300"></i>
+                        </div>
+                        <p id="admin-stat-strategy-total" class="text-2xl font-bold text-brand-dark">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Bearbeitet</p>
-                        <p id="admin-stat-strategy-done" class="text-3xl font-serif text-green-600">0</p>
+                    <div class="bg-white p-4 rounded-xl border border-red-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Neu (unbearbeitet)</span>
+                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                        </div>
+                        <p id="admin-stat-strategy-new" class="text-2xl font-bold text-red-500">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-green-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Bearbeitet</span>
+                            <i class="fas fa-check-circle text-green-400"></i>
+                        </div>
+                        <p id="admin-stat-strategy-done" class="text-2xl font-bold text-green-600">0</p>
                     </div>
                 </div>
 
                 <!-- Strategy Calls List -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                        <h3 class="font-bold text-brand-dark">Erstgespräch-Anfragen</h3>
-                        <button onclick="app.loadStrategyCalls()" class="text-brand-gold text-sm hover:underline">
-                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
-                        </button>
-                    </div>
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
                     <div id="admin-strategy-list" class="divide-y divide-gray-100">
                         <div class="p-8 text-center text-gray-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
@@ -2963,65 +3084,125 @@
 
             <!-- Coaches Tab Content -->
             <div id="admin-content-coaches" class="hidden">
-                <!-- Coaches Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Gesamt Mentoren</p>
-                        <p id="admin-stat-coaches-total" class="text-3xl font-serif text-brand-dark">0</p>
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">Mentoren-Verwaltung</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-80 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Mentoren-Verwaltung</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• <strong>Neuen Mentor anlegen:</strong> Name, E-Mail (für Login-Verknüpfung), Rolle, Expertise</li>
+                                    <li>• <strong>Sichtbarkeit:</strong> Steuert Anzeige auf der öffentlichen Website</li>
+                                    <li>• <strong>E-Mail wichtig:</strong> Der Mentor loggt sich mit dieser E-Mail ein und sieht dann sein Dashboard</li>
+                                    <li>• <strong>Verfügbarkeit:</strong> Mentor pflegt selbst über sein Dashboard</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Sichtbar</p>
-                        <p id="admin-stat-coaches-visible" class="text-3xl font-serif text-green-600">0</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Versteckt</p>
-                        <p id="admin-stat-coaches-hidden" class="text-3xl font-serif text-gray-400">0</p>
+                    <div class="flex gap-2">
+                        <button onclick="app.loadAdminCoaches()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-brand-dark border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                            <i class="fas fa-sync-alt"></i>
+                            <span class="hidden sm:inline">Aktualisieren</span>
+                        </button>
+                        <button onclick="app.openAddCoachModal()" class="flex items-center gap-2 px-4 py-1.5 text-sm text-white bg-brand-gold hover:bg-yellow-500 rounded-lg transition font-medium">
+                            <i class="fas fa-plus"></i>
+                            <span>Neuer Mentor</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Coaches List -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                        <h3 class="font-bold text-brand-dark">Mentoren-Verwaltung</h3>
-                        <button onclick="app.loadAdminCoaches()" class="text-brand-gold text-sm hover:underline">
-                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
-                        </button>
-                    </div>
-                    <div id="admin-coaches-list" class="divide-y divide-gray-100">
-                        <div class="p-8 text-center text-gray-400">
-                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                            <p class="text-sm">Lade Mentoren...</p>
+                <!-- Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Gesamt Mentoren</span>
+                            <i class="fas fa-user-tie text-gray-300"></i>
                         </div>
+                        <p id="admin-stat-coaches-total" class="text-2xl font-bold text-brand-dark">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-green-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Sichtbar</span>
+                            <i class="fas fa-eye text-green-400"></i>
+                        </div>
+                        <p id="admin-stat-coaches-visible" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Versteckt</span>
+                            <i class="fas fa-eye-slash text-gray-400"></i>
+                        </div>
+                        <p id="admin-stat-coaches-hidden" class="text-2xl font-bold text-gray-500">0</p>
+                    </div>
+                </div>
+
+                <!-- Coaches Grid -->
+                <div id="admin-coaches-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-white p-8 rounded-xl border border-gray-100 text-center text-gray-400 col-span-full">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p class="text-sm">Lade Mentoren...</p>
                     </div>
                 </div>
             </div>
 
             <!-- Documents Tab Content -->
             <div id="admin-content-documents" class="hidden">
-                <!-- Documents Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">📥 Von Kunden hochgeladen</p>
-                        <p id="admin-stat-docs-uploaded" class="text-3xl font-serif text-blue-600">0</p>
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">Dokumente</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-72 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Dokumentenverwaltung</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• <strong>Von Kunden:</strong> Hochgeladene Lebensläufe etc.</li>
+                                    <li>• <strong>Von dir:</strong> Fertige Dokumente für Kunden</li>
+                                    <li>• Direkter Download per Klick</li>
+                                    <li>• Upload über die Bestelldetails</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">📤 Von dir gesendet</p>
-                        <p id="admin-stat-docs-delivered" class="text-3xl font-serif text-green-600">0</p>
+                    <button onclick="app.loadAdminDocuments()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-brand-dark border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="hidden sm:inline">Aktualisieren</span>
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                    <div class="bg-white p-4 rounded-xl border border-blue-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Von Kunden hochgeladen</span>
+                            <i class="fas fa-upload text-blue-400"></i>
+                        </div>
+                        <p id="admin-stat-docs-uploaded" class="text-2xl font-bold text-blue-600">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">Kunden mit Dokumenten</p>
-                        <p id="admin-stat-docs-users" class="text-3xl font-serif text-brand-dark">0</p>
+                    <div class="bg-white p-4 rounded-xl border border-green-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Von dir gesendet</span>
+                            <i class="fas fa-paper-plane text-green-400"></i>
+                        </div>
+                        <p id="admin-stat-docs-delivered" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wide">Kunden mit Dokumenten</span>
+                            <i class="fas fa-users text-gray-300"></i>
+                        </div>
+                        <p id="admin-stat-docs-users" class="text-2xl font-bold text-brand-dark">0</p>
                     </div>
                 </div>
 
                 <!-- Documents List -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                        <h3 class="font-bold text-brand-dark">Alle Dokumente</h3>
-                        <button onclick="app.loadAdminDocuments()" class="text-brand-gold text-sm hover:underline">
-                            <i class="fas fa-sync-alt mr-1"></i>Aktualisieren
-                        </button>
-                    </div>
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
                     <div id="admin-documents-list" class="divide-y divide-gray-100">
                         <div class="p-8 text-center text-gray-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
@@ -3033,29 +3214,56 @@
 
             <!-- Settings Tab Content -->
             <div id="admin-content-settings" class="hidden">
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-100">
-                        <h3 class="font-bold text-brand-dark">Website-Einstellungen</h3>
-                        <p class="text-sm text-gray-600">Hier kannst du Texte auf der Website anpassen</p>
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">Einstellungen</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-72 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Website-Einstellungen</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• Dynamische Texte auf der Website</li>
+                                    <li>• Änderungen sind sofort live</li>
+                                    <li>• Ideal für zeitlich begrenzte Aktionen</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="p-6 space-y-6">
-                        <!-- Mentoring Slots -->
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <label class="block text-sm font-bold text-brand-dark mb-2">
-                                <i class="fas fa-users text-brand-gold mr-2"></i>Mentoring-Plätze Hinweis
-                            </label>
-                            <p class="text-xs text-gray-600 mb-3">Dieser Text erscheint im Hero-Bereich der Startseite</p>
-                            <div class="flex gap-3">
+                </div>
+
+                <!-- Settings Cards -->
+                <div class="space-y-4">
+                    <!-- Mentoring Slots -->
+                    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div class="p-4 border-b border-gray-100 bg-gray-50">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bullhorn text-brand-gold"></i>
+                                <h3 class="font-bold text-brand-dark">Mentoring-Plätze Hinweis</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Dieser Text erscheint als Banner im Hero-Bereich der Startseite</p>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex flex-col md:flex-row gap-3">
                                 <input type="text" id="admin-mentoring-slots"
                                        placeholder="z.B.: Nur noch 3 Mentoring-Plätze im Januar verfügbar"
-                                       class="flex-1 border border-gray-200 rounded px-4 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                                       class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20">
                                 <button onclick="app.saveMentoringSlots()"
-                                        class="bg-brand-gold text-brand-dark px-6 py-2 rounded text-sm font-bold hover:bg-yellow-500 transition">
-                                    <i class="fas fa-save mr-2"></i>Speichern
+                                        class="flex items-center justify-center gap-2 bg-brand-gold text-brand-dark px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-yellow-500 transition whitespace-nowrap">
+                                    <i class="fas fa-save"></i>
+                                    <span>Speichern</span>
                                 </button>
                             </div>
                             <p id="admin-mentoring-slots-status" class="text-xs text-gray-400 mt-2"></p>
                         </div>
+                    </div>
+
+                    <!-- Future Settings Placeholder -->
+                    <div class="bg-white rounded-xl border border-dashed border-gray-200 p-6 text-center">
+                        <i class="fas fa-plus-circle text-gray-300 text-2xl mb-2"></i>
+                        <p class="text-sm text-gray-400">Weitere Einstellungen werden bei Bedarf hinzugefügt</p>
                     </div>
                 </div>
             </div>
@@ -3774,6 +3982,11 @@
             loadAdminCoaches: () => App.loadAdminCoaches(),
             toggleCoachVisibility: (coachId, visible) => App.toggleCoachVisibility(coachId, visible),
             loadAdminDocuments: () => App.loadAdminDocuments(),
+            openAddCoachModal: () => App.openAddCoachModal(),
+            openEditCoachModal: (coachId) => App.openEditCoachModal(coachId),
+            closeCoachModal: () => App.closeCoachModal(),
+            saveCoach: () => App.saveCoach(),
+            deleteCoach: (coachId) => App.deleteCoach(coachId),
 
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),
@@ -4216,6 +4429,142 @@
                         <i class="fas fa-paper-plane mr-2"></i>Absenden
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT COACH MODAL -->
+    <div id="coach-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-gray-100 bg-gradient-to-r from-brand-dark to-gray-800 text-white rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand-gold rounded-lg flex items-center justify-center">
+                            <i id="coach-modal-icon" class="fas fa-user-plus text-brand-dark"></i>
+                        </div>
+                        <div>
+                            <h3 id="coach-modal-title" class="font-serif text-lg font-bold">Neuen Mentor anlegen</h3>
+                            <p class="text-xs text-gray-400">Mentor-Daten eingeben</p>
+                        </div>
+                    </div>
+                    <button onclick="app.closeCoachModal()" class="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="coach-form" class="p-5 space-y-4">
+                <input type="hidden" id="coach-edit-id" value="">
+
+                <!-- Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="coach-name" required
+                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                           placeholder="Max Mustermann">
+                </div>
+
+                <!-- Email (wichtig für Login) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        E-Mail <span class="text-red-500">*</span>
+                        <span class="text-xs text-gray-400 ml-1">(für Login-Verknüpfung)</span>
+                    </label>
+                    <input type="email" id="coach-email" required
+                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                           placeholder="mentor@beispiel.de">
+                    <p class="text-xs text-gray-400 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Der Mentor loggt sich mit dieser E-Mail ein und sieht dann sein Dashboard
+                    </p>
+                </div>
+
+                <!-- Rolle -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Rolle/Position <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="coach-role" required
+                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                           placeholder="z.B. CEO, CFO, Geschäftsführer">
+                </div>
+
+                <!-- Erfahrung -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Erfahrung
+                    </label>
+                    <input type="text" id="coach-experience"
+                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                           placeholder="z.B. 25+ Jahre">
+                </div>
+
+                <!-- Branche -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Branche
+                    </label>
+                    <input type="text" id="coach-industry"
+                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                           placeholder="z.B. Technologie, Finance, Consulting">
+                </div>
+
+                <!-- Expertise Tags -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Expertise
+                        <span class="text-xs text-gray-400 ml-1">(kommagetrennt)</span>
+                    </label>
+                    <input type="text" id="coach-expertise"
+                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                           placeholder="Leadership, Strategy, Transformation">
+                </div>
+
+                <!-- Bio -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Kurzbiografie
+                    </label>
+                    <textarea id="coach-bio" rows="3"
+                              class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20 resize-none"
+                              placeholder="Kurze Beschreibung des Mentors..."></textarea>
+                </div>
+
+                <!-- Bild URL -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Profilbild URL
+                    </label>
+                    <input type="url" id="coach-image"
+                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20"
+                           placeholder="https://...">
+                </div>
+
+                <!-- Sichtbarkeit -->
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" id="coach-visible" checked
+                           class="w-4 h-4 text-brand-gold border-gray-300 rounded focus:ring-brand-gold">
+                    <label for="coach-visible" class="text-sm text-gray-700">
+                        Auf der Website sichtbar
+                    </label>
+                </div>
+            </form>
+
+            <!-- Modal Footer -->
+            <div class="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex gap-3">
+                <button onclick="app.closeCoachModal()"
+                        class="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-100 transition text-sm">
+                    Abbrechen
+                </button>
+                <button onclick="app.saveCoach()"
+                        class="flex-1 px-4 py-2.5 bg-brand-gold text-brand-dark font-bold rounded-lg hover:bg-yellow-500 transition text-sm">
+                    <i class="fas fa-save mr-2"></i>
+                    <span id="coach-save-btn-text">Speichern</span>
+                </button>
             </div>
         </div>
     </div>

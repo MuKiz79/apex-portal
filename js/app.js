@@ -4,7 +4,7 @@
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, reload, applyActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, getMetadata } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
 import { sampleArticles } from './data.js';
@@ -3815,13 +3815,13 @@ export function switchAdminTab(tabName) {
 
         if (tabBtn) {
             if (id === tabName) {
-                // Active tab styling
-                tabBtn.classList.add('text-brand-dark', 'border-brand-gold');
-                tabBtn.classList.remove('text-gray-400', 'border-transparent');
+                // Active tab styling - new design with rounded-t-lg and bg-gray-50
+                tabBtn.classList.add('bg-gray-50', 'text-brand-dark');
+                tabBtn.classList.remove('text-gray-300', 'hover:bg-white/10');
             } else {
                 // Inactive tab styling
-                tabBtn.classList.remove('text-brand-dark', 'border-brand-gold');
-                tabBtn.classList.add('text-gray-400', 'border-transparent');
+                tabBtn.classList.remove('bg-gray-50', 'text-brand-dark');
+                tabBtn.classList.add('text-gray-300', 'hover:bg-white/10');
             }
         }
 
@@ -3845,6 +3845,8 @@ export function switchAdminTab(tabName) {
         loadAllOrders();
     } else if (tabName === 'documents') {
         loadAdminDocuments();
+    } else if (tabName === 'settings') {
+        loadAdminSettings();
     }
 }
 
@@ -3853,13 +3855,26 @@ export async function loadAdminCoaches() {
     const container = document.getElementById('admin-coaches-list');
     if (!container) return;
 
-    container.innerHTML = '<p class="text-gray-400">Lade Mentoren...</p>';
+    container.innerHTML = '<div class="bg-white p-8 rounded-xl border border-gray-100 text-center text-gray-400 col-span-full"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p class="text-sm">Lade Mentoren...</p></div>';
 
     try {
         const coaches = await fetchCollection('coaches');
 
+        // Update state for edit function
+        if (window.app?.state) {
+            window.app.state.coaches = coaches;
+        }
+
         if (coaches.length === 0) {
-            container.innerHTML = '<p class="text-gray-400">Keine Mentoren gefunden.</p>';
+            container.innerHTML = `
+                <div class="bg-white p-12 rounded-xl border border-dashed border-gray-200 text-center col-span-full">
+                    <i class="fas fa-user-tie text-gray-300 text-4xl mb-4"></i>
+                    <p class="text-gray-500 mb-4">Noch keine Mentoren angelegt</p>
+                    <button onclick="app.openAddCoachModal()" class="px-4 py-2 bg-brand-gold text-brand-dark font-bold rounded-lg hover:bg-yellow-500 transition text-sm">
+                        <i class="fas fa-plus mr-2"></i>Ersten Mentor anlegen
+                    </button>
+                </div>
+            `;
             return;
         }
 
@@ -3877,30 +3892,67 @@ export async function loadAdminCoaches() {
         if (statHidden) statHidden.textContent = hiddenCoaches;
 
         container.innerHTML = coaches.map(coach => `
-            <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <img src="${coach.image || 'https://via.placeholder.com/50'}"
-                         alt="${coach.name}"
-                         class="w-12 h-12 rounded-full object-cover">
-                    <div>
-                        <h4 class="font-bold text-white">${coach.name}</h4>
-                        <p class="text-sm text-gray-400">${coach.role || ''}</p>
+            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition group">
+                <!-- Header mit Bild -->
+                <div class="relative h-32 bg-gradient-to-br from-brand-dark to-gray-800">
+                    <div class="absolute -bottom-8 left-4">
+                        <img src="${coach.image || 'https://via.placeholder.com/80'}"
+                             alt="${sanitizeHTML(coach.name)}"
+                             class="w-16 h-16 rounded-xl object-cover border-4 border-white shadow-lg">
+                    </div>
+                    <!-- Status Badge -->
+                    <div class="absolute top-3 right-3">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full ${coach.visible !== false ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}">
+                            ${coach.visible !== false ? 'Sichtbar' : 'Versteckt'}
+                        </span>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-sm ${coach.visible !== false ? 'text-green-400' : 'text-red-400'}">
-                        ${coach.visible !== false ? 'Sichtbar' : 'Versteckt'}
-                    </span>
-                    <button onclick="app.toggleCoachVisibility('${coach.id}')"
-                            class="px-4 py-2 text-sm rounded ${coach.visible !== false ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'} transition">
-                        ${coach.visible !== false ? 'Verstecken' : 'Anzeigen'}
-                    </button>
+
+                <!-- Content -->
+                <div class="pt-10 px-4 pb-4">
+                    <h4 class="font-bold text-brand-dark text-lg">${sanitizeHTML(coach.name)}</h4>
+                    <p class="text-sm text-gray-500">${sanitizeHTML(coach.role || '-')}</p>
+                    ${coach.email ? `<p class="text-xs text-brand-gold mt-1"><i class="fas fa-envelope mr-1"></i>${sanitizeHTML(coach.email)}</p>` : ''}
+
+                    <!-- Tags -->
+                    ${coach.expertise && coach.expertise.length > 0 ? `
+                        <div class="flex flex-wrap gap-1 mt-3">
+                            ${coach.expertise.slice(0, 3).map(exp => `
+                                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${sanitizeHTML(exp)}</span>
+                            `).join('')}
+                            ${coach.expertise.length > 3 ? `<span class="px-2 py-0.5 bg-gray-100 text-gray-400 text-xs rounded-full">+${coach.expertise.length - 3}</span>` : ''}
+                        </div>
+                    ` : ''}
+
+                    <!-- Info -->
+                    <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 space-y-1">
+                        ${coach.experience ? `<p><i class="fas fa-briefcase mr-1 w-4"></i>${sanitizeHTML(coach.experience)}</p>` : ''}
+                        ${coach.industry ? `<p><i class="fas fa-building mr-1 w-4"></i>${sanitizeHTML(coach.industry)}</p>` : ''}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex gap-2">
+                        <button onclick="app.openEditCoachModal('${coach.id}')"
+                                class="flex-1 px-3 py-2 text-sm font-medium text-brand-dark bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                            <i class="fas fa-edit mr-1"></i>Bearbeiten
+                        </button>
+                        <button onclick="app.toggleCoachVisibility('${coach.id}')"
+                                class="px-3 py-2 text-sm ${coach.visible !== false ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'} rounded-lg transition"
+                                title="${coach.visible !== false ? 'Verstecken' : 'Anzeigen'}">
+                            <i class="fas ${coach.visible !== false ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                        </button>
+                        <button onclick="app.deleteCoach('${coach.id}')"
+                                class="px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg transition"
+                                title="Löschen">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `).join('');
     } catch (e) {
         logger.error('Error loading admin coaches:', e);
-        container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Mentoren.</p>';
+        container.innerHTML = '<div class="bg-white p-8 rounded-xl border border-red-100 text-center text-red-500 col-span-full"><i class="fas fa-exclamation-circle text-2xl mb-2"></i><p class="text-sm">Fehler beim Laden der Mentoren</p></div>';
     }
 }
 
@@ -3936,6 +3988,139 @@ export async function toggleCoachVisibility(coachId) {
     } catch (e) {
         logger.error('Error toggling coach visibility:', e);
         showToast('Fehler beim Aktualisieren');
+    }
+}
+
+// ========== COACH MODAL FUNCTIONS ==========
+
+export function openAddCoachModal() {
+    const modal = document.getElementById('coach-modal');
+    if (!modal) return;
+
+    // Reset form
+    document.getElementById('coach-form').reset();
+    document.getElementById('coach-edit-id').value = '';
+    document.getElementById('coach-visible').checked = true;
+
+    // Set modal to "Add" mode
+    document.getElementById('coach-modal-title').textContent = 'Neuen Mentor anlegen';
+    document.getElementById('coach-modal-icon').className = 'fas fa-user-plus text-brand-dark';
+    document.getElementById('coach-save-btn-text').textContent = 'Speichern';
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+export function openEditCoachModal(coachId) {
+    const modal = document.getElementById('coach-modal');
+    if (!modal) return;
+
+    // Find coach data
+    const coach = window.app?.state?.coaches?.find(c => c.id === coachId);
+    if (!coach) {
+        showToast('Mentor nicht gefunden');
+        return;
+    }
+
+    // Fill form with coach data
+    document.getElementById('coach-edit-id').value = coachId;
+    document.getElementById('coach-name').value = coach.name || '';
+    document.getElementById('coach-email').value = coach.email || '';
+    document.getElementById('coach-role').value = coach.role || '';
+    document.getElementById('coach-experience').value = coach.experience || '';
+    document.getElementById('coach-industry').value = coach.industry || '';
+    document.getElementById('coach-expertise').value = (coach.expertise || []).join(', ');
+    document.getElementById('coach-bio').value = coach.bio || '';
+    document.getElementById('coach-image').value = coach.image || '';
+    document.getElementById('coach-visible').checked = coach.visible !== false;
+
+    // Set modal to "Edit" mode
+    document.getElementById('coach-modal-title').textContent = 'Mentor bearbeiten';
+    document.getElementById('coach-modal-icon').className = 'fas fa-user-edit text-brand-dark';
+    document.getElementById('coach-save-btn-text').textContent = 'Aktualisieren';
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+export function closeCoachModal() {
+    const modal = document.getElementById('coach-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+export async function saveCoach() {
+    const editId = document.getElementById('coach-edit-id').value;
+    const name = document.getElementById('coach-name').value.trim();
+    const email = document.getElementById('coach-email').value.trim();
+    const role = document.getElementById('coach-role').value.trim();
+
+    // Validate required fields
+    if (!name || !email || !role) {
+        showToast('Bitte alle Pflichtfelder ausfüllen');
+        return;
+    }
+
+    const coachData = {
+        name,
+        email,
+        role,
+        experience: document.getElementById('coach-experience').value.trim(),
+        industry: document.getElementById('coach-industry').value.trim(),
+        expertise: document.getElementById('coach-expertise').value.split(',').map(e => e.trim()).filter(e => e),
+        bio: document.getElementById('coach-bio').value.trim(),
+        image: document.getElementById('coach-image').value.trim() || 'https://via.placeholder.com/200',
+        visible: document.getElementById('coach-visible').checked
+    };
+
+    try {
+        if (editId) {
+            // Update existing coach
+            await updateDoc(doc(db, 'coaches', editId), coachData);
+            showToast('Mentor aktualisiert');
+        } else {
+            // Create new coach
+            coachData.createdAt = new Date();
+            await addDoc(collection(db, 'coaches'), coachData);
+            showToast('Mentor erstellt');
+        }
+
+        closeCoachModal();
+        loadAdminCoaches();
+
+        // Refresh state coaches
+        if (window.app?.state) {
+            const coaches = await fetchCollection('coaches');
+            window.app.state.coaches = coaches;
+            filterCoaches(window.app.state);
+        }
+    } catch (e) {
+        logger.error('Error saving coach:', e);
+        showToast('Fehler beim Speichern');
+    }
+}
+
+export async function deleteCoach(coachId) {
+    if (!confirm('Mentor wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+        return;
+    }
+
+    try {
+        await deleteDoc(doc(db, 'coaches', coachId));
+        showToast('Mentor gelöscht');
+        loadAdminCoaches();
+
+        // Refresh state coaches
+        if (window.app?.state) {
+            const coaches = await fetchCollection('coaches');
+            window.app.state.coaches = coaches;
+            filterCoaches(window.app.state);
+        }
+    } catch (e) {
+        logger.error('Error deleting coach:', e);
+        showToast('Fehler beim Löschen');
     }
 }
 
