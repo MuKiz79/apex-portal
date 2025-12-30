@@ -3980,6 +3980,12 @@
             showAppointmentDeclineModal: (orderId) => App.showAppointmentDeclineModal(orderId),
             closeAppointmentDeclineModal: () => App.closeAppointmentDeclineModal(),
             confirmDeclineFromModal: () => App.confirmDeclineFromModal(window.app.state),
+            // Mentor Appointment Selection (Customer)
+            openMentorAppointmentModal: (orderId, coachId) => App.openMentorAppointmentModal(orderId, coachId),
+            closeMentorAppointmentModal: () => App.closeMentorAppointmentModal(),
+            selectMentorAppointment: (orderId, datetime) => App.selectMentorAppointment(orderId, datetime),
+            showAlternativeProposalForm: (orderId, coachId) => App.showAlternativeProposalForm(orderId, coachId),
+            submitAlternativeProposal: () => App.submitAlternativeProposal(),
             handleFileUpload: (input) => App.handleFileUpload(window.app.state, input),
             switchDashboardTab: (tabName) => App.switchDashboardTab(tabName, window.app.state),
             saveProfile: () => App.saveProfile(window.app.state),

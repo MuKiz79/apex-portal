@@ -1608,13 +1608,56 @@ export function renderOrders(orders) {
                             </div>
                         </div>
                     </div>
+                ` : hasCoach && !hasAppointment && order.assignedCoachId ? `
+                    <!-- Mentor assigned - Show appointment selection -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                        <!-- Assigned Mentor Info -->
+                        <div class="flex items-start gap-3 sm:gap-4 mb-4 pb-4 border-b border-blue-100">
+                            <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-brand-dark to-gray-800 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                                <i class="fas fa-user-tie text-brand-gold text-lg sm:text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="inline-block text-xs font-bold text-blue-700 uppercase tracking-wider bg-blue-100 px-2 py-1 rounded mb-1">Ihr Mentor</span>
+                                <h4 class="font-bold text-brand-dark text-base sm:text-lg">${sanitizeHTML(order.assignedCoachName || 'Wird zugewiesen')}</h4>
+                                <p class="text-xs text-gray-500 mt-1">Bereit für Ihre Session</p>
+                            </div>
+                        </div>
+
+                        <!-- Executive Info Banner -->
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                            <div class="flex items-start gap-2">
+                                <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
+                                <div class="text-xs text-amber-800">
+                                    <p class="font-semibold mb-1">Hinweis zu Terminzeiten</p>
+                                    <p>Unsere Mentoren sind erfahrene Executives und daher in der Regel <strong>ab 18:00 Uhr</strong> verfügbar. Bitte beachten Sie dies bei Ihrer Terminauswahl.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appointment Selection Button -->
+                        <button onclick="app.openMentorAppointmentModal('${order.id}', '${order.assignedCoachId}')"
+                                class="w-full bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-500 hover:to-amber-600 text-brand-dark font-bold py-3 sm:py-4 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>Termin auswählen</span>
+                        </button>
+                    </div>
                 ` : hasCoach && !hasAppointment ? `
-                    <!-- No proposals yet - Mobile-Optimized CTA -->
-                    <button onclick="app.switchDashboardTab('appointments')"
-                            class="w-full bg-gradient-to-r from-brand-gold/20 to-amber-100 text-brand-dark font-bold py-3 sm:py-4 px-4 sm:px-5 rounded-xl hover:from-brand-gold/30 hover:to-amber-200 active:from-brand-gold/40 transition-all duration-200 flex items-center justify-center gap-2 sm:gap-3 border border-brand-gold/30 shadow-sm text-sm sm:text-base">
-                        <i class="fas fa-calendar-plus"></i>
-                        <span>Wunschtermine</span>
-                    </button>
+                    <!-- Waiting for mentor assignment -->
+                    <div class="bg-gradient-to-br from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                        <div class="flex items-start gap-3 sm:gap-4">
+                            <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-hourglass-half text-white text-base sm:text-xl animate-pulse"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-gray-700 text-base sm:text-lg mb-1">Mentor wird zugewiesen</h4>
+                                <p class="text-xs sm:text-sm text-gray-600">Wir prüfen Ihre Bestellung und weisen Ihnen einen passenden Mentor zu.</p>
+                                <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                    <i class="fas fa-bell"></i>
+                                    Sie werden per E-Mail benachrichtigt
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 ` : ''}
                     </div>
                 </div>
@@ -2181,6 +2224,410 @@ export function acceptAppointmentProposal(state, orderId, datetime) {
 
 export function declineAllAppointmentProposals(state, orderId) {
     showAppointmentDeclineModal(orderId);
+}
+
+// ========== MENTOR APPOINTMENT SELECTION ==========
+
+// Open modal to select appointment from mentor's availability
+export async function openMentorAppointmentModal(orderId, coachId) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('mentor-appointment-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'mentor-appointment-modal';
+        modal.className = 'fixed inset-0 z-50 hidden overflow-y-auto';
+        document.body.appendChild(modal);
+    }
+
+    // Show loading state
+    modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden">
+                <div class="p-8 text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl text-brand-gold mb-4"></i>
+                    <p class="text-gray-600">Lade Verfügbarkeiten...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        // Load mentor data and availability
+        const coachDoc = await getDoc(doc(db, 'coaches', coachId));
+        if (!coachDoc.exists()) {
+            throw new Error('Mentor nicht gefunden');
+        }
+
+        const coach = { id: coachId, ...coachDoc.data() };
+        const availability = coach.availability || {};
+
+        // Get available slots in the next 4 weeks
+        const availableSlots = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < 28; i++) {
+            const checkDate = new Date(today);
+            checkDate.setDate(today.getDate() + i);
+            const dateKey = checkDate.toISOString().split('T')[0];
+
+            if (availability[dateKey] && availability[dateKey].length > 0) {
+                availability[dateKey].forEach(time => {
+                    const slotDateTime = new Date(`${dateKey}T${time}`);
+                    // Only show future slots
+                    if (slotDateTime > new Date()) {
+                        availableSlots.push({
+                            date: dateKey,
+                            time: time,
+                            datetime: `${dateKey}T${time}`,
+                            display: {
+                                weekday: checkDate.toLocaleDateString('de-DE', { weekday: 'long' }),
+                                date: checkDate.toLocaleDateString('de-DE', { day: '2-digit', month: 'long' }),
+                                time: time
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        // Render modal content
+        modal.innerHTML = `
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) app.closeMentorAppointmentModal()">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-brand-dark to-gray-900 text-white p-5 flex-shrink-0">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-calendar-check text-brand-gold text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-serif text-lg font-bold">Termin auswählen</h3>
+                                    <p class="text-gray-400 text-sm">mit ${sanitizeHTML(coach.name)}</p>
+                                </div>
+                            </div>
+                            <button onclick="app.closeMentorAppointmentModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition">
+                                <i class="fas fa-times text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Executive Info -->
+                    <div class="bg-amber-50 border-b border-amber-200 p-4 flex-shrink-0">
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-lightbulb text-amber-600 mt-0.5"></i>
+                            <p class="text-xs text-amber-800">
+                                <strong>Tipp:</strong> Als Executive sind unsere Mentoren meist <strong>ab 18:00 Uhr</strong> verfügbar.
+                                Die Termine werden wöchentlich aktualisiert.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Available Slots -->
+                    <div class="flex-1 overflow-y-auto p-4">
+                        ${availableSlots.length > 0 ? `
+                            <p class="text-sm text-gray-600 mb-4">
+                                <i class="fas fa-calendar-alt mr-1 text-brand-gold"></i>
+                                <strong>${availableSlots.length}</strong> verfügbare Termine gefunden
+                            </p>
+                            <div class="space-y-2">
+                                ${availableSlots.map(slot => `
+                                    <button onclick="app.selectMentorAppointment('${orderId}', '${slot.datetime}')"
+                                            class="w-full flex items-center p-4 bg-gray-50 border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 active:bg-green-100 transition-all duration-200 group">
+                                        <div class="w-12 h-12 bg-white rounded-lg flex flex-col items-center justify-center border border-gray-200 shadow-sm flex-shrink-0 group-hover:border-green-400">
+                                            <span class="text-xs text-gray-500">${slot.display.weekday.slice(0, 2)}</span>
+                                            <span class="text-lg font-bold text-brand-dark">${slot.display.date.split(' ')[0]}</span>
+                                        </div>
+                                        <div class="flex-1 text-left ml-4">
+                                            <p class="font-semibold text-brand-dark">${slot.display.weekday}, ${slot.display.date}</p>
+                                            <p class="text-sm text-gray-500">
+                                                <i class="fas fa-clock mr-1"></i>${slot.display.time} Uhr
+                                            </p>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-chevron-right text-gray-300 group-hover:text-green-500 transition-colors"></i>
+                                        </div>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-calendar-times text-gray-400 text-2xl"></i>
+                                </div>
+                                <h4 class="font-bold text-gray-700 mb-2">Keine Termine verfügbar</h4>
+                                <p class="text-sm text-gray-500 mb-4">Der Mentor hat aktuell keine freien Termine eingetragen.</p>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Alternative Proposal Section -->
+                    <div class="border-t border-gray-100 p-4 bg-gray-50 flex-shrink-0">
+                        <button onclick="app.showAlternativeProposalForm('${orderId}', '${coachId}')"
+                                class="w-full text-center text-sm text-gray-600 hover:text-brand-dark py-2 flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Keiner passt? Eigenen Terminvorschlag senden</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+    } catch (e) {
+        logger.error('Error loading mentor appointments:', e);
+        modal.innerHTML = `
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+                    <i class="fas fa-exclamation-circle text-red-500 text-4xl mb-4"></i>
+                    <h3 class="font-bold text-gray-800 mb-2">Fehler beim Laden</h3>
+                    <p class="text-sm text-gray-600 mb-4">${e.message}</p>
+                    <button onclick="app.closeMentorAppointmentModal()" class="btn-primary">Schließen</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Close mentor appointment modal
+export function closeMentorAppointmentModal() {
+    const modal = document.getElementById('mentor-appointment-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+// Select and confirm appointment from mentor availability
+export async function selectMentorAppointment(orderId, datetime) {
+    if (!confirm('Möchten Sie diesen Termin verbindlich buchen?')) return;
+
+    try {
+        await updateDoc(doc(db, 'orders', orderId), {
+            appointment: {
+                datetime: datetime,
+                confirmed: true,
+                bookedAt: serverTimestamp()
+            },
+            appointmentStatus: 'confirmed'
+        });
+
+        closeMentorAppointmentModal();
+        showToast('✅ Termin erfolgreich gebucht!');
+
+        // Reload orders to show updated state
+        if (window.app?.state?.user) {
+            loadOrders(window.app.state);
+        }
+
+    } catch (e) {
+        logger.error('Error booking appointment:', e);
+        showToast('❌ Fehler bei der Buchung. Bitte versuchen Sie es erneut.');
+    }
+}
+
+// Show form to propose alternative appointment
+export function showAlternativeProposalForm(orderId, coachId) {
+    const modal = document.getElementById('mentor-appointment-modal');
+    if (!modal) return;
+
+    // Get minimum date (tomorrow)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const minDate = tomorrow.toISOString().split('T')[0];
+
+    // Get maximum date (8 weeks from now)
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 56);
+    const maxDateStr = maxDate.toISOString().split('T')[0];
+
+    modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) app.closeMentorAppointmentModal()">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-brand-dark to-gray-900 text-white p-5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-paper-plane text-brand-gold"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-serif text-lg font-bold">Terminvorschlag senden</h3>
+                            </div>
+                        </div>
+                        <button onclick="app.closeMentorAppointmentModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition">
+                            <i class="fas fa-times text-gray-400"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="bg-blue-50 border-b border-blue-200 p-4">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
+                        <p class="text-xs text-blue-800">
+                            Schlagen Sie bis zu 3 alternative Termine vor. Der Mentor wird diese prüfen und sich bei Ihnen melden.
+                            <strong>Empfehlung: Ab 18:00 Uhr.</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form id="alternative-proposal-form" class="p-5 space-y-4">
+                    <input type="hidden" id="proposal-order-id" value="${orderId}">
+                    <input type="hidden" id="proposal-coach-id" value="${coachId}">
+
+                    <!-- Proposal 1 -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-700">1. Wunschtermin *</label>
+                        <div class="flex gap-2">
+                            <input type="date" id="proposal-date-1" min="${minDate}" max="${maxDateStr}" required
+                                   class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                            <select id="proposal-time-1" required
+                                    class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                                <option value="">Zeit</option>
+                                <option value="09:00">09:00</option>
+                                <option value="10:00">10:00</option>
+                                <option value="11:00">11:00</option>
+                                <option value="12:00">12:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00" selected>18:00</option>
+                                <option value="19:00">19:00</option>
+                                <option value="20:00">20:00</option>
+                                <option value="21:00">21:00</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Proposal 2 -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-700">2. Wunschtermin (optional)</label>
+                        <div class="flex gap-2">
+                            <input type="date" id="proposal-date-2" min="${minDate}" max="${maxDateStr}"
+                                   class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                            <select id="proposal-time-2"
+                                    class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                                <option value="">Zeit</option>
+                                <option value="09:00">09:00</option>
+                                <option value="10:00">10:00</option>
+                                <option value="11:00">11:00</option>
+                                <option value="12:00">12:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00">18:00</option>
+                                <option value="19:00">19:00</option>
+                                <option value="20:00">20:00</option>
+                                <option value="21:00">21:00</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Proposal 3 -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-700">3. Wunschtermin (optional)</label>
+                        <div class="flex gap-2">
+                            <input type="date" id="proposal-date-3" min="${minDate}" max="${maxDateStr}"
+                                   class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                            <select id="proposal-time-3"
+                                    class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                                <option value="">Zeit</option>
+                                <option value="09:00">09:00</option>
+                                <option value="10:00">10:00</option>
+                                <option value="11:00">11:00</option>
+                                <option value="12:00">12:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00">18:00</option>
+                                <option value="19:00">19:00</option>
+                                <option value="20:00">20:00</option>
+                                <option value="21:00">21:00</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-700">Nachricht (optional)</label>
+                        <textarea id="proposal-note" rows="2" placeholder="z.B. Ich bin flexibel bei den Uhrzeiten..."
+                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none"></textarea>
+                    </div>
+                </form>
+
+                <!-- Actions -->
+                <div class="border-t border-gray-100 p-4 bg-gray-50 flex gap-3">
+                    <button onclick="app.openMentorAppointmentModal('${orderId}', '${coachId}')"
+                            class="flex-1 py-2.5 text-gray-600 hover:text-gray-800 transition text-sm font-medium">
+                        <i class="fas fa-arrow-left mr-1"></i> Zurück
+                    </button>
+                    <button onclick="app.submitAlternativeProposal()"
+                            class="flex-1 bg-brand-gold hover:bg-amber-500 text-brand-dark font-bold py-2.5 rounded-lg transition text-sm">
+                        <i class="fas fa-paper-plane mr-1"></i> Senden
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Submit alternative appointment proposal
+export async function submitAlternativeProposal() {
+    const orderId = document.getElementById('proposal-order-id')?.value;
+    const date1 = document.getElementById('proposal-date-1')?.value;
+    const time1 = document.getElementById('proposal-time-1')?.value;
+    const date2 = document.getElementById('proposal-date-2')?.value;
+    const time2 = document.getElementById('proposal-time-2')?.value;
+    const date3 = document.getElementById('proposal-date-3')?.value;
+    const time3 = document.getElementById('proposal-time-3')?.value;
+    const note = document.getElementById('proposal-note')?.value;
+
+    if (!date1 || !time1) {
+        showToast('⚠️ Bitte mindestens den 1. Wunschtermin ausfüllen');
+        return;
+    }
+
+    const customerProposals = [];
+    if (date1 && time1) {
+        customerProposals.push({ date: date1, time: time1, datetime: `${date1}T${time1}` });
+    }
+    if (date2 && time2) {
+        customerProposals.push({ date: date2, time: time2, datetime: `${date2}T${time2}` });
+    }
+    if (date3 && time3) {
+        customerProposals.push({ date: date3, time: time3, datetime: `${date3}T${time3}` });
+    }
+
+    try {
+        await updateDoc(doc(db, 'orders', orderId), {
+            customerProposals: customerProposals,
+            customerProposalNote: note || '',
+            customerProposalSubmittedAt: serverTimestamp(),
+            appointmentStatus: 'customer_proposed'
+        });
+
+        closeMentorAppointmentModal();
+        showToast('✅ Terminvorschläge gesendet! Wir melden uns.');
+
+        // Reload orders
+        if (window.app?.state?.user) {
+            loadOrders(window.app.state);
+        }
+
+    } catch (e) {
+        logger.error('Error submitting proposal:', e);
+        showToast('❌ Fehler beim Senden. Bitte versuchen Sie es erneut.');
+    }
 }
 
 // ========== AVAILABILITY ==========
