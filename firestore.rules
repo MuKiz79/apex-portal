@@ -124,6 +124,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ========== CV PROJECTS ==========
+
+    // CV Projects Collection - Admin kann alles, Kunden können eigene lesen/schreiben (Fragebogen)
+    match /cvProjects/{projectId} {
+      // Lesen: Admin kann alle lesen, User kann eigene lesen
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      // Erstellen: Nur Admin oder System (Cloud Function)
+      allow create: if isAdmin();
+      // Update: Admin kann alles, User kann nur Fragebogen-bezogene Felder ändern
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['questionnaire', 'documents', 'updatedAt', 'status'])
+      );
+      allow delete: if isAdmin();
+    }
+
     // ========== CATCH-ALL: DENY ==========
 
     match /{document=**} {

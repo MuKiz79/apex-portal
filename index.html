@@ -2872,6 +2872,11 @@
                         <i class="fas fa-eye"></i>
                         <span>Mentor-Vorschau</span>
                     </button>
+                    <button onclick="app.switchAdminTab('cv-generator')" id="admin-tab-cv-generator"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                        <i class="fas fa-file-alt"></i>
+                        <span>CV-Generator</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -3333,6 +3338,78 @@
                         <p class="text-lg font-medium">Wähle einen Mentor aus</p>
                         <p class="text-sm mt-1">um dessen Dashboard-Ansicht zu sehen</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- CV-Generator Tab Content -->
+            <div id="admin-content-cv-generator" class="hidden">
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">CV-Generator</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-80 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">KI-basierte CV-Erstellung</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>1. Fragebogen an Kunden senden</li>
+                                    <li>2. Kunde lädt Dokumente hoch</li>
+                                    <li>3. KI generiert optimierten Lebenslauf</li>
+                                    <li>4. Template auswählen & PDF exportieren</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="app.loadCvProjects()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-brand-dark border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                            <i class="fas fa-sync-alt"></i>
+                            <span class="hidden sm:inline">Aktualisieren</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter/Search Bar -->
+                <div class="bg-white rounded-xl border border-gray-100 p-4 mb-6">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div class="flex-1 min-w-[200px]">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" id="cv-project-search" placeholder="Suche nach Order-ID oder Name..."
+                                       oninput="app.filterCvProjects()"
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="cv-project-status-filter" onchange="app.filterCvProjects()"
+                                    class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white">
+                                <option value="">Alle Status</option>
+                                <option value="questionnaire_sent">Fragebogen gesendet</option>
+                                <option value="data_received">Daten erhalten</option>
+                                <option value="generating">Wird generiert</option>
+                                <option value="ready">CV fertig</option>
+                                <option value="delivered">Zugestellt</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CV Projects List -->
+                <div id="cv-projects-list" class="space-y-4">
+                    <!-- Loading state -->
+                    <div class="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                        <p>Lade CV-Projekte...</p>
+                    </div>
+                </div>
+
+                <!-- Empty State (shown when no projects) -->
+                <div id="cv-projects-empty" class="hidden bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
+                    <i class="fas fa-file-alt text-5xl text-gray-300 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-600 mb-2">Keine CV-Projekte vorhanden</h3>
+                    <p class="text-sm text-gray-400 mb-6">CV-Projekte werden automatisch bei CV-Bestellungen erstellt.</p>
+                    <p class="text-xs text-gray-400">Sobald eine CV-Bestellung eingeht, erscheint sie hier.</p>
                 </div>
             </div>
         </div>
@@ -3902,7 +3979,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20251229e';
-        import * as App from './js/app.js?v=20251229k';
+        import * as App from './js/app.js?v=20251230a';
 
         // Make functions globally accessible
         window.app = {
@@ -4073,6 +4150,20 @@
             loadMentorPreview: () => App.loadMentorPreview(),
             previewPrevWeek: () => App.previewPrevWeek(),
             previewNextWeek: () => App.previewNextWeek(),
+
+            // CV-Generator functions
+            loadCvProjects: () => App.loadCvProjects(),
+            filterCvProjects: () => App.filterCvProjects(),
+            sendCvQuestionnaire: (orderId) => App.sendCvQuestionnaire(orderId),
+            closeCvQuestionnaireModal: () => App.closeCvQuestionnaireModal(),
+            confirmSendCvQuestionnaire: (orderId) => App.confirmSendCvQuestionnaire(orderId),
+            resendCvQuestionnaire: (orderId) => App.resendCvQuestionnaire(orderId),
+            openCvQuestionnaireView: (orderId) => App.openCvQuestionnaireView(orderId),
+            viewCvData: (orderId) => App.viewCvData(orderId),
+            openCvGenerator: (orderId) => App.openCvGenerator(orderId),
+            openCvPreview: (orderId) => App.openCvPreview(orderId),
+            exportCvPdf: (orderId) => App.exportCvPdf(orderId),
+            sendCvToCustomer: (orderId) => App.sendCvToCustomer(orderId),
 
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),

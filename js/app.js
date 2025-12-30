@@ -4656,8 +4656,8 @@ export function switchDashboardTab(tabName, state) {
 
 // Switch Admin Panel Tabs
 export function switchAdminTab(tabName) {
-    // Tab names: orders, users, strategy, coaches, documents, settings, mentor-preview
-    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings', 'mentor-preview'];
+    // Tab names: orders, users, strategy, coaches, documents, settings, mentor-preview, cv-generator
+    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings', 'mentor-preview', 'cv-generator'];
 
     // Update tab buttons
     tabIds.forEach(id => {
@@ -4700,6 +4700,8 @@ export function switchAdminTab(tabName) {
         loadAdminSettings();
     } else if (tabName === 'mentor-preview') {
         loadMentorPreviewOptions();
+    } else if (tabName === 'cv-generator') {
+        loadCvProjects();
     }
 }
 
@@ -7008,5 +7010,496 @@ export async function saveMentoringSlots() {
         logger.error('Error saving mentoring slots:', e);
         showToast('Fehler beim Speichern');
     }
+}
+
+// ============================================
+// CV-GENERATOR FUNCTIONS
+// ============================================
+
+// Store for CV projects
+let cvProjectsCache = [];
+
+// CV Package identifiers (to filter CV-related orders)
+const CV_PACKAGE_KEYWORDS = ['CV', 'Lebenslauf', 'Quick-Check', 'Young Professional', 'Senior Professional', 'Executive', 'C-Suite'];
+
+// Status labels and colors
+const CV_STATUS_CONFIG = {
+    'new': { label: 'Neu', color: 'bg-blue-100 text-blue-800', icon: 'fa-plus-circle' },
+    'questionnaire_sent': { label: 'Fragebogen gesendet', color: 'bg-yellow-100 text-yellow-800', icon: 'fa-paper-plane' },
+    'data_received': { label: 'Daten erhalten', color: 'bg-indigo-100 text-indigo-800', icon: 'fa-check-circle' },
+    'generating': { label: 'Wird generiert', color: 'bg-purple-100 text-purple-800', icon: 'fa-cog fa-spin' },
+    'ready': { label: 'CV fertig', color: 'bg-green-100 text-green-800', icon: 'fa-file-alt' },
+    'delivered': { label: 'Zugestellt', color: 'bg-gray-100 text-gray-800', icon: 'fa-check-double' }
+};
+
+// Load CV projects from orders
+export async function loadCvProjects() {
+    const listContainer = document.getElementById('cv-projects-list');
+    const emptyContainer = document.getElementById('cv-projects-empty');
+
+    if (!listContainer) return;
+
+    listContainer.innerHTML = `
+        <div class="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400">
+            <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+            <p>Lade CV-Projekte...</p>
+        </div>
+    `;
+
+    try {
+        // Load all orders and filter for CV packages
+        const ordersRef = collection(db, 'orders');
+        const ordersSnapshot = await getDocs(ordersRef);
+
+        // Filter orders that contain CV packages
+        const cvOrders = [];
+        ordersSnapshot.forEach(docSnap => {
+            const order = { id: docSnap.id, ...docSnap.data() };
+            // Check if any item contains CV-related keywords
+            const hasCvPackage = order.items?.some(item =>
+                CV_PACKAGE_KEYWORDS.some(keyword =>
+                    item.title?.toLowerCase().includes(keyword.toLowerCase())
+                )
+            );
+            if (hasCvPackage) {
+                cvOrders.push(order);
+            }
+        });
+
+        // Also load any existing cvProjects to merge status
+        const cvProjectsRef = collection(db, 'cvProjects');
+        const cvProjectsSnapshot = await getDocs(cvProjectsRef);
+        const cvProjectsMap = {};
+        cvProjectsSnapshot.forEach(docSnap => {
+            cvProjectsMap[docSnap.data().orderId] = { id: docSnap.id, ...docSnap.data() };
+        });
+
+        // Merge orders with cvProjects data
+        cvProjectsCache = cvOrders.map(order => {
+            const project = cvProjectsMap[order.id] || {};
+            return {
+                ...order,
+                cvProjectId: project.id || null,
+                cvStatus: project.status || 'new',
+                questionnaire: project.questionnaire || null,
+                documents: project.documents || null,
+                generatedCv: project.generatedCv || null
+            };
+        });
+
+        // Sort by date (newest first)
+        cvProjectsCache.sort((a, b) => {
+            const dateA = a.date?.toDate?.() || new Date(a.date) || new Date(0);
+            const dateB = b.date?.toDate?.() || new Date(b.date) || new Date(0);
+            return dateB - dateA;
+        });
+
+        renderCvProjects();
+
+    } catch (e) {
+        logger.error('Error loading CV projects:', e);
+        listContainer.innerHTML = `
+            <div class="bg-white rounded-xl border border-red-200 p-8 text-center text-red-500">
+                <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                <p>Fehler beim Laden der CV-Projekte</p>
+                <p class="text-sm mt-2">${e.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Render CV projects list
+function renderCvProjects() {
+    const listContainer = document.getElementById('cv-projects-list');
+    const emptyContainer = document.getElementById('cv-projects-empty');
+
+    if (!listContainer) return;
+
+    // Apply filters
+    const searchTerm = document.getElementById('cv-project-search')?.value?.toLowerCase() || '';
+    const statusFilter = document.getElementById('cv-project-status-filter')?.value || '';
+
+    let filteredProjects = cvProjectsCache.filter(project => {
+        // Search filter
+        const matchesSearch = !searchTerm ||
+            project.id?.toLowerCase().includes(searchTerm) ||
+            project.customerName?.toLowerCase().includes(searchTerm) ||
+            project.customerEmail?.toLowerCase().includes(searchTerm);
+
+        // Status filter
+        const matchesStatus = !statusFilter || project.cvStatus === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
+
+    if (filteredProjects.length === 0) {
+        listContainer.innerHTML = '';
+        if (emptyContainer) {
+            emptyContainer.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (emptyContainer) {
+        emptyContainer.classList.add('hidden');
+    }
+
+    listContainer.innerHTML = filteredProjects.map(project => {
+        const statusConfig = CV_STATUS_CONFIG[project.cvStatus] || CV_STATUS_CONFIG['new'];
+        const orderDate = project.date?.toDate?.() || new Date(project.date);
+        const formattedDate = orderDate.toLocaleDateString('de-DE', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        // Get CV package name from items
+        const cvItem = project.items?.find(item =>
+            CV_PACKAGE_KEYWORDS.some(keyword =>
+                item.title?.toLowerCase().includes(keyword.toLowerCase())
+            )
+        );
+        const packageName = cvItem?.title || 'CV-Paket';
+
+        // Check what data is available
+        const hasQuestionnaire = !!project.questionnaire;
+        const hasDocuments = project.documents?.existingCv || project.documents?.targetJob;
+        const hasCv = !!project.generatedCv;
+
+        return `
+            <div class="bg-white rounded-xl border border-gray-100 hover:border-brand-gold/50 transition-all overflow-hidden">
+                <div class="p-4 sm:p-6">
+                    <!-- Header Row -->
+                    <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+                        <div class="flex-1 min-w-[200px]">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-mono text-gray-400">${project.id}</span>
+                                <span class="text-xs text-gray-300">|</span>
+                                <span class="text-xs text-gray-400">${formattedDate}</span>
+                            </div>
+                            <h3 class="font-medium text-brand-dark">${project.customerName || 'Unbekannt'}</h3>
+                            <p class="text-sm text-gray-500">${project.customerEmail || ''}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}">
+                                <i class="fas ${statusConfig.icon} mr-1"></i>
+                                ${statusConfig.label}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Package Info -->
+                    <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-file-alt text-brand-gold"></i>
+                            <span class="font-medium text-brand-dark">${packageName}</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Indicators -->
+                    <div class="flex items-center gap-4 mb-4 text-xs">
+                        <div class="flex items-center gap-1.5 ${hasQuestionnaire ? 'text-green-600' : 'text-gray-400'}">
+                            <i class="fas ${hasQuestionnaire ? 'fa-check-circle' : 'fa-circle'}"></i>
+                            <span>Fragebogen</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 ${hasDocuments ? 'text-green-600' : 'text-gray-400'}">
+                            <i class="fas ${hasDocuments ? 'fa-check-circle' : 'fa-circle'}"></i>
+                            <span>Dokumente</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 ${hasCv ? 'text-green-600' : 'text-gray-400'}">
+                            <i class="fas ${hasCv ? 'fa-check-circle' : 'fa-circle'}"></i>
+                            <span>CV generiert</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-2">
+                        ${project.cvStatus === 'new' ? `
+                            <button onclick="app.sendCvQuestionnaire('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-brand-gold text-brand-dark rounded-lg text-sm font-medium hover:bg-yellow-500 transition">
+                                <i class="fas fa-paper-plane"></i>
+                                Fragebogen senden
+                            </button>
+                        ` : ''}
+
+                        ${project.cvStatus === 'questionnaire_sent' ? `
+                            <button onclick="app.openCvQuestionnaireView('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition">
+                                <i class="fas fa-eye"></i>
+                                Status prüfen
+                            </button>
+                            <button onclick="app.resendCvQuestionnaire('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">
+                                <i class="fas fa-redo"></i>
+                                Erneut senden
+                            </button>
+                        ` : ''}
+
+                        ${project.cvStatus === 'data_received' ? `
+                            <button onclick="app.openCvGenerator('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-brand-gold text-brand-dark rounded-lg text-sm font-medium hover:bg-yellow-500 transition">
+                                <i class="fas fa-magic"></i>
+                                CV generieren
+                            </button>
+                            <button onclick="app.viewCvData('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition">
+                                <i class="fas fa-eye"></i>
+                                Daten ansehen
+                            </button>
+                        ` : ''}
+
+                        ${project.cvStatus === 'ready' ? `
+                            <button onclick="app.openCvPreview('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-brand-gold text-brand-dark rounded-lg text-sm font-medium hover:bg-yellow-500 transition">
+                                <i class="fas fa-eye"></i>
+                                CV Vorschau
+                            </button>
+                            <button onclick="app.exportCvPdf('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition">
+                                <i class="fas fa-file-pdf"></i>
+                                PDF Export
+                            </button>
+                            <button onclick="app.sendCvToCustomer('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">
+                                <i class="fas fa-envelope"></i>
+                                An Kunde senden
+                            </button>
+                        ` : ''}
+
+                        ${project.cvStatus === 'delivered' ? `
+                            <button onclick="app.openCvPreview('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition">
+                                <i class="fas fa-eye"></i>
+                                CV ansehen
+                            </button>
+                            <button onclick="app.exportCvPdf('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">
+                                <i class="fas fa-file-pdf"></i>
+                                PDF Export
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Filter CV projects
+export function filterCvProjects() {
+    renderCvProjects();
+}
+
+// Send questionnaire to customer
+export async function sendCvQuestionnaire(orderId) {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) {
+        showToast('Projekt nicht gefunden');
+        return;
+    }
+
+    // Show confirmation modal
+    const modal = document.createElement('div');
+    modal.id = 'cv-questionnaire-modal';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 bg-brand-gold/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-paper-plane text-brand-gold text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-brand-dark">Fragebogen senden</h3>
+                    <p class="text-sm text-gray-500">An: ${project.customerEmail}</p>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Der Kunde erhält eine E-Mail mit einem Link zum CV-Fragebogen.
+                    Nach Ausfüllen werden Sie benachrichtigt.
+                </p>
+            </div>
+
+            <div class="flex gap-3 justify-end">
+                <button onclick="app.closeCvQuestionnaireModal()"
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800 transition">
+                    Abbrechen
+                </button>
+                <button onclick="app.confirmSendCvQuestionnaire('${orderId}')"
+                        class="px-6 py-2 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Jetzt senden
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Close questionnaire modal
+export function closeCvQuestionnaireModal() {
+    const modal = document.getElementById('cv-questionnaire-modal');
+    if (modal) modal.remove();
+}
+
+// Confirm and send questionnaire
+export async function confirmSendCvQuestionnaire(orderId) {
+    closeCvQuestionnaireModal();
+
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) return;
+
+    showToast('Sende Fragebogen...');
+
+    try {
+        // Create cvProject document if not exists
+        if (!project.cvProjectId) {
+            const cvProjectRef = await addDoc(collection(db, 'cvProjects'), {
+                orderId: orderId,
+                userId: project.userId,
+                customerEmail: project.customerEmail,
+                customerName: project.customerName,
+                status: 'questionnaire_sent',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+            project.cvProjectId = cvProjectRef.id;
+        } else {
+            await updateDoc(doc(db, 'cvProjects', project.cvProjectId), {
+                status: 'questionnaire_sent',
+                updatedAt: serverTimestamp()
+            });
+        }
+
+        // Call Cloud Function to send email
+        // TODO: Implement sendQuestionnaireEmail Cloud Function
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/sendQuestionnaireEmail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId: orderId,
+                projectId: project.cvProjectId,
+                customerEmail: project.customerEmail,
+                customerName: project.customerName
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Email konnte nicht gesendet werden');
+        }
+
+        showToast('Fragebogen wurde gesendet!');
+        await loadCvProjects();
+
+    } catch (e) {
+        logger.error('Error sending questionnaire:', e);
+        showToast('Fehler beim Senden: ' + e.message);
+    }
+}
+
+// Resend questionnaire
+export async function resendCvQuestionnaire(orderId) {
+    await sendCvQuestionnaire(orderId);
+}
+
+// Open CV questionnaire view (to check status)
+export function openCvQuestionnaireView(orderId) {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) return;
+
+    // Create questionnaire link
+    const questionnaireUrl = `${window.location.origin}?questionnaire=${project.cvProjectId || orderId}`;
+
+    const modal = document.createElement('div');
+    modal.id = 'cv-status-modal';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-brand-dark">Fragebogen-Status</h3>
+                <button onclick="document.getElementById('cv-status-modal')?.remove()"
+                        class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <div class="flex items-center gap-2 text-yellow-800 mb-2">
+                        <i class="fas fa-clock"></i>
+                        <span class="font-medium">Warte auf Kundenantwort</span>
+                    </div>
+                    <p class="text-sm text-yellow-700">
+                        Der Fragebogen wurde an <strong>${project.customerEmail}</strong> gesendet.
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-xs text-gray-500 mb-2">Fragebogen-Link:</p>
+                    <div class="flex items-center gap-2">
+                        <input type="text" value="${questionnaireUrl}" readonly
+                               class="flex-1 text-xs bg-white border border-gray-200 rounded px-3 py-2">
+                        <button onclick="navigator.clipboard.writeText('${questionnaireUrl}'); app.showToast('Link kopiert!')"
+                                class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded transition">
+                            <i class="fas fa-copy text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button onclick="document.getElementById('cv-status-modal')?.remove()"
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800 transition">
+                    Schließen
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// View CV data collected from questionnaire
+export function viewCvData(orderId) {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) return;
+
+    showToast('Datenansicht wird geladen...');
+    // TODO: Implement data view modal
+}
+
+// Open CV generator (template selection + generation)
+export function openCvGenerator(orderId) {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) return;
+
+    showToast('CV-Generator wird geöffnet...');
+    // TODO: Implement CV generator modal with template selection
+}
+
+// Open CV preview
+export function openCvPreview(orderId) {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) return;
+
+    showToast('CV-Vorschau wird geladen...');
+    // TODO: Implement CV preview modal
+}
+
+// Export CV as PDF
+export function exportCvPdf(orderId) {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) return;
+
+    showToast('PDF wird generiert...');
+    // TODO: Implement PDF export with html2pdf.js
+}
+
+// Send CV to customer
+export async function sendCvToCustomer(orderId) {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project) return;
+
+    showToast('CV wird an Kunden gesendet...');
+    // TODO: Implement send CV to customer via Cloud Function
 }
 
