@@ -1887,7 +1887,7 @@ export function showAppointmentCalendar(orderId) {
 export function generateTimeSlots(days) {
     const slots = [];
     const now = new Date();
-    const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const times = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
 
     for (let d = 1; d <= days; d++) {
         const date = new Date(now);
@@ -2565,8 +2565,8 @@ function renderAvailabilityCalendar() {
         weekLabel.textContent = `KW ${weekNumber} - ${monthName}`;
     }
 
-    // Time slots (9:00 - 18:00)
-    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    // Time slots (9:00 - 21:00)
+    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
 
     // Days of the week
     const days = [];
@@ -4383,7 +4383,7 @@ function renderPreviewCalendarHTML() {
         if (weekLabel) weekLabel.textContent = `KW ${weekNumber} - ${monthName}`;
     }, 0);
 
-    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
     const days = [];
     for (let i = 0; i < 7; i++) {
         const date = new Date(startOfWeek);
