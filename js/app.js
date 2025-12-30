@@ -3894,8 +3894,8 @@ export function switchDashboardTab(tabName, state) {
 
 // Switch Admin Panel Tabs
 export function switchAdminTab(tabName) {
-    // Tab names: orders, users, strategy, coaches, documents, settings
-    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings'];
+    // Tab names: orders, users, strategy, coaches, documents, settings, mentor-preview
+    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings', 'mentor-preview'];
 
     // Update tab buttons
     tabIds.forEach(id => {
@@ -3936,6 +3936,8 @@ export function switchAdminTab(tabName) {
         loadAdminDocuments();
     } else if (tabName === 'settings') {
         loadAdminSettings();
+    } else if (tabName === 'mentor-preview') {
+        loadMentorPreviewOptions();
     }
 }
 
@@ -4077,6 +4079,362 @@ export async function toggleCoachVisibility(coachId) {
     } catch (e) {
         logger.error('Error toggling coach visibility:', e);
         showToast('Fehler beim Aktualisieren');
+    }
+}
+
+// ========== MENTOR PREVIEW FUNCTIONS (Admin) ==========
+
+// Store preview state
+let previewMentorData = null;
+let previewAvailability = {};
+let previewBookedSlots = {};
+let previewWeekOffset = 0;
+
+// Load mentor options for the preview dropdown
+export async function loadMentorPreviewOptions() {
+    const select = document.getElementById('admin-mentor-preview-select');
+    if (!select) return;
+
+    try {
+        const coaches = await fetchCollection('coaches');
+
+        select.innerHTML = '<option value="">-- Mentor auswählen --</option>';
+        coaches.forEach(coach => {
+            const option = document.createElement('option');
+            option.value = coach.id;
+            option.textContent = `${coach.name}${coach.visible === false ? ' (versteckt)' : ''}`;
+            select.appendChild(option);
+        });
+    } catch (e) {
+        logger.error('Error loading mentor preview options:', e);
+    }
+}
+
+// Load mentor preview dashboard
+export async function loadMentorPreview() {
+    const select = document.getElementById('admin-mentor-preview-select');
+    const container = document.getElementById('admin-mentor-preview-container');
+
+    if (!select || !container) return;
+
+    const coachId = select.value;
+    if (!coachId) {
+        container.innerHTML = `
+            <div class="p-8 text-center text-gray-400">
+                <i class="fas fa-user-tie text-5xl mb-4 opacity-50"></i>
+                <p class="text-lg font-medium">Wähle einen Mentor aus</p>
+                <p class="text-sm mt-1">um dessen Dashboard-Ansicht zu sehen</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '<div class="p-8 text-center"><i class="fas fa-spinner fa-spin text-3xl text-brand-gold"></i><p class="mt-3 text-gray-500">Lade Mentor-Dashboard...</p></div>';
+
+    try {
+        // Load coach data
+        const coachDoc = await getDoc(doc(db, 'coaches', coachId));
+        if (!coachDoc.exists()) {
+            container.innerHTML = '<div class="p-8 text-center text-red-500">Mentor nicht gefunden</div>';
+            return;
+        }
+
+        previewMentorData = { id: coachId, ...coachDoc.data() };
+        previewAvailability = previewMentorData.availability || {};
+        previewWeekOffset = 0;
+
+        // Load booked slots for this mentor
+        await loadPreviewBookedSlots(coachId);
+
+        // Load sessions
+        const sessions = await loadPreviewSessions(coachId);
+
+        // Render the preview dashboard
+        renderMentorPreviewDashboard(sessions);
+
+    } catch (e) {
+        logger.error('Error loading mentor preview:', e);
+        container.innerHTML = '<div class="p-8 text-center text-red-500">Fehler beim Laden</div>';
+    }
+}
+
+// Load booked slots for preview
+async function loadPreviewBookedSlots(coachId) {
+    try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('assignedCoachId', '==', coachId));
+        const snapshot = await getDocs(q);
+
+        previewBookedSlots = {};
+        snapshot.forEach(doc => {
+            const order = doc.data();
+            if (order.appointment?.datetime) {
+                const dt = new Date(order.appointment.datetime);
+                const dateKey = dt.toISOString().split('T')[0];
+                const timeKey = dt.toTimeString().slice(0, 5);
+                if (!previewBookedSlots[dateKey]) {
+                    previewBookedSlots[dateKey] = [];
+                }
+                previewBookedSlots[dateKey].push(timeKey);
+            }
+        });
+    } catch (e) {
+        logger.error('Error loading preview booked slots:', e);
+    }
+}
+
+// Load sessions for preview
+async function loadPreviewSessions(coachId) {
+    try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('assignedCoachId', '==', coachId));
+        const snapshot = await getDocs(q);
+
+        const sessions = [];
+        snapshot.forEach(doc => {
+            const order = doc.data();
+            if (order.appointment?.datetime) {
+                sessions.push({
+                    id: doc.id,
+                    ...order
+                });
+            }
+        });
+
+        // Sort by appointment date
+        sessions.sort((a, b) => new Date(a.appointment.datetime) - new Date(b.appointment.datetime));
+        return sessions;
+    } catch (e) {
+        logger.error('Error loading preview sessions:', e);
+        return [];
+    }
+}
+
+// Render the mentor preview dashboard
+function renderMentorPreviewDashboard(sessions) {
+    const container = document.getElementById('admin-mentor-preview-container');
+    if (!container || !previewMentorData) return;
+
+    // Count stats
+    const totalSlots = Object.values(previewAvailability).reduce((sum, slots) => sum + (slots?.length || 0), 0);
+    const totalBookings = Object.values(previewBookedSlots).reduce((sum, slots) => sum + (slots?.length || 0), 0);
+    const upcomingSessions = sessions.filter(s => new Date(s.appointment.datetime) >= new Date()).length;
+
+    container.innerHTML = `
+        <div class="border-2 border-brand-gold/30 rounded-2xl overflow-hidden">
+            <!-- Preview Banner -->
+            <div class="bg-gradient-to-r from-brand-gold/20 to-yellow-100 px-4 py-2 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-eye text-brand-gold"></i>
+                    <span class="text-sm font-medium text-brand-dark">Vorschau-Modus für: <strong>${previewMentorData.name}</strong></span>
+                </div>
+                <span class="text-xs text-gray-600 bg-white/50 px-2 py-1 rounded">Nur Ansicht - Keine echten Änderungen</span>
+            </div>
+
+            <!-- Mentor Header -->
+            <div class="bg-gradient-to-r from-brand-dark to-gray-900 text-white p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full bg-brand-gold/20 flex items-center justify-center overflow-hidden">
+                        ${previewMentorData.image
+                            ? `<img src="${previewMentorData.image}" class="w-full h-full object-cover" alt="${previewMentorData.name}">`
+                            : `<i class="fas fa-user-tie text-brand-gold text-2xl"></i>`
+                        }
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-serif font-bold">Willkommen, ${previewMentorData.name}</h2>
+                        <p class="text-gray-400 text-sm">${previewMentorData.role || 'Mentor'} • ${previewMentorData.email || 'Keine E-Mail'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-4 p-4 bg-gray-50 border-b">
+                <div class="bg-white p-4 rounded-xl text-center shadow-sm">
+                    <div class="text-2xl font-bold text-green-600">${totalSlots}</div>
+                    <div class="text-xs text-gray-500">Verfügbare Slots</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl text-center shadow-sm">
+                    <div class="text-2xl font-bold text-blue-600">${totalBookings}</div>
+                    <div class="text-xs text-gray-500">Gebuchte Termine</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl text-center shadow-sm">
+                    <div class="text-2xl font-bold text-brand-gold">${upcomingSessions}</div>
+                    <div class="text-xs text-gray-500">Anstehende Sessions</div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="grid md:grid-cols-2 gap-4 p-4">
+                <!-- Availability Calendar -->
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-calendar-alt text-brand-gold"></i>
+                            <h3 class="font-bold text-brand-dark">Meine Verfügbarkeit</h3>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="app.previewPrevWeek()" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 transition">
+                                <i class="fas fa-chevron-left text-gray-500"></i>
+                            </button>
+                            <span id="preview-week-label" class="text-sm text-gray-600 min-w-[140px] text-center">KW 1</span>
+                            <button onclick="app.previewNextWeek()" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 transition">
+                                <i class="fas fa-chevron-right text-gray-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="preview-calendar" class="p-2 overflow-x-auto">
+                        ${renderPreviewCalendarHTML()}
+                    </div>
+                    <div class="p-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <div class="flex items-center gap-4 text-xs">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-500"></span> Verfügbar</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-500"></span> Gebucht</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-gray-200"></span> Nicht verfügbar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sessions List -->
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-users text-brand-gold"></i>
+                            <h3 class="font-bold text-brand-dark">Meine Sessions</h3>
+                        </div>
+                        <span class="bg-brand-gold text-brand-dark text-xs font-bold px-2 py-1 rounded-full">${sessions.length}</span>
+                    </div>
+                    <div class="max-h-[350px] overflow-y-auto">
+                        ${sessions.length === 0
+                            ? `<div class="p-8 text-center text-gray-400">
+                                <i class="fas fa-calendar-check text-3xl mb-2 opacity-50"></i>
+                                <p class="text-sm">Keine Sessions zugewiesen</p>
+                              </div>`
+                            : sessions.map(session => {
+                                const dt = new Date(session.appointment.datetime);
+                                const dateStr = dt.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+                                const timeStr = dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                                const isPast = dt < new Date();
+
+                                return `
+                                    <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition ${isPast ? 'opacity-50' : ''}">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <div class="font-medium text-sm text-brand-dark">${session.customerName || 'Unbekannt'}</div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    <i class="fas fa-calendar mr-1"></i>${dateStr} um ${timeStr}
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                ${isPast
+                                                    ? '<span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">Vergangen</span>'
+                                                    : '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Anstehend</span>'
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Render preview calendar HTML
+function renderPreviewCalendarHTML() {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (previewWeekOffset * 7));
+
+    // Update week label
+    const weekNumber = getWeekNumber(startOfWeek);
+    const monthName = startOfWeek.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+
+    // Schedule update of week label after render
+    setTimeout(() => {
+        const weekLabel = document.getElementById('preview-week-label');
+        if (weekLabel) weekLabel.textContent = `KW ${weekNumber} - ${monthName}`;
+    }, 0);
+
+    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        days.push(date);
+    }
+
+    let html = `
+        <table class="w-full border-collapse text-xs">
+            <thead>
+                <tr>
+                    <th class="p-1 text-gray-500 font-medium"></th>
+                    ${days.map(d => `
+                        <th class="p-1 text-center ${d.getDay() === 0 || d.getDay() === 6 ? 'bg-gray-50' : ''}">
+                            <div class="text-gray-500 font-medium">${d.toLocaleDateString('de-DE', { weekday: 'short' })}</div>
+                            <div class="font-bold ${isToday(d) ? 'text-brand-gold' : 'text-gray-700'}">${d.getDate()}</div>
+                        </th>
+                    `).join('')}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    timeSlots.forEach(time => {
+        html += `<tr>`;
+        html += `<td class="p-1 text-gray-500 font-medium text-right pr-2">${time}</td>`;
+
+        days.forEach(d => {
+            const dateKey = d.toISOString().split('T')[0];
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const isAvailable = previewAvailability[dateKey]?.includes(time);
+            const isBooked = previewBookedSlots[dateKey]?.includes(time);
+            const isPast = d < new Date() && !isToday(d);
+
+            let cellClass = 'p-0.5';
+            let slotClass = 'w-full h-6 rounded ';
+
+            if (isPast) {
+                slotClass += 'bg-gray-100';
+            } else if (isBooked) {
+                slotClass += 'bg-blue-500';
+            } else if (isAvailable) {
+                slotClass += 'bg-green-500';
+            } else {
+                slotClass += 'bg-gray-200';
+            }
+
+            if (isWeekend) {
+                cellClass += ' bg-gray-50';
+            }
+
+            html += `<td class="${cellClass}"><div class="${slotClass}"></div></td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    return html;
+}
+
+// Preview calendar navigation
+export function previewPrevWeek() {
+    previewWeekOffset--;
+    updatePreviewCalendar();
+}
+
+export function previewNextWeek() {
+    previewWeekOffset++;
+    updatePreviewCalendar();
+}
+
+function updatePreviewCalendar() {
+    const calendarContainer = document.getElementById('preview-calendar');
+    if (calendarContainer) {
+        calendarContainer.innerHTML = renderPreviewCalendarHTML();
     }
 }
 

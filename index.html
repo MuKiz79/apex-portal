@@ -2851,6 +2851,11 @@
                         <i class="fas fa-cog"></i>
                         <span>Einstellungen</span>
                     </button>
+                    <button onclick="app.switchAdminTab('mentor-preview')" id="admin-tab-mentor-preview"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all border-l border-white/20 ml-2">
+                        <i class="fas fa-eye"></i>
+                        <span>Mentor-Vorschau</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -3264,6 +3269,53 @@
                     <div class="bg-white rounded-xl border border-dashed border-gray-200 p-6 text-center">
                         <i class="fas fa-plus-circle text-gray-300 text-2xl mb-2"></i>
                         <p class="text-sm text-gray-400">Weitere Einstellungen werden bei Bedarf hinzugefügt</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mentor Preview Tab Content -->
+            <div id="admin-content-mentor-preview" class="hidden">
+                <!-- Section Header with Info -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">Mentor-Dashboard Vorschau</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-80 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Mentor-Vorschau</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• <strong>Test-Modus:</strong> Sieh genau, was Mentoren sehen</li>
+                                    <li>• <strong>Kalender:</strong> Verfügbarkeiten verwalten</li>
+                                    <li>• <strong>Sessions:</strong> Zugewiesene Termine einsehen</li>
+                                    <li>• Wähle einen Mentor aus um dessen Ansicht zu testen</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mentor Selector -->
+                <div class="bg-white rounded-xl border border-gray-100 p-4 mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mentor auswählen für Vorschau:</label>
+                    <div class="flex gap-3">
+                        <select id="admin-mentor-preview-select" onchange="app.loadMentorPreview()" class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold bg-white">
+                            <option value="">-- Mentor auswählen --</option>
+                        </select>
+                        <button onclick="app.loadMentorPreview()" class="flex items-center gap-2 px-4 py-2 bg-brand-gold text-brand-dark rounded-lg text-sm font-medium hover:bg-yellow-500 transition">
+                            <i class="fas fa-sync-alt"></i>
+                            Laden
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview Container -->
+                <div id="admin-mentor-preview-container" class="bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-dashed border-gray-200 min-h-[500px]">
+                    <div class="p-8 text-center text-gray-400">
+                        <i class="fas fa-user-tie text-5xl mb-4 opacity-50"></i>
+                        <p class="text-lg font-medium">Wähle einen Mentor aus</p>
+                        <p class="text-sm mt-1">um dessen Dashboard-Ansicht zu sehen</p>
                     </div>
                 </div>
             </div>
@@ -3989,6 +4041,10 @@
             closeCoachModal: () => App.closeCoachModal(),
             saveCoach: () => App.saveCoach(),
             deleteCoach: (coachId) => App.deleteCoach(coachId),
+            loadMentorPreviewOptions: () => App.loadMentorPreviewOptions(),
+            loadMentorPreview: () => App.loadMentorPreview(),
+            previewPrevWeek: () => App.previewPrevWeek(),
+            previewNextWeek: () => App.previewNextWeek(),
 
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),
