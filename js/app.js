@@ -2345,7 +2345,7 @@ export async function openMentorAppointmentModal(orderId, coachId) {
                             </p>
                             <div class="space-y-2">
                                 ${availableSlots.map(slot => `
-                                    <button onclick="app.selectMentorAppointment('${orderId}', '${slot.datetime}')"
+                                    <button onclick="app.selectMentorAppointment('${orderId}', '${slot.datetime}', true)"
                                             class="w-full flex items-center p-4 bg-gray-50 border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 active:bg-green-100 transition-all duration-200 group">
                                         <div class="w-12 h-12 bg-white rounded-lg flex flex-col items-center justify-center border border-gray-200 shadow-sm flex-shrink-0 group-hover:border-green-400">
                                             <span class="text-xs text-gray-500">${slot.display.weekday.slice(0, 2)}</span>
@@ -2411,13 +2411,16 @@ export function closeMentorAppointmentModal() {
 }
 
 // Select and confirm appointment from mentor availability
-export async function selectMentorAppointment(orderId, datetime) {
-    // Show professional confirmation modal instead of native confirm()
-    showBookingConfirmationModal(orderId, datetime);
+// mentorAlreadyAssigned = true means admin already assigned the mentor, so no compliance check needed
+export async function selectMentorAppointment(orderId, datetime, mentorAlreadyAssigned = true) {
+    // Show professional confirmation modal
+    // Skip compliance check if mentor was already assigned by admin
+    showBookingConfirmationModal(orderId, datetime, mentorAlreadyAssigned);
 }
 
-// Show professional booking confirmation modal with compliance check
-function showBookingConfirmationModal(orderId, datetime) {
+// Show professional booking confirmation modal
+// skipComplianceCheck = true when mentor was already assigned by admin
+function showBookingConfirmationModal(orderId, datetime, skipComplianceCheck = false) {
     const dateObj = new Date(datetime);
     const formattedDate = dateObj.toLocaleDateString('de-DE', {
         weekday: 'long',
@@ -2437,6 +2440,50 @@ function showBookingConfirmationModal(orderId, datetime) {
         confirmModal.id = 'booking-confirm-modal';
         document.body.appendChild(confirmModal);
     }
+
+    // Compliance check section - only shown if NOT skipped
+    const complianceSection = skipComplianceCheck ? '' : `
+        <!-- Compliance Check Info Box -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <i class="fas fa-shield-alt text-amber-600 text-sm"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-amber-800 text-sm mb-1">Compliance-Check erforderlich</h4>
+                    <p class="text-amber-700 text-xs leading-relaxed">
+                        Vor der finalen Terminbestätigung führen wir einen kurzen Compliance-Check durch,
+                        um sicherzustellen, dass wir Ihnen den bestmöglichen Service bieten können.
+                        Sie erhalten innerhalb von 24 Stunden eine Bestätigung per E-Mail.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Consent Checkbox -->
+        <label class="flex items-start gap-3 cursor-pointer mb-6 group">
+            <input type="checkbox" id="compliance-consent-checkbox"
+                   onchange="app.toggleBookingButton()"
+                   class="w-5 h-5 mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold cursor-pointer">
+            <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
+                Ich stimme dem <strong>Compliance-Check</strong> zu und verstehe, dass die endgültige
+                Terminbestätigung nach erfolgreicher Prüfung per E-Mail erfolgt.
+            </span>
+        </label>
+    `;
+
+    // Simple confirmation text when compliance check is skipped
+    const simpleConfirmation = skipComplianceCheck ? `
+        <p class="text-gray-600 text-sm mb-6">
+            Möchten Sie diesen Termin verbindlich buchen? Nach der Bestätigung erhalten Sie und Ihr Mentor eine Benachrichtigung.
+        </p>
+    ` : '';
+
+    // Button state depends on whether compliance check is needed
+    const buttonDisabled = skipComplianceCheck ? '' : 'disabled';
+    const buttonClass = skipComplianceCheck
+        ? 'flex-1 px-4 py-3 bg-brand-gold text-brand-dark rounded-xl hover:bg-brand-gold/90 transition-all duration-200 font-medium cursor-pointer'
+        : 'flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all duration-200';
 
     confirmModal.innerHTML = `
         <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]" onclick="if(event.target === this) app.closeBookingConfirmModal()">
@@ -2468,33 +2515,8 @@ function showBookingConfirmationModal(orderId, datetime) {
                         </div>
                     </div>
 
-                    <!-- Compliance Check Info Box -->
-                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <i class="fas fa-shield-alt text-amber-600 text-sm"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold text-amber-800 text-sm mb-1">Compliance-Check erforderlich</h4>
-                                <p class="text-amber-700 text-xs leading-relaxed">
-                                    Vor der finalen Terminbestätigung führen wir einen kurzen Compliance-Check durch,
-                                    um sicherzustellen, dass wir Ihnen den bestmöglichen Service bieten können.
-                                    Sie erhalten innerhalb von 24 Stunden eine Bestätigung per E-Mail.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Compliance Consent Checkbox -->
-                    <label class="flex items-start gap-3 cursor-pointer mb-6 group">
-                        <input type="checkbox" id="compliance-consent-checkbox"
-                               onchange="app.toggleBookingButton()"
-                               class="w-5 h-5 mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold cursor-pointer">
-                        <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
-                            Ich stimme dem <strong>Compliance-Check</strong> zu und verstehe, dass die endgültige
-                            Terminbestätigung nach erfolgreicher Prüfung per E-Mail erfolgt.
-                        </span>
-                    </label>
+                    ${simpleConfirmation}
+                    ${complianceSection}
 
                     <!-- Buttons -->
                     <div class="flex gap-3">
@@ -2504,8 +2526,8 @@ function showBookingConfirmationModal(orderId, datetime) {
                         </button>
                         <button id="confirm-booking-btn"
                                 onclick="app.confirmBooking('${orderId}', '${datetime}')"
-                                disabled
-                                class="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all duration-200">
+                                ${buttonDisabled}
+                                class="${buttonClass}">
                             <i class="fas fa-check mr-2"></i>Bestätigen
                         </button>
                     </div>
