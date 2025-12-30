@@ -2784,18 +2784,26 @@ export async function showAssignCoachModal(orderId) {
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'assign-coach-modal';
-        modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden';
+        modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4';
         modal.innerHTML = `
-            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
-                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-600 to-purple-600">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden">
+                <div class="p-5 border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-white">Mentor zuweisen</h3>
-                        <button onclick="app.closeAssignCoachModal()" class="text-white/80 hover:text-white">
-                            <i class="fas fa-times text-xl"></i>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-plus text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Mentor zuweisen</h3>
+                                <p class="text-xs text-white/70">Wähle einen verfügbaren Mentor</p>
+                            </div>
+                        </div>
+                        <button onclick="app.closeAssignCoachModal()" class="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition">
+                            <i class="fas fa-times text-white"></i>
                         </button>
                     </div>
                 </div>
-                <div id="assign-coach-list" class="p-6 overflow-y-auto max-h-[60vh]">
+                <div id="assign-coach-list" class="p-4 overflow-y-auto max-h-[65vh]">
                     <div class="flex justify-center py-8">
                         <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
                     </div>
@@ -2806,6 +2814,7 @@ export async function showAssignCoachModal(orderId) {
     }
 
     modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
     await loadCoachesForAssignment();
 }
 
@@ -2815,10 +2824,11 @@ export function closeAssignCoachModal() {
     if (modal) {
         modal.classList.add('hidden');
     }
+    document.body.style.overflow = '';
     currentAssignOrderId = null;
 }
 
-// Load coaches and display in modal
+// Load coaches and display in modal with smart recommendations
 async function loadCoachesForAssignment() {
     const container = document.getElementById('assign-coach-list');
     if (!container || !db) return;
@@ -2839,46 +2849,125 @@ async function loadCoachesForAssignment() {
             container.innerHTML = `
                 <div class="text-center py-8 text-gray-500">
                     <i class="fas fa-user-slash text-4xl text-gray-300 mb-3"></i>
-                    <p>Keine Mentoren verfügbar</p>
+                    <p class="mb-3">Keine Mentoren verfügbar</p>
+                    <button onclick="app.closeAssignCoachModal(); app.switchAdminTab('coaches'); app.openAddCoachModal();"
+                            class="text-sm text-indigo-600 hover:text-indigo-800 underline">
+                        Jetzt Mentor anlegen
+                    </button>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = coaches.map(coach => {
-            const availabilityDates = Object.keys(coach.availability || {}).length;
-            const totalSlots = Object.values(coach.availability || {}).reduce((sum, slots) => sum + slots.length, 0);
+        // Calculate availability score for each coach
+        const today = new Date();
+        const twoWeeksLater = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-            return `
-                <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:border-indigo-300 hover:bg-indigo-50/50 transition cursor-pointer"
-                     onclick="app.assignCoachToOrder('${coach.id}', '${sanitizeHTML(coach.name || 'Mentor')}')">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                            ${coach.image ? `<img src="${coach.image}" alt="${sanitizeHTML(coach.name)}" class="w-full h-full object-cover">` : `
-                                <div class="w-full h-full flex items-center justify-center bg-indigo-100">
-                                    <i class="fas fa-user text-indigo-400 text-xl"></i>
+        const scoredCoaches = coaches.map(coach => {
+            const availability = coach.availability || {};
+            let futureSlots = 0;
+            let nearSlots = 0;
+
+            Object.entries(availability).forEach(([dateStr, slots]) => {
+                const date = new Date(dateStr);
+                if (date >= today && date <= twoWeeksLater) {
+                    futureSlots += (slots?.length || 0);
+                    // Slots in the next 7 days count more
+                    if (date <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)) {
+                        nearSlots += (slots?.length || 0);
+                    }
+                }
+            });
+
+            return {
+                ...coach,
+                futureSlots,
+                nearSlots,
+                score: nearSlots * 2 + futureSlots,
+                isVisible: coach.visible !== false
+            };
+        });
+
+        // Sort by availability score (highest first)
+        scoredCoaches.sort((a, b) => b.score - a.score);
+
+        // Find the recommended mentor (highest score with visibility)
+        const recommended = scoredCoaches.find(c => c.isVisible && c.score > 0);
+
+        container.innerHTML = `
+            ${recommended ? `
+                <div class="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                    <div class="flex items-center gap-2 text-green-700 text-xs font-medium mb-2">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Empfehlung basierend auf Verfügbarkeit</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-2 bg-white rounded-lg border border-green-200 cursor-pointer hover:shadow-md transition"
+                         onclick="app.assignCoachToOrder('${recommended.id}', '${sanitizeHTML(recommended.name || 'Mentor')}')">
+                        <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 ring-2 ring-green-400">
+                            ${recommended.image ? `<img src="${recommended.image}" alt="${sanitizeHTML(recommended.name)}" class="w-full h-full object-cover">` : `
+                                <div class="w-full h-full flex items-center justify-center bg-green-100">
+                                    <i class="fas fa-user text-green-500"></i>
                                 </div>
                             `}
                         </div>
                         <div class="flex-1">
-                            <h4 class="font-bold text-brand-dark">${sanitizeHTML(coach.name || 'Unbekannt')}</h4>
-                            <p class="text-sm text-gray-600">${sanitizeHTML(coach.role || '')}</p>
-                            <div class="mt-1 flex items-center gap-3 text-xs">
-                                ${coach.experience ? `<span class="text-gray-500"><i class="fas fa-briefcase mr-1"></i>${sanitizeHTML(coach.experience)}</span>` : ''}
-                                ${availabilityDates > 0 ? `
-                                    <span class="text-green-600"><i class="fas fa-calendar-check mr-1"></i>${totalSlots} Slots verfügbar</span>
-                                ` : `
-                                    <span class="text-orange-500"><i class="fas fa-calendar-times mr-1"></i>Keine Verfügbarkeit</span>
-                                `}
-                            </div>
+                            <h4 class="font-bold text-brand-dark flex items-center gap-2">
+                                ${sanitizeHTML(recommended.name || 'Unbekannt')}
+                                <span class="px-1.5 py-0.5 bg-green-500 text-white text-xs rounded">Empfohlen</span>
+                            </h4>
+                            <p class="text-sm text-gray-600">${sanitizeHTML(recommended.role || '')}</p>
+                            <p class="text-xs text-green-600 mt-1">
+                                <i class="fas fa-calendar-check mr-1"></i>${recommended.futureSlots} Slots in den nächsten 2 Wochen
+                            </p>
                         </div>
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
+                        <button class="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+                            Zuweisen
+                        </button>
                     </div>
                 </div>
-            `;
-        }).join('');
+            ` : ''}
+
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-3">Alle Mentoren (${scoredCoaches.length})</p>
+
+            ${scoredCoaches.map(coach => {
+                const isRecommended = recommended?.id === coach.id;
+                if (isRecommended) return ''; // Already shown above
+
+                const availabilityClass = coach.futureSlots > 5 ? 'text-green-600' :
+                                          coach.futureSlots > 0 ? 'text-yellow-600' : 'text-red-500';
+                const availabilityBg = coach.futureSlots > 5 ? 'bg-green-50 border-green-100' :
+                                       coach.futureSlots > 0 ? 'bg-yellow-50 border-yellow-100' : 'bg-red-50 border-red-100';
+
+                return `
+                    <div class="border border-gray-200 rounded-xl p-3 mb-2 hover:border-indigo-300 hover:shadow-sm transition cursor-pointer ${!coach.isVisible ? 'opacity-50' : ''}"
+                         onclick="app.assignCoachToOrder('${coach.id}', '${sanitizeHTML(coach.name || 'Mentor')}')">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                                ${coach.image ? `<img src="${coach.image}" alt="${sanitizeHTML(coach.name)}" class="w-full h-full object-cover">` : `
+                                    <div class="w-full h-full flex items-center justify-center bg-indigo-100">
+                                        <i class="fas fa-user text-indigo-400"></i>
+                                    </div>
+                                `}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-brand-dark truncate">${sanitizeHTML(coach.name || 'Unbekannt')}</h4>
+                                    ${!coach.isVisible ? '<span class="px-1.5 py-0.5 bg-gray-200 text-gray-500 text-xs rounded">Versteckt</span>' : ''}
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">${sanitizeHTML(coach.role || '-')}</p>
+                            </div>
+                            <div class="flex-shrink-0 text-right">
+                                <div class="px-2 py-1 ${availabilityBg} rounded-lg border">
+                                    <p class="text-xs ${availabilityClass} font-medium">
+                                        ${coach.futureSlots > 0 ? `${coach.futureSlots} Slots` : 'Keine Slots'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        `;
 
     } catch (e) {
         logger.error('Error loading coaches for assignment:', e);
@@ -4608,8 +4697,8 @@ function renderAdminOrders(orders) {
 
     if (orders.length === 0) {
         container.innerHTML = `
-            <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
-                <i class="fas fa-inbox text-3xl mb-4"></i>
+            <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
+                <i class="fas fa-inbox text-4xl mb-4"></i>
                 <p>Keine Bestellungen gefunden</p>
             </div>
         `;
@@ -4618,214 +4707,249 @@ function renderAdminOrders(orders) {
 
     container.innerHTML = orders.map(order => {
         const date = order.date?.seconds
-            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
             : 'Unbekannt';
+        const time = order.date?.seconds
+            ? new Date(order.date.seconds * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+            : '';
 
-        const statusColors = {
-            processing: 'bg-yellow-100 text-yellow-800',
-            confirmed: 'bg-blue-100 text-blue-800',
-            completed: 'bg-green-100 text-green-800',
-            cancelled: 'bg-red-100 text-red-800'
+        const statusConfig = {
+            processing: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'fa-clock', label: 'In Bearbeitung' },
+            confirmed: { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'fa-check', label: 'Bestätigt' },
+            completed: { bg: 'bg-green-100', text: 'text-green-800', icon: 'fa-check-double', label: 'Abgeschlossen' },
+            cancelled: { bg: 'bg-red-100', text: 'text-red-800', icon: 'fa-times', label: 'Storniert' }
         };
+        const status = statusConfig[order.status] || statusConfig.processing;
 
-        const items = order.items?.map(item => `${item.title} (€${item.price})`).join(', ') || 'Keine Produkte';
+        // Determine what type of order this is
+        const isSession = hasCoachSession(order);
+        const hasAppointment = order.appointment?.confirmed;
+        const hasPendingProposals = order.appointmentProposals && !order.appointment?.confirmed && order.appointmentStatus !== 'declined';
+        const needsAttention = isSession && !order.assignedCoachId;
+
+        // First item title shortened
+        const mainItem = order.items?.[0]?.title || 'Produkt';
+        const itemCount = order.items?.length || 0;
 
         return `
-            <div class="bg-white rounded-sm shadow-sm overflow-hidden" data-order-id="${order.id}">
-                <div class="p-6">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                        <div>
-                            <p class="font-mono text-xs text-gray-400 mb-1">#${order.id.substring(0, 8).toUpperCase()}</p>
-                            <p class="font-bold text-brand-dark">${sanitizeHTML(order.customerName || 'Unbekannt')}</p>
-                            <p class="text-sm text-gray-500">${sanitizeHTML(order.customerEmail || 'Keine Email')}</p>
+            <div class="bg-white rounded-xl border ${needsAttention ? 'border-orange-300 ring-2 ring-orange-100' : 'border-gray-100'} overflow-hidden hover:shadow-md transition" data-order-id="${order.id}">
+                <!-- Compact Header - Always Visible -->
+                <div class="p-4 cursor-pointer" onclick="app.toggleOrderExpand('${order.id}')">
+                    <div class="flex items-center gap-4">
+                        <!-- Status Indicator -->
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 ${status.bg} rounded-lg flex items-center justify-center">
+                                <i class="fas ${status.icon} ${status.text}"></i>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-xs text-gray-400 mb-1">${date}</p>
-                            <p class="text-xl font-serif text-brand-dark">€${(order.total || 0).toLocaleString('de-DE')}</p>
+
+                        <!-- Main Info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-bold text-brand-dark truncate">${sanitizeHTML(order.customerName || 'Unbekannt')}</span>
+                                <span class="text-xs font-mono text-gray-400">#${order.id.substring(0, 6).toUpperCase()}</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-gray-500">
+                                <span><i class="fas fa-box mr-1"></i>${sanitizeHTML(mainItem.substring(0, 25))}${mainItem.length > 25 ? '...' : ''}${itemCount > 1 ? ` +${itemCount - 1}` : ''}</span>
+                                <span><i class="fas fa-calendar mr-1"></i>${date}</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Info Badges -->
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            ${isSession ? `
+                                ${order.assignedCoachId ? `
+                                    <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full flex items-center gap-1">
+                                        <i class="fas fa-user-tie"></i>
+                                        <span class="hidden sm:inline">${sanitizeHTML((order.assignedCoachName || 'Mentor').split(' ')[0])}</span>
+                                    </span>
+                                ` : `
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full flex items-center gap-1 animate-pulse">
+                                        <i class="fas fa-exclamation"></i>
+                                        <span class="hidden sm:inline">Mentor fehlt</span>
+                                    </span>
+                                `}
+                            ` : ''}
+                            ${hasAppointment ? `
+                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <span class="hidden sm:inline">Termin</span>
+                                </span>
+                            ` : hasPendingProposals ? `
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-hourglass-half"></i>
+                                    <span class="hidden sm:inline">Wartet</span>
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        <!-- Price & Expand -->
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                            <span class="font-bold text-brand-dark">€${(order.total || 0).toLocaleString('de-DE')}</span>
+                            <i id="expand-icon-${order.id}" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
                         </div>
                     </div>
+                </div>
 
-                    <div class="border-t border-gray-100 pt-4 mb-4">
-                        <p class="text-sm text-gray-600"><strong>Produkte:</strong> ${sanitizeHTML(items)}</p>
-                    </div>
-
-                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div class="flex items-center gap-3">
-                            <span class="text-sm text-gray-500">Status:</span>
-                            <select onchange="app.updateOrderStatus('${order.id}', this.value)"
-                                    class="border border-gray-200 rounded-sm px-3 py-1 text-sm focus:outline-none focus:border-brand-gold ${statusColors[order.status] || ''}">
-                                <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>In Bearbeitung</option>
-                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Bestätigt</option>
-                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
-                                <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Storniert</option>
-                            </select>
+                <!-- Expandable Content -->
+                <div id="order-details-${order.id}" class="hidden border-t border-gray-100">
+                    <div class="p-4 bg-gray-50 space-y-4">
+                        <!-- Customer & Order Info -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white rounded-lg p-3 border border-gray-100">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Kunde</p>
+                                <p class="font-medium text-brand-dark">${sanitizeHTML(order.customerName || 'Unbekannt')}</p>
+                                <p class="text-sm text-gray-500">${sanitizeHTML(order.customerEmail || 'Keine Email')}</p>
+                                <p class="text-xs text-gray-400 mt-1">${date} um ${time}</p>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 border border-gray-100">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Produkte</p>
+                                ${order.items?.map(item => `
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-700">${sanitizeHTML(item.title)}</span>
+                                        <span class="font-medium">€${item.price}</span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-400 text-sm">Keine Produkte</p>'}
+                            </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
+                        <!-- Status & Actions Row -->
+                        <div class="flex flex-wrap items-center gap-3 bg-white rounded-lg p-3 border border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500">Status:</span>
+                                <select onchange="app.updateOrderStatus('${order.id}', this.value)"
+                                        class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-brand-gold ${status.bg} ${status.text}">
+                                    <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>In Bearbeitung</option>
+                                    <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Bestätigt</option>
+                                    <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
+                                    <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Storniert</option>
+                                </select>
+                            </div>
+                            <div class="flex-1"></div>
                             <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
-                                    class="bg-green-600 text-white px-4 py-2 rounded-sm text-xs font-bold uppercase hover:bg-green-700 transition">
-                                <i class="fas fa-calendar-plus mr-2"></i>Termin vorschlagen
+                                    class="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition">
+                                <i class="fas fa-calendar-plus"></i>
+                                <span>Termin</span>
                             </button>
-                            <label class="cursor-pointer bg-brand-gold text-brand-dark px-4 py-2 rounded-sm text-xs font-bold uppercase hover:bg-yellow-500 transition">
-                                <i class="fas fa-upload mr-2"></i>Dokument hochladen
+                            <label class="flex items-center gap-2 px-3 py-1.5 bg-brand-gold text-brand-dark text-xs font-medium rounded-lg hover:bg-yellow-500 transition cursor-pointer">
+                                <i class="fas fa-upload"></i>
+                                <span>Dokument</span>
                                 <input type="file" class="hidden" accept=".pdf,.doc,.docx"
                                        onchange="app.uploadDocumentToUser('${order.userId}', '${order.id}', this.files[0], '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')">
                             </label>
                         </div>
-                    </div>
 
-                    <!-- Professional Appointment Timeline -->
-                    ${order.appointmentProposals || order.appointment || order.appointmentStatus ? `
-                        <div class="mt-6 border-t border-gray-100 pt-6">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <i class="fas fa-calendar-alt text-brand-gold"></i>
-                                Terminplanung
-                            </h4>
-
-                            ${order.appointmentStatus === 'confirmed' && order.appointment?.confirmed ? `
-                                <!-- Confirmed State -->
-                                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-5 shadow-sm">
-                                    <div class="flex items-start gap-4">
-                                        <div class="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-md">
-                                            <i class="fas fa-check text-white text-lg"></i>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="font-bold text-green-800 text-lg mb-1">Termin bestätigt</p>
-                                            <div class="bg-white rounded-md px-4 py-3 border border-green-200 mt-2">
-                                                <div class="flex items-center gap-3">
-                                                    <i class="fas fa-calendar-check text-green-600"></i>
-                                                    <span class="font-medium text-gray-800">
-                                                        ${new Date(order.appointment.datetime).toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-center gap-3 mt-2">
-                                                    <i class="fas fa-clock text-green-600"></i>
-                                                    <span class="font-medium text-gray-800">
-                                                        ${new Date(order.appointment.datetime).toLocaleString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            ${order.appointment.confirmedAt ? `
-                                                <p class="text-xs text-green-600 mt-3">
-                                                    <i class="fas fa-check-double mr-1"></i>
-                                                    Bestätigt am ${new Date(order.appointment.confirmedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            ` : ''}
-                                        </div>
-                                    </div>
+                        <!-- Mentor Section (only for sessions) -->
+                        ${isSession ? `
+                            <div class="bg-white rounded-lg p-3 border ${order.assignedCoachId ? 'border-indigo-200' : 'border-orange-200'}">
+                                <div class="flex items-center justify-between mb-3">
+                                    <p class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fas fa-user-tie ${order.assignedCoachId ? 'text-indigo-500' : 'text-orange-500'}"></i>
+                                        Mentor-Zuweisung
+                                    </p>
+                                    ${!order.assignedCoachId ? `
+                                        <span class="text-xs text-orange-600 font-medium animate-pulse">Aktion erforderlich</span>
+                                    ` : ''}
                                 </div>
-                            ` : order.appointmentStatus === 'declined' ? `
-                                <!-- Declined State -->
-                                <div class="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-5 shadow-sm">
-                                    <div class="flex items-start gap-4">
-                                        <div class="flex-shrink-0 w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center shadow-md">
-                                            <i class="fas fa-times text-white text-lg"></i>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="font-bold text-orange-800 text-lg mb-1">Termine abgelehnt</p>
-                                            <p class="text-sm text-orange-700 mb-3">Der Kunde hat alle vorgeschlagenen Termine abgelehnt.</p>
-                                            ${order.appointmentDeclineReason ? `
-                                                <div class="bg-white rounded-md px-4 py-3 border border-orange-200 mb-3">
-                                                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Begründung des Kunden:</p>
-                                                    <p class="text-gray-700 italic">"${sanitizeHTML(order.appointmentDeclineReason)}"</p>
-                                                </div>
-                                            ` : ''}
-                                            ${order.appointmentDeclinedAt ? `
-                                                <p class="text-xs text-orange-600 mb-3">
-                                                    <i class="fas fa-calendar-times mr-1"></i>
-                                                    Abgelehnt am ${new Date(order.appointmentDeclinedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            ` : ''}
-                                            <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
-                                                    class="bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-orange-700 transition shadow-sm">
-                                                <i class="fas fa-calendar-plus mr-2"></i>Neue Termine vorschlagen
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ` : order.appointmentProposals ? `
-                                <!-- Pending State -->
-                                <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-5 shadow-sm">
-                                    <div class="flex items-start gap-4">
-                                        <div class="flex-shrink-0 w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center shadow-md animate-pulse">
-                                            <i class="fas fa-hourglass-half text-white text-lg"></i>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="font-bold text-yellow-800 text-lg mb-1">Warte auf Kundenbestätigung</p>
-                                            <p class="text-sm text-yellow-700 mb-3">Terminvorschläge wurden gesendet. Der Kunde muss noch auswählen.</p>
-                                            <div class="bg-white rounded-md border border-yellow-200 overflow-hidden">
-                                                <p class="text-xs text-gray-500 uppercase tracking-wider px-4 py-2 bg-yellow-100 border-b border-yellow-200">Vorgeschlagene Termine:</p>
-                                                <div class="p-4 space-y-2">
-                                                    ${order.appointmentProposals.map((prop, idx) => `
-                                                        <div class="flex items-center gap-3 text-sm text-gray-700">
-                                                            <span class="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-700 font-bold text-xs">${idx + 1}</span>
-                                                            <i class="fas fa-calendar text-yellow-600"></i>
-                                                            <span>${new Date(prop).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span>
-                                                        </div>
-                                                    `).join('')}
-                                                </div>
-                                            </div>
-                                            ${order.appointmentProposalsSentAt ? `
-                                                <p class="text-xs text-yellow-600 mt-3">
-                                                    <i class="fas fa-paper-plane mr-1"></i>
-                                                    Gesendet am ${new Date(order.appointmentProposalsSentAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    ` : ''}
-
-                    <!-- Mentor Assignment Section -->
-                    ${hasCoachSession(order) ? `
-                        <div class="mt-6 border-t border-gray-100 pt-6">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <i class="fas fa-user-tie text-indigo-500"></i>
-                                Mentor-Zuweisung
-                            </h4>
-                            ${order.assignedCoachId ? `
-                                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-4">
+                                ${order.assignedCoachId ? `
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-user text-white"></i>
+                                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-indigo-600"></i>
                                             </div>
                                             <div>
-                                                <p class="font-bold text-indigo-800">${sanitizeHTML(order.assignedCoachName || 'Mentor')}</p>
-                                                <p class="text-xs text-indigo-600">Zugewiesen</p>
+                                                <p class="font-medium text-brand-dark">${sanitizeHTML(order.assignedCoachName || 'Mentor')}</p>
+                                                <p class="text-xs text-green-600"><i class="fas fa-check mr-1"></i>Zugewiesen</p>
                                             </div>
                                         </div>
                                         <button onclick="app.showAssignCoachModal('${order.id}')"
-                                                class="text-indigo-600 hover:text-indigo-800 text-sm underline">
+                                                class="text-sm text-indigo-600 hover:text-indigo-800 underline">
                                             Ändern
                                         </button>
                                     </div>
-                                </div>
-                            ` : `
-                                <button onclick="app.showAssignCoachModal('${order.id}')"
-                                        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition shadow-md">
-                                    <i class="fas fa-user-plus mr-2"></i>Mentor zuweisen
-                                </button>
-                            `}
-                        </div>
-                    ` : ''}
-
-                    <!-- Documents Section -->
-                    <div id="docs-${order.id}" class="mt-4 border-t border-gray-100 pt-4">
-                        <!-- Customer uploaded documents -->
-                        <div class="mb-4">
-                            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">📥 Vom Kunden hochgeladen</p>
-                            <div id="doc-list-customer-${order.id}" class="space-y-2">
-                                <p class="text-xs text-gray-400 italic">Lade...</p>
+                                ` : `
+                                    <button onclick="app.showAssignCoachModal('${order.id}')"
+                                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                                        <i class="fas fa-user-plus"></i>
+                                        Mentor zuweisen
+                                    </button>
+                                `}
                             </div>
-                        </div>
-                        <!-- Admin delivered documents -->
-                        <div>
-                            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">📤 Von dir gesendet</p>
-                            <div id="doc-list-admin-${order.id}" class="space-y-2">
-                                <p class="text-xs text-gray-400 italic">Lade...</p>
+                        ` : ''}
+
+                        <!-- Appointment Section -->
+                        ${order.appointmentProposals || order.appointment || order.appointmentStatus ? `
+                            <div class="bg-white rounded-lg p-3 border border-gray-100">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-brand-gold"></i>
+                                    Terminplanung
+                                </p>
+                                ${order.appointmentStatus === 'confirmed' && order.appointment?.confirmed ? `
+                                    <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-check text-white"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-green-800">Termin bestätigt</p>
+                                            <p class="text-sm text-green-700">
+                                                ${new Date(order.appointment.datetime).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr
+                                            </p>
+                                        </div>
+                                    </div>
+                                ` : order.appointmentStatus === 'declined' ? `
+                                    <div class="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <i class="fas fa-times-circle text-orange-500"></i>
+                                            <span class="font-medium text-orange-800">Termine abgelehnt</span>
+                                        </div>
+                                        ${order.appointmentDeclineReason ? `
+                                            <p class="text-sm text-gray-600 italic mb-2">"${sanitizeHTML(order.appointmentDeclineReason)}"</p>
+                                        ` : ''}
+                                        <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
+                                                class="text-sm text-orange-600 hover:text-orange-800 underline">
+                                            Neue Termine vorschlagen
+                                        </button>
+                                    </div>
+                                ` : order.appointmentProposals ? `
+                                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <i class="fas fa-hourglass-half text-yellow-600 animate-pulse"></i>
+                                            <span class="font-medium text-yellow-800">Warte auf Kundenauswahl</span>
+                                        </div>
+                                        <div class="text-sm text-yellow-700 space-y-1">
+                                            ${order.appointmentProposals.slice(0, 3).map(prop => `
+                                                <p><i class="fas fa-calendar text-yellow-500 mr-2"></i>${new Date(prop).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr</p>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+
+                        <!-- Documents Section (Collapsed by Default) -->
+                        <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                            <button onclick="app.toggleOrderDocs('${order.id}')" class="w-full p-3 flex items-center justify-between text-left hover:bg-gray-50 transition">
+                                <span class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-folder text-gray-400"></i>
+                                    Dokumente
+                                </span>
+                                <i id="docs-icon-${order.id}" class="fas fa-chevron-down text-gray-400 text-xs transition-transform"></i>
+                            </button>
+                            <div id="docs-content-${order.id}" class="hidden border-t border-gray-100 p-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <p class="text-xs text-blue-600 font-medium mb-2"><i class="fas fa-upload mr-1"></i>Vom Kunden</p>
+                                        <div id="doc-list-customer-${order.id}" class="space-y-1 text-sm">
+                                            <p class="text-gray-400 italic text-xs">Lade...</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-green-600 font-medium mb-2"><i class="fas fa-paper-plane mr-1"></i>Von dir</p>
+                                        <div id="doc-list-admin-${order.id}" class="space-y-1 text-sm">
+                                            <p class="text-gray-400 italic text-xs">Lade...</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4916,6 +5040,38 @@ async function loadOrderDocuments(userId, orderId) {
         logger.error('Failed to load documents:', e);
         if (customerContainer) customerContainer.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
         if (adminContainer) adminContainer.innerHTML = '<p class="text-xs text-red-400">Fehler beim Laden</p>';
+    }
+}
+
+// Toggle order card expand/collapse
+export function toggleOrderExpand(orderId) {
+    const details = document.getElementById(`order-details-${orderId}`);
+    const icon = document.getElementById(`expand-icon-${orderId}`);
+
+    if (details && icon) {
+        const isHidden = details.classList.contains('hidden');
+        details.classList.toggle('hidden');
+        icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+
+        // Load documents when expanded
+        if (isHidden) {
+            const order = allAdminOrders.find(o => o.id === orderId);
+            if (order?.userId) {
+                loadOrderDocuments(order.userId, orderId);
+            }
+        }
+    }
+}
+
+// Toggle documents section within order
+export function toggleOrderDocs(orderId) {
+    const docs = document.getElementById(`docs-content-${orderId}`);
+    const icon = document.getElementById(`docs-icon-${orderId}`);
+
+    if (docs && icon) {
+        const isHidden = docs.classList.contains('hidden');
+        docs.classList.toggle('hidden');
+        icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
     }
 }
 
