@@ -1392,36 +1392,89 @@ exports.generateCvContent = onRequest({
         const skills = questionnaire.skills || {};
         const additional = questionnaire.additional || {};
 
-        // Template-specific requirements
-        const templateRequirements = {
-            minimalist: 'Clean, modern format with clear sections. Focus on readability and white space. Best for Young Professionals.',
-            creative: 'Modern design with subtle creative elements. Suitable for marketing, design, and tech roles.',
-            corporate: 'Traditional professional format. Comprehensive detail. Best for corporate and senior roles.',
-            executive: 'Executive brief format. High-level achievements and leadership focus. For C-Suite and Directors.',
-            brand: 'Personal branding focus. Emphasizes unique value proposition and thought leadership.'
+        // Template-specific requirements with detailed examples
+        const templateExamples = {
+            minimalist: {
+                description: 'Clean, modern format for Young Professionals (0-5 Jahre Erfahrung). Fokus auf Potenzial und erste Erfolge.',
+                summaryExample: 'Ambitionierter Marketing-Spezialist mit 3 Jahren Erfahrung in der Entwicklung datengetriebener Kampagnen. Nachgewiesene Steigerung der Conversion-Rate um 45% durch A/B-Testing und Kundenanalyse. Expertise in Google Analytics, HubSpot und Social Media Marketing.',
+                achievementExamples: [
+                    'Steigerung der Social-Media-Reichweite um 150% innerhalb von 6 Monaten durch gezielte Content-Strategie',
+                    'Einführung eines neuen CRM-Systems, das die Kundenzufriedenheit um 20% erhöhte',
+                    'Reduzierung der Bearbeitungszeit um 30% durch Prozessoptimierung'
+                ]
+            },
+            creative: {
+                description: 'Modern und kreativ für Marketing, Design und Tech-Rollen. Betont Innovation und kreative Problemlösung.',
+                summaryExample: 'Kreativer UX Designer mit Leidenschaft für nutzerzentrierte Produktentwicklung. 5 Jahre Erfahrung in der Gestaltung digitaler Erlebnisse für Fortune-500-Unternehmen. Gewinner des Red Dot Design Award 2023.',
+                achievementExamples: [
+                    'Redesign der Unternehmens-App führte zu 40% höherer Nutzerengagement und 25% weniger Support-Anfragen',
+                    'Entwicklung eines Design-Systems, das die Entwicklungszeit neuer Features um 60% verkürzte',
+                    'Leitung eines cross-funktionalen Teams von 8 Designern bei der Neugestaltung der E-Commerce-Plattform'
+                ]
+            },
+            corporate: {
+                description: 'Klassisch-professionell für Senior Professionals (5-15 Jahre). Umfassende Darstellung von Verantwortung und Ergebnissen.',
+                summaryExample: 'Erfahrener Finanzmanager mit über 10 Jahren Expertise in der strategischen Finanzplanung und Budgetverantwortung bis €50M. Nachgewiesene Erfolgsbilanz in der Optimierung von Finanzprozessen und Kostenreduktion. MBA-Abschluss und CFA-Zertifizierung.',
+                achievementExamples: [
+                    '20-prozentige Senkung der Betriebskosten durch Implementierung von Lean-Management-Prinzipien',
+                    'Jährliche Steigerung der Neukundenaufträge um 15% durch strategische Vertriebspartnerschaften',
+                    'Erfolgreiche Integration zweier Tochtergesellschaften mit Synergieeffekten von €2,5M jährlich'
+                ]
+            },
+            executive: {
+                description: 'Executive Brief für C-Suite und Direktoren. Fokus auf strategische Vision, P&L-Verantwortung und transformative Führung.',
+                summaryExample: 'Visionärer Geschäftsführer mit 20+ Jahren Erfahrung in der Transformation mittelständischer Unternehmen. Nachgewiesene P&L-Verantwortung bis €500M und erfolgreiche Führung von 500+ Mitarbeitern. Spezialisiert auf digitale Transformation und internationales Wachstum.',
+                achievementExamples: [
+                    'Steigerung des Unternehmensumsatzes von €150M auf €450M innerhalb von 5 Jahren',
+                    'Erfolgreiche Durchführung eines IPO mit Bewertung von €800M',
+                    'Transformation der Organisation: Reduktion der Time-to-Market um 62% bei gleichzeitiger Kostensenkung von 25%',
+                    'Aufbau und Führung eines internationalen Teams von 150+ Mitarbeitern in 8 Ländern'
+                ]
+            },
+            brand: {
+                description: 'Personal Branding für Thought Leader. Betont einzigartigen Mehrwert, Expertise und Vordenkerrolle.',
+                summaryExample: 'Anerkannter Experte für digitale Transformation und Keynote-Speaker mit über 100 Vorträgen auf internationalen Konferenzen. Autor von "Digital Leadership" (Bestseller 2023). Berater für DAX-30-Unternehmen in Fragen der Innovationsstrategie.',
+                achievementExamples: [
+                    'Entwicklung einer preisgekrönten Innovationsmethodik, die in 50+ Unternehmen implementiert wurde',
+                    'Aufbau einer LinkedIn-Community von 75.000+ Followern als Thought Leader für Digital Leadership',
+                    'Beratung von 15 DAX-Unternehmen bei der strategischen Neuausrichtung mit durchschnittlicher Umsatzsteigerung von 30%'
+                ]
+            }
         };
 
-        // Build the prompt for Claude
-        const prompt = `Du bist ein erfahrener CV-Experte und Karriereberater bei APEX Executive, einem Premium-Karriereservice für Führungskräfte.
+        const selectedTemplate = templateExamples[templateType] || templateExamples.corporate;
+
+        // Build the enhanced prompt for Claude
+        const prompt = `Du bist ein Premium-CV-Experte bei APEX Executive, einem exklusiven Karriereservice für Führungskräfte. Du erstellst Lebensläufe auf dem Niveau professioneller CV-Writer, die €500-2000 pro CV berechnen.
 
 DEINE AUFGABE:
-Erstelle einen optimierten, professionellen Lebenslauf basierend auf den folgenden Informationen.
+Erstelle einen perfekt optimierten, professionellen Lebenslauf, der sofort beeindruckt.
 
 TEMPLATE-TYP: ${templateType || 'corporate'}
-TEMPLATE-ANFORDERUNGEN: ${templateRequirements[templateType] || templateRequirements.corporate}
+TEMPLATE-BESCHREIBUNG: ${selectedTemplate.description}
 SPRACHE: ${language || 'Deutsch'}
 
-=== PERSÖNLICHE DATEN ===
-Name: ${personalInfo.fullName || 'Nicht angegeben'}
-E-Mail: ${personalInfo.email || ''}
-Telefon: ${personalInfo.phone || ''}
-Standort: ${personalInfo.location || ''}
-LinkedIn: ${personalInfo.linkedin || ''}
-Website: ${personalInfo.website || ''}
-Gewünschte Position: ${personalInfo.targetRole || ''}
-Karriereziel: ${personalInfo.careerGoal || ''}
+=== BEISPIELE FÜR DIESEN TEMPLATE-TYP ===
 
-=== BERUFSERFAHRUNG ===
+BEISPIEL-SUMMARY (so sollte es klingen):
+"${selectedTemplate.summaryExample}"
+
+BEISPIEL-ACHIEVEMENTS (diese Qualität erwarten wir):
+${selectedTemplate.achievementExamples.map((a, i) => `${i + 1}. "${a}"`).join('\n')}
+
+=== KANDIDATEN-DATEN ===
+
+PERSÖNLICHE DATEN:
+- Name: ${personalInfo.fullName || 'Nicht angegeben'}
+- E-Mail: ${personalInfo.email || ''}
+- Telefon: ${personalInfo.phone || ''}
+- Standort: ${personalInfo.location || ''}
+- LinkedIn: ${personalInfo.linkedin || ''}
+- Website: ${personalInfo.website || ''}
+- Gewünschte Position: ${personalInfo.targetRole || ''}
+- Karriereziel: ${personalInfo.careerGoal || ''}
+
+BERUFSERFAHRUNG:
 ${experience.length > 0 ? experience.map((exp, i) => `
 Position ${i + 1}:
 - Firma: ${exp.company || ''}
@@ -1431,7 +1484,7 @@ Position ${i + 1}:
 - Erfolge: ${(exp.achievements || []).join(', ') || 'Keine angegeben'}
 `).join('\n') : 'Keine Berufserfahrung angegeben'}
 
-=== AUSBILDUNG ===
+AUSBILDUNG:
 ${education.length > 0 ? education.map((edu, i) => `
 Ausbildung ${i + 1}:
 - Institution: ${edu.institution || ''}
@@ -1442,75 +1495,107 @@ Ausbildung ${i + 1}:
 - Highlights: ${edu.highlights || ''}
 `).join('\n') : 'Keine Ausbildung angegeben'}
 
-=== SKILLS ===
+SKILLS:
 - Technische Skills: ${(skills.technical || []).join(', ') || 'Keine angegeben'}
 - Soft Skills: ${(skills.soft || []).join(', ') || 'Keine angegeben'}
 - Sprachen: ${(skills.languages || []).map(l => `${l.language} (${l.level})`).join(', ') || 'Keine angegeben'}
 - Zertifikate: ${(skills.certifications || []).join(', ') || 'Keine angegeben'}
 
-=== ZUSÄTZLICHE INFORMATIONEN ===
+ZUSÄTZLICHE INFORMATIONEN:
 - Eigene Zusammenfassung: ${additional.summary || ''}
 - Top-Stärken: ${additional.strengths || ''}
 - Ziel-Branchen: ${(additional.industries || []).join(', ') || ''}
 
 ${documents.existingCv?.extractedText ? `
-=== AKTUELLER LEBENSLAUF (extrahierter Text) ===
-${documents.existingCv.extractedText.substring(0, 3000)}
+AKTUELLER LEBENSLAUF (extrahierter Text):
+${documents.existingCv.extractedText.substring(0, 4000)}
 ` : ''}
 
 ${documents.targetJob?.extractedText ? `
-=== ZIELSTELLE (extrahierte Beschreibung) ===
-${documents.targetJob.extractedText.substring(0, 2000)}
+ZIELSTELLE (Stellenbeschreibung):
+${documents.targetJob.extractedText.substring(0, 2500)}
 ` : ''}
 
-WICHTIGE ANWEISUNGEN:
-1. Formuliere alle Bullet Points aktionsorientiert (Verben am Anfang)
-2. Quantifiziere Erfolge wo möglich (Zahlen, Prozentsätze, Umsätze)
-3. Optimiere für ATS-Systeme (relevante Keywords aus der Zielstelle)
-4. Passe den Ton an das Template an (${templateType || 'corporate'})
-5. Das Profil/Summary sollte 3-4 Sätze haben und die wichtigsten Qualifikationen hervorheben
-6. Betone Leadership und Strategie bei Executive-Positionen
+=== PREMIUM-QUALITÄTSSTANDARDS ===
+
+1. POWER-VERBEN für Achievements (IMMER verwenden):
+   - Deutsch: Steigerte, Reduzierte, Implementierte, Führte, Entwickelte, Optimierte, Transformierte, Etablierte, Verhandelte, Akquirierte
+   - Englisch: Spearheaded, Orchestrated, Championed, Accelerated, Pioneered, Streamlined, Negotiated, Cultivated
+
+2. ACHIEVEMENT-FORMEL (Action + Ergebnis + Metrik + Kontext):
+   SCHWACH: "Verantwortlich für Vertrieb"
+   STARK: "Steigerung des Vertriebsumsatzes um 35% (€2,4M) durch Einführung eines Key-Account-Programms mit 12 Großkunden"
+
+3. QUANTIFIZIERUNG (IMMER mit Zahlen):
+   - Umsatz/Budget in € oder $
+   - Prozentuale Verbesserungen
+   - Teamgrößen (z.B. "Führung von 25 Mitarbeitern")
+   - Zeitersparnisse (z.B. "Reduktion um 40%")
+   - Anzahl Projekte/Kunden/Länder
+
+4. ATS-KEYWORDS (aus Zielstelle extrahieren):
+   - Strategische Planung, Change Management, P&L-Verantwortung
+   - Digital Transformation, Stakeholder Management
+   - Cross-funktionale Führung, Business Development
+
+5. SUMMARY-STRUKTUR (3-4 kraftvolle Sätze):
+   Satz 1: Titel + Jahre Erfahrung + Hauptexpertise
+   Satz 2: Größter quantifizierbarer Erfolg
+   Satz 3: Kernkompetenzen/Spezialisierung
+   Satz 4 (optional): Einzigartiger Mehrwert/USP
+
+6. EXECUTIVE-FOKUS (bei C-Level/Director):
+   - P&L-Verantwortung mit Zahlen
+   - Strategische Initiativen
+   - Board/Stakeholder-Kommunikation
+   - M&A, IPO, Internationalisierung
+   - Digitale Transformation
 
 AUSGABEFORMAT:
-Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt in diesem Format (keine Markdown-Codeblöcke):
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (keine Markdown-Codeblöcke, kein zusätzlicher Text):
 {
   "personal": {
-    "fullName": "...",
-    "title": "Aktuelle oder gewünschte Berufsbezeichnung",
-    "email": "...",
-    "phone": "...",
-    "location": "...",
-    "linkedin": "...",
-    "website": "..."
+    "fullName": "Vollständiger Name",
+    "title": "Professioneller Titel (z.B. 'Chief Financial Officer | Strategische Finanzführung')",
+    "email": "email@beispiel.de",
+    "phone": "+49 170 1234567",
+    "location": "München, Deutschland",
+    "linkedin": "linkedin.com/in/name",
+    "website": "website.de"
   },
-  "summary": "Professionelles Profil/Summary in 3-4 Sätzen",
+  "summary": "Kraftvolles Executive Summary nach der 3-4 Satz Struktur. Mit konkreten Zahlen und Erfolgen.",
   "experience": [
     {
       "company": "Firmenname",
-      "role": "Position",
-      "period": "MM/YYYY - MM/YYYY oder heute",
-      "location": "Stadt, Land",
-      "description": "Kurze Beschreibung der Rolle",
-      "achievements": ["Erfolg 1 mit Zahlen", "Erfolg 2 mit Impact", "Erfolg 3"]
+      "role": "Exakte Positionsbezeichnung",
+      "period": "01/2020 - heute",
+      "location": "Stadt, Deutschland",
+      "description": "Eine Zeile Kernverantwortung",
+      "achievements": [
+        "Quantifizierter Erfolg 1 mit Power-Verb und Zahlen",
+        "Quantifizierter Erfolg 2 mit messbarem Impact",
+        "Quantifizierter Erfolg 3 mit Kontext",
+        "Quantifizierter Erfolg 4 (bei Senior-Rollen)"
+      ]
     }
   ],
   "education": [
     {
-      "institution": "Name",
-      "degree": "Abschluss",
-      "field": "Fachrichtung",
-      "period": "YYYY - YYYY",
-      "grade": "Note falls relevant",
-      "highlights": "Besondere Leistungen"
+      "institution": "Universität/Hochschule",
+      "degree": "Abschlussbezeichnung",
+      "field": "Studienrichtung",
+      "period": "2010 - 2014",
+      "grade": "Note (falls gut)",
+      "highlights": "Relevante Auszeichnungen/Stipendien"
     }
   ],
   "skills": {
-    "technical": ["Skill 1", "Skill 2"],
-    "soft": ["Soft Skill 1", "Soft Skill 2"],
-    "languages": [{"language": "Deutsch", "level": "Muttersprache"}],
-    "certifications": ["Zertifikat 1"]
+    "technical": ["Skill 1", "Skill 2", "Skill 3"],
+    "soft": ["Leadership", "Strategisches Denken", "Change Management"],
+    "languages": [{"language": "Deutsch", "level": "Muttersprache"}, {"language": "Englisch", "level": "Verhandlungssicher"}],
+    "certifications": ["Relevante Zertifizierung 1", "Zertifizierung 2"]
   },
-  "expertise": ["Expertise-Bereich 1", "Expertise-Bereich 2", "Expertise-Bereich 3"]
+  "expertise": ["Kernkompetenz 1", "Kernkompetenz 2", "Kernkompetenz 3", "Kernkompetenz 4", "Kernkompetenz 5"]
 }`;
 
         console.log(`Generating CV for project ${projectId} with template ${templateType}`);
