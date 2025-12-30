@@ -6,6 +6,11 @@ const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const docx = require('docx');
 
+// Pdfme for template-based PDF generation
+const { generate } = require('@pdfme/generator');
+const { BLANK_PDF } = require('@pdfme/common');
+const { text, image, line, rectangle } = require('@pdfme/schemas');
+
 // Define secrets
 const stripeSecretKey = defineSecret('STRIPE_SECRET_KEY');
 const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
@@ -1850,7 +1855,14 @@ exports.generateCvDocument = onRequest({
             contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             fileExtension = 'docx';
         } else if (format === 'pdf') {
-            documentBuffer = await generatePdfDocument(cvData, templateStyle, projectData.generatedCv);
+            // Use Pdfme for template-based PDF generation (new method)
+            // Falls back to PDFKit for unsupported templates
+            const pdfmeTemplates = ['schwarz-beige-modern', 'green-yellow-modern', 'minimalist', 'corporate'];
+            if (pdfmeTemplates.includes(templateStyle)) {
+                documentBuffer = await generatePdfWithPdfme(cvData, templateStyle);
+            } else {
+                documentBuffer = await generatePdfDocument(cvData, templateStyle, projectData.generatedCv);
+            }
             contentType = 'application/pdf';
             fileExtension = 'pdf';
         } else {
@@ -2613,6 +2625,419 @@ async function generatePdfDocument(cvData, templateStyle, generatedCvOptions) {
             return headingY + 12;
         }
     });
+}
+
+// ========== PDFME TEMPLATE-BASED PDF GENERATION ==========
+// Define reusable CV templates for Pdfme
+const PDFME_CV_TEMPLATES = {
+    // Schwarz Beige Modern - Executive/Senior Template
+    'schwarz-beige-modern': {
+        name: 'Schwarz Beige Modern',
+        colors: {
+            headerBg: '#3d3d3d',
+            headerText: '#ffffff',
+            primary: '#3d3d3d',
+            secondary: '#c9a227',
+            text: '#333333',
+            lightText: '#666666'
+        },
+        // Template will be built dynamically based on CV data
+    },
+    // Green Yellow Modern - Young Professional Template
+    'green-yellow-modern': {
+        name: 'Green Yellow Modern',
+        colors: {
+            primary: '#2d8a8a',
+            secondary: '#f5c842',
+            headerBg: '#2d8a8a',
+            text: '#333333',
+            lightText: '#666666'
+        }
+    },
+    // Minimalist Clean
+    'minimalist': {
+        name: 'Minimalist Clean',
+        colors: {
+            primary: '#000000',
+            secondary: '#666666',
+            text: '#333333',
+            lightText: '#999999'
+        }
+    },
+    // Corporate Classic
+    'corporate': {
+        name: 'Corporate Classic',
+        colors: {
+            primary: '#1e3a5f',
+            secondary: '#c9a227',
+            text: '#333333',
+            lightText: '#666666'
+        }
+    }
+};
+
+// Generate PDF using Pdfme templates
+async function generatePdfWithPdfme(cvData, templateStyle) {
+    const templateConfig = PDFME_CV_TEMPLATES[templateStyle] || PDFME_CV_TEMPLATES['corporate'];
+    const colors = templateConfig.colors;
+
+    const personal = cvData.personal || {};
+    const experience = cvData.experience || [];
+    const education = cvData.education || [];
+    const skills = cvData.skills || {};
+    const summary = cvData.summary || '';
+    const expertise = cvData.expertise || [];
+
+    // A4 dimensions in mm: 210 x 297
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // Build schemas dynamically based on CV content
+    const schemas = [];
+    const inputs = {};
+    let yPos = margin;
+
+    // ===== HEADER BACKGROUND (for dark header templates) =====
+    if (templateStyle === 'schwarz-beige-modern' || templateStyle === 'corporate') {
+        schemas.push({
+            name: 'headerBg',
+            type: 'rectangle',
+            position: { x: 0, y: 0 },
+            width: pageWidth,
+            height: 45,
+            color: colors.headerBg
+        });
+        inputs.headerBg = '';
+        yPos = 8;
+    }
+
+    // ===== NAME =====
+    schemas.push({
+        name: 'fullName',
+        type: 'text',
+        position: { x: margin, y: yPos },
+        width: contentWidth,
+        height: 15,
+        fontSize: 28,
+        fontColor: templateStyle === 'schwarz-beige-modern' || templateStyle === 'corporate' ? colors.headerText : colors.primary,
+        alignment: 'center',
+        fontName: 'Helvetica-Bold'
+    });
+    inputs.fullName = (personal.fullName || 'Name').toUpperCase();
+    yPos += 12;
+
+    // ===== TITLE =====
+    if (personal.title) {
+        schemas.push({
+            name: 'title',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 8,
+            fontSize: 12,
+            fontColor: templateStyle === 'schwarz-beige-modern' ? colors.secondary : (templateStyle === 'corporate' ? colors.headerText : colors.secondary),
+            alignment: 'center'
+        });
+        inputs.title = personal.title;
+        yPos += 10;
+    }
+
+    // ===== CONTACT INFO =====
+    const contactParts = [];
+    if (personal.email) contactParts.push(personal.email);
+    if (personal.phone) contactParts.push(personal.phone);
+    if (personal.location) contactParts.push(personal.location);
+
+    if (contactParts.length > 0) {
+        schemas.push({
+            name: 'contact',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 6,
+            fontSize: 9,
+            fontColor: templateStyle === 'schwarz-beige-modern' || templateStyle === 'corporate' ? '#cccccc' : colors.lightText,
+            alignment: 'center'
+        });
+        inputs.contact = contactParts.join('  |  ');
+        yPos += 12;
+    }
+
+    // Move past header area
+    if (templateStyle === 'schwarz-beige-modern' || templateStyle === 'corporate') {
+        yPos = 50;
+    }
+
+    // ===== DIVIDER LINE =====
+    schemas.push({
+        name: 'divider1',
+        type: 'line',
+        position: { x: margin, y: yPos },
+        width: contentWidth,
+        height: 1,
+        color: colors.secondary
+    });
+    inputs.divider1 = '';
+    yPos += 8;
+
+    // ===== SUMMARY/PROFILE =====
+    if (summary) {
+        schemas.push({
+            name: 'summaryLabel',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 6,
+            fontSize: 11,
+            fontColor: colors.primary,
+            fontName: 'Helvetica-Bold'
+        });
+        inputs.summaryLabel = 'PROFIL';
+        yPos += 7;
+
+        schemas.push({
+            name: 'summaryText',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 20,
+            fontSize: 9,
+            fontColor: colors.text,
+            lineHeight: 1.4
+        });
+        inputs.summaryText = summary;
+        yPos += 22;
+    }
+
+    // ===== EXPERTISE/KERNKOMPETENZEN =====
+    if (expertise.length > 0) {
+        schemas.push({
+            name: 'expertiseLabel',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 6,
+            fontSize: 11,
+            fontColor: colors.primary,
+            fontName: 'Helvetica-Bold'
+        });
+        inputs.expertiseLabel = 'KERNKOMPETENZEN';
+        yPos += 7;
+
+        schemas.push({
+            name: 'expertiseText',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 8,
+            fontSize: 9,
+            fontColor: colors.secondary,
+            alignment: 'center'
+        });
+        inputs.expertiseText = expertise.join('  •  ');
+        yPos += 12;
+    }
+
+    // ===== EXPERIENCE =====
+    if (experience.length > 0) {
+        schemas.push({
+            name: 'expLabel',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 6,
+            fontSize: 11,
+            fontColor: colors.primary,
+            fontName: 'Helvetica-Bold'
+        });
+        inputs.expLabel = 'BERUFSERFAHRUNG';
+        yPos += 8;
+
+        experience.forEach((exp, idx) => {
+            if (yPos > 260) return; // Prevent overflow (would need multi-page for full support)
+
+            // Role
+            schemas.push({
+                name: `expRole${idx}`,
+                type: 'text',
+                position: { x: margin, y: yPos },
+                width: contentWidth * 0.7,
+                height: 6,
+                fontSize: 10,
+                fontColor: colors.primary,
+                fontName: 'Helvetica-Bold'
+            });
+            inputs[`expRole${idx}`] = exp.role || 'Position';
+
+            // Period (right aligned)
+            schemas.push({
+                name: `expPeriod${idx}`,
+                type: 'text',
+                position: { x: margin + contentWidth * 0.7, y: yPos },
+                width: contentWidth * 0.3,
+                height: 6,
+                fontSize: 9,
+                fontColor: colors.lightText,
+                alignment: 'right'
+            });
+            inputs[`expPeriod${idx}`] = exp.period || '';
+            yPos += 6;
+
+            // Company
+            schemas.push({
+                name: `expCompany${idx}`,
+                type: 'text',
+                position: { x: margin, y: yPos },
+                width: contentWidth,
+                height: 5,
+                fontSize: 9,
+                fontColor: colors.secondary
+            });
+            inputs[`expCompany${idx}`] = [exp.company, exp.location].filter(Boolean).join(', ');
+            yPos += 6;
+
+            // Description/Achievements
+            if (exp.description || (exp.achievements && exp.achievements.length > 0)) {
+                const achievementText = exp.achievements ?
+                    exp.achievements.map(a => `• ${a}`).join('\n') :
+                    (exp.description || '');
+
+                schemas.push({
+                    name: `expDesc${idx}`,
+                    type: 'text',
+                    position: { x: margin + 3, y: yPos },
+                    width: contentWidth - 3,
+                    height: Math.min(25, 5 * (exp.achievements?.length || 2)),
+                    fontSize: 8,
+                    fontColor: colors.text,
+                    lineHeight: 1.3
+                });
+                inputs[`expDesc${idx}`] = achievementText;
+                yPos += Math.min(25, 5 * (exp.achievements?.length || 2)) + 3;
+            }
+
+            yPos += 5;
+        });
+    }
+
+    // ===== EDUCATION =====
+    if (education.length > 0 && yPos < 240) {
+        schemas.push({
+            name: 'eduLabel',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 6,
+            fontSize: 11,
+            fontColor: colors.primary,
+            fontName: 'Helvetica-Bold'
+        });
+        inputs.eduLabel = 'AUSBILDUNG';
+        yPos += 8;
+
+        education.forEach((edu, idx) => {
+            if (yPos > 270) return;
+
+            schemas.push({
+                name: `eduDegree${idx}`,
+                type: 'text',
+                position: { x: margin, y: yPos },
+                width: contentWidth * 0.7,
+                height: 5,
+                fontSize: 9,
+                fontColor: colors.primary,
+                fontName: 'Helvetica-Bold'
+            });
+            inputs[`eduDegree${idx}`] = `${edu.degree || ''} ${edu.field || ''}`.trim();
+
+            schemas.push({
+                name: `eduPeriod${idx}`,
+                type: 'text',
+                position: { x: margin + contentWidth * 0.7, y: yPos },
+                width: contentWidth * 0.3,
+                height: 5,
+                fontSize: 8,
+                fontColor: colors.lightText,
+                alignment: 'right'
+            });
+            inputs[`eduPeriod${idx}`] = edu.period || '';
+            yPos += 5;
+
+            schemas.push({
+                name: `eduInst${idx}`,
+                type: 'text',
+                position: { x: margin, y: yPos },
+                width: contentWidth,
+                height: 5,
+                fontSize: 8,
+                fontColor: colors.lightText
+            });
+            inputs[`eduInst${idx}`] = edu.institution || '';
+            yPos += 8;
+        });
+    }
+
+    // ===== SKILLS =====
+    if (yPos < 260) {
+        schemas.push({
+            name: 'skillsLabel',
+            type: 'text',
+            position: { x: margin, y: yPos },
+            width: contentWidth,
+            height: 6,
+            fontSize: 11,
+            fontColor: colors.primary,
+            fontName: 'Helvetica-Bold'
+        });
+        inputs.skillsLabel = 'KENNTNISSE & FÄHIGKEITEN';
+        yPos += 8;
+
+        if (skills.technical && skills.technical.length > 0) {
+            schemas.push({
+                name: 'techSkills',
+                type: 'text',
+                position: { x: margin, y: yPos },
+                width: contentWidth,
+                height: 5,
+                fontSize: 8,
+                fontColor: colors.text
+            });
+            inputs.techSkills = `Fachkenntnisse: ${skills.technical.join(', ')}`;
+            yPos += 6;
+        }
+
+        if (skills.languages && skills.languages.length > 0) {
+            schemas.push({
+                name: 'langSkills',
+                type: 'text',
+                position: { x: margin, y: yPos },
+                width: contentWidth,
+                height: 5,
+                fontSize: 8,
+                fontColor: colors.text
+            });
+            inputs.langSkills = `Sprachen: ${skills.languages.map(l => `${l.language} (${l.level})`).join(', ')}`;
+            yPos += 6;
+        }
+    }
+
+    // Build the template
+    const template = {
+        basePdf: BLANK_PDF,
+        schemas: [schemas]
+    };
+
+    // Generate PDF
+    const plugins = { text, line, rectangle };
+    const pdf = await generate({
+        template,
+        inputs: [inputs],
+        plugins
+    });
+
+    return Buffer.from(pdf);
 }
 
 // ========== SCHWARZ BEIGE MODERN TEMPLATE (Canva Style) ==========

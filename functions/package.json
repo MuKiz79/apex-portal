@@ -10,14 +10,17 @@
     "node": "20"
   },
   "dependencies": {
+    "@pdfme/common": "^5.5.8",
+    "@pdfme/generator": "^5.5.8",
+    "@pdfme/schemas": "^5.5.8",
+    "docx": "^8.5.0",
     "firebase-admin": "^12.0.0",
     "firebase-functions": "^5.0.0",
-    "stripe": "^14.10.0",
-    "nodemailer": "^6.9.8",
-    "pdfkit": "^0.15.0",
-    "pdf-parse": "^1.1.1",
     "mammoth": "^1.6.0",
-    "docx": "^8.5.0"
+    "nodemailer": "^6.9.8",
+    "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.15.0",
+    "stripe": "^14.10.0"
   },
   "private": true
 }
