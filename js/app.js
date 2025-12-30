@@ -8107,8 +8107,9 @@ function updateCvGeneratorUI() {
 
 // Start CV generation with Claude API
 export async function startCvGeneration(projectId, orderId) {
-    const startBtn = document.getElementById('cv-gen-start-btn');
-    const cancelBtn = document.getElementById('cv-gen-cancel-btn');
+    // Use the wizard buttons (cv-gen-next-btn becomes the generate button in step 2)
+    const startBtn = document.getElementById('cv-gen-next-btn');
+    const backBtn = document.getElementById('cv-gen-back-btn');
     const progressDiv = document.getElementById('cv-generation-progress');
     const statusSpan = document.getElementById('cv-generation-status');
     const progressBar = document.getElementById('cv-generation-bar');
@@ -8126,23 +8127,27 @@ export async function startCvGeneration(projectId, orderId) {
     } = cvGeneratorState;
 
     // Update UI to show progress
-    startBtn.disabled = true;
-    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Wird generiert...';
-    cancelBtn.classList.add('hidden');
-    progressDiv.classList.remove('hidden');
+    if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Wird generiert...';
+    }
+    if (backBtn) backBtn.classList.add('hidden');
+    if (progressDiv) progressDiv.classList.remove('hidden');
 
     // Animate progress bar
     let progress = 0;
     const progressInterval = setInterval(() => {
         progress = Math.min(progress + Math.random() * 15, 90);
-        progressBar.style.width = `${progress}%`;
+        if (progressBar) progressBar.style.width = `${progress}%`;
 
-        if (progress < 30) {
-            statusSpan.textContent = 'Analysiere Fragebogen-Daten...';
-        } else if (progress < 60) {
-            statusSpan.textContent = includeCover ? 'Generiere CV & Anschreiben...' : 'Generiere optimierten CV...';
-        } else {
-            statusSpan.textContent = 'Finalisiere Dokument...';
+        if (statusSpan) {
+            if (progress < 30) {
+                statusSpan.textContent = 'Analysiere Fragebogen-Daten...';
+            } else if (progress < 60) {
+                statusSpan.textContent = includeCover ? 'Generiere CV & Anschreiben...' : 'Generiere optimierten CV...';
+            } else {
+                statusSpan.textContent = 'Finalisiere Dokument...';
+            }
         }
     }, 800);
 
@@ -8175,8 +8180,8 @@ export async function startCvGeneration(projectId, orderId) {
         const result = await response.json();
 
         // Complete progress
-        progressBar.style.width = '100%';
-        statusSpan.textContent = 'CV erfolgreich generiert!';
+        if (progressBar) progressBar.style.width = '100%';
+        if (statusSpan) statusSpan.textContent = 'CV erfolgreich generiert!';
 
         showToast('CV wurde erfolgreich generiert!');
 
@@ -8192,16 +8197,20 @@ export async function startCvGeneration(projectId, orderId) {
         clearInterval(progressInterval);
         logger.error('Error generating CV:', e);
 
-        progressDiv.innerHTML = `
-            <div class="flex items-center gap-3 text-red-600">
-                <i class="fas fa-exclamation-circle text-xl"></i>
-                <span>Fehler: ${e.message}</span>
-            </div>
-        `;
+        if (progressDiv) {
+            progressDiv.innerHTML = `
+                <div class="flex items-center gap-3 text-red-600">
+                    <i class="fas fa-exclamation-circle text-xl"></i>
+                    <span>Fehler: ${e.message}</span>
+                </div>
+            `;
+        }
 
-        startBtn.disabled = false;
-        startBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Erneut versuchen';
-        cancelBtn.classList.remove('hidden');
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Erneut versuchen';
+        }
+        if (backBtn) backBtn.classList.remove('hidden');
     }
 }
 
