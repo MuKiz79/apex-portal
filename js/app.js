@@ -648,6 +648,7 @@ export function updateAuthUI(state) {
     const userProfile = document.getElementById('nav-user-profile');
     const dashUsername = document.getElementById('dash-username');
     const userNameDisplay = document.getElementById('user-name-display');
+    const adminSection = document.getElementById('admin-section');
 
     if (state.user) {
         loginBtn?.classList.add('hidden');
@@ -658,12 +659,26 @@ export function updateAuthUI(state) {
         if(dashUsername) dashUsername.textContent = displayName;
         if(userNameDisplay) userNameDisplay.textContent = displayName.substring(0, 12) + (displayName.length > 12 ? '...' : '');
 
+        // Show admin section only for admins
+        if (adminSection) {
+            if (isAdmin(state.user.email)) {
+                adminSection.classList.remove('hidden');
+            } else {
+                adminSection.classList.add('hidden');
+            }
+        }
+
         // Load profile picture if available
         loadProfilePicture(state);
     } else {
         loginBtn?.classList.remove('hidden');
         userProfile?.classList.add('hidden');
         userProfile?.classList.remove('flex');
+
+        // Hide admin section when logged out
+        if (adminSection) {
+            adminSection.classList.add('hidden');
+        }
     }
 }
 
