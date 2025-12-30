@@ -7349,11 +7349,12 @@ export async function confirmSendCvQuestionnaire(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
     if (!project) return;
 
-    showToast('Sende Fragebogen...');
+    showToast('Erstelle CV-Projekt...');
 
     try {
         // Create cvProject document if not exists
-        if (!project.cvProjectId) {
+        let projectId = project.cvProjectId;
+        if (!projectId) {
             const cvProjectRef = await addDoc(collection(db, 'cvProjects'), {
                 orderId: orderId,
                 userId: project.userId,
@@ -7363,38 +7364,102 @@ export async function confirmSendCvQuestionnaire(orderId) {
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
-            project.cvProjectId = cvProjectRef.id;
+            projectId = cvProjectRef.id;
+            project.cvProjectId = projectId;
         } else {
-            await updateDoc(doc(db, 'cvProjects', project.cvProjectId), {
+            await updateDoc(doc(db, 'cvProjects', projectId), {
                 status: 'questionnaire_sent',
                 updatedAt: serverTimestamp()
             });
         }
 
-        // Call Cloud Function to send email
-        // TODO: Implement sendQuestionnaireEmail Cloud Function
-        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/sendQuestionnaireEmail', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                orderId: orderId,
-                projectId: project.cvProjectId,
-                customerEmail: project.customerEmail,
-                customerName: project.customerName
-            })
-        });
+        // Generate questionnaire link
+        const questionnaireUrl = `${window.location.origin}/?questionnaire=${projectId}`;
 
-        if (!response.ok) {
-            throw new Error('Email konnte nicht gesendet werden');
+        // Try to send email via Cloud Function (optional - may not be deployed yet)
+        try {
+            const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/sendQuestionnaireEmail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    projectId: projectId,
+                    customerEmail: project.customerEmail,
+                    customerName: project.customerName,
+                    questionnaireUrl: questionnaireUrl
+                })
+            });
+
+            if (response.ok) {
+                showToast('Fragebogen-Link wurde per E-Mail gesendet!');
+            } else {
+                // Email sending failed, but project was created - show link to copy
+                showQuestionnaireLink(projectId, project.customerEmail, questionnaireUrl);
+            }
+        } catch (emailError) {
+            // Cloud Function not available - show link to copy manually
+            logger.warn('Email function not available:', emailError);
+            showQuestionnaireLink(projectId, project.customerEmail, questionnaireUrl);
         }
 
-        showToast('Fragebogen wurde gesendet!');
         await loadCvProjects();
 
     } catch (e) {
-        logger.error('Error sending questionnaire:', e);
-        showToast('Fehler beim Senden: ' + e.message);
+        logger.error('Error creating CV project:', e);
+        showToast('Fehler: ' + e.message);
     }
+}
+
+// Show questionnaire link modal for manual copying
+function showQuestionnaireLink(projectId, customerEmail, url) {
+    const modal = document.createElement('div');
+    modal.id = 'questionnaire-link-modal';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-check text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-brand-dark">CV-Projekt erstellt</h3>
+                    <p class="text-sm text-gray-500">Fragebogen-Link bereit</p>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                <p class="text-sm text-amber-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Die automatische E-Mail-Funktion ist noch nicht aktiviert. Bitte senden Sie den Link manuell an den Kunden.
+                </p>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Kunde:</label>
+                <p class="text-sm text-gray-600">${customerEmail}</p>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Fragebogen-Link:</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" value="${url}" readonly
+                           class="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-mono">
+                    <button onclick="navigator.clipboard.writeText('${url}'); this.innerHTML='<i class=\\'fas fa-check\\'></i>'; setTimeout(() => this.innerHTML='<i class=\\'fas fa-copy\\'></i>', 2000)"
+                            class="px-3 py-2 bg-brand-gold text-brand-dark rounded-lg hover:bg-yellow-500 transition">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button onclick="document.getElementById('questionnaire-link-modal')?.remove()"
+                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                    Schließen
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 // Resend questionnaire
