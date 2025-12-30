@@ -7716,15 +7716,15 @@ export async function openCvGenerator(orderId) {
         return;
     }
 
-    // Reset state
+    // Reset state - use first Canva template as default
     cvGeneratorState = {
         step: 1,
         projectId: project.cvProjectId,
         orderId: orderId,
         customerName: project.customerName,
-        template: 'corporate',
-        colorScheme: 'classic',
-        layout: 'two-column',
+        template: 'elegant-navy',  // Default to first Canva template
+        colorScheme: 'elegant-navy',
+        layout: 'sidebar',
         includeCover: false,
         includePhoto: false,
         language: 'Deutsch',
@@ -7794,74 +7794,332 @@ export async function openCvGenerator(orderId) {
     initCvGeneratorHandlers();
 }
 
-// Render Step 1: Design Selection
-function renderCvGeneratorStep1() {
-    return `
-        <!-- Template Selection -->
-        <div class="mb-8">
-            <h4 class="text-lg font-medium text-brand-dark mb-4">
-                <i class="fas fa-th-large mr-2 text-brand-gold"></i>
-                Template-Stil
-            </h4>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                ${['minimalist', 'creative', 'corporate', 'executive', 'brand'].map(t => `
-                    <button onclick="window.selectCvDesign('template', '${t}')" data-design="template-${t}"
-                            class="design-option p-4 border-2 ${cvGeneratorState.template === t ? 'border-brand-gold bg-brand-gold/5' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
-                        <i class="fas ${t === 'minimalist' ? 'fa-align-left' : t === 'creative' ? 'fa-palette' : t === 'corporate' ? 'fa-building' : t === 'executive' ? 'fa-crown' : 'fa-user-tie'} text-2xl ${cvGeneratorState.template === t ? 'text-brand-gold' : 'text-gray-400'} mb-2"></i>
-                        <p class="font-medium text-brand-dark text-sm">${t === 'minimalist' ? 'Minimalist' : t === 'creative' ? 'Creative' : t === 'corporate' ? 'Corporate' : t === 'executive' ? 'Executive' : 'Personal Brand'}</p>
-                        <p class="text-xs text-gray-500">${t === 'minimalist' ? 'Clean & Modern' : t === 'creative' ? 'Innovativ' : t === 'corporate' ? 'Professionell' : t === 'executive' ? 'C-Suite' : 'Thought Leader'}</p>
-                    </button>
-                `).join('')}
+// Canva-style CV Template definitions with visual previews
+const canvaTemplates = [
+    {
+        id: 'elegant-navy',
+        name: 'Elegant Navy',
+        category: 'Executive',
+        colors: { primary: '#1e3a5f', secondary: '#c9a227', accent: '#f5f5f5', text: '#333333' },
+        layout: 'sidebar',
+        description: 'Zeitloses Design mit Navy-Seitenleiste',
+        tags: ['C-Suite', 'Führungskraft', 'Klassisch'],
+        preview: `
+            <div class="w-full h-full flex text-[6px]">
+                <div class="w-1/3 bg-[#1e3a5f] text-white p-2">
+                    <div class="w-8 h-8 rounded-full bg-gray-300 mx-auto mb-2"></div>
+                    <div class="h-1.5 bg-white/80 rounded mb-1"></div>
+                    <div class="h-1 bg-white/40 rounded w-3/4 mx-auto mb-3"></div>
+                    <div class="h-1 bg-[#c9a227] rounded w-full mb-1"></div>
+                    <div class="space-y-0.5">
+                        <div class="h-0.5 bg-white/30 rounded"></div>
+                        <div class="h-0.5 bg-white/30 rounded w-4/5"></div>
+                    </div>
+                </div>
+                <div class="w-2/3 bg-white p-2">
+                    <div class="h-1.5 bg-[#1e3a5f] rounded w-1/2 mb-2"></div>
+                    <div class="space-y-0.5 mb-2">
+                        <div class="h-0.5 bg-gray-300 rounded"></div>
+                        <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                    </div>
+                    <div class="h-1 bg-[#c9a227] rounded w-1/3 mb-1"></div>
+                    <div class="space-y-0.5">
+                        <div class="h-0.5 bg-gray-200 rounded"></div>
+                        <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <!-- Color Scheme -->
-        <div class="mb-8">
-            <h4 class="text-lg font-medium text-brand-dark mb-4">
-                <i class="fas fa-paint-brush mr-2 text-brand-gold"></i>
-                Farbschema
-            </h4>
-            <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
-                ${[
-                    { id: 'classic', name: 'Klassisch', colors: ['#1a1a2e', '#c9b99a'] },
-                    { id: 'navy', name: 'Navy Blue', colors: ['#1e3a5f', '#e8e8e8'] },
-                    { id: 'forest', name: 'Forest', colors: ['#2d4a3e', '#d4c5a9'] },
-                    { id: 'burgundy', name: 'Burgundy', colors: ['#722f37', '#f5f0eb'] },
-                    { id: 'slate', name: 'Slate', colors: ['#475569', '#f1f5f9'] },
-                    { id: 'charcoal', name: 'Charcoal', colors: ['#374151', '#fbbf24'] }
-                ].map(c => `
-                    <button onclick="window.selectCvDesign('colorScheme', '${c.id}')" data-design="color-${c.id}"
-                            class="design-option p-3 border-2 ${cvGeneratorState.colorScheme === c.id ? 'border-brand-gold' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
-                        <div class="flex justify-center gap-1 mb-2">
-                            <div class="w-6 h-6 rounded-full" style="background-color: ${c.colors[0]}"></div>
-                            <div class="w-6 h-6 rounded-full border border-gray-200" style="background-color: ${c.colors[1]}"></div>
+        `
+    },
+    {
+        id: 'modern-minimal',
+        name: 'Modern Minimal',
+        category: 'Young Professional',
+        colors: { primary: '#000000', secondary: '#666666', accent: '#ffffff', text: '#333333' },
+        layout: 'single-column',
+        description: 'Sauberes, minimalistisches Design',
+        tags: ['Modern', 'Tech', 'Startup'],
+        preview: `
+            <div class="w-full h-full bg-white p-3 text-[6px]">
+                <div class="text-center mb-3">
+                    <div class="h-2 bg-black rounded w-1/2 mx-auto mb-1"></div>
+                    <div class="h-1 bg-gray-400 rounded w-1/3 mx-auto"></div>
+                </div>
+                <div class="border-t border-b border-gray-200 py-1 mb-2">
+                    <div class="flex justify-center gap-2">
+                        <div class="h-0.5 bg-gray-300 rounded w-8"></div>
+                        <div class="h-0.5 bg-gray-300 rounded w-8"></div>
+                        <div class="h-0.5 bg-gray-300 rounded w-8"></div>
+                    </div>
+                </div>
+                <div class="h-1 bg-black rounded w-1/4 mb-1"></div>
+                <div class="space-y-0.5 mb-2">
+                    <div class="h-0.5 bg-gray-200 rounded"></div>
+                    <div class="h-0.5 bg-gray-200 rounded w-5/6"></div>
+                </div>
+                <div class="h-1 bg-black rounded w-1/4 mb-1"></div>
+                <div class="space-y-0.5">
+                    <div class="h-0.5 bg-gray-200 rounded"></div>
+                    <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                </div>
+            </div>
+        `
+    },
+    {
+        id: 'creative-bold',
+        name: 'Creative Bold',
+        category: 'Creative',
+        colors: { primary: '#e63946', secondary: '#1d3557', accent: '#f1faee', text: '#1d3557' },
+        layout: 'two-column',
+        description: 'Auffälliges Design für Kreative',
+        tags: ['Design', 'Marketing', 'Kreativ'],
+        preview: `
+            <div class="w-full h-full bg-[#f1faee] text-[6px]">
+                <div class="bg-[#e63946] p-2 mb-2">
+                    <div class="h-2 bg-white rounded w-1/2 mb-1"></div>
+                    <div class="h-1 bg-white/70 rounded w-1/3"></div>
+                </div>
+                <div class="px-2 flex gap-2">
+                    <div class="w-1/2">
+                        <div class="h-1 bg-[#1d3557] rounded w-2/3 mb-1"></div>
+                        <div class="space-y-0.5">
+                            <div class="h-0.5 bg-gray-400 rounded"></div>
+                            <div class="h-0.5 bg-gray-400 rounded w-4/5"></div>
                         </div>
-                        <p class="text-xs font-medium text-brand-dark">${c.name}</p>
+                    </div>
+                    <div class="w-1/2">
+                        <div class="h-1 bg-[#e63946] rounded w-2/3 mb-1"></div>
+                        <div class="flex gap-0.5 flex-wrap">
+                            <div class="h-2 w-4 bg-[#1d3557]/20 rounded"></div>
+                            <div class="h-2 w-5 bg-[#1d3557]/20 rounded"></div>
+                            <div class="h-2 w-3 bg-[#1d3557]/20 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+    },
+    {
+        id: 'corporate-classic',
+        name: 'Corporate Classic',
+        category: 'Senior Professional',
+        colors: { primary: '#2c3e50', secondary: '#3498db', accent: '#ecf0f1', text: '#2c3e50' },
+        layout: 'single-column',
+        description: 'Professionell für Konzernumfeld',
+        tags: ['Konzern', 'Finance', 'Consulting'],
+        preview: `
+            <div class="w-full h-full bg-white text-[6px]">
+                <div class="bg-[#2c3e50] p-2">
+                    <div class="h-2 bg-white rounded w-2/3 mb-1"></div>
+                    <div class="h-0.5 bg-[#3498db] rounded w-1/2"></div>
+                </div>
+                <div class="p-2">
+                    <div class="flex gap-2 mb-2 text-[4px] text-gray-400">
+                        <span>✉ email</span>
+                        <span>📱 phone</span>
+                        <span>📍 location</span>
+                    </div>
+                    <div class="h-1 bg-[#2c3e50] rounded w-1/3 mb-1"></div>
+                    <div class="h-0.5 bg-[#3498db] rounded w-full mb-2"></div>
+                    <div class="space-y-0.5">
+                        <div class="h-0.5 bg-gray-200 rounded"></div>
+                        <div class="h-0.5 bg-gray-200 rounded w-5/6"></div>
+                        <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                    </div>
+                </div>
+            </div>
+        `
+    },
+    {
+        id: 'executive-gold',
+        name: 'Executive Gold',
+        category: 'C-Suite',
+        colors: { primary: '#1a1a2e', secondary: '#c9b99a', accent: '#f8f6f3', text: '#1a1a2e' },
+        layout: 'sidebar',
+        description: 'Premium-Design für Top-Manager',
+        tags: ['CEO', 'Vorstand', 'Executive'],
+        preview: `
+            <div class="w-full h-full flex text-[6px]">
+                <div class="w-1/3 bg-[#1a1a2e] text-white p-2">
+                    <div class="w-8 h-8 rounded-full bg-[#c9b99a] mx-auto mb-2"></div>
+                    <div class="h-0.5 bg-[#c9b99a] rounded mb-2"></div>
+                    <div class="space-y-1">
+                        <div class="h-0.5 bg-white/40 rounded"></div>
+                        <div class="h-0.5 bg-white/40 rounded w-4/5"></div>
+                    </div>
+                    <div class="mt-2 h-0.5 bg-[#c9b99a] rounded mb-1"></div>
+                    <div class="flex gap-0.5 flex-wrap">
+                        <div class="h-1.5 w-3 bg-white/20 rounded"></div>
+                        <div class="h-1.5 w-4 bg-white/20 rounded"></div>
+                    </div>
+                </div>
+                <div class="w-2/3 bg-[#f8f6f3] p-2">
+                    <div class="h-2 bg-[#1a1a2e] rounded w-2/3 mb-1"></div>
+                    <div class="h-0.5 bg-[#c9b99a] rounded w-1/2 mb-2"></div>
+                    <div class="h-1 bg-[#1a1a2e] rounded w-1/3 mb-1"></div>
+                    <div class="space-y-0.5">
+                        <div class="h-0.5 bg-gray-300 rounded"></div>
+                        <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                    </div>
+                </div>
+            </div>
+        `
+    },
+    {
+        id: 'tech-modern',
+        name: 'Tech Modern',
+        category: 'Tech & IT',
+        colors: { primary: '#6366f1', secondary: '#818cf8', accent: '#f8fafc', text: '#1e293b' },
+        layout: 'two-column',
+        description: 'Modern für Tech-Industrie',
+        tags: ['IT', 'Software', 'Developer'],
+        preview: `
+            <div class="w-full h-full bg-[#f8fafc] text-[6px]">
+                <div class="p-2">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#818cf8]"></div>
+                        <div>
+                            <div class="h-1.5 bg-[#1e293b] rounded w-12 mb-0.5"></div>
+                            <div class="h-0.5 bg-[#6366f1] rounded w-8"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="w-1/2">
+                            <div class="h-1 bg-[#6366f1] rounded w-2/3 mb-1"></div>
+                            <div class="space-y-0.5">
+                                <div class="h-0.5 bg-gray-300 rounded"></div>
+                                <div class="h-0.5 bg-gray-300 rounded w-4/5"></div>
+                            </div>
+                        </div>
+                        <div class="w-1/2">
+                            <div class="h-1 bg-[#818cf8] rounded w-2/3 mb-1"></div>
+                            <div class="flex gap-0.5 flex-wrap">
+                                <div class="h-1.5 px-1 bg-[#6366f1]/20 rounded text-[4px]">React</div>
+                                <div class="h-1.5 px-1 bg-[#6366f1]/20 rounded text-[4px]">Node</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+    },
+    {
+        id: 'elegant-burgundy',
+        name: 'Elegant Burgundy',
+        category: 'Senior Professional',
+        colors: { primary: '#722f37', secondary: '#d4a574', accent: '#faf7f5', text: '#3d2c2e' },
+        layout: 'single-column',
+        description: 'Elegantes Weinrot für Führungskräfte',
+        tags: ['Luxury', 'Fashion', 'Hospitality'],
+        preview: `
+            <div class="w-full h-full bg-[#faf7f5] text-[6px]">
+                <div class="border-b-2 border-[#722f37] p-2 text-center">
+                    <div class="h-2 bg-[#722f37] rounded w-1/2 mx-auto mb-1"></div>
+                    <div class="h-0.5 bg-[#d4a574] rounded w-1/3 mx-auto"></div>
+                </div>
+                <div class="p-2">
+                    <div class="flex justify-center gap-2 mb-2 text-[4px] text-[#722f37]">
+                        <span>✉</span><span>📱</span><span>🔗</span>
+                    </div>
+                    <div class="h-1 bg-[#722f37] rounded w-1/4 mb-1"></div>
+                    <div class="border-l-2 border-[#d4a574] pl-1 space-y-0.5">
+                        <div class="h-0.5 bg-gray-300 rounded"></div>
+                        <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                    </div>
+                </div>
+            </div>
+        `
+    },
+    {
+        id: 'swiss-clean',
+        name: 'Swiss Clean',
+        category: 'Universal',
+        colors: { primary: '#333333', secondary: '#e74c3c', accent: '#ffffff', text: '#333333' },
+        layout: 'two-column',
+        description: 'Swiss Design - Klarheit & Präzision',
+        tags: ['Design', 'Architecture', 'Engineering'],
+        preview: `
+            <div class="w-full h-full bg-white text-[6px] p-2">
+                <div class="flex gap-2">
+                    <div class="w-1/3">
+                        <div class="h-2 bg-[#333333] rounded mb-1"></div>
+                        <div class="h-0.5 bg-[#e74c3c] rounded w-2/3 mb-2"></div>
+                        <div class="space-y-1">
+                            <div class="h-0.5 bg-gray-200 rounded"></div>
+                            <div class="h-0.5 bg-gray-200 rounded"></div>
+                            <div class="h-0.5 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+                    <div class="w-2/3 border-l border-gray-200 pl-2">
+                        <div class="h-1 bg-[#333333] rounded w-1/2 mb-1"></div>
+                        <div class="space-y-0.5 mb-2">
+                            <div class="h-0.5 bg-gray-200 rounded"></div>
+                            <div class="h-0.5 bg-gray-200 rounded w-5/6"></div>
+                        </div>
+                        <div class="h-1 bg-[#e74c3c] rounded w-1/2 mb-1"></div>
+                        <div class="space-y-0.5">
+                            <div class="h-0.5 bg-gray-200 rounded"></div>
+                            <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+    }
+];
+
+// Render Step 1: Design Selection with Canva-style previews
+function renderCvGeneratorStep1() {
+    const categories = ['Alle', 'Executive', 'Senior Professional', 'Young Professional', 'Creative', 'Tech & IT'];
+
+    return `
+        <!-- Category Filter -->
+        <div class="mb-6">
+            <div class="flex flex-wrap gap-2 justify-center">
+                ${categories.map(cat => `
+                    <button onclick="window.filterCvTemplates('${cat}')" data-category="${cat}"
+                            class="category-btn px-4 py-2 rounded-full text-sm font-medium transition
+                                   ${cat === 'Alle' ? 'bg-brand-gold text-brand-dark' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
+                        ${cat}
                     </button>
                 `).join('')}
             </div>
         </div>
 
-        <!-- Layout -->
-        <div class="mb-8">
-            <h4 class="text-lg font-medium text-brand-dark mb-4">
-                <i class="fas fa-columns mr-2 text-brand-gold"></i>
-                Layout
-            </h4>
-            <div class="grid grid-cols-3 gap-4">
-                ${[
-                    { id: 'single-column', name: 'Eine Spalte', icon: 'fa-align-justify', desc: 'Klassisch & übersichtlich' },
-                    { id: 'two-column', name: 'Zwei Spalten', icon: 'fa-columns', desc: 'Modern & strukturiert' },
-                    { id: 'sidebar', name: 'Sidebar', icon: 'fa-window-maximize', desc: 'Kompakt & elegant' }
-                ].map(l => `
-                    <button onclick="window.selectCvDesign('layout', '${l.id}')" data-design="layout-${l.id}"
-                            class="design-option p-4 border-2 ${cvGeneratorState.layout === l.id ? 'border-brand-gold bg-brand-gold/5' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
-                        <i class="fas ${l.icon} text-2xl ${cvGeneratorState.layout === l.id ? 'text-brand-gold' : 'text-gray-400'} mb-2"></i>
-                        <p class="font-medium text-brand-dark text-sm">${l.name}</p>
-                        <p class="text-xs text-gray-500">${l.desc}</p>
-                    </button>
-                `).join('')}
-            </div>
+        <!-- Template Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="cv-template-grid">
+            ${canvaTemplates.map(t => `
+                <div class="template-card cursor-pointer group" data-template="${t.id}" data-category="${t.category}"
+                     onclick="window.selectCvTemplate('${t.id}')">
+                    <div class="relative border-2 ${cvGeneratorState.template === t.id ? 'border-brand-gold ring-2 ring-brand-gold/20' : 'border-gray-200'}
+                                rounded-xl overflow-hidden transition-all hover:border-brand-gold hover:shadow-lg">
+                        <!-- Preview -->
+                        <div class="aspect-[3/4] bg-gray-50 relative overflow-hidden">
+                            ${t.preview}
+                            <!-- Hover overlay -->
+                            <div class="absolute inset-0 bg-brand-gold/90 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span class="text-brand-dark font-medium text-sm">Auswählen</span>
+                            </div>
+                            <!-- Selected checkmark -->
+                            ${cvGeneratorState.template === t.id ? `
+                                <div class="absolute top-2 right-2 w-6 h-6 bg-brand-gold rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-brand-dark text-xs"></i>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <!-- Info -->
+                        <div class="p-3 bg-white">
+                            <p class="font-medium text-brand-dark text-sm truncate">${t.name}</p>
+                            <p class="text-xs text-gray-500">${t.category}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+
+        <!-- Selected Template Details -->
+        <div id="selected-template-info" class="bg-gradient-to-br from-brand-gold/10 to-yellow-50 rounded-xl p-4 mb-6">
+            ${renderSelectedTemplateInfo()}
         </div>
 
         <!-- Additional Options -->
@@ -7887,6 +8145,35 @@ function renderCvGeneratorStep1() {
                         <p class="text-xs text-gray-500">Bereich für Profilbild reservieren</p>
                     </div>
                 </label>
+            </div>
+        </div>
+    `;
+}
+
+// Render selected template info panel
+function renderSelectedTemplateInfo() {
+    const selected = canvaTemplates.find(t => t.id === cvGeneratorState.template) || canvaTemplates[0];
+    return `
+        <div class="flex items-start gap-4">
+            <div class="w-20 h-28 rounded-lg overflow-hidden border-2 border-brand-gold flex-shrink-0">
+                ${selected.preview}
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <h4 class="text-lg font-medium text-brand-dark">${selected.name}</h4>
+                    <span class="px-2 py-0.5 bg-brand-gold/20 text-brand-dark text-xs rounded-full">${selected.category}</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">${selected.description}</p>
+                <div class="flex items-center gap-4 text-xs text-gray-500">
+                    <span><i class="fas fa-palette mr-1"></i>Layout: ${selected.layout === 'sidebar' ? 'Seitenleiste' : selected.layout === 'two-column' ? 'Zwei Spalten' : 'Eine Spalte'}</span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${selected.colors.primary}"></span>
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${selected.colors.secondary}"></span>
+                    </span>
+                </div>
+                <div class="flex flex-wrap gap-1 mt-2">
+                    ${selected.tags.map(tag => `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${tag}</span>`).join('')}
+                </div>
             </div>
         </div>
     `;
@@ -8026,6 +8313,70 @@ function initCvGeneratorHandlers() {
                 }
             }
         }
+    };
+
+    // Select Canva-style template
+    window.selectCvTemplate = function(templateId) {
+        cvGeneratorState.template = templateId;
+
+        // Find the selected template to get its properties
+        const template = canvaTemplates.find(t => t.id === templateId);
+        if (template) {
+            cvGeneratorState.colorScheme = templateId; // Use template id as color scheme reference
+            cvGeneratorState.layout = template.layout;
+        }
+
+        // Update all template cards UI
+        document.querySelectorAll('.template-card').forEach(card => {
+            const border = card.querySelector('.border-2');
+            if (card.dataset.template === templateId) {
+                border.classList.add('border-brand-gold', 'ring-2', 'ring-brand-gold/20');
+                border.classList.remove('border-gray-200');
+                // Add checkmark if not exists
+                const previewDiv = border.querySelector('.aspect-\\[3\\/4\\]');
+                if (previewDiv && !previewDiv.querySelector('.fa-check')) {
+                    const checkmark = document.createElement('div');
+                    checkmark.className = 'absolute top-2 right-2 w-6 h-6 bg-brand-gold rounded-full flex items-center justify-center';
+                    checkmark.innerHTML = '<i class="fas fa-check text-brand-dark text-xs"></i>';
+                    previewDiv.appendChild(checkmark);
+                }
+            } else {
+                border.classList.remove('border-brand-gold', 'ring-2', 'ring-brand-gold/20');
+                border.classList.add('border-gray-200');
+                // Remove checkmark
+                const checkmark = border.querySelector('.fa-check')?.parentElement;
+                if (checkmark) checkmark.remove();
+            }
+        });
+
+        // Update the selected template info panel
+        const infoPanel = document.getElementById('selected-template-info');
+        if (infoPanel) {
+            infoPanel.innerHTML = renderSelectedTemplateInfo();
+        }
+    };
+
+    // Filter templates by category
+    window.filterCvTemplates = function(category) {
+        // Update category buttons
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            if (btn.dataset.category === category) {
+                btn.classList.add('bg-brand-gold', 'text-brand-dark');
+                btn.classList.remove('bg-gray-100', 'text-gray-600');
+            } else {
+                btn.classList.remove('bg-brand-gold', 'text-brand-dark');
+                btn.classList.add('bg-gray-100', 'text-gray-600');
+            }
+        });
+
+        // Filter template cards
+        document.querySelectorAll('.template-card').forEach(card => {
+            if (category === 'Alle' || card.dataset.category === category) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
     };
 
     window.toggleFocusArea = function(area) {

@@ -1912,16 +1912,26 @@ exports.generateCvDocument = onRequest({
 async function generateWordDocument(cvData, templateStyle, generatedCvOptions) {
     const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, ShadingType, Header, Footer, PageNumber, NumberFormat } = docx;
 
-    // Color schemes based on template style
+    // Canva-style color schemes based on template style (without # prefix for docx)
     const colorSchemes = {
+        // Original schemes
         executive: { primary: '1A365D', secondary: 'C9B99A', accent: '2D3748', text: '1A202C', lightBg: 'F7FAFC' },
         modern: { primary: '2563EB', secondary: '3B82F6', accent: '1E40AF', text: '1F2937', lightBg: 'EFF6FF' },
         classic: { primary: '1F2937', secondary: '6B7280', accent: '374151', text: '111827', lightBg: 'F9FAFB' },
         creative: { primary: '7C3AED', secondary: '8B5CF6', accent: '6D28D9', text: '1F2937', lightBg: 'F5F3FF' },
-        minimal: { primary: '000000', secondary: '4B5563', accent: '1F2937', text: '111827', lightBg: 'FFFFFF' }
+        minimal: { primary: '000000', secondary: '4B5563', accent: '1F2937', text: '111827', lightBg: 'FFFFFF' },
+        // New Canva-style templates
+        'elegant-navy': { primary: '1e3a5f', secondary: 'c9a227', accent: '4a6fa5', text: '333333', lightBg: 'f5f5f5' },
+        'modern-minimal': { primary: '000000', secondary: '666666', accent: '999999', text: '333333', lightBg: 'ffffff' },
+        'creative-bold': { primary: 'e63946', secondary: '1d3557', accent: 'a8dadc', text: '1d3557', lightBg: 'f1faee' },
+        'corporate-classic': { primary: '2c3e50', secondary: '3498db', accent: '95a5a6', text: '2c3e50', lightBg: 'ecf0f1' },
+        'executive-gold': { primary: '1a1a2e', secondary: 'c9b99a', accent: '4a4a6a', text: '1a1a2e', lightBg: 'f8f6f3' },
+        'tech-modern': { primary: '6366f1', secondary: '818cf8', accent: 'a5b4fc', text: '1e293b', lightBg: 'f8fafc' },
+        'elegant-burgundy': { primary: '722f37', secondary: 'd4a574', accent: '9c6644', text: '3d2c2e', lightBg: 'faf7f5' },
+        'swiss-clean': { primary: '333333', secondary: 'e74c3c', accent: '7f8c8d', text: '333333', lightBg: 'ffffff' }
     };
 
-    const colors = colorSchemes[templateStyle] || colorSchemes.executive;
+    const colors = colorSchemes[templateStyle] || colorSchemes['elegant-navy'];
     const personal = cvData.personal || {};
     const experience = cvData.experience || [];
     const education = cvData.education || [];
@@ -2357,16 +2367,26 @@ async function generatePdfDocument(cvData, templateStyle, generatedCvOptions) {
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        // Color schemes
+        // Canva-style color schemes (with # prefix for PDFKit)
         const colorSchemes = {
+            // Original schemes
             executive: { primary: '#1A365D', secondary: '#C9B99A', accent: '#2D3748', text: '#1A202C' },
             modern: { primary: '#2563EB', secondary: '#3B82F6', accent: '#1E40AF', text: '#1F2937' },
             classic: { primary: '#1F2937', secondary: '#6B7280', accent: '#374151', text: '#111827' },
             creative: { primary: '#7C3AED', secondary: '#8B5CF6', accent: '#6D28D9', text: '#1F2937' },
-            minimal: { primary: '#000000', secondary: '#4B5563', accent: '#1F2937', text: '#111827' }
+            minimal: { primary: '#000000', secondary: '#4B5563', accent: '#1F2937', text: '#111827' },
+            // New Canva-style templates
+            'elegant-navy': { primary: '#1e3a5f', secondary: '#c9a227', accent: '#4a6fa5', text: '#333333' },
+            'modern-minimal': { primary: '#000000', secondary: '#666666', accent: '#999999', text: '#333333' },
+            'creative-bold': { primary: '#e63946', secondary: '#1d3557', accent: '#a8dadc', text: '#1d3557' },
+            'corporate-classic': { primary: '#2c3e50', secondary: '#3498db', accent: '#95a5a6', text: '#2c3e50' },
+            'executive-gold': { primary: '#1a1a2e', secondary: '#c9b99a', accent: '#4a4a6a', text: '#1a1a2e' },
+            'tech-modern': { primary: '#6366f1', secondary: '#818cf8', accent: '#a5b4fc', text: '#1e293b' },
+            'elegant-burgundy': { primary: '#722f37', secondary: '#d4a574', accent: '#9c6644', text: '#3d2c2e' },
+            'swiss-clean': { primary: '#333333', secondary: '#e74c3c', accent: '#7f8c8d', text: '#333333' }
         };
 
-        const colors = colorSchemes[templateStyle] || colorSchemes.executive;
+        const colors = colorSchemes[templateStyle] || colorSchemes['elegant-navy'];
         const personal = cvData.personal || {};
         const experience = cvData.experience || [];
         const education = cvData.education || [];
