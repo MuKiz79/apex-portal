@@ -26,6 +26,9 @@ const ORDER_STATUS = {
 // Admin Emails (fallback - primary source is Firestore config/admins)
 const ADMIN_EMAILS = ['muammer.kizilaslan@gmail.com'];
 
+// Mentor State (will be set on login if user is a mentor)
+let currentMentorData = null;
+
 // File Size Limits (in bytes)
 const FILE_LIMITS = {
     PROFILE_PICTURE: 5 * 1024 * 1024,    // 5MB
@@ -643,12 +646,14 @@ export async function handleLogout(state, navigateTo) {
     showToast('✅ Erfolgreich abgemeldet');
 }
 
-export function updateAuthUI(state) {
+export async function updateAuthUI(state) {
     const loginBtn = document.getElementById('nav-login-btn');
     const userProfile = document.getElementById('nav-user-profile');
     const dashUsername = document.getElementById('dash-username');
     const userNameDisplay = document.getElementById('user-name-display');
     const adminSection = document.getElementById('admin-section');
+    const mentorSection = document.getElementById('mentor-section');
+    const mentorTab = document.getElementById('dash-tab-mentor');
 
     if (state.user) {
         loginBtn?.classList.add('hidden');
@@ -668,6 +673,25 @@ export function updateAuthUI(state) {
             }
         }
 
+        // Check if user is a mentor
+        await checkAndSetupMentor(state);
+
+        // Show mentor section/tab if user is a mentor
+        if (mentorSection) {
+            if (currentMentorData) {
+                mentorSection.classList.remove('hidden');
+            } else {
+                mentorSection.classList.add('hidden');
+            }
+        }
+        if (mentorTab) {
+            if (currentMentorData) {
+                mentorTab.classList.remove('hidden');
+            } else {
+                mentorTab.classList.add('hidden');
+            }
+        }
+
         // Load profile picture if available
         loadProfilePicture(state);
     } else {
@@ -679,7 +703,61 @@ export function updateAuthUI(state) {
         if (adminSection) {
             adminSection.classList.add('hidden');
         }
+
+        // Hide mentor section when logged out
+        if (mentorSection) {
+            mentorSection.classList.add('hidden');
+        }
+        if (mentorTab) {
+            mentorTab.classList.add('hidden');
+        }
+
+        // Clear mentor data
+        currentMentorData = null;
     }
+}
+
+// Check if current user is a mentor and set up mentor data
+async function checkAndSetupMentor(state) {
+    if (!db || !state.user?.email) {
+        currentMentorData = null;
+        return;
+    }
+
+    try {
+        // Query coaches collection to find a coach with matching email
+        const coachesRef = collection(db, 'coaches');
+        const q = query(coachesRef, where('email', '==', state.user.email));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+            const coachDoc = snapshot.docs[0];
+            currentMentorData = {
+                id: coachDoc.id,
+                ...coachDoc.data()
+            };
+
+            // Update coach document with userId if not set
+            if (!currentMentorData.userId) {
+                await updateDoc(doc(db, 'coaches', coachDoc.id), {
+                    userId: state.user.uid
+                });
+                currentMentorData.userId = state.user.uid;
+            }
+
+            logger.log('Mentor detected:', currentMentorData.name);
+        } else {
+            currentMentorData = null;
+        }
+    } catch (e) {
+        logger.error('Error checking mentor status:', e);
+        currentMentorData = null;
+    }
+}
+
+// Get current mentor data (for use in other functions)
+export function getCurrentMentorData() {
+    return currentMentorData;
 }
 
 async function loadProfilePicture(state) {
@@ -2386,6 +2464,458 @@ export async function handleFileUpload(state, input) {
     }
 }
 
+// ========== MENTOR DASHBOARD ==========
+
+// State for availability calendar
+let currentWeekOffset = 0;
+let mentorAvailability = {};
+let mentorBookedSlots = {};
+
+// Initialize mentor dashboard when tab is switched
+export async function initMentorDashboard() {
+    if (!currentMentorData) return;
+
+    // Update welcome name
+    const welcomeName = document.getElementById('mentor-welcome-name');
+    if (welcomeName) {
+        welcomeName.textContent = `Willkommen, ${currentMentorData.name}`;
+    }
+
+    // Load availability from Firestore
+    mentorAvailability = currentMentorData.availability || {};
+
+    // Load booked sessions to show in calendar
+    await loadMentorBookedSlots();
+
+    // Render calendar
+    renderAvailabilityCalendar();
+
+    // Load mentor sessions
+    await loadMentorSessions();
+}
+
+// Load booked slots for the mentor
+async function loadMentorBookedSlots() {
+    if (!db || !currentMentorData) return;
+
+    try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('assignedCoachId', '==', currentMentorData.id));
+        const snapshot = await getDocs(q);
+
+        mentorBookedSlots = {};
+        snapshot.forEach(doc => {
+            const order = doc.data();
+            if (order.appointment?.datetime) {
+                const dt = new Date(order.appointment.datetime);
+                const dateKey = dt.toISOString().split('T')[0];
+                const timeKey = dt.toTimeString().slice(0, 5);
+                if (!mentorBookedSlots[dateKey]) {
+                    mentorBookedSlots[dateKey] = [];
+                }
+                mentorBookedSlots[dateKey].push(timeKey);
+            }
+        });
+    } catch (e) {
+        logger.error('Error loading booked slots:', e);
+    }
+}
+
+// Render the availability calendar
+function renderAvailabilityCalendar() {
+    const container = document.getElementById('availability-calendar');
+    const weekLabel = document.getElementById('availability-week-label');
+    if (!container) return;
+
+    // Calculate week dates
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (currentWeekOffset * 7)); // Monday
+
+    // Update week label
+    const weekNumber = getWeekNumber(startOfWeek);
+    const monthName = startOfWeek.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    if (weekLabel) {
+        weekLabel.textContent = `KW ${weekNumber} - ${monthName}`;
+    }
+
+    // Time slots (9:00 - 18:00)
+    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+
+    // Days of the week
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        days.push(date);
+    }
+
+    // Build calendar HTML
+    let html = `
+        <table class="w-full border-collapse">
+            <thead>
+                <tr>
+                    <th class="p-2 text-xs text-gray-500 font-medium"></th>
+                    ${days.map(d => `
+                        <th class="p-2 text-center ${d.getDay() === 0 || d.getDay() === 6 ? 'bg-gray-50' : ''}">
+                            <div class="text-xs text-gray-500 font-medium">${d.toLocaleDateString('de-DE', { weekday: 'short' })}</div>
+                            <div class="text-sm font-bold ${isToday(d) ? 'text-brand-gold' : 'text-gray-700'}">${d.getDate()}</div>
+                        </th>
+                    `).join('')}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    timeSlots.forEach(time => {
+        html += `<tr>`;
+        html += `<td class="p-2 text-xs text-gray-500 font-medium text-right pr-3">${time}</td>`;
+
+        days.forEach(d => {
+            const dateKey = d.toISOString().split('T')[0];
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const isAvailable = mentorAvailability[dateKey]?.includes(time);
+            const isBooked = mentorBookedSlots[dateKey]?.includes(time);
+            const isPast = d < new Date() && !isToday(d);
+
+            let cellClass = 'p-1';
+            let slotClass = 'w-full h-8 rounded cursor-pointer transition-all ';
+
+            if (isPast) {
+                slotClass += 'bg-gray-100 cursor-not-allowed';
+            } else if (isBooked) {
+                slotClass += 'bg-blue-500 hover:bg-blue-600';
+            } else if (isAvailable) {
+                slotClass += 'bg-green-500 hover:bg-green-600';
+            } else {
+                slotClass += 'bg-gray-200 hover:bg-gray-300';
+            }
+
+            if (isWeekend) {
+                cellClass += ' bg-gray-50';
+            }
+
+            const clickHandler = isPast || isBooked ? '' : `onclick="app.toggleTimeSlot('${dateKey}', '${time}')"`;
+
+            html += `<td class="${cellClass}">
+                <div class="${slotClass}" ${clickHandler} title="${isBooked ? 'Gebucht' : isAvailable ? 'Verfügbar - Klicken zum Entfernen' : 'Nicht verfügbar - Klicken zum Hinzufügen'}"></div>
+            </td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+// Helper: Check if date is today
+function isToday(date) {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+}
+
+// Helper: Get ISO week number
+function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+// Toggle time slot availability
+export function toggleTimeSlot(dateKey, time) {
+    if (!mentorAvailability[dateKey]) {
+        mentorAvailability[dateKey] = [];
+    }
+
+    const index = mentorAvailability[dateKey].indexOf(time);
+    if (index > -1) {
+        mentorAvailability[dateKey].splice(index, 1);
+        if (mentorAvailability[dateKey].length === 0) {
+            delete mentorAvailability[dateKey];
+        }
+    } else {
+        mentorAvailability[dateKey].push(time);
+        mentorAvailability[dateKey].sort();
+    }
+
+    renderAvailabilityCalendar();
+}
+
+// Navigate to previous week
+export function prevWeek() {
+    currentWeekOffset--;
+    renderAvailabilityCalendar();
+}
+
+// Navigate to next week
+export function nextWeek() {
+    currentWeekOffset++;
+    renderAvailabilityCalendar();
+}
+
+// Save availability to Firestore
+export async function saveAvailability() {
+    if (!db || !currentMentorData) {
+        showToast('❌ Fehler: Nicht als Mentor angemeldet');
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, 'coaches', currentMentorData.id), {
+            availability: mentorAvailability
+        });
+        currentMentorData.availability = mentorAvailability;
+        showToast('✅ Verfügbarkeit gespeichert');
+    } catch (e) {
+        logger.error('Error saving availability:', e);
+        showToast('❌ Fehler beim Speichern');
+    }
+}
+
+// Load mentor's assigned sessions
+async function loadMentorSessions() {
+    if (!db || !currentMentorData) return;
+
+    const container = document.getElementById('mentor-sessions-list');
+    const countBadge = document.getElementById('mentor-session-count');
+    if (!container) return;
+
+    try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('assignedCoachId', '==', currentMentorData.id));
+        const snapshot = await getDocs(q);
+
+        const sessions = [];
+        snapshot.forEach(doc => {
+            const order = doc.data();
+            if (order.appointment?.datetime) {
+                sessions.push({
+                    id: doc.id,
+                    ...order
+                });
+            }
+        });
+
+        // Sort by appointment date
+        sessions.sort((a, b) => new Date(a.appointment.datetime) - new Date(b.appointment.datetime));
+
+        // Update count
+        if (countBadge) {
+            countBadge.textContent = sessions.length;
+        }
+
+        if (sessions.length === 0) {
+            container.innerHTML = `
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fas fa-calendar-check text-4xl text-gray-300 mb-3"></i>
+                    <p>Keine Sessions zugewiesen</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = sessions.map(session => {
+            const dt = new Date(session.appointment.datetime);
+            const dateStr = dt.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            const isPast = dt < new Date();
+            const canJoin = isMeetingTimeNow(session.appointment.datetime);
+
+            return `
+                <div class="p-4 hover:bg-gray-50 transition ${isPast ? 'opacity-60' : ''}">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-brand-dark">${sanitizeHTML(session.customerName || 'Kunde')}</h4>
+                            <p class="text-sm text-gray-600">${sanitizeHTML(session.customerEmail || '')}</p>
+                            <div class="mt-2 flex items-center gap-2 text-sm">
+                                <i class="fas fa-calendar text-gray-400"></i>
+                                <span>${dateStr}</span>
+                                <span class="text-brand-gold font-bold">${timeStr} Uhr</span>
+                            </div>
+                            <div class="mt-1 text-xs text-gray-500">
+                                ${session.items?.map(i => i.title).join(', ') || 'Session'}
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            ${canJoin ? `
+                                <button onclick="app.joinMeeting('${session.id}')"
+                                        class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+                                    <i class="fas fa-video"></i>
+                                    Meeting beitreten
+                                </button>
+                            ` : isPast ? `
+                                <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-lg">Abgeschlossen</span>
+                            ` : `
+                                <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
+                                    <i class="fas fa-clock"></i> Geplant
+                                </span>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        logger.error('Error loading mentor sessions:', e);
+        container.innerHTML = `
+            <div class="p-8 text-center text-red-500">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                <p>Fehler beim Laden der Sessions</p>
+            </div>
+        `;
+    }
+}
+
+// ========== ADMIN: COACH ASSIGNMENT ==========
+
+let currentAssignOrderId = null;
+
+// Show modal to assign a coach to an order
+export async function showAssignCoachModal(orderId) {
+    currentAssignOrderId = orderId;
+
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('assign-coach-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'assign-coach-modal';
+        modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden';
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-white">Mentor zuweisen</h3>
+                        <button onclick="app.closeAssignCoachModal()" class="text-white/80 hover:text-white">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="assign-coach-list" class="p-6 overflow-y-auto max-h-[60vh]">
+                    <div class="flex justify-center py-8">
+                        <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    modal.classList.remove('hidden');
+    await loadCoachesForAssignment();
+}
+
+// Close the assign coach modal
+export function closeAssignCoachModal() {
+    const modal = document.getElementById('assign-coach-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    currentAssignOrderId = null;
+}
+
+// Load coaches and display in modal
+async function loadCoachesForAssignment() {
+    const container = document.getElementById('assign-coach-list');
+    if (!container || !db) return;
+
+    try {
+        const coachesRef = collection(db, 'coaches');
+        const snapshot = await getDocs(coachesRef);
+
+        const coaches = [];
+        snapshot.forEach(doc => {
+            coaches.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+
+        if (coaches.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-user-slash text-4xl text-gray-300 mb-3"></i>
+                    <p>Keine Mentoren verfügbar</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = coaches.map(coach => {
+            const availabilityDates = Object.keys(coach.availability || {}).length;
+            const totalSlots = Object.values(coach.availability || {}).reduce((sum, slots) => sum + slots.length, 0);
+
+            return `
+                <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:border-indigo-300 hover:bg-indigo-50/50 transition cursor-pointer"
+                     onclick="app.assignCoachToOrder('${coach.id}', '${sanitizeHTML(coach.name || 'Mentor')}')">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                            ${coach.image ? `<img src="${coach.image}" alt="${sanitizeHTML(coach.name)}" class="w-full h-full object-cover">` : `
+                                <div class="w-full h-full flex items-center justify-center bg-indigo-100">
+                                    <i class="fas fa-user text-indigo-400 text-xl"></i>
+                                </div>
+                            `}
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-brand-dark">${sanitizeHTML(coach.name || 'Unbekannt')}</h4>
+                            <p class="text-sm text-gray-600">${sanitizeHTML(coach.role || '')}</p>
+                            <div class="mt-1 flex items-center gap-3 text-xs">
+                                ${coach.experience ? `<span class="text-gray-500"><i class="fas fa-briefcase mr-1"></i>${sanitizeHTML(coach.experience)}</span>` : ''}
+                                ${availabilityDates > 0 ? `
+                                    <span class="text-green-600"><i class="fas fa-calendar-check mr-1"></i>${totalSlots} Slots verfügbar</span>
+                                ` : `
+                                    <span class="text-orange-500"><i class="fas fa-calendar-times mr-1"></i>Keine Verfügbarkeit</span>
+                                `}
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        logger.error('Error loading coaches for assignment:', e);
+        container.innerHTML = `
+            <div class="text-center py-8 text-red-500">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                <p>Fehler beim Laden der Mentoren</p>
+            </div>
+        `;
+    }
+}
+
+// Assign a coach to the order
+export async function assignCoachToOrder(coachId, coachName) {
+    if (!db || !currentAssignOrderId) {
+        showToast('❌ Fehler: Order nicht gefunden');
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, 'orders', currentAssignOrderId), {
+            assignedCoachId: coachId,
+            assignedCoachName: coachName,
+            assignedAt: new Date()
+        });
+
+        showToast(`✅ ${coachName} wurde zugewiesen`);
+        closeAssignCoachModal();
+
+        // Refresh admin orders
+        loadAllOrders();
+
+    } catch (e) {
+        logger.error('Error assigning coach:', e);
+        showToast('❌ Fehler beim Zuweisen');
+    }
+}
+
 // ========== COACHES & ARTICLES ==========
 // Note: db and sanitizeHTML already imported at top of file
 
@@ -3265,6 +3795,11 @@ export function switchDashboardTab(tabName, state) {
     if (tabName === 'appointments' && state) {
         loadAvailability(state);
     }
+
+    // Initialize mentor dashboard when switching to mentor tab
+    if (tabName === 'mentor') {
+        initMentorDashboard();
+    }
 }
 
 // Switch Admin Panel Tabs
@@ -4054,6 +4589,40 @@ function renderAdminOrders(orders) {
                                     </div>
                                 </div>
                             ` : ''}
+                        </div>
+                    ` : ''}
+
+                    <!-- Mentor Assignment Section -->
+                    ${hasCoachSession(order) ? `
+                        <div class="mt-6 border-t border-gray-100 pt-6">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-user-tie text-indigo-500"></i>
+                                Mentor-Zuweisung
+                            </h4>
+                            ${order.assignedCoachId ? `
+                                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-indigo-800">${sanitizeHTML(order.assignedCoachName || 'Mentor')}</p>
+                                                <p class="text-xs text-indigo-600">Zugewiesen</p>
+                                            </div>
+                                        </div>
+                                        <button onclick="app.showAssignCoachModal('${order.id}')"
+                                                class="text-indigo-600 hover:text-indigo-800 text-sm underline">
+                                            Ändern
+                                        </button>
+                                    </div>
+                                </div>
+                            ` : `
+                                <button onclick="app.showAssignCoachModal('${order.id}')"
+                                        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition shadow-md">
+                                    <i class="fas fa-user-plus mr-2"></i>Mentor zuweisen
+                                </button>
+                            `}
                         </div>
                     ` : ''}
 

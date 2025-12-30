@@ -1363,6 +1363,11 @@
                         <i class="fas fa-user-cog" aria-hidden="true"></i>
                         <span>Profil</span>
                     </button>
+                    <!-- Mentor Tab - only visible for mentors -->
+                    <button id="dash-tab-mentor" onclick="app.switchDashboardTab('mentor')" class="dashboard-tab hidden flex items-center gap-2 px-4 py-3 text-sm font-medium text-white/70 hover:text-white/80 border-b-2 border-transparent whitespace-nowrap" data-tab="mentor">
+                        <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+                        <span>Mentor-Bereich</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1674,6 +1679,90 @@
                                         Bild hochladen
                                     </label>
                                     <input type="file" id="about-image-upload" accept="image/*" class="hidden" onchange="if(this.files[0]) app.uploadAboutImage(this.files[0])">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== TAB: MENTOR (nur für Mentoren) ===== -->
+                    <div id="tab-mentor" class="dashboard-tab-content hidden">
+                        <!-- Mentor Welcome -->
+                        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white mb-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-chalkboard-teacher text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h2 class="font-serif text-xl font-bold" id="mentor-welcome-name">Mentor Dashboard</h2>
+                                    <p class="text-white/80 text-sm">Verwalten Sie Ihre Verfügbarkeit und Sessions</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Availability Calendar -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                            <div class="p-6 border-b border-gray-100">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h2 class="font-serif text-xl text-brand-dark">Meine Verfügbarkeit</h2>
+                                        <p class="text-sm text-gray-600 mt-1">Klicken Sie auf Zeitslots um Ihre Verfügbarkeit zu setzen</p>
+                                    </div>
+                                    <button onclick="app.saveAvailability()" class="btn-primary text-sm">
+                                        <i class="fas fa-save"></i>
+                                        Speichern
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-6">
+                                <!-- Week Navigation -->
+                                <div class="flex justify-between items-center mb-4">
+                                    <button onclick="app.prevWeek()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                                        <i class="fas fa-chevron-left text-gray-600"></i>
+                                    </button>
+                                    <span id="availability-week-label" class="font-bold text-brand-dark">KW 1 - Januar 2024</span>
+                                    <button onclick="app.nextWeek()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                                        <i class="fas fa-chevron-right text-gray-600"></i>
+                                    </button>
+                                </div>
+                                <!-- Calendar Grid -->
+                                <div id="availability-calendar" class="overflow-x-auto">
+                                    <div class="min-w-[600px]">
+                                        <!-- Will be filled by JavaScript -->
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex gap-4 text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 bg-green-500 rounded"></div>
+                                        <span class="text-gray-600">Verfügbar</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 bg-gray-200 rounded"></div>
+                                        <span class="text-gray-600">Nicht verfügbar</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 bg-blue-500 rounded"></div>
+                                        <span class="text-gray-600">Gebucht</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mentor Sessions -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="p-6 border-b border-gray-100">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h2 class="font-serif text-xl text-brand-dark">Meine Sessions</h2>
+                                        <p class="text-sm text-gray-600 mt-1">Ihre zugewiesenen Mentoring-Termine</p>
+                                    </div>
+                                    <span id="mentor-session-count" class="bg-indigo-100 text-indigo-700 text-xs px-3 py-1.5 rounded-full font-bold">0</span>
+                                </div>
+                            </div>
+                            <div id="mentor-sessions-list" class="divide-y divide-gray-100">
+                                <!-- Sessions will be loaded here -->
+                                <div class="p-8 text-center text-gray-500">
+                                    <i class="fas fa-calendar-check text-4xl text-gray-300 mb-3"></i>
+                                    <p>Keine Sessions zugewiesen</p>
                                 </div>
                             </div>
                         </div>
@@ -3636,6 +3725,13 @@
             saveProfile: () => App.saveProfile(window.app.state),
             changePassword: () => App.changePassword(window.app.state),
 
+            // Mentor Dashboard functions
+            initMentorDashboard: () => App.initMentorDashboard(),
+            toggleTimeSlot: (dateKey, time) => App.toggleTimeSlot(dateKey, time),
+            prevWeek: () => App.prevWeek(),
+            nextWeek: () => App.nextWeek(),
+            saveAvailability: () => App.saveAvailability(),
+
             // Coaches & Articles functions
             filterCoaches: () => App.filterCoaches(window.app.state),
             openCoachDetail: (id) => App.openCoachDetail(window.app.state, id, Core.navigateTo),
@@ -3659,6 +3755,9 @@
             loadAllOrders: () => App.loadAllOrders(),
             filterAdminOrders: () => App.filterAdminOrders(),
             updateOrderStatus: (orderId, status) => App.updateOrderStatus(orderId, status),
+            showAssignCoachModal: (orderId) => App.showAssignCoachModal(orderId),
+            closeAssignCoachModal: () => App.closeAssignCoachModal(),
+            assignCoachToOrder: (coachId, coachName) => App.assignCoachToOrder(coachId, coachName),
             uploadDocumentToUser: (userId, orderId, file, customerEmail, customerName) => App.uploadDocumentToUser(userId, orderId, file, customerEmail, customerName),
             switchAdminTab: (tabName) => App.switchAdminTab(tabName),
             loadAdminUsers: () => App.loadAdminUsers(),
