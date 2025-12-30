@@ -1642,19 +1642,29 @@ export function renderOrders(orders) {
                         </button>
                     </div>
                 ` : hasCoach && !hasAppointment ? `
-                    <!-- Waiting for mentor assignment -->
-                    <div class="bg-gradient-to-br from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                    <!-- Waiting for mentor assignment - Compliance Check -->
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 sm:p-5 shadow-sm">
                         <div class="flex items-start gap-3 sm:gap-4">
-                            <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center shadow-lg">
-                                <i class="fas fa-hourglass-half text-white text-base sm:text-xl animate-pulse"></i>
+                            <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-shield-alt text-white text-base sm:text-xl"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-bold text-gray-700 text-base sm:text-lg mb-1">Mentor wird zugewiesen</h4>
-                                <p class="text-xs sm:text-sm text-gray-600">Wir prüfen Ihre Bestellung und weisen Ihnen einen passenden Mentor zu.</p>
-                                <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                                    <i class="fas fa-bell"></i>
-                                    Sie werden per E-Mail benachrichtigt
+                                <h4 class="font-bold text-amber-800 text-base sm:text-lg mb-1">Compliance-Check läuft</h4>
+                                <p class="text-xs sm:text-sm text-amber-700 leading-relaxed">
+                                    Wir führen einen Compliance-Check durch, um Interessenkonflikte auszuschließen
+                                    (z.B. gleiche Branche, Wettbewerber). Nach erfolgreicher Prüfung wird Ihnen ein
+                                    passender Mentor zugewiesen.
                                 </p>
+                                <div class="flex flex-wrap items-center gap-3 mt-3">
+                                    <span class="text-xs text-amber-600 flex items-center gap-1">
+                                        <i class="fas fa-clock"></i>
+                                        In der Regel 24-48h
+                                    </span>
+                                    <span class="text-xs text-amber-600 flex items-center gap-1">
+                                        <i class="fas fa-bell"></i>
+                                        Benachrichtigung per E-Mail
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
