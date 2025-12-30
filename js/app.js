@@ -2612,8 +2612,9 @@ export function bookSessionWithComplianceCheck(productName, price, coachName) {
                                 <h4 class="font-semibold text-amber-800 text-sm mb-1">Compliance-Check erforderlich</h4>
                                 <p class="text-amber-700 text-xs leading-relaxed">
                                     Nach Ihrer Bestellung führen wir einen Compliance-Check durch, um Interessenkonflikte
-                                    auszuschließen (z.B. gleiche Branche, Wettbewerber). Nach erfolgreicher Prüfung wird
-                                    Ihnen ein passender Mentor zugewiesen.
+                                    auszuschließen (z.B. gleiche Branche, Wettbewerber). Bei erfolgreicher Prüfung wird
+                                    <strong>${coachName || 'Ihr Wunschkandidat'}</strong> Ihr Mentor. Andernfalls wählen wir
+                                    einen gleichwertigen Mentor für Sie aus.
                                 </p>
                             </div>
                         </div>
@@ -2625,8 +2626,8 @@ export function bookSessionWithComplianceCheck(productName, price, coachName) {
                                onchange="app.toggleSessionBookingButton()"
                                class="w-5 h-5 mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold cursor-pointer">
                         <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
-                            Ich stimme dem <strong>Compliance-Check</strong> zu und verstehe, dass mir nach
-                            erfolgreicher Prüfung ein passender Mentor zugewiesen wird.
+                            Ich stimme dem <strong>Compliance-Check</strong> zu und verstehe, dass bei erfolgreicher
+                            Prüfung ${coachName || 'mein Wunschkandidat'} mein Mentor wird, andernfalls ein gleichwertiger Mentor.
                         </span>
                     </label>
 
@@ -2669,8 +2670,13 @@ export function toggleSessionBookingButton() {
 // Confirm session booking after compliance consent
 export function confirmSessionBooking(productName, price) {
     closeBookingConfirmModal();
-    addToCart(productName, price);
-    showToast('✅ Session zum Warenkorb hinzugefügt');
+    // addToCart requires state as first parameter
+    if (window.app?.state) {
+        addToCart(window.app.state, productName, price);
+        showToast('✅ Session zum Warenkorb hinzugefügt');
+    } else {
+        showToast('❌ Fehler beim Hinzufügen zum Warenkorb');
+    }
 }
 
 // Actually confirm and save the booking
