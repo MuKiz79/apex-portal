@@ -7196,9 +7196,15 @@ function renderCvProjects() {
 
                     <!-- Progress Indicators -->
                     <div class="flex items-center gap-4 mb-4 text-xs">
-                        <div class="flex items-center gap-1.5 ${hasQuestionnaire ? 'text-green-600' : 'text-gray-400'}">
-                            <i class="fas ${hasQuestionnaire ? 'fa-check-circle' : 'fa-circle'}"></i>
-                            <span>Fragebogen</span>
+                        ${project.mode === 'smart' ? `
+                            <div class="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                                <i class="fas fa-magic"></i>
+                                <span>Smart Upload</span>
+                            </div>
+                        ` : ''}
+                        <div class="flex items-center gap-1.5 ${hasQuestionnaire || hasDocuments ? 'text-green-600' : 'text-gray-400'}">
+                            <i class="fas ${hasQuestionnaire || hasDocuments ? 'fa-check-circle' : 'fa-circle'}"></i>
+                            <span>Daten</span>
                         </div>
                         <div class="flex items-center gap-1.5 ${hasDocuments ? 'text-green-600' : 'text-gray-400'}">
                             <i class="fas ${hasDocuments ? 'fa-check-circle' : 'fa-circle'}"></i>
@@ -7524,48 +7530,792 @@ export function openCvQuestionnaireView(orderId) {
 }
 
 // View CV data collected from questionnaire
-export function viewCvData(orderId) {
+export async function viewCvData(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
-    if (!project) return;
+    if (!project || !project.cvProjectId) {
+        showToast('Keine Daten verfügbar');
+        return;
+    }
 
-    showToast('Datenansicht wird geladen...');
-    // TODO: Implement data view modal
+    try {
+        // Load latest project data
+        const projectDoc = await getDoc(doc(db, 'cvProjects', project.cvProjectId));
+        if (!projectDoc.exists()) {
+            showToast('Projekt nicht gefunden');
+            return;
+        }
+
+        const data = projectDoc.data();
+        const q = data.questionnaire || {};
+        const docs = data.documents || {};
+
+        const modal = document.createElement('div');
+        modal.id = 'cv-data-modal';
+        modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl my-4">
+                <div class="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+                    <h3 class="text-xl font-medium text-brand-dark">Gesammelte Daten</h3>
+                    <button onclick="document.getElementById('cv-data-modal')?.remove()"
+                            class="text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Upload Mode Badge -->
+                    ${data.mode === 'smart' ? `
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-magic text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-purple-800">Smart Upload</p>
+                            <p class="text-sm text-purple-600">Der Kunde hat seine Dokumente per Smart Upload hochgeladen</p>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Personal Data -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-medium text-brand-dark mb-3"><i class="fas fa-user mr-2 text-brand-gold"></i>Persönliche Daten</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div><span class="text-gray-500">Name:</span> <span class="font-medium">${q.personal?.fullName || '-'}</span></div>
+                            <div><span class="text-gray-500">E-Mail:</span> <span class="font-medium">${q.personal?.email || '-'}</span></div>
+                            <div><span class="text-gray-500">Telefon:</span> <span class="font-medium">${q.personal?.phone || '-'}</span></div>
+                            <div><span class="text-gray-500">Standort:</span> <span class="font-medium">${q.personal?.location || '-'}</span></div>
+                            <div><span class="text-gray-500">Zielposition:</span> <span class="font-medium">${q.personal?.targetRole || '-'}</span></div>
+                            <div><span class="text-gray-500">LinkedIn:</span> <span class="font-medium">${q.personal?.linkedin || '-'}</span></div>
+                        </div>
+                        ${q.personal?.careerGoal ? `<p class="mt-3 text-sm"><span class="text-gray-500">Karriereziel:</span> ${q.personal.careerGoal}</p>` : ''}
+                    </div>
+
+                    <!-- Experience -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-medium text-brand-dark mb-3"><i class="fas fa-briefcase mr-2 text-brand-gold"></i>Berufserfahrung</h4>
+                        ${(q.experience || []).length > 0 ? q.experience.map(exp => `
+                            <div class="border-l-2 border-brand-gold pl-3 mb-3">
+                                <p class="font-medium">${exp.role || 'Position'} <span class="text-gray-400">@</span> ${exp.company || 'Firma'}</p>
+                                <p class="text-sm text-gray-500">${exp.startDate || ''} - ${exp.endDate || 'heute'}</p>
+                                ${exp.description ? `<p class="text-sm mt-1">${exp.description}</p>` : ''}
+                                ${(exp.achievements || []).length > 0 ? `<ul class="text-sm mt-2 space-y-1">${exp.achievements.map(a => `<li class="text-green-700">✓ ${a}</li>`).join('')}</ul>` : ''}
+                            </div>
+                        `).join('') : '<p class="text-gray-400 text-sm">Keine Berufserfahrung angegeben</p>'}
+                    </div>
+
+                    <!-- Education -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-medium text-brand-dark mb-3"><i class="fas fa-graduation-cap mr-2 text-brand-gold"></i>Ausbildung</h4>
+                        ${(q.education || []).length > 0 ? q.education.map(edu => `
+                            <div class="border-l-2 border-brand-gold pl-3 mb-3">
+                                <p class="font-medium">${edu.degree || 'Abschluss'} - ${edu.field || ''}</p>
+                                <p class="text-sm text-gray-500">${edu.institution || ''} | ${edu.startDate || ''} - ${edu.endDate || ''}</p>
+                            </div>
+                        `).join('') : '<p class="text-gray-400 text-sm">Keine Ausbildung angegeben</p>'}
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-medium text-brand-dark mb-3"><i class="fas fa-cogs mr-2 text-brand-gold"></i>Skills</h4>
+                        <div class="space-y-2 text-sm">
+                            <div><span class="text-gray-500">Technisch:</span> ${(q.skills?.technical || []).join(', ') || '-'}</div>
+                            <div><span class="text-gray-500">Soft Skills:</span> ${(q.skills?.soft || []).join(', ') || '-'}</div>
+                            <div><span class="text-gray-500">Sprachen:</span> ${(q.skills?.languages || []).map(l => `${l.language} (${l.level})`).join(', ') || '-'}</div>
+                            <div><span class="text-gray-500">Zertifikate:</span> ${(q.skills?.certifications || []).join(', ') || '-'}</div>
+                        </div>
+                    </div>
+
+                    <!-- Documents -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-medium text-brand-dark mb-3"><i class="fas fa-file-alt mr-2 text-brand-gold"></i>Hochgeladene Dokumente</h4>
+                        <div class="space-y-2">
+                            ${docs.existingCv ? `
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg">
+                                    <span class="text-sm"><i class="fas fa-file-pdf text-red-500 mr-2"></i>Aktueller Lebenslauf: ${docs.existingCv.filename || 'CV'}</span>
+                                    <a href="${docs.existingCv.url}" target="_blank" class="text-brand-gold hover:underline text-sm">Öffnen</a>
+                                </div>
+                            ` : ''}
+                            ${docs.targetJob ? `
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg">
+                                    <span class="text-sm"><i class="fas fa-briefcase text-blue-500 mr-2"></i>Stellenausschreibung: ${docs.targetJob.filename || 'Stellenbeschreibung'}</span>
+                                    <a href="${docs.targetJob.url}" target="_blank" class="text-brand-gold hover:underline text-sm">Öffnen</a>
+                                </div>
+                            ` : ''}
+                            ${(docs.otherDocuments || []).length > 0 ? docs.otherDocuments.map((doc, i) => `
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg">
+                                    <span class="text-sm"><i class="fas fa-file text-gray-500 mr-2"></i>Weiteres Dokument: ${doc.filename || 'Dokument ' + (i + 1)}</span>
+                                    <a href="${doc.url}" target="_blank" class="text-brand-gold hover:underline text-sm">Öffnen</a>
+                                </div>
+                            `).join('') : ''}
+                            ${!docs.existingCv && !docs.targetJob && (!docs.otherDocuments || docs.otherDocuments.length === 0) ? '<p class="text-gray-400 text-sm">Keine Dokumente hochgeladen</p>' : ''}
+                        </div>
+                    </div>
+
+                    <!-- Notes (Smart Upload) -->
+                    ${q.additional?.notes ? `
+                    <div class="bg-amber-50 rounded-xl p-4">
+                        <h4 class="font-medium text-brand-dark mb-3"><i class="fas fa-sticky-note mr-2 text-brand-gold"></i>Besondere Hinweise</h4>
+                        <p class="text-sm text-gray-700">${q.additional.notes}</p>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div class="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex justify-end gap-3">
+                    <button onclick="document.getElementById('cv-data-modal')?.remove()"
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800 transition">
+                        Schließen
+                    </button>
+                    <button onclick="document.getElementById('cv-data-modal')?.remove(); app.openCvGenerator('${orderId}')"
+                            class="px-6 py-2 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition">
+                        <i class="fas fa-magic mr-2"></i>CV generieren
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+    } catch (e) {
+        logger.error('Error loading CV data:', e);
+        showToast('Fehler beim Laden der Daten');
+    }
 }
 
 // Open CV generator (template selection + generation)
-export function openCvGenerator(orderId) {
+export async function openCvGenerator(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
-    if (!project) return;
+    if (!project || !project.cvProjectId) {
+        showToast('Projekt nicht gefunden');
+        return;
+    }
 
-    showToast('CV-Generator wird geöffnet...');
-    // TODO: Implement CV generator modal with template selection
+    const modal = document.createElement('div');
+    modal.id = 'cv-generator-modal';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-brand-gold to-yellow-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-magic text-white text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-medium text-brand-dark">CV generieren</h3>
+                    <p class="text-sm text-gray-500">${project.customerName}</p>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Template auswählen</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="template-options">
+                    <button onclick="selectCvTemplate('minimalist')" data-template="minimalist"
+                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
+                        <i class="fas fa-align-left text-2xl text-gray-400 mb-2"></i>
+                        <p class="font-medium text-brand-dark">Minimalist</p>
+                        <p class="text-xs text-gray-500">Clean & Modern</p>
+                    </button>
+                    <button onclick="selectCvTemplate('creative')" data-template="creative"
+                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
+                        <i class="fas fa-palette text-2xl text-gray-400 mb-2"></i>
+                        <p class="font-medium text-brand-dark">Creative</p>
+                        <p class="text-xs text-gray-500">Modern & Kreativ</p>
+                    </button>
+                    <button onclick="selectCvTemplate('corporate')" data-template="corporate"
+                            class="template-option p-4 border-2 border-brand-gold rounded-xl bg-brand-gold/5 text-left">
+                        <i class="fas fa-building text-2xl text-brand-gold mb-2"></i>
+                        <p class="font-medium text-brand-dark">Corporate</p>
+                        <p class="text-xs text-gray-500">Professionell</p>
+                    </button>
+                    <button onclick="selectCvTemplate('executive')" data-template="executive"
+                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
+                        <i class="fas fa-crown text-2xl text-gray-400 mb-2"></i>
+                        <p class="font-medium text-brand-dark">Executive</p>
+                        <p class="text-xs text-gray-500">C-Suite Level</p>
+                    </button>
+                    <button onclick="selectCvTemplate('brand')" data-template="brand"
+                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
+                        <i class="fas fa-user-tie text-2xl text-gray-400 mb-2"></i>
+                        <p class="font-medium text-brand-dark">Personal Brand</p>
+                        <p class="text-xs text-gray-500">Thought Leader</p>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Sprache</label>
+                <select id="cv-language-select" class="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold">
+                    <option value="Deutsch" selected>Deutsch</option>
+                    <option value="Englisch">Englisch</option>
+                </select>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-robot mr-2"></i>
+                    Die KI analysiert die Fragebogen-Daten und erstellt einen optimierten Lebenslauf.
+                    Dies kann 30-60 Sekunden dauern.
+                </p>
+            </div>
+
+            <div id="cv-generation-progress" class="hidden mb-6">
+                <div class="flex items-center gap-3 text-brand-dark">
+                    <i class="fas fa-spinner fa-spin text-xl"></i>
+                    <span id="cv-generation-status">CV wird generiert...</span>
+                </div>
+                <div class="mt-3 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div id="cv-generation-bar" class="bg-brand-gold h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 justify-end">
+                <button onclick="document.getElementById('cv-generator-modal')?.remove()"
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                        id="cv-gen-cancel-btn">
+                    Abbrechen
+                </button>
+                <button onclick="app.startCvGeneration('${project.cvProjectId}', '${orderId}')"
+                        class="px-6 py-2 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition"
+                        id="cv-gen-start-btn">
+                    <i class="fas fa-magic mr-2"></i>
+                    Jetzt generieren
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Add template selection handler
+    window.selectCvTemplate = function(template) {
+        document.querySelectorAll('.template-option').forEach(btn => {
+            btn.classList.remove('border-brand-gold', 'bg-brand-gold/5');
+            btn.classList.add('border-gray-200');
+            btn.querySelector('i').classList.remove('text-brand-gold');
+            btn.querySelector('i').classList.add('text-gray-400');
+        });
+        const selected = document.querySelector(`[data-template="${template}"]`);
+        if (selected) {
+            selected.classList.remove('border-gray-200');
+            selected.classList.add('border-brand-gold', 'bg-brand-gold/5');
+            selected.querySelector('i').classList.remove('text-gray-400');
+            selected.querySelector('i').classList.add('text-brand-gold');
+        }
+        window.selectedCvTemplate = template;
+    };
+
+    window.selectedCvTemplate = 'corporate'; // Default
+}
+
+// Start CV generation with Claude API
+export async function startCvGeneration(projectId, orderId) {
+    const startBtn = document.getElementById('cv-gen-start-btn');
+    const cancelBtn = document.getElementById('cv-gen-cancel-btn');
+    const progressDiv = document.getElementById('cv-generation-progress');
+    const statusSpan = document.getElementById('cv-generation-status');
+    const progressBar = document.getElementById('cv-generation-bar');
+
+    const template = window.selectedCvTemplate || 'corporate';
+    const language = document.getElementById('cv-language-select')?.value || 'Deutsch';
+
+    // Update UI to show progress
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Wird generiert...';
+    cancelBtn.classList.add('hidden');
+    progressDiv.classList.remove('hidden');
+
+    // Animate progress bar
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress = Math.min(progress + Math.random() * 15, 90);
+        progressBar.style.width = `${progress}%`;
+
+        if (progress < 30) {
+            statusSpan.textContent = 'Analysiere Fragebogen-Daten...';
+        } else if (progress < 60) {
+            statusSpan.textContent = 'Generiere optimierten CV...';
+        } else {
+            statusSpan.textContent = 'Finalisiere Dokument...';
+        }
+    }, 800);
+
+    try {
+        // Call Cloud Function to generate CV
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/generateCvContent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId: projectId,
+                templateType: template,
+                language: language
+            })
+        });
+
+        clearInterval(progressInterval);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'CV-Generierung fehlgeschlagen');
+        }
+
+        const result = await response.json();
+
+        // Complete progress
+        progressBar.style.width = '100%';
+        statusSpan.textContent = 'CV erfolgreich generiert!';
+
+        showToast('CV wurde erfolgreich generiert!');
+
+        // Close modal and refresh list
+        setTimeout(async () => {
+            document.getElementById('cv-generator-modal')?.remove();
+            await loadCvProjects();
+            // Open preview automatically
+            openCvPreview(orderId);
+        }, 1000);
+
+    } catch (e) {
+        clearInterval(progressInterval);
+        logger.error('Error generating CV:', e);
+
+        progressDiv.innerHTML = `
+            <div class="flex items-center gap-3 text-red-600">
+                <i class="fas fa-exclamation-circle text-xl"></i>
+                <span>Fehler: ${e.message}</span>
+            </div>
+        `;
+
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Erneut versuchen';
+        cancelBtn.classList.remove('hidden');
+    }
 }
 
 // Open CV preview
-export function openCvPreview(orderId) {
+export async function openCvPreview(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
-    if (!project) return;
+    if (!project || !project.cvProjectId) {
+        showToast('Projekt nicht gefunden');
+        return;
+    }
 
-    showToast('CV-Vorschau wird geladen...');
-    // TODO: Implement CV preview modal
+    try {
+        showToast('Lade CV-Vorschau...');
+
+        // Load latest project data
+        const projectDoc = await getDoc(doc(db, 'cvProjects', project.cvProjectId));
+        if (!projectDoc.exists() || !projectDoc.data().generatedCv) {
+            showToast('Kein generierter CV gefunden');
+            return;
+        }
+
+        const data = projectDoc.data();
+        const cv = data.generatedCv.data;
+        const template = data.generatedCv.templateType || 'corporate';
+
+        // Render CV preview
+        const cvHtml = renderCvTemplate(cv, template);
+
+        const modal = document.createElement('div');
+        modal.id = 'cv-preview-modal';
+        modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden shadow-2xl my-4 flex flex-col">
+                <!-- Header -->
+                <div class="bg-brand-dark text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center gap-4">
+                        <h3 class="text-lg font-medium">CV Vorschau</h3>
+                        <span class="text-xs bg-brand-gold/20 text-brand-gold px-2 py-1 rounded">${template.charAt(0).toUpperCase() + template.slice(1)}</span>
+                    </div>
+                    <button onclick="document.getElementById('cv-preview-modal')?.remove()"
+                            class="text-white/60 hover:text-white transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- CV Content -->
+                <div class="flex-1 overflow-y-auto p-6 bg-gray-100">
+                    <div id="cv-preview-content" class="bg-white shadow-lg mx-auto" style="max-width: 210mm;">
+                        ${cvHtml}
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-500">Template:</span>
+                        <select id="preview-template-select" onchange="app.changeCvTemplate('${project.cvProjectId}', '${orderId}')"
+                                class="text-sm border border-gray-200 rounded px-2 py-1">
+                            <option value="minimalist" ${template === 'minimalist' ? 'selected' : ''}>Minimalist</option>
+                            <option value="creative" ${template === 'creative' ? 'selected' : ''}>Creative</option>
+                            <option value="corporate" ${template === 'corporate' ? 'selected' : ''}>Corporate</option>
+                            <option value="executive" ${template === 'executive' ? 'selected' : ''}>Executive</option>
+                            <option value="brand" ${template === 'brand' ? 'selected' : ''}>Personal Brand</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="app.regenerateCv('${project.cvProjectId}', '${orderId}')"
+                                class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition">
+                            <i class="fas fa-redo mr-2"></i>Neu generieren
+                        </button>
+                        <button onclick="app.exportCvPdf('${orderId}')"
+                                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            <i class="fas fa-file-pdf mr-2"></i>PDF Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+    } catch (e) {
+        logger.error('Error loading CV preview:', e);
+        showToast('Fehler beim Laden der Vorschau');
+    }
+}
+
+// Render CV template HTML
+function renderCvTemplate(cv, template) {
+    const personal = cv.personal || {};
+    const summary = cv.summary || '';
+    const experience = cv.experience || [];
+    const education = cv.education || [];
+    const skills = cv.skills || {};
+    const expertise = cv.expertise || [];
+
+    // Template-specific styling
+    const templateStyles = {
+        minimalist: {
+            headerBg: 'bg-white',
+            headerText: 'text-gray-900',
+            accentColor: 'text-gray-600',
+            sectionTitle: 'text-gray-800 border-b border-gray-200',
+            bodyText: 'text-gray-700'
+        },
+        creative: {
+            headerBg: 'bg-gradient-to-r from-purple-600 to-indigo-600',
+            headerText: 'text-white',
+            accentColor: 'text-purple-600',
+            sectionTitle: 'text-purple-700 border-b-2 border-purple-200',
+            bodyText: 'text-gray-700'
+        },
+        corporate: {
+            headerBg: 'bg-brand-dark',
+            headerText: 'text-white',
+            accentColor: 'text-brand-gold',
+            sectionTitle: 'text-brand-dark border-b-2 border-brand-gold',
+            bodyText: 'text-gray-700'
+        },
+        executive: {
+            headerBg: 'bg-slate-900',
+            headerText: 'text-white',
+            accentColor: 'text-amber-500',
+            sectionTitle: 'text-slate-800 border-b-2 border-amber-500',
+            bodyText: 'text-gray-700'
+        },
+        brand: {
+            headerBg: 'bg-gradient-to-br from-brand-dark to-brand-dark/90',
+            headerText: 'text-white',
+            accentColor: 'text-brand-gold',
+            sectionTitle: 'text-brand-dark border-l-4 border-brand-gold pl-4',
+            bodyText: 'text-gray-700'
+        }
+    };
+
+    const style = templateStyles[template] || templateStyles.corporate;
+
+    return `
+        <div class="cv-template cv-template-${template}" style="font-family: 'Georgia', serif;">
+            <!-- Header -->
+            <div class="${style.headerBg} ${style.headerText} p-8">
+                <h1 class="text-3xl font-bold mb-1">${personal.fullName || 'Name'}</h1>
+                <p class="text-xl opacity-90 mb-4">${personal.title || ''}</p>
+                <div class="flex flex-wrap gap-4 text-sm opacity-80">
+                    ${personal.email ? `<span><i class="fas fa-envelope mr-1"></i>${personal.email}</span>` : ''}
+                    ${personal.phone ? `<span><i class="fas fa-phone mr-1"></i>${personal.phone}</span>` : ''}
+                    ${personal.location ? `<span><i class="fas fa-map-marker-alt mr-1"></i>${personal.location}</span>` : ''}
+                    ${personal.linkedin ? `<span><i class="fab fa-linkedin mr-1"></i>${personal.linkedin}</span>` : ''}
+                </div>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <!-- Summary -->
+                ${summary ? `
+                    <div>
+                        <h2 class="text-lg font-bold ${style.sectionTitle} pb-2 mb-3">PROFIL</h2>
+                        <p class="${style.bodyText} leading-relaxed">${summary}</p>
+                    </div>
+                ` : ''}
+
+                <!-- Expertise -->
+                ${expertise.length > 0 ? `
+                    <div>
+                        <h2 class="text-lg font-bold ${style.sectionTitle} pb-2 mb-3">KERNKOMPETENZEN</h2>
+                        <div class="flex flex-wrap gap-2">
+                            ${expertise.map(e => `<span class="px-3 py-1 bg-gray-100 rounded-full text-sm ${style.accentColor}">${e}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Experience -->
+                ${experience.length > 0 ? `
+                    <div>
+                        <h2 class="text-lg font-bold ${style.sectionTitle} pb-2 mb-3">BERUFSERFAHRUNG</h2>
+                        <div class="space-y-4">
+                            ${experience.map(exp => `
+                                <div class="border-l-2 ${style.accentColor.replace('text-', 'border-')} pl-4">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="font-bold ${style.bodyText}">${exp.role || ''}</h3>
+                                            <p class="${style.accentColor} text-sm">${exp.company || ''}${exp.location ? ` | ${exp.location}` : ''}</p>
+                                        </div>
+                                        <span class="text-sm text-gray-500">${exp.period || ''}</span>
+                                    </div>
+                                    ${exp.description ? `<p class="text-sm ${style.bodyText} mt-2">${exp.description}</p>` : ''}
+                                    ${(exp.achievements || []).length > 0 ? `
+                                        <ul class="mt-2 space-y-1">
+                                            ${exp.achievements.map(a => `<li class="text-sm ${style.bodyText} flex items-start gap-2"><span class="${style.accentColor}">•</span>${a}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Education -->
+                ${education.length > 0 ? `
+                    <div>
+                        <h2 class="text-lg font-bold ${style.sectionTitle} pb-2 mb-3">AUSBILDUNG</h2>
+                        <div class="space-y-3">
+                            ${education.map(edu => `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-bold ${style.bodyText}">${edu.degree || ''} ${edu.field ? `- ${edu.field}` : ''}</h3>
+                                        <p class="text-sm ${style.accentColor}">${edu.institution || ''}</p>
+                                        ${edu.highlights ? `<p class="text-sm text-gray-500 mt-1">${edu.highlights}</p>` : ''}
+                                    </div>
+                                    <span class="text-sm text-gray-500">${edu.period || ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Skills -->
+                <div class="grid grid-cols-2 gap-6">
+                    ${(skills.technical || []).length > 0 ? `
+                        <div>
+                            <h2 class="text-lg font-bold ${style.sectionTitle} pb-2 mb-3">FACHKENNTNISSE</h2>
+                            <div class="flex flex-wrap gap-2">
+                                ${skills.technical.map(s => `<span class="px-2 py-1 bg-gray-100 rounded text-sm">${s}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${(skills.languages || []).length > 0 ? `
+                        <div>
+                            <h2 class="text-lg font-bold ${style.sectionTitle} pb-2 mb-3">SPRACHEN</h2>
+                            <div class="space-y-1">
+                                ${skills.languages.map(l => `<p class="text-sm"><span class="font-medium">${l.language}</span> - ${l.level}</p>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                ${(skills.certifications || []).length > 0 ? `
+                    <div>
+                        <h2 class="text-lg font-bold ${style.sectionTitle} pb-2 mb-3">ZERTIFIKATE</h2>
+                        <div class="flex flex-wrap gap-2">
+                            ${skills.certifications.map(c => `<span class="px-3 py-1 bg-gray-100 rounded-full text-sm">${c}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// Change CV template and re-render preview
+export async function changeCvTemplate(projectId, orderId) {
+    const newTemplate = document.getElementById('preview-template-select')?.value;
+    if (!newTemplate) return;
+
+    try {
+        const projectDoc = await getDoc(doc(db, 'cvProjects', projectId));
+        if (!projectDoc.exists()) return;
+
+        const cv = projectDoc.data().generatedCv?.data;
+        if (!cv) return;
+
+        const cvHtml = renderCvTemplate(cv, newTemplate);
+        const previewContent = document.getElementById('cv-preview-content');
+        if (previewContent) {
+            previewContent.innerHTML = cvHtml;
+        }
+
+        // Update template in Firestore
+        await updateDoc(doc(db, 'cvProjects', projectId), {
+            'generatedCv.templateType': newTemplate
+        });
+
+    } catch (e) {
+        logger.error('Error changing template:', e);
+    }
+}
+
+// Regenerate CV with new Claude API call
+export async function regenerateCv(projectId, orderId) {
+    document.getElementById('cv-preview-modal')?.remove();
+    openCvGenerator(orderId);
 }
 
 // Export CV as PDF
-export function exportCvPdf(orderId) {
+export async function exportCvPdf(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
-    if (!project) return;
+    if (!project || !project.cvProjectId) {
+        showToast('Projekt nicht gefunden');
+        return;
+    }
 
     showToast('PDF wird generiert...');
-    // TODO: Implement PDF export with html2pdf.js
+
+    try {
+        // Load html2pdf.js dynamically if not loaded
+        if (!window.html2pdf) {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+        }
+
+        // Get the CV preview content
+        let cvContent = document.getElementById('cv-preview-content');
+
+        // If preview modal is not open, we need to load and render the CV
+        if (!cvContent) {
+            const projectDoc = await getDoc(doc(db, 'cvProjects', project.cvProjectId));
+            if (!projectDoc.exists() || !projectDoc.data().generatedCv) {
+                showToast('Kein generierter CV gefunden');
+                return;
+            }
+
+            const data = projectDoc.data();
+            const cv = data.generatedCv.data;
+            const template = data.generatedCv.templateType || 'corporate';
+
+            // Create temporary container
+            const tempContainer = document.createElement('div');
+            tempContainer.id = 'temp-cv-content';
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            tempContainer.innerHTML = `<div style="width: 210mm; background: white;">${renderCvTemplate(cv, template)}</div>`;
+            document.body.appendChild(tempContainer);
+            cvContent = tempContainer.querySelector('div');
+        }
+
+        // Configure html2pdf options
+        const opt = {
+            margin: 0,
+            filename: `CV_${project.customerName?.replace(/\s+/g, '_') || 'APEX'}_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            },
+            jsPDF: {
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait'
+            }
+        };
+
+        // Generate PDF
+        await html2pdf().set(opt).from(cvContent).save();
+
+        // Clean up temp container if it exists
+        document.getElementById('temp-cv-content')?.remove();
+
+        showToast('PDF wurde heruntergeladen!');
+
+    } catch (e) {
+        logger.error('Error generating PDF:', e);
+        showToast('Fehler beim PDF-Export: ' + e.message);
+    }
+}
+
+// Helper function to load external scripts
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
 }
 
 // Send CV to customer
 export async function sendCvToCustomer(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
-    if (!project) return;
+    if (!project || !project.cvProjectId) {
+        showToast('Projekt nicht gefunden');
+        return;
+    }
 
+    const modal = document.createElement('div');
+    modal.id = 'send-cv-modal';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-envelope text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-brand-dark">CV an Kunden senden</h3>
+                    <p class="text-sm text-gray-500">${project.customerEmail}</p>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Der Kunde erhält eine E-Mail mit dem fertigen CV als PDF-Anhang.
+                </p>
+            </div>
+
+            <div class="flex gap-3 justify-end">
+                <button onclick="document.getElementById('send-cv-modal')?.remove()"
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800 transition">
+                    Abbrechen
+                </button>
+                <button onclick="app.confirmSendCvToCustomer('${project.cvProjectId}', '${orderId}')"
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Jetzt senden
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Confirm and send CV to customer
+export async function confirmSendCvToCustomer(projectId, orderId) {
+    document.getElementById('send-cv-modal')?.remove();
     showToast('CV wird an Kunden gesendet...');
-    // TODO: Implement send CV to customer via Cloud Function
+
+    try {
+        // Update status to delivered
+        await updateDoc(doc(db, 'cvProjects', projectId), {
+            status: 'delivered',
+            deliveredAt: serverTimestamp()
+        });
+
+        // TODO: Send email with PDF attachment via Cloud Function
+
+        showToast('CV wurde als zugestellt markiert!');
+        await loadCvProjects();
+
+    } catch (e) {
+        logger.error('Error sending CV:', e);
+        showToast('Fehler: ' + e.message);
+    }
 }
 
 // ============================================
@@ -7574,6 +8324,8 @@ export async function sendCvToCustomer(orderId) {
 
 let cvQuestionnaireStep = 1;
 let cvQuestionnaireProjectId = null;
+let cvQuestionnaireMode = null; // 'smart' or 'manual'
+let smartQuestionnaireStep = 1;
 let cvQuestionnaireData = {
     personal: {},
     experience: [],
@@ -7581,6 +8333,18 @@ let cvQuestionnaireData = {
     skills: {},
     additional: {},
     documents: {}
+};
+let smartUploadData = {
+    cvFile: null,
+    cvUrl: null,
+    jobFile: null,
+    jobUrl: null,
+    otherFiles: [],
+    otherUrls: [],
+    name: '',
+    email: '',
+    targetRole: '',
+    notes: ''
 };
 let experienceCounter = 0;
 let educationCounter = 0;
@@ -7605,38 +8369,31 @@ export async function initCvQuestionnaire() {
             // Pre-fill form with existing data
             if (data.questionnaire) {
                 cvQuestionnaireData = { ...cvQuestionnaireData, ...data.questionnaire };
-                prefillQuestionnaireForm(data.questionnaire);
             }
 
-            // Pre-fill email and name if available
+            // Pre-fill email and name for both modes
             if (data.customerEmail) {
+                smartUploadData.email = data.customerEmail;
                 const emailInput = document.getElementById('cv-q-email');
-                if (emailInput && !emailInput.value) {
-                    emailInput.value = data.customerEmail;
-                }
+                const smartEmailInput = document.getElementById('cv-q-smart-email');
+                if (emailInput) emailInput.value = data.customerEmail;
+                if (smartEmailInput) smartEmailInput.value = data.customerEmail;
             }
             if (data.customerName) {
+                smartUploadData.name = data.customerName;
                 const nameInput = document.getElementById('cv-q-fullname');
-                if (nameInput && !nameInput.value) {
-                    nameInput.value = data.customerName;
-                }
+                const smartNameInput = document.getElementById('cv-q-smart-name');
+                if (nameInput) nameInput.value = data.customerName;
+                if (smartNameInput) smartNameInput.value = data.customerName;
             }
         }
 
-        // Initialize with default entries
-        if (cvQuestionnaireData.experience.length === 0) {
-            addCvExperienceEntry();
-        }
-        if (cvQuestionnaireData.education.length === 0) {
-            addCvEducationEntry();
-        }
-        if (cvQuestionnaireData.skills.languages?.length === 0 || !cvQuestionnaireData.skills.languages) {
-            addCvLanguageEntry();
-        }
-
-        // Show questionnaire view
+        // Show questionnaire view with mode selection
         hideAllViews();
         document.getElementById('view-cv-questionnaire')?.classList.remove('hidden');
+
+        // Reset to mode selection
+        resetQuestionnaireView();
 
         return true;
     } catch (e) {
@@ -7644,6 +8401,442 @@ export async function initCvQuestionnaire() {
         showToast('Fehler beim Laden des Fragebogens');
         return false;
     }
+}
+
+// Reset questionnaire view to initial state
+function resetQuestionnaireView() {
+    // Show mode selection
+    document.getElementById('cv-q-mode-selection')?.classList.remove('hidden');
+
+    // Hide both modes
+    document.getElementById('cv-q-smart-mode')?.classList.add('hidden');
+    document.getElementById('cv-q-manual-mode')?.classList.add('hidden');
+    document.getElementById('cv-q-manual-progress')?.classList.add('hidden');
+
+    cvQuestionnaireMode = null;
+    smartQuestionnaireStep = 1;
+    cvQuestionnaireStep = 1;
+}
+
+// Select questionnaire mode (smart or manual)
+export function selectQuestionnaireMode(mode) {
+    cvQuestionnaireMode = mode;
+
+    // Hide mode selection
+    document.getElementById('cv-q-mode-selection')?.classList.add('hidden');
+
+    if (mode === 'smart') {
+        // Show smart upload mode
+        document.getElementById('cv-q-smart-mode')?.classList.remove('hidden');
+        document.getElementById('cv-q-manual-mode')?.classList.add('hidden');
+        document.getElementById('cv-q-manual-progress')?.classList.add('hidden');
+
+        // Pre-fill smart mode fields
+        const smartEmailInput = document.getElementById('cv-q-smart-email');
+        const smartNameInput = document.getElementById('cv-q-smart-name');
+        if (smartEmailInput && smartUploadData.email) smartEmailInput.value = smartUploadData.email;
+        if (smartNameInput && smartUploadData.name) smartNameInput.value = smartUploadData.name;
+
+        // Reset smart mode
+        smartQuestionnaireStep = 1;
+        updateSmartQuestionnaireUI();
+    } else {
+        // Show manual mode
+        document.getElementById('cv-q-smart-mode')?.classList.add('hidden');
+        document.getElementById('cv-q-manual-mode')?.classList.remove('hidden');
+        document.getElementById('cv-q-manual-progress')?.classList.remove('hidden');
+
+        // Initialize manual mode entries
+        if (cvQuestionnaireData.experience.length === 0) {
+            addCvExperienceEntry();
+        }
+        if (cvQuestionnaireData.education.length === 0) {
+            addCvEducationEntry();
+        }
+        if (!cvQuestionnaireData.skills.languages?.length) {
+            addCvLanguageEntry();
+        }
+
+        // Pre-fill manual mode
+        if (cvQuestionnaireData.questionnaire) {
+            prefillQuestionnaireForm(cvQuestionnaireData.questionnaire);
+        }
+
+        cvQuestionnaireStep = 1;
+        updateCvQuestionnaireUI();
+    }
+}
+
+// Back to mode selection
+export function backToModeSelection() {
+    resetQuestionnaireView();
+}
+
+// ============================================
+// SMART UPLOAD MODE FUNCTIONS
+// ============================================
+
+// Handle CV file upload in smart mode
+export async function handleSmartCvUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    showToast('CV wird hochgeladen...');
+
+    try {
+        const url = await uploadQuestionnaireFile(file, 'existingCv');
+        smartUploadData.cvFile = file;
+        smartUploadData.cvUrl = url;
+
+        // Update UI
+        document.getElementById('cv-q-smart-cv-preview')?.classList.remove('hidden');
+        document.getElementById('cv-q-smart-cv-placeholder')?.classList.add('hidden');
+        document.getElementById('cv-q-smart-cv-filename').textContent = file.name;
+
+        // Enable next button
+        updateSmartNextButton();
+
+        showToast('CV erfolgreich hochgeladen!');
+    } catch (e) {
+        logger.error('Error uploading CV:', e);
+        showToast('Fehler beim Hochladen: ' + e.message);
+    }
+}
+
+// Handle job description upload in smart mode
+export async function handleSmartJobUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    showToast('Stellenausschreibung wird hochgeladen...');
+
+    try {
+        const url = await uploadQuestionnaireFile(file, 'targetJob');
+        smartUploadData.jobFile = file;
+        smartUploadData.jobUrl = url;
+
+        // Update UI
+        document.getElementById('cv-q-smart-job-preview')?.classList.remove('hidden');
+        document.getElementById('cv-q-smart-job-placeholder')?.classList.add('hidden');
+        document.getElementById('cv-q-smart-job-filename').textContent = file.name;
+
+        showToast('Stellenausschreibung erfolgreich hochgeladen!');
+    } catch (e) {
+        logger.error('Error uploading job description:', e);
+        showToast('Fehler beim Hochladen: ' + e.message);
+    }
+}
+
+// Handle other documents upload in smart mode
+export async function handleSmartOtherUpload(input) {
+    const files = input.files;
+    if (!files || files.length === 0) return;
+
+    showToast('Dokumente werden hochgeladen...');
+
+    try {
+        for (const file of files) {
+            const url = await uploadQuestionnaireFile(file, 'other');
+            smartUploadData.otherFiles.push(file);
+            smartUploadData.otherUrls.push(url);
+        }
+
+        // Update UI
+        document.getElementById('cv-q-smart-other-preview')?.classList.remove('hidden');
+        document.getElementById('cv-q-smart-other-placeholder')?.classList.add('hidden');
+        document.getElementById('cv-q-smart-other-filename').textContent =
+            smartUploadData.otherFiles.map(f => f.name).join(', ');
+
+        showToast(`${files.length} Dokument(e) erfolgreich hochgeladen!`);
+    } catch (e) {
+        logger.error('Error uploading documents:', e);
+        showToast('Fehler beim Hochladen: ' + e.message);
+    }
+}
+
+// Upload file to Firebase Storage for questionnaire
+async function uploadQuestionnaireFile(file, docType) {
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const path = `cv-documents/${cvQuestionnaireProjectId}/${docType}_${timestamp}_${safeName}`;
+
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+}
+
+// Update smart mode next button state
+function updateSmartNextButton() {
+    const nextBtn = document.getElementById('cv-q-smart-next-btn');
+    if (!nextBtn) return;
+
+    if (smartQuestionnaireStep === 1) {
+        // Step 1: Need CV uploaded
+        nextBtn.disabled = !smartUploadData.cvUrl;
+    } else if (smartQuestionnaireStep === 2) {
+        // Step 2: Need name, email, and target role
+        const name = document.getElementById('cv-q-smart-name')?.value?.trim();
+        const email = document.getElementById('cv-q-smart-email')?.value?.trim();
+        const targetRole = document.getElementById('cv-q-smart-target-role')?.value?.trim();
+        nextBtn.disabled = !name || !email || !targetRole;
+    }
+}
+
+// Update smart questionnaire UI based on current step
+function updateSmartQuestionnaireUI() {
+    // Hide all steps
+    document.querySelectorAll('.cv-q-smart-step').forEach(el => el.classList.add('hidden'));
+
+    // Show current step
+    document.getElementById(`cv-q-smart-step-${smartQuestionnaireStep}`)?.classList.remove('hidden');
+
+    // Update progress indicators
+    for (let i = 1; i <= 3; i++) {
+        const indicator = document.getElementById(`smart-step-${i}-indicator`);
+        const line = document.getElementById(`smart-step-line-${i - 1}`);
+
+        if (indicator) {
+            if (i <= smartQuestionnaireStep) {
+                indicator.classList.remove('bg-gray-200', 'text-gray-500');
+                indicator.classList.add('bg-brand-gold', 'text-white');
+            } else {
+                indicator.classList.add('bg-gray-200', 'text-gray-500');
+                indicator.classList.remove('bg-brand-gold', 'text-white');
+            }
+        }
+        if (line && i > 1) {
+            if (i <= smartQuestionnaireStep) {
+                line.classList.remove('bg-gray-200');
+                line.classList.add('bg-brand-gold');
+            } else {
+                line.classList.add('bg-gray-200');
+                line.classList.remove('bg-brand-gold');
+            }
+        }
+    }
+
+    // Update navigation buttons
+    const backBtn = document.getElementById('cv-q-smart-back-btn');
+    const nextBtn = document.getElementById('cv-q-smart-next-btn');
+    const submitBtn = document.getElementById('cv-q-smart-submit-btn');
+
+    if (smartQuestionnaireStep === 1) {
+        backBtn.onclick = () => backToModeSelection();
+    } else {
+        backBtn.onclick = () => smartQuestionnaireBack();
+    }
+
+    if (smartQuestionnaireStep === 3) {
+        nextBtn?.classList.add('hidden');
+        submitBtn?.classList.remove('hidden');
+
+        // Fill summary
+        fillSmartSummary();
+    } else {
+        nextBtn?.classList.remove('hidden');
+        submitBtn?.classList.add('hidden');
+    }
+
+    updateSmartNextButton();
+}
+
+// Navigate to next step in smart mode
+export function smartQuestionnaireNext() {
+    if (smartQuestionnaireStep === 1) {
+        if (!smartUploadData.cvUrl) {
+            showToast('Bitte laden Sie Ihren Lebenslauf hoch');
+            return;
+        }
+    } else if (smartQuestionnaireStep === 2) {
+        // Save form data
+        smartUploadData.name = document.getElementById('cv-q-smart-name')?.value?.trim() || '';
+        smartUploadData.email = document.getElementById('cv-q-smart-email')?.value?.trim() || '';
+        smartUploadData.targetRole = document.getElementById('cv-q-smart-target-role')?.value?.trim() || '';
+        smartUploadData.notes = document.getElementById('cv-q-smart-notes')?.value?.trim() || '';
+
+        if (!smartUploadData.name || !smartUploadData.email || !smartUploadData.targetRole) {
+            showToast('Bitte füllen Sie alle Pflichtfelder aus');
+            return;
+        }
+    }
+
+    smartQuestionnaireStep++;
+    updateSmartQuestionnaireUI();
+}
+
+// Navigate back in smart mode
+export function smartQuestionnaireBack() {
+    if (smartQuestionnaireStep > 1) {
+        smartQuestionnaireStep--;
+        updateSmartQuestionnaireUI();
+    } else {
+        backToModeSelection();
+    }
+}
+
+// Fill summary for smart mode step 3
+function fillSmartSummary() {
+    const summaryContent = document.getElementById('cv-q-smart-summary-content');
+    if (!summaryContent) return;
+
+    let html = `
+        <div class="flex items-center gap-2">
+            <i class="fas fa-user text-brand-gold"></i>
+            <span><strong>Name:</strong> ${smartUploadData.name}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <i class="fas fa-envelope text-brand-gold"></i>
+            <span><strong>E-Mail:</strong> ${smartUploadData.email}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <i class="fas fa-bullseye text-brand-gold"></i>
+            <span><strong>Zielposition:</strong> ${smartUploadData.targetRole}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <i class="fas fa-file-pdf text-green-500"></i>
+            <span><strong>CV:</strong> ${smartUploadData.cvFile?.name || 'Hochgeladen'}</span>
+        </div>
+    `;
+
+    if (smartUploadData.jobUrl) {
+        html += `
+            <div class="flex items-center gap-2">
+                <i class="fas fa-briefcase text-green-500"></i>
+                <span><strong>Stellenausschreibung:</strong> ${smartUploadData.jobFile?.name || 'Hochgeladen'}</span>
+            </div>
+        `;
+    }
+
+    if (smartUploadData.otherUrls.length > 0) {
+        html += `
+            <div class="flex items-center gap-2">
+                <i class="fas fa-file-alt text-green-500"></i>
+                <span><strong>Weitere Dokumente:</strong> ${smartUploadData.otherFiles.length} Datei(en)</span>
+            </div>
+        `;
+    }
+
+    if (smartUploadData.notes) {
+        html += `
+            <div class="flex items-start gap-2 mt-2 pt-2 border-t border-gray-200">
+                <i class="fas fa-sticky-note text-brand-gold mt-0.5"></i>
+                <span><strong>Hinweise:</strong> ${smartUploadData.notes}</span>
+            </div>
+        `;
+    }
+
+    summaryContent.innerHTML = html;
+}
+
+// Submit smart questionnaire
+export async function submitSmartQuestionnaire() {
+    if (!cvQuestionnaireProjectId) {
+        showToast('Fehler: Projekt nicht gefunden');
+        return;
+    }
+
+    showToast('Daten werden übermittelt...');
+
+    try {
+        // Prepare data
+        const updateData = {
+            mode: 'smart',
+            questionnaire: {
+                personal: {
+                    fullName: smartUploadData.name,
+                    email: smartUploadData.email,
+                    targetRole: smartUploadData.targetRole
+                },
+                additional: {
+                    notes: smartUploadData.notes
+                }
+            },
+            documents: {
+                existingCv: {
+                    url: smartUploadData.cvUrl,
+                    filename: smartUploadData.cvFile?.name,
+                    uploadedAt: serverTimestamp()
+                }
+            },
+            status: 'data_received',
+            updatedAt: serverTimestamp(),
+            submittedAt: serverTimestamp()
+        };
+
+        // Add optional documents
+        if (smartUploadData.jobUrl) {
+            updateData.documents.targetJob = {
+                url: smartUploadData.jobUrl,
+                filename: smartUploadData.jobFile?.name,
+                uploadedAt: serverTimestamp()
+            };
+        }
+
+        if (smartUploadData.otherUrls.length > 0) {
+            updateData.documents.otherDocuments = smartUploadData.otherUrls.map((url, i) => ({
+                url,
+                filename: smartUploadData.otherFiles[i]?.name,
+                uploadedAt: new Date().toISOString()
+            }));
+        }
+
+        // Update Firestore
+        await updateDoc(doc(db, 'cvProjects', cvQuestionnaireProjectId), updateData);
+
+        // Show success
+        showSmartSubmitSuccess();
+
+    } catch (e) {
+        logger.error('Error submitting smart questionnaire:', e);
+        showToast('Fehler beim Übermitteln: ' + e.message);
+    }
+}
+
+// Show success message after smart submit
+function showSmartSubmitSuccess() {
+    const container = document.getElementById('cv-q-smart-mode');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="p-8 text-center">
+                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-check-circle text-green-500 text-5xl"></i>
+                </div>
+                <h2 class="font-serif text-2xl text-brand-dark mb-3">Vielen Dank!</h2>
+                <p class="text-gray-500 mb-6">
+                    Ihr Fragebogen wurde erfolgreich übermittelt. Unser Team wird sich umgehend an die Erstellung Ihres optimierten Lebenslaufs machen.
+                </p>
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
+                    <h4 class="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i>
+                        Was passiert als Nächstes?
+                    </h4>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>• Unsere KI analysiert Ihre Dokumente</li>
+                        <li>• Ein Experte überprüft und optimiert Ihren CV</li>
+                        <li>• Sie erhalten Ihren fertigen Lebenslauf per E-Mail</li>
+                    </ul>
+                </div>
+                <a href="/" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition">
+                    <i class="fas fa-home"></i>
+                    Zur Startseite
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+// Add event listeners for smart mode form inputs
+export function initSmartModeListeners() {
+    // Add input listeners for step 2 validation
+    const fields = ['cv-q-smart-name', 'cv-q-smart-email', 'cv-q-smart-target-role'];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', updateSmartNextButton);
+        }
+    });
 }
 
 // Pre-fill form with existing data

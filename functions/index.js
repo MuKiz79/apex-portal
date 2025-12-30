@@ -12,6 +12,7 @@ const smtpHost = defineSecret('SMTP_HOST');
 const smtpUser = defineSecret('SMTP_USER');
 const smtpPass = defineSecret('SMTP_PASS');
 const dailyApiKey = defineSecret('DAILY_API_KEY');
+const claudeApiKey = defineSecret('CLAUDE_API_KEY');
 
 // Set global options
 setGlobalOptions({
@@ -1175,5 +1176,499 @@ exports.createMeetingToken = onRequest({
     } catch (error) {
         console.error('Error creating meeting token:', error);
         return res.status(500).json({ error: 'Failed to create meeting token', message: error.message });
+    }
+});
+
+// ========== SEND CV QUESTIONNAIRE EMAIL ==========
+exports.sendQuestionnaireEmail = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { projectId, customerEmail, customerName, questionnaireUrl } = req.body;
+
+        if (!projectId || !customerEmail || !questionnaireUrl) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Create transporter
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 587,
+            secure: false,
+            auth: {
+                user: smtpUser.value(),
+                pass: smtpPass.value()
+            }
+        });
+
+        // Email content
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV-Fragebogen - APEX Executive</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
+        <tr>
+            <td style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 40px 30px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #C9B99A 0%, #B8A88A 100%); border-radius: 12px; display: inline-block; text-align: center; line-height: 50px;">
+                                            <span style="color: #1a1a2e; font-size: 24px; font-weight: bold; font-family: Georgia, serif;">A</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top: 20px;">
+                                        <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-family: Georgia, serif;">CV-Fragebogen</h1>
+                                        <p style="color: #C9B99A; font-size: 16px; margin: 10px 0 0;">APEX Executive Career Services</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Guten Tag${customerName ? ' ' + customerName.split(' ')[0] : ''},
+                            </p>
+
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                vielen Dank für Ihre Bestellung bei APEX Executive. Um Ihren optimierten Lebenslauf zu erstellen, benötigen wir einige Informationen von Ihnen.
+                            </p>
+
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                Bitte füllen Sie den folgenden Fragebogen aus. Der Prozess dauert etwa 15-20 Minuten und Ihre Eingaben werden automatisch gespeichert.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="border-radius: 8px; background: linear-gradient(135deg, #C9B99A 0%, #B8A88A 100%);">
+                                        <a href="${questionnaireUrl}" target="_blank" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #1a1a2e; text-decoration: none;">
+                                            Fragebogen ausfüllen →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 30px 0 0; text-align: center;">
+                                Oder kopieren Sie diesen Link:<br>
+                                <a href="${questionnaireUrl}" style="color: #C9B99A; word-break: break-all;">${questionnaireUrl}</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Info Box -->
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa; border-radius: 12px; padding: 20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="color: #333333; font-size: 14px; font-weight: 600; margin: 0 0 10px;">
+                                            📋 Was wir benötigen:
+                                        </p>
+                                        <ul style="color: #666666; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                                            <li>Persönliche Daten & Karriereziele</li>
+                                            <li>Berufserfahrung & Ausbildung</li>
+                                            <li>Skills & Qualifikationen</li>
+                                            <li>Optional: Aktueller Lebenslauf & Stellenausschreibung</li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
+                            <p style="color: #999999; font-size: 12px; margin: 0;">
+                                © ${new Date().getFullYear()} APEX Executive Career Services
+                            </p>
+                            <p style="color: #666666; font-size: 11px; margin: 10px 0 0;">
+                                Diese E-Mail wurde automatisch generiert. Bei Fragen kontaktieren Sie uns unter kontakt@apex-executive.de
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+        `;
+
+        // Send email
+        await transporter.sendMail({
+            from: `"APEX Executive" <${smtpUser.value()}>`,
+            to: customerEmail,
+            subject: 'Ihr CV-Fragebogen - APEX Executive',
+            html: emailHtml
+        });
+
+        console.log(`Questionnaire email sent to ${customerEmail} for project ${projectId}`);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Email sent successfully'
+        });
+
+    } catch (error) {
+        console.error('Error sending questionnaire email:', error);
+        return res.status(500).json({
+            error: 'Failed to send email',
+            message: error.message
+        });
+    }
+});
+
+// ========== GENERATE CV CONTENT WITH CLAUDE API ==========
+exports.generateCvContent = onRequest({
+    secrets: [claudeApiKey],
+    invoker: 'public',
+    timeoutSeconds: 120,
+    memory: '512MiB'
+}, async (req, res) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { projectId, templateType, language } = req.body;
+
+        if (!projectId) {
+            return res.status(400).json({ error: 'projectId is required' });
+        }
+
+        // Load CV project data from Firestore
+        const projectRef = admin.firestore().collection('cvProjects').doc(projectId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            return res.status(404).json({ error: 'CV Project not found' });
+        }
+
+        const projectData = projectDoc.data();
+        const questionnaire = projectData.questionnaire || {};
+        const documents = projectData.documents || {};
+
+        // Build context from questionnaire
+        const personalInfo = questionnaire.personal || {};
+        const experience = questionnaire.experience || [];
+        const education = questionnaire.education || [];
+        const skills = questionnaire.skills || {};
+        const additional = questionnaire.additional || {};
+
+        // Template-specific requirements
+        const templateRequirements = {
+            minimalist: 'Clean, modern format with clear sections. Focus on readability and white space. Best for Young Professionals.',
+            creative: 'Modern design with subtle creative elements. Suitable for marketing, design, and tech roles.',
+            corporate: 'Traditional professional format. Comprehensive detail. Best for corporate and senior roles.',
+            executive: 'Executive brief format. High-level achievements and leadership focus. For C-Suite and Directors.',
+            brand: 'Personal branding focus. Emphasizes unique value proposition and thought leadership.'
+        };
+
+        // Build the prompt for Claude
+        const prompt = `Du bist ein erfahrener CV-Experte und Karriereberater bei APEX Executive, einem Premium-Karriereservice für Führungskräfte.
+
+DEINE AUFGABE:
+Erstelle einen optimierten, professionellen Lebenslauf basierend auf den folgenden Informationen.
+
+TEMPLATE-TYP: ${templateType || 'corporate'}
+TEMPLATE-ANFORDERUNGEN: ${templateRequirements[templateType] || templateRequirements.corporate}
+SPRACHE: ${language || 'Deutsch'}
+
+=== PERSÖNLICHE DATEN ===
+Name: ${personalInfo.fullName || 'Nicht angegeben'}
+E-Mail: ${personalInfo.email || ''}
+Telefon: ${personalInfo.phone || ''}
+Standort: ${personalInfo.location || ''}
+LinkedIn: ${personalInfo.linkedin || ''}
+Website: ${personalInfo.website || ''}
+Gewünschte Position: ${personalInfo.targetRole || ''}
+Karriereziel: ${personalInfo.careerGoal || ''}
+
+=== BERUFSERFAHRUNG ===
+${experience.length > 0 ? experience.map((exp, i) => `
+Position ${i + 1}:
+- Firma: ${exp.company || ''}
+- Position: ${exp.role || ''}
+- Zeitraum: ${exp.startDate || ''} - ${exp.endDate || 'heute'}
+- Beschreibung: ${exp.description || ''}
+- Erfolge: ${(exp.achievements || []).join(', ') || 'Keine angegeben'}
+`).join('\n') : 'Keine Berufserfahrung angegeben'}
+
+=== AUSBILDUNG ===
+${education.length > 0 ? education.map((edu, i) => `
+Ausbildung ${i + 1}:
+- Institution: ${edu.institution || ''}
+- Abschluss: ${edu.degree || ''}
+- Fachrichtung: ${edu.field || ''}
+- Zeitraum: ${edu.startDate || ''} - ${edu.endDate || ''}
+- Note: ${edu.grade || ''}
+- Highlights: ${edu.highlights || ''}
+`).join('\n') : 'Keine Ausbildung angegeben'}
+
+=== SKILLS ===
+- Technische Skills: ${(skills.technical || []).join(', ') || 'Keine angegeben'}
+- Soft Skills: ${(skills.soft || []).join(', ') || 'Keine angegeben'}
+- Sprachen: ${(skills.languages || []).map(l => `${l.language} (${l.level})`).join(', ') || 'Keine angegeben'}
+- Zertifikate: ${(skills.certifications || []).join(', ') || 'Keine angegeben'}
+
+=== ZUSÄTZLICHE INFORMATIONEN ===
+- Eigene Zusammenfassung: ${additional.summary || ''}
+- Top-Stärken: ${additional.strengths || ''}
+- Ziel-Branchen: ${(additional.industries || []).join(', ') || ''}
+
+${documents.existingCv?.extractedText ? `
+=== AKTUELLER LEBENSLAUF (extrahierter Text) ===
+${documents.existingCv.extractedText.substring(0, 3000)}
+` : ''}
+
+${documents.targetJob?.extractedText ? `
+=== ZIELSTELLE (extrahierte Beschreibung) ===
+${documents.targetJob.extractedText.substring(0, 2000)}
+` : ''}
+
+WICHTIGE ANWEISUNGEN:
+1. Formuliere alle Bullet Points aktionsorientiert (Verben am Anfang)
+2. Quantifiziere Erfolge wo möglich (Zahlen, Prozentsätze, Umsätze)
+3. Optimiere für ATS-Systeme (relevante Keywords aus der Zielstelle)
+4. Passe den Ton an das Template an (${templateType || 'corporate'})
+5. Das Profil/Summary sollte 3-4 Sätze haben und die wichtigsten Qualifikationen hervorheben
+6. Betone Leadership und Strategie bei Executive-Positionen
+
+AUSGABEFORMAT:
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt in diesem Format (keine Markdown-Codeblöcke):
+{
+  "personal": {
+    "fullName": "...",
+    "title": "Aktuelle oder gewünschte Berufsbezeichnung",
+    "email": "...",
+    "phone": "...",
+    "location": "...",
+    "linkedin": "...",
+    "website": "..."
+  },
+  "summary": "Professionelles Profil/Summary in 3-4 Sätzen",
+  "experience": [
+    {
+      "company": "Firmenname",
+      "role": "Position",
+      "period": "MM/YYYY - MM/YYYY oder heute",
+      "location": "Stadt, Land",
+      "description": "Kurze Beschreibung der Rolle",
+      "achievements": ["Erfolg 1 mit Zahlen", "Erfolg 2 mit Impact", "Erfolg 3"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Name",
+      "degree": "Abschluss",
+      "field": "Fachrichtung",
+      "period": "YYYY - YYYY",
+      "grade": "Note falls relevant",
+      "highlights": "Besondere Leistungen"
+    }
+  ],
+  "skills": {
+    "technical": ["Skill 1", "Skill 2"],
+    "soft": ["Soft Skill 1", "Soft Skill 2"],
+    "languages": [{"language": "Deutsch", "level": "Muttersprache"}],
+    "certifications": ["Zertifikat 1"]
+  },
+  "expertise": ["Expertise-Bereich 1", "Expertise-Bereich 2", "Expertise-Bereich 3"]
+}`;
+
+        console.log(`Generating CV for project ${projectId} with template ${templateType}`);
+
+        // Call Claude API
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'x-api-key': claudeApiKey.value(),
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4096,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Claude API error:', errorData);
+            return res.status(500).json({ error: 'Claude API error', details: errorData });
+        }
+
+        const claudeResponse = await response.json();
+        const responseText = claudeResponse.content[0].text;
+
+        // Parse the JSON response from Claude
+        let generatedCvData;
+        try {
+            // Try to extract JSON from the response (in case Claude adds extra text)
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                generatedCvData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('No JSON found in response');
+            }
+        } catch (parseError) {
+            console.error('Failed to parse Claude response:', parseError);
+            console.error('Response text:', responseText);
+            return res.status(500).json({
+                error: 'Failed to parse CV data',
+                message: parseError.message,
+                rawResponse: responseText.substring(0, 500)
+            });
+        }
+
+        // Update the CV project with generated data
+        await projectRef.update({
+            generatedCv: {
+                templateType: templateType || 'corporate',
+                language: language || 'de',
+                data: generatedCvData,
+                generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                model: 'claude-sonnet-4-20250514'
+            },
+            status: 'ready',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`CV generated successfully for project ${projectId}`);
+
+        return res.status(200).json({
+            success: true,
+            data: generatedCvData,
+            templateType: templateType || 'corporate'
+        });
+
+    } catch (error) {
+        console.error('Error generating CV:', error);
+        return res.status(500).json({
+            error: 'Failed to generate CV',
+            message: error.message
+        });
+    }
+});
+
+// ========== EXTRACT TEXT FROM DOCUMENT ==========
+exports.extractDocumentText = onRequest({
+    invoker: 'public',
+    timeoutSeconds: 60,
+    memory: '512MiB'
+}, async (req, res) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { projectId, documentType, fileUrl, fileName } = req.body;
+
+        if (!projectId || !documentType || !fileUrl) {
+            return res.status(400).json({ error: 'projectId, documentType, and fileUrl are required' });
+        }
+
+        console.log(`Extracting text from ${fileName} for project ${projectId}`);
+
+        let extractedText = '';
+        const fileExtension = fileName?.toLowerCase().split('.').pop() || '';
+
+        // Download the file
+        const fileResponse = await fetch(fileUrl);
+        if (!fileResponse.ok) {
+            throw new Error('Failed to download file');
+        }
+        const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
+
+        // Extract text based on file type
+        if (fileExtension === 'pdf') {
+            const pdfParse = require('pdf-parse');
+            const pdfData = await pdfParse(fileBuffer);
+            extractedText = pdfData.text;
+        } else if (fileExtension === 'docx' || fileExtension === 'doc') {
+            const mammoth = require('mammoth');
+            const result = await mammoth.extractRawText({ buffer: fileBuffer });
+            extractedText = result.value;
+        } else if (fileExtension === 'txt') {
+            extractedText = fileBuffer.toString('utf-8');
+        } else {
+            return res.status(400).json({ error: 'Unsupported file format. Supported: PDF, DOCX, DOC, TXT' });
+        }
+
+        // Clean up the extracted text
+        extractedText = extractedText
+            .replace(/\s+/g, ' ')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+
+        // Update the CV project with extracted text
+        const projectRef = admin.firestore().collection('cvProjects').doc(projectId);
+        const updateField = `documents.${documentType}.extractedText`;
+
+        await projectRef.update({
+            [updateField]: extractedText.substring(0, 10000), // Limit to 10k chars
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`Text extracted successfully: ${extractedText.length} characters`);
+
+        return res.status(200).json({
+            success: true,
+            textLength: extractedText.length,
+            preview: extractedText.substring(0, 500)
+        });
+
+    } catch (error) {
+        console.error('Error extracting document text:', error);
+        return res.status(500).json({
+            error: 'Failed to extract text',
+            message: error.message
+        });
     }
 });

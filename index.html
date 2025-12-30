@@ -3415,7 +3415,7 @@
         </div>
     </div>
 
-    <!-- CV QUESTIONNAIRE VIEW (Public) -->
+    <!-- CV QUESTIONNAIRE VIEW (Public) - Simplified Version -->
     <div id="view-cv-questionnaire" class="hidden fade-in min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <div class="max-w-3xl mx-auto px-4 py-8 sm:py-12">
             <!-- Header -->
@@ -3423,12 +3423,226 @@
                 <div class="w-16 h-16 bg-gradient-to-br from-brand-dark to-brand-dark/80 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <span class="text-brand-gold text-2xl font-serif font-bold">A</span>
                 </div>
-                <h1 class="font-serif text-2xl sm:text-3xl text-brand-dark mb-2">CV-Fragebogen</h1>
-                <p class="text-gray-500 text-sm sm:text-base">Bitte füllen Sie alle Felder aus, damit wir Ihren optimalen Lebenslauf erstellen können.</p>
+                <h1 class="font-serif text-2xl sm:text-3xl text-brand-dark mb-2">CV-Unterlagen einreichen</h1>
+                <p class="text-gray-500 text-sm sm:text-base">Laden Sie Ihre Unterlagen hoch oder füllen Sie das Formular manuell aus.</p>
             </div>
 
-            <!-- Progress Bar -->
-            <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-6 shadow-sm">
+            <!-- Mode Selection -->
+            <div id="cv-q-mode-selection" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+                <div class="p-6 sm:p-8">
+                    <h2 class="font-serif text-xl text-brand-dark mb-6 text-center">Wie möchten Sie Ihre Daten übermitteln?</h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Smart Upload Option -->
+                        <button onclick="app.selectQuestionnaireMode('smart')"
+                                class="cv-q-mode-btn group p-6 border-2 border-gray-200 rounded-2xl hover:border-brand-gold hover:bg-amber-50 transition-all text-left relative">
+                            <div class="absolute -top-3 -right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                Empfohlen
+                            </div>
+                            <div class="w-14 h-14 bg-gradient-to-br from-brand-gold to-yellow-500 rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i class="fas fa-magic text-white text-2xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-brand-dark mb-2">Smart Upload</h3>
+                            <p class="text-sm text-gray-500 mb-3">Laden Sie Ihren aktuellen CV hoch – unsere KI extrahiert automatisch alle relevanten Daten.</p>
+                            <ul class="text-xs text-gray-400 space-y-1">
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> Spart Zeit</li>
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> KI-gestützte Extraktion</li>
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> PDF, Word, Bilder</li>
+                            </ul>
+                        </button>
+
+                        <!-- Manual Option -->
+                        <button onclick="app.selectQuestionnaireMode('manual')"
+                                class="cv-q-mode-btn group p-6 border-2 border-gray-200 rounded-2xl hover:border-brand-gold hover:bg-amber-50 transition-all text-left">
+                            <div class="w-14 h-14 bg-gradient-to-br from-gray-400 to-gray-500 rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i class="fas fa-keyboard text-white text-2xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-brand-dark mb-2">Manuell eingeben</h3>
+                            <p class="text-sm text-gray-500 mb-3">Füllen Sie Schritt für Schritt alle Felder selbst aus.</p>
+                            <ul class="text-xs text-gray-400 space-y-1">
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> Volle Kontrolle</li>
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> Detaillierte Eingabe</li>
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> Schritt für Schritt</li>
+                            </ul>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SMART UPLOAD MODE -->
+            <div id="cv-q-smart-mode" class="hidden">
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="p-6 sm:p-8">
+                        <!-- Progress Steps -->
+                        <div class="flex items-center justify-center mb-8">
+                            <div class="flex items-center">
+                                <div id="smart-step-1-indicator" class="w-10 h-10 bg-brand-gold rounded-full flex items-center justify-center text-white font-bold">1</div>
+                                <div id="smart-step-line-1" class="w-16 h-1 bg-gray-200"></div>
+                                <div id="smart-step-2-indicator" class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold">2</div>
+                                <div id="smart-step-line-2" class="w-16 h-1 bg-gray-200"></div>
+                                <div id="smart-step-3-indicator" class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold">3</div>
+                            </div>
+                        </div>
+
+                        <!-- Smart Step 1: Upload Documents -->
+                        <div id="cv-q-smart-step-1" class="cv-q-smart-step">
+                            <h2 class="font-serif text-xl text-brand-dark mb-2 text-center">Dokumente hochladen</h2>
+                            <p class="text-gray-500 text-sm text-center mb-8">Laden Sie Ihre Unterlagen hoch – wir kümmern uns um den Rest.</p>
+
+                            <div class="space-y-6">
+                                <!-- CV Upload -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Aktueller Lebenslauf <span class="text-red-500">*</span>
+                                    </label>
+                                    <div id="cv-q-smart-cv-upload"
+                                         class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-brand-gold hover:bg-amber-50 transition cursor-pointer"
+                                         onclick="document.getElementById('cv-q-smart-cv-input').click()">
+                                        <div id="cv-q-smart-cv-preview" class="hidden">
+                                            <i class="fas fa-file-pdf text-4xl text-green-500 mb-2"></i>
+                                            <p id="cv-q-smart-cv-filename" class="text-sm font-medium text-gray-700"></p>
+                                            <p class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle mr-1"></i>Hochgeladen</p>
+                                        </div>
+                                        <div id="cv-q-smart-cv-placeholder">
+                                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                                            <p class="text-sm text-gray-600 font-medium">Klicken zum Hochladen</p>
+                                            <p class="text-xs text-gray-400 mt-1">PDF, Word (.doc, .docx)</p>
+                                        </div>
+                                        <input type="file" id="cv-q-smart-cv-input" class="hidden" accept=".pdf,.doc,.docx"
+                                               onchange="app.handleSmartCvUpload(this)">
+                                    </div>
+                                </div>
+
+                                <!-- Optional: Target Job -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Stellenausschreibung <span class="text-gray-400">(optional)</span>
+                                    </label>
+                                    <div id="cv-q-smart-job-upload"
+                                         class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-brand-gold hover:bg-amber-50 transition cursor-pointer"
+                                         onclick="document.getElementById('cv-q-smart-job-input').click()">
+                                        <div id="cv-q-smart-job-preview" class="hidden">
+                                            <i class="fas fa-briefcase text-3xl text-green-500 mb-2"></i>
+                                            <p id="cv-q-smart-job-filename" class="text-sm font-medium text-gray-700"></p>
+                                            <p class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle mr-1"></i>Hochgeladen</p>
+                                        </div>
+                                        <div id="cv-q-smart-job-placeholder">
+                                            <i class="fas fa-briefcase text-3xl text-gray-400 mb-2"></i>
+                                            <p class="text-sm text-gray-500">Zielstelle hochladen für optimale Anpassung</p>
+                                            <p class="text-xs text-gray-400 mt-1">PDF, Word, Screenshot</p>
+                                        </div>
+                                        <input type="file" id="cv-q-smart-job-input" class="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                                               onchange="app.handleSmartJobUpload(this)">
+                                    </div>
+                                </div>
+
+                                <!-- Optional: Additional Documents -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Weitere Dokumente <span class="text-gray-400">(optional)</span>
+                                    </label>
+                                    <div id="cv-q-smart-other-upload"
+                                         class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-brand-gold hover:bg-amber-50 transition cursor-pointer"
+                                         onclick="document.getElementById('cv-q-smart-other-input').click()">
+                                        <div id="cv-q-smart-other-preview" class="hidden">
+                                            <i class="fas fa-file-alt text-3xl text-green-500 mb-2"></i>
+                                            <p id="cv-q-smart-other-filename" class="text-sm font-medium text-gray-700"></p>
+                                            <p class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle mr-1"></i>Hochgeladen</p>
+                                        </div>
+                                        <div id="cv-q-smart-other-placeholder">
+                                            <i class="fas fa-file-alt text-3xl text-gray-400 mb-2"></i>
+                                            <p class="text-sm text-gray-500">Zeugnisse, Zertifikate, LinkedIn-Export etc.</p>
+                                            <p class="text-xs text-gray-400 mt-1">PDF, Word, Bilder</p>
+                                        </div>
+                                        <input type="file" id="cv-q-smart-other-input" class="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" multiple
+                                               onchange="app.handleSmartOtherUpload(this)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Smart Step 2: Basic Info -->
+                        <div id="cv-q-smart-step-2" class="cv-q-smart-step hidden">
+                            <h2 class="font-serif text-xl text-brand-dark mb-2 text-center">Kurze Angaben</h2>
+                            <p class="text-gray-500 text-sm text-center mb-8">Nur noch wenige Infos, dann sind wir fertig.</p>
+
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Vollständiger Name <span class="text-red-500">*</span></label>
+                                        <input type="text" id="cv-q-smart-name" required
+                                               class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                               placeholder="Max Mustermann">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">E-Mail <span class="text-red-500">*</span></label>
+                                        <input type="email" id="cv-q-smart-email" required
+                                               class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                               placeholder="max@beispiel.de">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Gewünschte Position <span class="text-red-500">*</span></label>
+                                    <input type="text" id="cv-q-smart-target-role" required
+                                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                           placeholder="z.B. Senior Product Manager, Head of Marketing">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Besondere Hinweise <span class="text-gray-400">(optional)</span></label>
+                                    <textarea id="cv-q-smart-notes" rows="3"
+                                              class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold resize-none"
+                                              placeholder="Gibt es etwas, das wir bei der CV-Erstellung besonders beachten sollen? z.B. bestimmte Erfahrungen hervorheben, Lücken erklären etc."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Smart Step 3: Confirmation -->
+                        <div id="cv-q-smart-step-3" class="cv-q-smart-step hidden">
+                            <div class="text-center py-8">
+                                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <i class="fas fa-check text-green-500 text-3xl"></i>
+                                </div>
+                                <h2 class="font-serif text-2xl text-brand-dark mb-3">Alles bereit!</h2>
+                                <p class="text-gray-500 mb-6">Ihre Unterlagen wurden erfolgreich hochgeladen. Klicken Sie auf "Absenden", um Ihre Daten an uns zu übermitteln.</p>
+
+                                <div id="cv-q-smart-summary" class="bg-gray-50 rounded-xl p-4 text-left mb-6">
+                                    <h4 class="font-medium text-gray-700 mb-3">Zusammenfassung:</h4>
+                                    <div id="cv-q-smart-summary-content" class="text-sm text-gray-600 space-y-2">
+                                        <!-- Summary will be filled dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation -->
+                        <div class="mt-8 flex justify-between items-center">
+                            <button type="button" id="cv-q-smart-back-btn" onclick="app.smartQuestionnaireBack()"
+                                    class="px-4 py-2 text-gray-600 hover:text-gray-800 transition flex items-center gap-2">
+                                <i class="fas fa-arrow-left"></i>
+                                Zurück
+                            </button>
+
+                            <button type="button" id="cv-q-smart-next-btn" onclick="app.smartQuestionnaireNext()"
+                                    class="px-6 py-2.5 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                Weiter
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+
+                            <button type="button" id="cv-q-smart-submit-btn" onclick="app.submitSmartQuestionnaire()"
+                                    class="hidden px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2">
+                                <i class="fas fa-paper-plane mr-1"></i>
+                                Absenden
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MANUAL MODE - Progress Bar -->
+            <div id="cv-q-manual-progress" class="hidden bg-white rounded-2xl border border-gray-100 p-4 mb-6 shadow-sm">
                 <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
                     <span>Schritt <span id="cv-q-current-step">1</span> von 5</span>
                     <span id="cv-q-progress-percent">20%</span>
@@ -3445,8 +3659,8 @@
                 </div>
             </div>
 
-            <!-- Form Container -->
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <!-- MANUAL MODE - Form Container -->
+            <div id="cv-q-manual-mode" class="hidden bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <!-- Step 1: Personal Data -->
                 <div id="cv-q-step-1" class="cv-q-step p-6 sm:p-8">
                     <h2 class="font-serif text-xl text-brand-dark mb-6 flex items-center gap-3">
@@ -3704,6 +3918,14 @@
                     <i class="fas fa-cloud"></i>
                     Fortschritt wird automatisch gespeichert
                 </p>
+            </div>
+
+            <!-- Back to Mode Selection Link -->
+            <div class="mt-4 text-center">
+                <button onclick="app.backToModeSelection()" class="text-sm text-gray-500 hover:text-brand-gold transition">
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    Andere Methode wählen
+                </button>
             </div>
         </div>
     </div>
@@ -4454,12 +4676,26 @@
             openCvQuestionnaireView: (orderId) => App.openCvQuestionnaireView(orderId),
             viewCvData: (orderId) => App.viewCvData(orderId),
             openCvGenerator: (orderId) => App.openCvGenerator(orderId),
+            startCvGeneration: (projectId, orderId) => App.startCvGeneration(projectId, orderId),
             openCvPreview: (orderId) => App.openCvPreview(orderId),
+            changeCvTemplate: (projectId, orderId) => App.changeCvTemplate(projectId, orderId),
+            regenerateCv: (projectId, orderId) => App.regenerateCv(projectId, orderId),
             exportCvPdf: (orderId) => App.exportCvPdf(orderId),
             sendCvToCustomer: (orderId) => App.sendCvToCustomer(orderId),
+            confirmSendCvToCustomer: (projectId, orderId) => App.confirmSendCvToCustomer(projectId, orderId),
 
             // CV Questionnaire functions
             initCvQuestionnaire: () => App.initCvQuestionnaire(),
+            selectQuestionnaireMode: (mode) => App.selectQuestionnaireMode(mode),
+            backToModeSelection: () => App.backToModeSelection(),
+            // Smart Upload mode
+            handleSmartCvUpload: (input) => App.handleSmartCvUpload(input),
+            handleSmartJobUpload: (input) => App.handleSmartJobUpload(input),
+            handleSmartOtherUpload: (input) => App.handleSmartOtherUpload(input),
+            smartQuestionnaireNext: () => App.smartQuestionnaireNext(),
+            smartQuestionnaireBack: () => App.smartQuestionnaireBack(),
+            submitSmartQuestionnaire: () => App.submitSmartQuestionnaire(),
+            // Manual mode
             nextCvQuestionnaireStep: () => App.nextCvQuestionnaireStep(),
             prevCvQuestionnaireStep: () => App.prevCvQuestionnaireStep(),
             addCvExperienceEntry: () => App.addCvExperienceEntry(),
