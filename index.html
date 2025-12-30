@@ -1707,7 +1707,7 @@
                                         <h2 class="font-serif text-xl text-brand-dark">Meine Verfügbarkeit</h2>
                                         <p class="text-sm text-gray-600 mt-1">Klicken Sie auf Zeitslots um Ihre Verfügbarkeit zu setzen</p>
                                     </div>
-                                    <button onclick="app.saveAvailability()" class="btn-primary text-sm">
+                                    <button onclick="app.saveMentorAvailability()" class="btn-primary text-sm">
                                         <i class="fas fa-save"></i>
                                         Speichern
                                     </button>
@@ -3730,7 +3730,8 @@
             toggleTimeSlot: (dateKey, time) => App.toggleTimeSlot(dateKey, time),
             prevWeek: () => App.prevWeek(),
             nextWeek: () => App.nextWeek(),
-            saveAvailability: () => App.saveAvailability(),
+            saveAvailability: () => App.saveAvailability(window.app.state),
+            saveMentorAvailability: () => App.saveMentorAvailability(),
 
             // Coaches & Articles functions
             filterCoaches: () => App.filterCoaches(window.app.state),

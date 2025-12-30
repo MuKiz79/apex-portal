@@ -179,9 +179,45 @@ exports.stripeWebhook = onRequest({
                             try {
                                 const resetLink = await admin.auth().generatePasswordResetLink(customerEmail);
                                 console.log('Password reset link generated:', resetLink);
-                                // TODO: Send custom email with reset link
+
+                                // Send welcome email with reset link
+                                const transporter = nodemailer.createTransport({
+                                    host: smtpHost.value(),
+                                    port: 587,
+                                    secure: false,
+                                    auth: {
+                                        user: smtpUser.value(),
+                                        pass: smtpPass.value()
+                                    }
+                                });
+
+                                await transporter.sendMail({
+                                    from: '"APEX Executive" <noreply@apex-executive.de>',
+                                    to: customerEmail,
+                                    subject: 'Willkommen bei APEX Executive - Bitte Passwort festlegen',
+                                    html: `
+                                        <div style="font-family: 'Georgia', serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; padding: 40px; color: #fff;">
+                                            <div style="text-align: center; margin-bottom: 30px;">
+                                                <h1 style="color: #C9B99A; font-size: 28px; margin: 0;">APEX Executive</h1>
+                                            </div>
+                                            <div style="background: white; padding: 30px; border-radius: 8px; color: #333;">
+                                                <h2 style="color: #1a1a2e; margin-top: 0;">Willkommen bei APEX Executive!</h2>
+                                                <p>Vielen Dank für Ihre Bestellung. Wir haben automatisch ein Konto für Sie erstellt.</p>
+                                                <p>Bitte klicken Sie auf den folgenden Button, um Ihr Passwort festzulegen:</p>
+                                                <div style="text-align: center; margin: 30px 0;">
+                                                    <a href="${resetLink}" style="background: #C9B99A; color: #1a1a2e; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Passwort festlegen</a>
+                                                </div>
+                                                <p style="color: #666; font-size: 14px;">Oder kopieren Sie diesen Link in Ihren Browser:<br><a href="${resetLink}" style="color: #1a1a2e;">${resetLink}</a></p>
+                                                <p>Sobald Ihr Passwort festgelegt ist, können Sie sich in Ihrem Dashboard einloggen und Ihre Bestellungen einsehen.</p>
+                                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                                                <p style="color: #666; font-size: 12px;">Bei Fragen stehen wir Ihnen gerne zur Verfügung: concierge@apex-executive.de</p>
+                                            </div>
+                                        </div>
+                                    `
+                                });
+                                console.log('Welcome email with password reset sent to:', customerEmail);
                             } catch (resetError) {
-                                console.error('Error generating password reset link:', resetError);
+                                console.error('Error generating password reset link or sending email:', resetError);
                             }
 
                             console.log('New user created:', userId, customerEmail);

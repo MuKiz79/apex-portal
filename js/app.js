@@ -1620,9 +1620,6 @@ export function toggleOrderDetails(orderId) {
 
 // Check if meeting time is now (15 min before to 2 hours after)
 function isMeetingTimeNow(datetime) {
-    // TODO: Remove this line after testing - always show meeting button for testing
-    return true;
-
     const meetingTime = new Date(datetime);
     const now = new Date();
     const fifteenMinBefore = new Date(meetingTime.getTime() - 15 * 60 * 1000);
@@ -1828,7 +1825,11 @@ function getOrderStatusInfo(status) {
 }
 
 export function hasCoachSession(order) {
-    return order.items && order.items.some(item => item.title && item.title.includes('Session:'));
+    // Check for any mentoring/session products
+    const sessionKeywords = ['Session', 'Mentoring', 'Coaching', 'Komplettpaket'];
+    return order.items && order.items.some(item =>
+        item.title && sessionKeywords.some(keyword => item.title.includes(keyword))
+    );
 }
 
 export function getOrderStatusText(status) {
@@ -2656,8 +2657,8 @@ export function nextWeek() {
     renderAvailabilityCalendar();
 }
 
-// Save availability to Firestore
-export async function saveAvailability() {
+// Save mentor availability to Firestore
+export async function saveMentorAvailability() {
     if (!db || !currentMentorData) {
         showToast('❌ Fehler: Nicht als Mentor angemeldet');
         return;
