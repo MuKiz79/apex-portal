@@ -3415,6 +3415,299 @@
         </div>
     </div>
 
+    <!-- CV QUESTIONNAIRE VIEW (Public) -->
+    <div id="view-cv-questionnaire" class="hidden fade-in min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <div class="max-w-3xl mx-auto px-4 py-8 sm:py-12">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-brand-dark to-brand-dark/80 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <span class="text-brand-gold text-2xl font-serif font-bold">A</span>
+                </div>
+                <h1 class="font-serif text-2xl sm:text-3xl text-brand-dark mb-2">CV-Fragebogen</h1>
+                <p class="text-gray-500 text-sm sm:text-base">Bitte füllen Sie alle Felder aus, damit wir Ihren optimalen Lebenslauf erstellen können.</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-6 shadow-sm">
+                <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
+                    <span>Schritt <span id="cv-q-current-step">1</span> von 5</span>
+                    <span id="cv-q-progress-percent">20%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="cv-q-progress-bar" class="bg-brand-gold h-2 rounded-full transition-all duration-300" style="width: 20%"></div>
+                </div>
+                <div class="flex justify-between mt-3 text-xs">
+                    <span class="text-brand-gold font-medium">Persönlich</span>
+                    <span class="text-gray-400">Erfahrung</span>
+                    <span class="text-gray-400">Ausbildung</span>
+                    <span class="text-gray-400">Skills</span>
+                    <span class="text-gray-400">Dokumente</span>
+                </div>
+            </div>
+
+            <!-- Form Container -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <!-- Step 1: Personal Data -->
+                <div id="cv-q-step-1" class="cv-q-step p-6 sm:p-8">
+                    <h2 class="font-serif text-xl text-brand-dark mb-6 flex items-center gap-3">
+                        <span class="w-8 h-8 bg-brand-gold/20 rounded-lg flex items-center justify-center text-brand-gold text-sm font-bold">1</span>
+                        Persönliche Daten
+                    </h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Vollständiger Name *</label>
+                            <input type="text" id="cv-q-fullname" required
+                                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                   placeholder="Max Mustermann">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">E-Mail *</label>
+                            <input type="email" id="cv-q-email" required
+                                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                   placeholder="max@beispiel.de">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                            <input type="tel" id="cv-q-phone"
+                                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                   placeholder="+49 170 1234567">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Standort</label>
+                            <input type="text" id="cv-q-location"
+                                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                   placeholder="München, Deutschland">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">LinkedIn-Profil</label>
+                            <input type="url" id="cv-q-linkedin"
+                                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                   placeholder="linkedin.com/in/maxmustermann">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Website/Portfolio</label>
+                            <input type="url" id="cv-q-website"
+                                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                   placeholder="www.beispiel.de">
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                        <h3 class="font-medium text-amber-800 mb-3 flex items-center gap-2">
+                            <i class="fas fa-bullseye"></i>
+                            Karriereziele
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Gewünschte Position *</label>
+                                <input type="text" id="cv-q-target-role" required
+                                       class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold bg-white"
+                                       placeholder="z.B. Senior Product Manager, Head of Marketing">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Karriereziel (2-3 Sätze)</label>
+                                <textarea id="cv-q-career-goal" rows="3"
+                                          class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold bg-white resize-none"
+                                          placeholder="Beschreiben Sie kurz, was Sie in den nächsten 2-3 Jahren beruflich erreichen möchten..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Experience -->
+                <div id="cv-q-step-2" class="cv-q-step hidden p-6 sm:p-8">
+                    <h2 class="font-serif text-xl text-brand-dark mb-6 flex items-center gap-3">
+                        <span class="w-8 h-8 bg-brand-gold/20 rounded-lg flex items-center justify-center text-brand-gold text-sm font-bold">2</span>
+                        Berufserfahrung
+                    </h2>
+
+                    <div id="cv-q-experience-list" class="space-y-6">
+                        <!-- Experience entries will be added here -->
+                    </div>
+
+                    <button type="button" onclick="app.addCvExperienceEntry()"
+                            class="mt-4 w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-brand-gold hover:text-brand-gold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        Position hinzufügen
+                    </button>
+                </div>
+
+                <!-- Step 3: Education -->
+                <div id="cv-q-step-3" class="cv-q-step hidden p-6 sm:p-8">
+                    <h2 class="font-serif text-xl text-brand-dark mb-6 flex items-center gap-3">
+                        <span class="w-8 h-8 bg-brand-gold/20 rounded-lg flex items-center justify-center text-brand-gold text-sm font-bold">3</span>
+                        Ausbildung
+                    </h2>
+
+                    <div id="cv-q-education-list" class="space-y-6">
+                        <!-- Education entries will be added here -->
+                    </div>
+
+                    <button type="button" onclick="app.addCvEducationEntry()"
+                            class="mt-4 w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-brand-gold hover:text-brand-gold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        Ausbildung hinzufügen
+                    </button>
+                </div>
+
+                <!-- Step 4: Skills -->
+                <div id="cv-q-step-4" class="cv-q-step hidden p-6 sm:p-8">
+                    <h2 class="font-serif text-xl text-brand-dark mb-6 flex items-center gap-3">
+                        <span class="w-8 h-8 bg-brand-gold/20 rounded-lg flex items-center justify-center text-brand-gold text-sm font-bold">4</span>
+                        Skills & Qualifikationen
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fachliche Kompetenzen</label>
+                            <textarea id="cv-q-technical-skills" rows="3"
+                                      class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold resize-none"
+                                      placeholder="z.B. Projektmanagement, Agile/Scrum, MS Office, SAP, Python... (durch Komma getrennt)"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Soft Skills</label>
+                            <textarea id="cv-q-soft-skills" rows="3"
+                                      class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold resize-none"
+                                      placeholder="z.B. Führungskompetenz, Kommunikation, Teamarbeit, analytisches Denken... (durch Komma getrennt)"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sprachen</label>
+                            <div id="cv-q-languages-list" class="space-y-2">
+                                <!-- Language entries will be added here -->
+                            </div>
+                            <button type="button" onclick="app.addCvLanguageEntry()"
+                                    class="mt-2 text-sm text-brand-gold hover:text-yellow-600 flex items-center gap-1">
+                                <i class="fas fa-plus"></i>
+                                Sprache hinzufügen
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Zertifikate & Weiterbildungen</label>
+                            <textarea id="cv-q-certifications" rows="3"
+                                      class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold resize-none"
+                                      placeholder="z.B. PMP, AWS Certified, Six Sigma Green Belt... (durch Komma getrennt)"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Documents & Additional -->
+                <div id="cv-q-step-5" class="cv-q-step hidden p-6 sm:p-8">
+                    <h2 class="font-serif text-xl text-brand-dark mb-6 flex items-center gap-3">
+                        <span class="w-8 h-8 bg-brand-gold/20 rounded-lg flex items-center justify-center text-brand-gold text-sm font-bold">5</span>
+                        Dokumente & Zusatzinfos
+                    </h2>
+
+                    <div class="space-y-6">
+                        <!-- Document Uploads -->
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                            <h3 class="font-medium text-blue-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-file-upload"></i>
+                                Dokumente hochladen
+                            </h3>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Aktueller Lebenslauf</label>
+                                    <div id="cv-q-existing-cv-upload" class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-brand-gold transition cursor-pointer"
+                                         onclick="document.getElementById('cv-q-existing-cv-input').click()">
+                                        <i class="fas fa-file-pdf text-2xl text-gray-400 mb-2"></i>
+                                        <p class="text-sm text-gray-500">PDF oder Word hochladen</p>
+                                        <input type="file" id="cv-q-existing-cv-input" class="hidden" accept=".pdf,.doc,.docx"
+                                               onchange="app.handleCvDocumentUpload('existingCv', this)">
+                                    </div>
+                                    <p id="cv-q-existing-cv-filename" class="text-xs text-green-600 mt-1 hidden"></p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Stellenausschreibung (optional)</label>
+                                    <div id="cv-q-target-job-upload" class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-brand-gold transition cursor-pointer"
+                                         onclick="document.getElementById('cv-q-target-job-input').click()">
+                                        <i class="fas fa-briefcase text-2xl text-gray-400 mb-2"></i>
+                                        <p class="text-sm text-gray-500">PDF, Word oder Screenshot</p>
+                                        <input type="file" id="cv-q-target-job-input" class="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                                               onchange="app.handleCvDocumentUpload('targetJob', this)">
+                                    </div>
+                                    <p id="cv-q-target-job-filename" class="text-xs text-green-600 mt-1 hidden"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Info -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Persönliche Zusammenfassung</label>
+                            <textarea id="cv-q-summary" rows="4"
+                                      class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold resize-none"
+                                      placeholder="Beschreiben Sie sich in 3-4 Sätzen: Was macht Sie aus? Was sind Ihre größten beruflichen Erfolge?"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Top 3 Stärken</label>
+                            <input type="text" id="cv-q-strengths"
+                                   class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                   placeholder="z.B. Strategisches Denken, Teamführung, Innovationsfreude">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Ziel-Branchen</label>
+                                <input type="text" id="cv-q-industries"
+                                       class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                       placeholder="z.B. Tech, Finance, Consulting">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Verfügbarkeit</label>
+                                <input type="text" id="cv-q-availability"
+                                       class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                       placeholder="z.B. Ab sofort, 3 Monate Kündigungsfrist">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Zusätzliche Hinweise</label>
+                            <textarea id="cv-q-additional-notes" rows="3"
+                                      class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold resize-none"
+                                      placeholder="Gibt es etwas, das wir bei der CV-Erstellung besonders beachten sollen?"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="border-t border-gray-100 p-4 sm:p-6 flex justify-between items-center bg-gray-50">
+                    <button type="button" id="cv-q-prev-btn" onclick="app.prevCvQuestionnaireStep()"
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled>
+                        <i class="fas fa-arrow-left"></i>
+                        Zurück
+                    </button>
+
+                    <button type="button" id="cv-q-next-btn" onclick="app.nextCvQuestionnaireStep()"
+                            class="px-6 py-2.5 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition flex items-center gap-2">
+                        Weiter
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+
+                    <button type="button" id="cv-q-submit-btn" onclick="app.submitCvQuestionnaire()"
+                            class="hidden px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2">
+                        <i class="fas fa-check"></i>
+                        Absenden
+                    </button>
+                </div>
+            </div>
+
+            <!-- Autosave Indicator -->
+            <div class="mt-4 text-center">
+                <p id="cv-q-autosave-status" class="text-xs text-gray-400">
+                    <i class="fas fa-cloud"></i>
+                    Fortschritt wird automatisch gespeichert
+                </p>
+            </div>
+        </div>
+    </div>
+
     <div id="view-impressum" class="hidden fade-in min-h-screen bg-white">
         <div class="max-w-4xl mx-auto px-4 py-20">
             <h1 class="font-serif text-3xl mb-8">Impressum</h1>
@@ -3979,7 +4272,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20251229e';
-        import * as App from './js/app.js?v=20251230a';
+        import * as App from './js/app.js?v=20251230b';
 
         // Make functions globally accessible
         window.app = {
@@ -4165,6 +4458,17 @@
             exportCvPdf: (orderId) => App.exportCvPdf(orderId),
             sendCvToCustomer: (orderId) => App.sendCvToCustomer(orderId),
 
+            // CV Questionnaire functions
+            initCvQuestionnaire: () => App.initCvQuestionnaire(),
+            nextCvQuestionnaireStep: () => App.nextCvQuestionnaireStep(),
+            prevCvQuestionnaireStep: () => App.prevCvQuestionnaireStep(),
+            addCvExperienceEntry: () => App.addCvExperienceEntry(),
+            addCvEducationEntry: () => App.addCvEducationEntry(),
+            addCvLanguageEntry: () => App.addCvLanguageEntry(),
+            removeCvEntry: (entryId) => App.removeCvEntry(entryId),
+            handleCvDocumentUpload: (docType, input) => App.handleCvDocumentUpload(docType, input),
+            submitCvQuestionnaire: () => App.submitCvQuestionnaire(),
+
             // User documents
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),
             loadUserUploads: () => App.loadUserUploads(window.app.state),
@@ -4292,7 +4596,15 @@
         window.app.state.justPaid = initialUrlParams.get('payment') === 'success';
 
         // Load Initial Data
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check for CV questionnaire URL parameter first
+            const questionnaireParam = new URLSearchParams(window.location.search).get('questionnaire');
+            if (questionnaireParam) {
+                await app.initCvQuestionnaire();
+                console.log('✅ CV Questionnaire loaded');
+                return; // Don't load regular app if questionnaire mode
+            }
+
             app.initData();
             app.updateCartUI();
             app.loadAboutImage(); // Load dynamic "Über uns" image

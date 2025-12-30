@@ -7503,3 +7503,597 @@ export async function sendCvToCustomer(orderId) {
     // TODO: Implement send CV to customer via Cloud Function
 }
 
+// ============================================
+// CV QUESTIONNAIRE FUNCTIONS
+// ============================================
+
+let cvQuestionnaireStep = 1;
+let cvQuestionnaireProjectId = null;
+let cvQuestionnaireData = {
+    personal: {},
+    experience: [],
+    education: [],
+    skills: {},
+    additional: {},
+    documents: {}
+};
+let experienceCounter = 0;
+let educationCounter = 0;
+let languageCounter = 0;
+
+// Initialize CV Questionnaire from URL parameter
+export async function initCvQuestionnaire() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('questionnaire');
+
+    if (!projectId) return false;
+
+    cvQuestionnaireProjectId = projectId;
+
+    try {
+        // Load existing project data
+        const projectDoc = await getDoc(doc(db, 'cvProjects', projectId));
+
+        if (projectDoc.exists()) {
+            const data = projectDoc.data();
+
+            // Pre-fill form with existing data
+            if (data.questionnaire) {
+                cvQuestionnaireData = { ...cvQuestionnaireData, ...data.questionnaire };
+                prefillQuestionnaireForm(data.questionnaire);
+            }
+
+            // Pre-fill email and name if available
+            if (data.customerEmail) {
+                const emailInput = document.getElementById('cv-q-email');
+                if (emailInput && !emailInput.value) {
+                    emailInput.value = data.customerEmail;
+                }
+            }
+            if (data.customerName) {
+                const nameInput = document.getElementById('cv-q-fullname');
+                if (nameInput && !nameInput.value) {
+                    nameInput.value = data.customerName;
+                }
+            }
+        }
+
+        // Initialize with default entries
+        if (cvQuestionnaireData.experience.length === 0) {
+            addCvExperienceEntry();
+        }
+        if (cvQuestionnaireData.education.length === 0) {
+            addCvEducationEntry();
+        }
+        if (cvQuestionnaireData.skills.languages?.length === 0 || !cvQuestionnaireData.skills.languages) {
+            addCvLanguageEntry();
+        }
+
+        // Show questionnaire view
+        hideAllViews();
+        document.getElementById('view-cv-questionnaire')?.classList.remove('hidden');
+
+        return true;
+    } catch (e) {
+        logger.error('Error loading questionnaire:', e);
+        showToast('Fehler beim Laden des Fragebogens');
+        return false;
+    }
+}
+
+// Pre-fill form with existing data
+function prefillQuestionnaireForm(data) {
+    // Personal data
+    if (data.personal) {
+        setInputValue('cv-q-fullname', data.personal.fullName);
+        setInputValue('cv-q-email', data.personal.email);
+        setInputValue('cv-q-phone', data.personal.phone);
+        setInputValue('cv-q-location', data.personal.location);
+        setInputValue('cv-q-linkedin', data.personal.linkedin);
+        setInputValue('cv-q-website', data.personal.website);
+        setInputValue('cv-q-target-role', data.personal.targetRole);
+        setInputValue('cv-q-career-goal', data.personal.careerGoal);
+    }
+
+    // Experience
+    if (data.experience?.length > 0) {
+        data.experience.forEach((exp, i) => {
+            if (i > 0) addCvExperienceEntry();
+            // Fields will be filled after entry is added
+        });
+    }
+
+    // Skills
+    if (data.skills) {
+        setInputValue('cv-q-technical-skills', data.skills.technical?.join(', '));
+        setInputValue('cv-q-soft-skills', data.skills.soft?.join(', '));
+        setInputValue('cv-q-certifications', data.skills.certifications?.join(', '));
+    }
+
+    // Additional
+    if (data.additional) {
+        setInputValue('cv-q-summary', data.additional.summary);
+        setInputValue('cv-q-strengths', data.additional.strengths);
+        setInputValue('cv-q-industries', data.additional.industries?.join(', '));
+        setInputValue('cv-q-availability', data.additional.availability);
+        setInputValue('cv-q-additional-notes', data.additional.notes);
+    }
+}
+
+function setInputValue(id, value) {
+    const el = document.getElementById(id);
+    if (el && value) el.value = value;
+}
+
+// Navigate to next step
+export function nextCvQuestionnaireStep() {
+    if (cvQuestionnaireStep >= 5) return;
+
+    // Save current step data
+    saveCvQuestionnaireStepData();
+
+    cvQuestionnaireStep++;
+    updateCvQuestionnaireUI();
+
+    // Auto-save
+    autosaveCvQuestionnaire();
+}
+
+// Navigate to previous step
+export function prevCvQuestionnaireStep() {
+    if (cvQuestionnaireStep <= 1) return;
+
+    saveCvQuestionnaireStepData();
+    cvQuestionnaireStep--;
+    updateCvQuestionnaireUI();
+}
+
+// Update UI based on current step
+function updateCvQuestionnaireUI() {
+    // Hide all steps
+    document.querySelectorAll('.cv-q-step').forEach(el => el.classList.add('hidden'));
+
+    // Show current step
+    document.getElementById(`cv-q-step-${cvQuestionnaireStep}`)?.classList.remove('hidden');
+
+    // Update progress
+    const progress = (cvQuestionnaireStep / 5) * 100;
+    document.getElementById('cv-q-current-step').textContent = cvQuestionnaireStep;
+    document.getElementById('cv-q-progress-percent').textContent = `${progress}%`;
+    document.getElementById('cv-q-progress-bar').style.width = `${progress}%`;
+
+    // Update step labels
+    const stepLabels = document.querySelectorAll('#view-cv-questionnaire .flex.justify-between.mt-3 span');
+    stepLabels.forEach((label, i) => {
+        if (i + 1 <= cvQuestionnaireStep) {
+            label.classList.remove('text-gray-400');
+            label.classList.add('text-brand-gold', 'font-medium');
+        } else {
+            label.classList.add('text-gray-400');
+            label.classList.remove('text-brand-gold', 'font-medium');
+        }
+    });
+
+    // Update buttons
+    const prevBtn = document.getElementById('cv-q-prev-btn');
+    const nextBtn = document.getElementById('cv-q-next-btn');
+    const submitBtn = document.getElementById('cv-q-submit-btn');
+
+    prevBtn.disabled = cvQuestionnaireStep === 1;
+
+    if (cvQuestionnaireStep === 5) {
+        nextBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+    } else {
+        nextBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+    }
+}
+
+// Save current step data to cvQuestionnaireData
+function saveCvQuestionnaireStepData() {
+    switch (cvQuestionnaireStep) {
+        case 1:
+            cvQuestionnaireData.personal = {
+                fullName: document.getElementById('cv-q-fullname')?.value || '',
+                email: document.getElementById('cv-q-email')?.value || '',
+                phone: document.getElementById('cv-q-phone')?.value || '',
+                location: document.getElementById('cv-q-location')?.value || '',
+                linkedin: document.getElementById('cv-q-linkedin')?.value || '',
+                website: document.getElementById('cv-q-website')?.value || '',
+                targetRole: document.getElementById('cv-q-target-role')?.value || '',
+                careerGoal: document.getElementById('cv-q-career-goal')?.value || ''
+            };
+            break;
+
+        case 2:
+            cvQuestionnaireData.experience = collectExperienceEntries();
+            break;
+
+        case 3:
+            cvQuestionnaireData.education = collectEducationEntries();
+            break;
+
+        case 4:
+            cvQuestionnaireData.skills = {
+                technical: parseCommaSeparated(document.getElementById('cv-q-technical-skills')?.value),
+                soft: parseCommaSeparated(document.getElementById('cv-q-soft-skills')?.value),
+                languages: collectLanguageEntries(),
+                certifications: parseCommaSeparated(document.getElementById('cv-q-certifications')?.value)
+            };
+            break;
+
+        case 5:
+            cvQuestionnaireData.additional = {
+                summary: document.getElementById('cv-q-summary')?.value || '',
+                strengths: document.getElementById('cv-q-strengths')?.value || '',
+                industries: parseCommaSeparated(document.getElementById('cv-q-industries')?.value),
+                availability: document.getElementById('cv-q-availability')?.value || '',
+                notes: document.getElementById('cv-q-additional-notes')?.value || ''
+            };
+            break;
+    }
+}
+
+function parseCommaSeparated(str) {
+    if (!str) return [];
+    return str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+}
+
+// Add experience entry
+export function addCvExperienceEntry() {
+    const container = document.getElementById('cv-q-experience-list');
+    if (!container) return;
+
+    const entryId = `exp-${experienceCounter++}`;
+
+    const entryHtml = `
+        <div id="${entryId}" class="bg-gray-50 rounded-xl p-4 relative">
+            <button type="button" onclick="app.removeCvEntry('${entryId}')"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Unternehmen *</label>
+                    <input type="text" class="exp-company w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                           placeholder="Firma GmbH">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Position *</label>
+                    <input type="text" class="exp-role w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                           placeholder="Senior Manager">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Von</label>
+                    <input type="month" class="exp-start w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bis</label>
+                    <div class="flex items-center gap-2">
+                        <input type="month" class="exp-end flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                        <label class="flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap">
+                            <input type="checkbox" class="exp-current rounded text-brand-gold">
+                            Aktuell
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+                <textarea class="exp-description w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none" rows="2"
+                          placeholder="Hauptverantwortlichkeiten und Tätigkeiten..."></textarea>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Erfolge & Achievements</label>
+                <textarea class="exp-achievements w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none" rows="2"
+                          placeholder="z.B. Umsatzsteigerung um 20%, Teamaufbau von 5 auf 15 Mitarbeiter... (eines pro Zeile)"></textarea>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', entryHtml);
+}
+
+// Add education entry
+export function addCvEducationEntry() {
+    const container = document.getElementById('cv-q-education-list');
+    if (!container) return;
+
+    const entryId = `edu-${educationCounter++}`;
+
+    const entryHtml = `
+        <div id="${entryId}" class="bg-gray-50 rounded-xl p-4 relative">
+            <button type="button" onclick="app.removeCvEntry('${entryId}')"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Institution *</label>
+                    <input type="text" class="edu-institution w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                           placeholder="Universität / Hochschule">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Abschluss</label>
+                    <input type="text" class="edu-degree w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                           placeholder="z.B. Bachelor, Master, Diplom">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Fachrichtung</label>
+                    <input type="text" class="edu-field w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                           placeholder="z.B. Betriebswirtschaft">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Von</label>
+                    <input type="month" class="edu-start w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bis</label>
+                    <input type="month" class="edu-end w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                    <input type="text" class="edu-grade w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                           placeholder="z.B. 1,5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Schwerpunkte</label>
+                    <input type="text" class="edu-highlights w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                           placeholder="z.B. Finance, Marketing">
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', entryHtml);
+}
+
+// Add language entry
+export function addCvLanguageEntry() {
+    const container = document.getElementById('cv-q-languages-list');
+    if (!container) return;
+
+    const entryId = `lang-${languageCounter++}`;
+
+    const entryHtml = `
+        <div id="${entryId}" class="flex items-center gap-2">
+            <input type="text" class="lang-name flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                   placeholder="Sprache">
+            <select class="lang-level border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold bg-white">
+                <option value="">Niveau</option>
+                <option value="Muttersprache">Muttersprache</option>
+                <option value="Verhandlungssicher (C2)">Verhandlungssicher (C2)</option>
+                <option value="Fließend (C1)">Fließend (C1)</option>
+                <option value="Fortgeschritten (B2)">Fortgeschritten (B2)</option>
+                <option value="Mittelstufe (B1)">Mittelstufe (B1)</option>
+                <option value="Grundkenntnisse (A1-A2)">Grundkenntnisse (A1-A2)</option>
+            </select>
+            <button type="button" onclick="app.removeCvEntry('${entryId}')"
+                    class="text-gray-400 hover:text-red-500 transition p-1">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', entryHtml);
+}
+
+// Remove entry
+export function removeCvEntry(entryId) {
+    document.getElementById(entryId)?.remove();
+}
+
+// Collect all experience entries
+function collectExperienceEntries() {
+    const entries = [];
+    document.querySelectorAll('#cv-q-experience-list > div').forEach(entry => {
+        entries.push({
+            company: entry.querySelector('.exp-company')?.value || '',
+            role: entry.querySelector('.exp-role')?.value || '',
+            startDate: entry.querySelector('.exp-start')?.value || '',
+            endDate: entry.querySelector('.exp-current')?.checked ? 'heute' : (entry.querySelector('.exp-end')?.value || ''),
+            description: entry.querySelector('.exp-description')?.value || '',
+            achievements: (entry.querySelector('.exp-achievements')?.value || '').split('\n').filter(a => a.trim())
+        });
+    });
+    return entries;
+}
+
+// Collect all education entries
+function collectEducationEntries() {
+    const entries = [];
+    document.querySelectorAll('#cv-q-education-list > div').forEach(entry => {
+        entries.push({
+            institution: entry.querySelector('.edu-institution')?.value || '',
+            degree: entry.querySelector('.edu-degree')?.value || '',
+            field: entry.querySelector('.edu-field')?.value || '',
+            startDate: entry.querySelector('.edu-start')?.value || '',
+            endDate: entry.querySelector('.edu-end')?.value || '',
+            grade: entry.querySelector('.edu-grade')?.value || '',
+            highlights: entry.querySelector('.edu-highlights')?.value || ''
+        });
+    });
+    return entries;
+}
+
+// Collect all language entries
+function collectLanguageEntries() {
+    const entries = [];
+    document.querySelectorAll('#cv-q-languages-list > div').forEach(entry => {
+        const name = entry.querySelector('.lang-name')?.value || '';
+        const level = entry.querySelector('.lang-level')?.value || '';
+        if (name) {
+            entries.push({ language: name, level: level });
+        }
+    });
+    return entries;
+}
+
+// Autosave questionnaire data
+async function autosaveCvQuestionnaire() {
+    if (!cvQuestionnaireProjectId) return;
+
+    const statusEl = document.getElementById('cv-q-autosave-status');
+    if (statusEl) {
+        statusEl.innerHTML = '<i class="fas fa-sync fa-spin"></i> Speichern...';
+    }
+
+    try {
+        await updateDoc(doc(db, 'cvProjects', cvQuestionnaireProjectId), {
+            questionnaire: cvQuestionnaireData,
+            updatedAt: serverTimestamp()
+        });
+
+        if (statusEl) {
+            statusEl.innerHTML = '<i class="fas fa-check text-green-500"></i> Gespeichert';
+            setTimeout(() => {
+                statusEl.innerHTML = '<i class="fas fa-cloud"></i> Fortschritt wird automatisch gespeichert';
+            }, 2000);
+        }
+    } catch (e) {
+        logger.error('Error autosaving questionnaire:', e);
+        if (statusEl) {
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500"></i> Speichern fehlgeschlagen';
+        }
+    }
+}
+
+// Handle document upload
+export async function handleCvDocumentUpload(docType, input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+        showToast('Datei zu groß (max. 10MB)');
+        return;
+    }
+
+    const filenameEl = document.getElementById(`cv-q-${docType === 'existingCv' ? 'existing-cv' : 'target-job'}-filename`);
+    const uploadEl = document.getElementById(`cv-q-${docType === 'existingCv' ? 'existing-cv' : 'target-job'}-upload`);
+
+    try {
+        // Show uploading state
+        if (uploadEl) {
+            uploadEl.innerHTML = `
+                <i class="fas fa-spinner fa-spin text-2xl text-brand-gold mb-2"></i>
+                <p class="text-sm text-gray-500">Wird hochgeladen...</p>
+            `;
+        }
+
+        // Upload to Firebase Storage
+        const storageRef = ref(storage, `cv-documents/${cvQuestionnaireProjectId}/${docType}/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+
+        // Store in questionnaire data
+        cvQuestionnaireData.documents[docType] = {
+            url: downloadUrl,
+            filename: file.name,
+            uploadedAt: new Date().toISOString()
+        };
+
+        // Update UI
+        if (filenameEl) {
+            filenameEl.textContent = `✓ ${file.name}`;
+            filenameEl.classList.remove('hidden');
+        }
+        if (uploadEl) {
+            uploadEl.innerHTML = `
+                <i class="fas fa-check-circle text-2xl text-green-500 mb-2"></i>
+                <p class="text-sm text-gray-500">${file.name}</p>
+            `;
+        }
+
+        // Autosave
+        autosaveCvQuestionnaire();
+
+        showToast('Datei hochgeladen');
+    } catch (e) {
+        logger.error('Error uploading document:', e);
+        showToast('Fehler beim Hochladen');
+
+        // Reset UI
+        if (uploadEl) {
+            const icon = docType === 'existingCv' ? 'fa-file-pdf' : 'fa-briefcase';
+            const text = docType === 'existingCv' ? 'PDF oder Word hochladen' : 'PDF, Word oder Screenshot';
+            uploadEl.innerHTML = `
+                <i class="fas ${icon} text-2xl text-gray-400 mb-2"></i>
+                <p class="text-sm text-gray-500">${text}</p>
+            `;
+        }
+    }
+}
+
+// Submit questionnaire
+export async function submitCvQuestionnaire() {
+    // Save final step data
+    saveCvQuestionnaireStepData();
+
+    // Validate required fields
+    if (!cvQuestionnaireData.personal.fullName || !cvQuestionnaireData.personal.email) {
+        showToast('Bitte Name und E-Mail ausfüllen');
+        cvQuestionnaireStep = 1;
+        updateCvQuestionnaireUI();
+        return;
+    }
+
+    if (!cvQuestionnaireData.personal.targetRole) {
+        showToast('Bitte gewünschte Position angeben');
+        cvQuestionnaireStep = 1;
+        updateCvQuestionnaireUI();
+        return;
+    }
+
+    try {
+        showToast('Fragebogen wird gesendet...');
+
+        // Update Firestore
+        await updateDoc(doc(db, 'cvProjects', cvQuestionnaireProjectId), {
+            questionnaire: cvQuestionnaireData,
+            status: 'data_received',
+            submittedAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        // Show success message
+        const container = document.getElementById('view-cv-questionnaire');
+        if (container) {
+            container.innerHTML = `
+                <div class="max-w-lg mx-auto px-4 py-20 text-center">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-check text-4xl text-green-600"></i>
+                    </div>
+                    <h1 class="font-serif text-2xl text-brand-dark mb-4">Vielen Dank!</h1>
+                    <p class="text-gray-600 mb-6">
+                        Ihr Fragebogen wurde erfolgreich übermittelt. Unser Team wird sich umgehend an die Erstellung Ihres optimierten Lebenslaufs machen.
+                    </p>
+                    <p class="text-sm text-gray-500 mb-8">
+                        Sie erhalten eine Benachrichtigung per E-Mail, sobald Ihr Lebenslauf fertig ist.
+                    </p>
+                    <a href="/" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition">
+                        <i class="fas fa-home"></i>
+                        Zur Startseite
+                    </a>
+                </div>
+            `;
+        }
+
+    } catch (e) {
+        logger.error('Error submitting questionnaire:', e);
+        showToast('Fehler beim Senden. Bitte versuchen Sie es erneut.');
+    }
+}
+
+// Hide all views helper
+function hideAllViews() {
+    document.querySelectorAll('[id^="view-"]').forEach(view => {
+        view.classList.add('hidden');
+    });
+}
+
