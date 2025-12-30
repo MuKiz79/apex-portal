@@ -1910,8 +1910,16 @@ exports.generateCvDocument = onRequest({
 
 // ========== WORD DOCUMENT GENERATOR ==========
 async function generateWordDocument(cvData, templateStyle, generatedCvOptions) {
-    const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, ShadingType, Header, Footer, PageNumber, NumberFormat } = docx;
+    const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, ShadingType, Header, Footer, PageNumber, NumberFormat, convertInchesToTwip, ImageRun } = docx;
 
+    // Route to specific template generators
+    if (templateStyle === 'schwarz-beige-modern' || templateStyle === 'canva-executive') {
+        return generateSchwarzBeigeModernTemplate(cvData, generatedCvOptions);
+    } else if (templateStyle === 'green-yellow-modern' || templateStyle === 'canva-creative') {
+        return generateGreenYellowModernTemplate(cvData, generatedCvOptions);
+    }
+
+    // Default template (fallback)
     // Canva-style color schemes based on template style (without # prefix for docx)
     const colorSchemes = {
         // Original schemes
@@ -2605,4 +2613,678 @@ async function generatePdfDocument(cvData, templateStyle, generatedCvOptions) {
             return headingY + 12;
         }
     });
+}
+
+// ========== SCHWARZ BEIGE MODERN TEMPLATE (Canva Style) ==========
+// Two-column layout with dark header, photo placeholder, beige accents
+async function generateSchwarzBeigeModernTemplate(cvData, generatedCvOptions) {
+    const { Document, Paragraph, TextRun, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, ShadingType, convertInchesToTwip } = docx;
+
+    const colors = {
+        headerBg: '3d3d3d',      // Dark gray/charcoal header
+        headerText: 'FFFFFF',    // White text on header
+        sidebarBg: 'f5f5f5',     // Light gray sidebar
+        primary: '3d3d3d',       // Dark gray for headings
+        secondary: 'c9a227',     // Gold/beige accent (not heavily used in this template)
+        text: '333333',          // Dark text
+        lightText: '666666'      // Light gray text
+    };
+
+    const personal = cvData.personal || {};
+    const experience = cvData.experience || [];
+    const education = cvData.education || [];
+    const skills = cvData.skills || {};
+    const languages = skills.languages || [];
+
+    // Helper to create section heading
+    const createSectionHeading = (title) => {
+        return new Paragraph({
+            children: [
+                new TextRun({
+                    text: title.toUpperCase(),
+                    bold: true,
+                    size: 22,
+                    font: 'Arial',
+                    color: colors.primary,
+                    characterSpacing: 40
+                })
+            ],
+            spacing: { before: 300, after: 200 }
+        });
+    };
+
+    // ===== HEADER SECTION (Full width dark background) =====
+    const headerTable = new Table({
+        rows: [
+            new TableRow({
+                children: [
+                    // Photo placeholder cell
+                    new TableCell({
+                        width: { size: 25, type: WidthType.PERCENTAGE },
+                        shading: { fill: colors.headerBg, type: ShadingType.CLEAR },
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: '[FOTO]',
+                                        color: '888888',
+                                        size: 20
+                                    })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { before: 400, after: 400 }
+                            })
+                        ],
+                        verticalAlign: 'center'
+                    }),
+                    // Name and title cell
+                    new TableCell({
+                        width: { size: 75, type: WidthType.PERCENTAGE },
+                        shading: { fill: colors.headerBg, type: ShadingType.CLEAR },
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: (personal.fullName || 'VORNAME').split(' ')[0]?.toUpperCase() || 'VORNAME',
+                                        bold: true,
+                                        size: 56,
+                                        font: 'Arial',
+                                        color: colors.headerText,
+                                        characterSpacing: 60
+                                    })
+                                ],
+                                spacing: { before: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: (personal.fullName || 'NACHNAME').split(' ').slice(1).join(' ')?.toUpperCase() || 'NACHNAME',
+                                        bold: true,
+                                        size: 56,
+                                        font: 'Arial',
+                                        color: colors.headerText,
+                                        characterSpacing: 60
+                                    })
+                                ]
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: (personal.title || 'POSITION').toUpperCase(),
+                                        size: 20,
+                                        font: 'Arial',
+                                        color: colors.headerText,
+                                        characterSpacing: 100
+                                    })
+                                ],
+                                spacing: { before: 100, after: 200 }
+                            })
+                        ],
+                        verticalAlign: 'center'
+                    })
+                ]
+            })
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.NONE },
+            bottom: { style: BorderStyle.NONE },
+            left: { style: BorderStyle.NONE },
+            right: { style: BorderStyle.NONE },
+            insideHorizontal: { style: BorderStyle.NONE },
+            insideVertical: { style: BorderStyle.NONE }
+        }
+    });
+
+    // ===== CONTACT ROW =====
+    const contactInfo = [];
+    if (personal.phone) contactInfo.push(`📞 ${personal.phone}`);
+    if (personal.email) contactInfo.push(`✉ ${personal.email}`);
+    if (personal.location) contactInfo.push(`📍 ${personal.location}`);
+
+    const contactRow = new Paragraph({
+        children: [
+            new TextRun({
+                text: contactInfo.join('     '),
+                size: 18,
+                font: 'Arial',
+                color: colors.lightText
+            })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 200, after: 300 },
+        border: {
+            bottom: { style: BorderStyle.SINGLE, size: 6, color: 'e0e0e0' }
+        }
+    });
+
+    // ===== MAIN CONTENT (Two columns) =====
+    // Left column: Bildung, Skills, Sprachen
+    // Right column: Berufserfahrung
+
+    const leftColumnContent = [];
+    const rightColumnContent = [];
+
+    // LEFT COLUMN - Education
+    leftColumnContent.push(createSectionHeading('Bildung'));
+    education.forEach(edu => {
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: `${edu.degree || ''} ${edu.field || ''}`.trim(),
+                    bold: true,
+                    size: 20,
+                    font: 'Arial',
+                    color: colors.primary
+                })
+            ],
+            spacing: { before: 100 }
+        }));
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: edu.institution || '',
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.text
+                })
+            ]
+        }));
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: edu.period || '',
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.lightText
+                })
+            ],
+            spacing: { after: 150 }
+        }));
+    });
+
+    // LEFT COLUMN - Skills
+    leftColumnContent.push(createSectionHeading('Skills'));
+    const allSkills = [...(skills.technical || []), ...(skills.soft || [])];
+    allSkills.forEach(skill => {
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: skill,
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.text
+                })
+            ],
+            spacing: { after: 50 }
+        }));
+    });
+
+    // LEFT COLUMN - Languages
+    leftColumnContent.push(createSectionHeading('Sprachen'));
+    languages.forEach(lang => {
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: lang.language || '',
+                    bold: true,
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.primary
+                })
+            ]
+        }));
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: lang.level || '',
+                    italics: true,
+                    size: 16,
+                    font: 'Arial',
+                    color: colors.lightText
+                })
+            ],
+            spacing: { after: 100 }
+        }));
+    });
+
+    // RIGHT COLUMN - Experience
+    rightColumnContent.push(createSectionHeading('Berufserfahrung'));
+    experience.forEach(exp => {
+        rightColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: exp.period || '',
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.lightText,
+                    characterSpacing: 20
+                })
+            ],
+            spacing: { before: 150 }
+        }));
+        rightColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: (exp.role || '').toUpperCase(),
+                    bold: true,
+                    size: 20,
+                    font: 'Arial',
+                    color: colors.primary
+                })
+            ]
+        }));
+        rightColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: exp.company || '',
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.text
+                })
+            ]
+        }));
+        if (exp.description) {
+            rightColumnContent.push(new Paragraph({
+                children: [
+                    new TextRun({
+                        text: exp.description,
+                        size: 18,
+                        font: 'Arial',
+                        color: colors.lightText
+                    })
+                ],
+                spacing: { before: 50, after: 100 }
+            }));
+        }
+        if (exp.achievements && exp.achievements.length > 0) {
+            exp.achievements.forEach(achievement => {
+                rightColumnContent.push(new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `• ${achievement}`,
+                            size: 18,
+                            font: 'Arial',
+                            color: colors.text
+                        })
+                    ],
+                    indent: { left: 200 }
+                }));
+            });
+        }
+    });
+
+    // Two-column table for main content
+    const mainContentTable = new Table({
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({
+                        width: { size: 35, type: WidthType.PERCENTAGE },
+                        children: leftColumnContent,
+                        margins: { top: 200, bottom: 200, left: 200, right: 200 }
+                    }),
+                    new TableCell({
+                        width: { size: 65, type: WidthType.PERCENTAGE },
+                        children: rightColumnContent,
+                        margins: { top: 200, bottom: 200, left: 300, right: 200 }
+                    })
+                ]
+            })
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.NONE },
+            bottom: { style: BorderStyle.NONE },
+            left: { style: BorderStyle.NONE },
+            right: { style: BorderStyle.NONE },
+            insideHorizontal: { style: BorderStyle.NONE },
+            insideVertical: { style: BorderStyle.NONE }
+        }
+    });
+
+    // Create document
+    const doc = new Document({
+        creator: 'APEX Executive',
+        title: `CV - ${personal.fullName || 'Lebenslauf'}`,
+        description: 'Professional CV - Schwarz Beige Modern Template',
+        sections: [{
+            properties: {
+                page: {
+                    margin: { top: 0, right: 0, bottom: 400, left: 0 }
+                }
+            },
+            children: [headerTable, contactRow, mainContentTable]
+        }]
+    });
+
+    return await docx.Packer.toBuffer(doc);
+}
+
+// ========== GREEN YELLOW MODERN TEMPLATE (Canva Style) ==========
+// Creative design with teal/yellow accents, photo, modern layout
+async function generateGreenYellowModernTemplate(cvData, generatedCvOptions) {
+    const { Document, Paragraph, TextRun, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, ShadingType } = docx;
+
+    const colors = {
+        primary: '2d8a8a',       // Teal/petrol
+        secondary: 'f5c842',     // Yellow accent
+        headerBg: '2d8a8a',      // Teal header
+        sidebarBg: '2d8a8a',     // Teal sidebar
+        white: 'FFFFFF',
+        text: '333333',
+        lightText: '666666'
+    };
+
+    const personal = cvData.personal || {};
+    const experience = cvData.experience || [];
+    const education = cvData.education || [];
+    const skills = cvData.skills || {};
+    const languages = skills.languages || [];
+
+    // Helper for yellow section headings
+    const createSectionHeading = (title, color = colors.secondary) => {
+        return new Paragraph({
+            children: [
+                new TextRun({
+                    text: title.toUpperCase(),
+                    bold: true,
+                    size: 24,
+                    font: 'Arial',
+                    color: color,
+                    characterSpacing: 40
+                })
+            ],
+            spacing: { before: 300, after: 200 }
+        });
+    };
+
+    // ===== HEADER with yellow accent bar =====
+    const yellowBar = new Paragraph({
+        shading: { fill: colors.secondary, type: ShadingType.CLEAR },
+        spacing: { after: 0 },
+        children: [new TextRun({ text: ' ', size: 40 })]
+    });
+
+    // ===== HEADER ROW (Photo + Name/Title/Profile) =====
+    const headerContent = [];
+
+    // Name
+    headerContent.push(new Paragraph({
+        children: [
+            new TextRun({
+                text: (personal.fullName || 'NAME').toUpperCase(),
+                bold: true,
+                size: 48,
+                font: 'Georgia',
+                color: colors.secondary
+            })
+        ],
+        spacing: { before: 200 }
+    }));
+
+    // Title
+    headerContent.push(new Paragraph({
+        children: [
+            new TextRun({
+                text: personal.title || 'POSITION',
+                size: 22,
+                font: 'Arial',
+                color: colors.text
+            })
+        ],
+        spacing: { after: 100 },
+        border: {
+            bottom: { style: BorderStyle.SINGLE, size: 6, color: colors.text }
+        }
+    }));
+
+    // Profile section
+    headerContent.push(new Paragraph({
+        children: [
+            new TextRun({
+                text: 'P R O F I L E',
+                bold: true,
+                size: 22,
+                font: 'Arial',
+                color: colors.secondary,
+                characterSpacing: 40
+            })
+        ],
+        spacing: { before: 200, after: 100 }
+    }));
+
+    if (cvData.summary) {
+        headerContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: cvData.summary,
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.text
+                })
+            ],
+            spacing: { after: 200 }
+        }));
+    }
+
+    const headerTable = new Table({
+        rows: [
+            new TableRow({
+                children: [
+                    // Photo placeholder
+                    new TableCell({
+                        width: { size: 30, type: WidthType.PERCENTAGE },
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: '[FOTO]',
+                                        color: '888888',
+                                        size: 20
+                                    })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { before: 400, after: 400 }
+                            })
+                        ],
+                        shading: { fill: 'f0f0f0', type: ShadingType.CLEAR },
+                        verticalAlign: 'center'
+                    }),
+                    // Name, title, profile
+                    new TableCell({
+                        width: { size: 70, type: WidthType.PERCENTAGE },
+                        children: headerContent,
+                        margins: { left: 300, right: 200, top: 200, bottom: 200 }
+                    })
+                ]
+            })
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.NONE },
+            bottom: { style: BorderStyle.NONE },
+            left: { style: BorderStyle.NONE },
+            right: { style: BorderStyle.NONE },
+            insideHorizontal: { style: BorderStyle.NONE },
+            insideVertical: { style: BorderStyle.NONE }
+        }
+    });
+
+    // ===== CONTACT BAR =====
+    const contactInfo = [];
+    if (personal.phone) contactInfo.push(`• ${personal.phone}`);
+    if (personal.email) contactInfo.push(`• ${personal.email}`);
+    if (personal.location) contactInfo.push(`• ${personal.location}`);
+
+    const contactBar = new Paragraph({
+        children: [
+            new TextRun({
+                text: contactInfo.join('     '),
+                size: 18,
+                font: 'Arial',
+                color: colors.text
+            })
+        ],
+        alignment: AlignmentType.LEFT,
+        spacing: { before: 100, after: 200 },
+        indent: { left: 200 }
+    });
+
+    // ===== MAIN CONTENT (Two columns) =====
+    const leftColumnContent = [];
+    const rightColumnContent = [];
+
+    // LEFT COLUMN - Skills (yellow headings)
+    leftColumnContent.push(createSectionHeading('S K I L L S'));
+    const allSkills = [...(skills.technical || []), ...(skills.soft || [])];
+    allSkills.forEach(skill => {
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: `• ${skill}`,
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.primary
+                })
+            ],
+            spacing: { after: 50 }
+        }));
+    });
+
+    // LEFT COLUMN - Education
+    leftColumnContent.push(createSectionHeading('E D U C A T I O N'));
+    education.forEach(edu => {
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: (edu.degree || '').toUpperCase(),
+                    bold: true,
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.secondary
+                })
+            ],
+            spacing: { before: 100 }
+        }));
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: edu.institution || '',
+                    size: 16,
+                    font: 'Arial',
+                    color: colors.primary
+                })
+            ]
+        }));
+        leftColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: edu.period || '',
+                    size: 16,
+                    font: 'Arial',
+                    color: colors.lightText
+                })
+            ],
+            spacing: { after: 150 }
+        }));
+    });
+
+    // RIGHT COLUMN - Experience
+    rightColumnContent.push(createSectionHeading('E X P E R I E N C E'));
+    experience.forEach(exp => {
+        rightColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: (exp.role || '').toUpperCase(),
+                    bold: true,
+                    size: 20,
+                    font: 'Arial',
+                    color: colors.secondary
+                })
+            ],
+            spacing: { before: 150 }
+        }));
+        rightColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: exp.company || '',
+                    size: 18,
+                    font: 'Arial',
+                    color: colors.text
+                })
+            ]
+        }));
+        rightColumnContent.push(new Paragraph({
+            children: [
+                new TextRun({
+                    text: exp.period || '',
+                    size: 16,
+                    font: 'Arial',
+                    color: colors.lightText
+                })
+            ]
+        }));
+        if (exp.description || (exp.achievements && exp.achievements.length > 0)) {
+            const descText = exp.description || (exp.achievements ? exp.achievements[0] : '');
+            rightColumnContent.push(new Paragraph({
+                children: [
+                    new TextRun({
+                        text: `• ${descText}`,
+                        size: 18,
+                        font: 'Arial',
+                        color: colors.text
+                    })
+                ],
+                spacing: { before: 50, after: 100 },
+                indent: { left: 200 }
+            }));
+        }
+    });
+
+    // Two-column table for main content
+    const mainContentTable = new Table({
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({
+                        width: { size: 40, type: WidthType.PERCENTAGE },
+                        children: leftColumnContent,
+                        margins: { top: 100, bottom: 200, left: 300, right: 200 }
+                    }),
+                    new TableCell({
+                        width: { size: 60, type: WidthType.PERCENTAGE },
+                        children: rightColumnContent,
+                        margins: { top: 100, bottom: 200, left: 200, right: 300 }
+                    })
+                ]
+            })
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.NONE },
+            bottom: { style: BorderStyle.NONE },
+            left: { style: BorderStyle.NONE },
+            right: { style: BorderStyle.NONE },
+            insideHorizontal: { style: BorderStyle.NONE },
+            insideVertical: { style: BorderStyle.NONE }
+        }
+    });
+
+    // Create document
+    const doc = new Document({
+        creator: 'APEX Executive',
+        title: `CV - ${personal.fullName || 'Lebenslauf'}`,
+        description: 'Professional CV - Green Yellow Modern Template',
+        sections: [{
+            properties: {
+                page: {
+                    margin: { top: 0, right: 0, bottom: 400, left: 0 }
+                }
+            },
+            children: [yellowBar, headerTable, contactBar, mainContentTable]
+        }]
+    });
+
+    return await docx.Packer.toBuffer(doc);
 }
