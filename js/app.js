@@ -2565,7 +2565,7 @@ export async function confirmBooking(orderId, datetime) {
 
         // Reload orders to show updated state
         if (window.app?.state?.user) {
-            loadOrders(window.app.state);
+            loadUserOrders(window.app.state);
         }
 
     } catch (e) {
@@ -2773,7 +2773,7 @@ export async function submitAlternativeProposal() {
 
         // Reload orders
         if (window.app?.state?.user) {
-            loadOrders(window.app.state);
+            loadUserOrders(window.app.state);
         }
 
     } catch (e) {
