@@ -1542,6 +1542,9 @@ export function toggleOrderDetails(orderId) {
 
 // Check if meeting time is now (15 min before to 2 hours after)
 function isMeetingTimeNow(datetime) {
+    // TODO: Remove this line after testing - always show meeting button for testing
+    return true;
+
     const meetingTime = new Date(datetime);
     const now = new Date();
     const fifteenMinBefore = new Date(meetingTime.getTime() - 15 * 60 * 1000);
