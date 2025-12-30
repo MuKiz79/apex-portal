@@ -4,7 +4,7 @@
 // Features Module: Authentication, Cart, Dashboard
 import { auth, db, storage, navigateTo } from './core.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, reload, applyActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, getMetadata } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
 import { sampleArticles } from './data.js';
@@ -2412,7 +2412,142 @@ export function closeMentorAppointmentModal() {
 
 // Select and confirm appointment from mentor availability
 export async function selectMentorAppointment(orderId, datetime) {
-    if (!confirm('Möchten Sie diesen Termin verbindlich buchen?')) return;
+    // Show professional confirmation modal instead of native confirm()
+    showBookingConfirmationModal(orderId, datetime);
+}
+
+// Show professional booking confirmation modal with compliance check
+function showBookingConfirmationModal(orderId, datetime) {
+    const dateObj = new Date(datetime);
+    const formattedDate = dateObj.toLocaleDateString('de-DE', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    });
+    const formattedTime = dateObj.toLocaleTimeString('de-DE', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Create modal
+    let confirmModal = document.getElementById('booking-confirm-modal');
+    if (!confirmModal) {
+        confirmModal = document.createElement('div');
+        confirmModal.id = 'booking-confirm-modal';
+        document.body.appendChild(confirmModal);
+    }
+
+    confirmModal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]" onclick="if(event.target === this) app.closeBookingConfirmModal()">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-brand-dark to-gray-900 text-white p-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar-check text-brand-gold text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-serif text-lg font-bold">Termin bestätigen</h3>
+                            <p class="text-gray-300 text-sm">Verbindliche Buchung</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="p-6">
+                    <!-- Appointment Details -->
+                    <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <i class="fas fa-calendar text-brand-gold"></i>
+                            <span class="font-medium">${formattedDate}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-clock text-brand-gold"></i>
+                            <span class="font-medium">${formattedTime} Uhr</span>
+                        </div>
+                    </div>
+
+                    <!-- Compliance Check Info Box -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <i class="fas fa-shield-alt text-amber-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-amber-800 text-sm mb-1">Compliance-Check erforderlich</h4>
+                                <p class="text-amber-700 text-xs leading-relaxed">
+                                    Vor der finalen Terminbestätigung führen wir einen kurzen Compliance-Check durch,
+                                    um sicherzustellen, dass wir Ihnen den bestmöglichen Service bieten können.
+                                    Sie erhalten innerhalb von 24 Stunden eine Bestätigung per E-Mail.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compliance Consent Checkbox -->
+                    <label class="flex items-start gap-3 cursor-pointer mb-6 group">
+                        <input type="checkbox" id="compliance-consent-checkbox"
+                               onchange="app.toggleBookingButton()"
+                               class="w-5 h-5 mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold cursor-pointer">
+                        <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
+                            Ich stimme dem <strong>Compliance-Check</strong> zu und verstehe, dass die endgültige
+                            Terminbestätigung nach erfolgreicher Prüfung per E-Mail erfolgt.
+                        </span>
+                    </label>
+
+                    <!-- Buttons -->
+                    <div class="flex gap-3">
+                        <button onclick="app.closeBookingConfirmModal()"
+                                class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
+                            Abbrechen
+                        </button>
+                        <button id="confirm-booking-btn"
+                                onclick="app.confirmBooking('${orderId}', '${datetime}')"
+                                disabled
+                                class="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all duration-200">
+                            <i class="fas fa-check mr-2"></i>Bestätigen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    confirmModal.classList.remove('hidden');
+}
+
+// Toggle booking button based on compliance consent
+export function toggleBookingButton() {
+    const checkbox = document.getElementById('compliance-consent-checkbox');
+    const button = document.getElementById('confirm-booking-btn');
+
+    if (checkbox && button) {
+        if (checkbox.checked) {
+            button.disabled = false;
+            button.className = 'flex-1 px-4 py-3 bg-brand-gold text-brand-dark rounded-xl hover:bg-brand-gold/90 transition-all duration-200 font-medium cursor-pointer';
+        } else {
+            button.disabled = true;
+            button.className = 'flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all duration-200';
+        }
+    }
+}
+
+// Close booking confirmation modal
+export function closeBookingConfirmModal() {
+    const modal = document.getElementById('booking-confirm-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.innerHTML = '';
+    }
+}
+
+// Actually confirm and save the booking
+export async function confirmBooking(orderId, datetime) {
+    const confirmBtn = document.querySelector('#booking-confirm-modal button:last-child');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Wird gebucht...';
+    }
 
     try {
         await updateDoc(doc(db, 'orders', orderId), {
@@ -2424,6 +2559,7 @@ export async function selectMentorAppointment(orderId, datetime) {
             appointmentStatus: 'confirmed'
         });
 
+        closeBookingConfirmModal();
         closeMentorAppointmentModal();
         showToast('✅ Termin erfolgreich gebucht!');
 
@@ -2435,6 +2571,12 @@ export async function selectMentorAppointment(orderId, datetime) {
     } catch (e) {
         logger.error('Error booking appointment:', e);
         showToast('❌ Fehler bei der Buchung. Bitte versuchen Sie es erneut.');
+
+        // Re-enable button on error
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Bestätigen';
+        }
     }
 }
 
