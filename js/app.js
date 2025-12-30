@@ -1330,7 +1330,7 @@ export function renderOrders(orders) {
         return;
     }
 
-    container.innerHTML = orders.map(order => {
+    container.innerHTML = orders.map((order, index) => {
         const date = order.date?.seconds
             ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', {
                 day: '2-digit',
@@ -1342,44 +1342,57 @@ export function renderOrders(orders) {
         const hasAppointment = order.appointment?.datetime;
         const shortOrderId = 'APEX-' + (order.stripeSessionId?.slice(-8) || order.id.slice(-8)).toUpperCase();
         const statusInfo = getOrderStatusInfo(order.status || 'confirmed');
+        const orderId = `order-${order.id}`;
+        // First order expanded by default
+        const isExpanded = index === 0;
 
         return `
-            <div class="p-5 hover:bg-gray-50 transition border-b border-gray-100 last:border-0">
-                <!-- Order Header -->
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <span class="text-xs text-gray-400 font-mono">${shortOrderId}</span>
-                        <h4 class="font-bold text-brand-dark mt-1">${order.items?.map(i => sanitizeHTML(i.title)).join(', ') || 'Bestellung'}</h4>
+            <div class="border-b border-gray-100 last:border-0">
+                <!-- Clickable Order Header -->
+                <button onclick="app.toggleOrderDetails('${orderId}')"
+                        class="w-full p-5 hover:bg-gray-50 transition flex justify-between items-center text-left group">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs text-gray-400 font-mono">${shortOrderId}</span>
+                            <span class="status-badge ${statusInfo.class} text-[10px] px-2 py-0.5">
+                                ${statusInfo.text}
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-brand-dark truncate">${order.items?.map(i => sanitizeHTML(i.title)).join(', ') || 'Bestellung'}</h4>
                         <p class="text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt mr-1"></i>${date}</p>
                     </div>
-                    <div class="text-right">
-                        <span class="font-serif text-xl text-brand-dark block">€${(order.total || 0).toFixed(2)}</span>
+                    <div class="flex items-center gap-4 flex-shrink-0 ml-4">
+                        <span class="font-serif text-xl text-brand-dark">€${(order.total || 0).toFixed(2)}</span>
+                        <i id="${orderId}-icon" class="fas fa-chevron-down text-gray-400 group-hover:text-brand-gold transition-all duration-300 ${isExpanded ? 'rotate-180' : ''}"></i>
                     </div>
-                </div>
+                </button>
 
-                <!-- Status Timeline -->
-                <div class="bg-gray-50 rounded-lg p-4 mb-3">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Bestellstatus</span>
-                        <span class="status-badge ${statusInfo.class}">
-                            <i class="${statusInfo.icon}"></i>
-                            ${statusInfo.text}
-                        </span>
-                    </div>
+                <!-- Collapsible Order Details -->
+                <div id="${orderId}" class="overflow-hidden transition-all duration-300 ${isExpanded ? '' : 'hidden'}">
+                    <div class="px-5 pb-5">
+                        <!-- Status Timeline -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Bestellstatus</span>
+                                <span class="status-badge ${statusInfo.class}">
+                                    <i class="${statusInfo.icon}"></i>
+                                    ${statusInfo.text}
+                                </span>
+                            </div>
 
-                    <!-- Progress Steps -->
-                    <div class="flex items-center gap-1">
-                        ${renderOrderProgress(order.status || 'confirmed')}
-                    </div>
+                            <!-- Progress Steps -->
+                            <div class="flex items-center gap-1">
+                                ${renderOrderProgress(order.status || 'confirmed')}
+                            </div>
 
-                    <!-- Status Description -->
-                    <p class="text-xs text-gray-500 mt-3">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        ${statusInfo.description}
-                    </p>
-                </div>
+                            <!-- Status Description -->
+                            <p class="text-xs text-gray-500 mt-3">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                ${statusInfo.description}
+                            </p>
+                        </div>
 
-                <!-- Professional Appointment Section - Mobile Optimized -->
+                        <!-- Professional Appointment Section - Mobile Optimized -->
                 ${order.appointment?.confirmed ? `
                     <!-- Confirmed Appointment - Mobile-Optimized Design -->
                     <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-5 shadow-sm">
@@ -1477,11 +1490,31 @@ export function renderOrders(orders) {
                         <span>Wunschtermine</span>
                     </button>
                 ` : ''}
+                    </div>
+                </div>
             </div>
         `;
     }).join('');
 
     if (badge) badge.textContent = orders.length.toString();
+}
+
+// Toggle order details visibility
+export function toggleOrderDetails(orderId) {
+    const content = document.getElementById(orderId);
+    const icon = document.getElementById(`${orderId}-icon`);
+
+    if (content && icon) {
+        const isHidden = content.classList.contains('hidden');
+
+        if (isHidden) {
+            content.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+        }
+    }
 }
 
 function renderOrderProgress(status) {
