@@ -4735,6 +4735,11 @@
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),
             loadUserUploads: () => App.loadUserUploads(window.app.state),
 
+            // CV Generator (two-step wizard)
+            openCvGenerator: (orderId) => App.openCvGenerator(orderId),
+            cvGeneratorNext: () => App.cvGeneratorNext(),
+            cvGeneratorBack: () => App.cvGeneratorBack(),
+
             // Strategy Call Modal
             openStrategyModal: () => App.openStrategyModal(),
             closeStrategyModal: () => App.closeStrategyModal(),

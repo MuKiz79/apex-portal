@@ -1367,7 +1367,18 @@ exports.generateCvContent = onRequest({
     }
 
     try {
-        const { projectId, templateType, language } = req.body;
+        const {
+            projectId,
+            templateType,
+            language,
+            // New design options
+            colorScheme = 'classic',
+            layout = 'two-column',
+            includeCover = false,
+            includePhoto = false,
+            tone = 'professional',
+            focusAreas = []
+        } = req.body;
 
         if (!projectId) {
             return res.status(400).json({ error: 'projectId is required' });
@@ -1444,15 +1455,29 @@ exports.generateCvContent = onRequest({
 
         const selectedTemplate = templateExamples[templateType] || templateExamples.corporate;
 
+        // Tone descriptions for different writing styles
+        const toneDescriptions = {
+            professional: 'Sachlich-professionell, fokussiert auf Fakten und Ergebnisse',
+            confident: 'Selbstbewusst und durchsetzungsstark, betont Führungsqualitäten',
+            dynamic: 'Dynamisch und modern, betont Innovation und Agilität',
+            executive: 'Authorativ und visionär, perfekt für C-Level-Positionen'
+        };
+
         // Build the enhanced prompt for Claude
         const prompt = `Du bist ein Premium-CV-Experte bei APEX Executive, einem exklusiven Karriereservice für Führungskräfte. Du erstellst Lebensläufe auf dem Niveau professioneller CV-Writer, die €500-2000 pro CV berechnen.
 
 DEINE AUFGABE:
-Erstelle einen perfekt optimierten, professionellen Lebenslauf, der sofort beeindruckt.
+Erstelle einen perfekt optimierten, professionellen Lebenslauf${includeCover ? ' MIT ANSCHREIBEN' : ''}, der sofort beeindruckt.
 
+=== DESIGN-EINSTELLUNGEN ===
 TEMPLATE-TYP: ${templateType || 'corporate'}
 TEMPLATE-BESCHREIBUNG: ${selectedTemplate.description}
+FARBSCHEMA: ${colorScheme} (beeinflusst Struktur und Ton)
+LAYOUT: ${layout === 'single-column' ? 'Eine Spalte (klassisch)' : layout === 'two-column' ? 'Zwei Spalten (modern)' : 'Sidebar (kompakt)'}
+FOTO-PLATZHALTER: ${includePhoto ? 'Ja - Platzhalter für Bewerbungsfoto einplanen' : 'Nein'}
 SPRACHE: ${language || 'Deutsch'}
+TON/STIL: ${toneDescriptions[tone] || toneDescriptions.professional}
+${focusAreas.length > 0 ? `FOKUS-BEREICHE (besonders betonen): ${focusAreas.join(', ')}` : ''}
 
 === BEISPIELE FÜR DIESEN TEMPLATE-TYP ===
 
@@ -1561,7 +1586,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (keine Markdown-Codeblöc
     "phone": "+49 170 1234567",
     "location": "München, Deutschland",
     "linkedin": "linkedin.com/in/name",
-    "website": "website.de"
+    "website": "website.de"${includePhoto ? ',\n    "photoPlaceholder": true' : ''}
   },
   "summary": "Kraftvolles Executive Summary nach der 3-4 Satz Struktur. Mit konkreten Zahlen und Erfolgen.",
   "experience": [
@@ -1595,7 +1620,14 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (keine Markdown-Codeblöc
     "languages": [{"language": "Deutsch", "level": "Muttersprache"}, {"language": "Englisch", "level": "Verhandlungssicher"}],
     "certifications": ["Relevante Zertifizierung 1", "Zertifizierung 2"]
   },
-  "expertise": ["Kernkompetenz 1", "Kernkompetenz 2", "Kernkompetenz 3", "Kernkompetenz 4", "Kernkompetenz 5"]
+  "expertise": ["Kernkompetenz 1", "Kernkompetenz 2", "Kernkompetenz 3", "Kernkompetenz 4", "Kernkompetenz 5"]${includeCover ? `,
+  "coverLetter": {
+    "greeting": "Sehr geehrte Damen und Herren,",
+    "opening": "Kraftvoller Einstieg, der Bezug zur Stelle nimmt und Interesse weckt (2-3 Sätze)",
+    "body": "Hauptteil mit konkreten Erfolgen und Mehrwert für das Unternehmen (3-4 Sätze). Zeige Bezug zu den Anforderungen.",
+    "closing": "Abschluss mit Call-to-Action und Gesprächswunsch (2 Sätze)",
+    "signature": "Mit freundlichen Grüßen"
+  }` : ''}
 }`;
 
         console.log(`Generating CV for project ${projectId} with template ${templateType}`);
@@ -1648,7 +1680,15 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (keine Markdown-Codeblöc
         await projectRef.update({
             generatedCv: {
                 templateType: templateType || 'corporate',
-                language: language || 'de',
+                language: language || 'Deutsch',
+                // Store all design options
+                colorScheme: colorScheme,
+                layout: layout,
+                includeCover: includeCover,
+                includePhoto: includePhoto,
+                tone: tone,
+                focusAreas: focusAreas,
+                // Generated content
                 data: generatedCvData,
                 generatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 model: 'claude-sonnet-4-20250514'
@@ -1657,7 +1697,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (keine Markdown-Codeblöc
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log(`CV generated successfully for project ${projectId}`);
+        console.log(`CV generated successfully for project ${projectId} with design options: ${JSON.stringify({ colorScheme, layout, includeCover, includePhoto, tone })}`);
 
         return res.status(200).json({
             success: true,

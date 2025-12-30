@@ -7680,7 +7680,25 @@ export async function viewCvData(orderId) {
     }
 }
 
-// Open CV generator (template selection + generation)
+// CV Generator State
+let cvGeneratorState = {
+    step: 1,
+    projectId: null,
+    orderId: null,
+    customerName: '',
+    // Step 1: Design
+    template: 'corporate',
+    colorScheme: 'classic',
+    layout: 'two-column',
+    includeCover: false,
+    includePhoto: false,
+    // Step 2: Options
+    language: 'Deutsch',
+    focusAreas: [],
+    tone: 'professional'
+};
+
+// Open CV generator (two-step wizard)
 export async function openCvGenerator(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
     if (!project || !project.cvProjectId) {
@@ -7688,119 +7706,403 @@ export async function openCvGenerator(orderId) {
         return;
     }
 
+    // Reset state
+    cvGeneratorState = {
+        step: 1,
+        projectId: project.cvProjectId,
+        orderId: orderId,
+        customerName: project.customerName,
+        template: 'corporate',
+        colorScheme: 'classic',
+        layout: 'two-column',
+        includeCover: false,
+        includePhoto: false,
+        language: 'Deutsch',
+        focusAreas: [],
+        tone: 'professional'
+    };
+
     const modal = document.createElement('div');
     modal.id = 'cv-generator-modal';
-    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto';
     modal.innerHTML = `
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-12 h-12 bg-gradient-to-br from-brand-gold to-yellow-600 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-magic text-white text-xl"></i>
+        <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl my-8">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-brand-gold to-yellow-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-magic text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-medium text-brand-dark">CV Generator</h3>
+                        <p class="text-sm text-gray-500">${project.customerName}</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-xl font-medium text-brand-dark">CV generieren</h3>
-                    <p class="text-sm text-gray-500">${project.customerName}</p>
-                </div>
+                <button onclick="document.getElementById('cv-generator-modal')?.remove()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-3">Template auswählen</label>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="template-options">
-                    <button onclick="selectCvTemplate('minimalist')" data-template="minimalist"
-                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
-                        <i class="fas fa-align-left text-2xl text-gray-400 mb-2"></i>
-                        <p class="font-medium text-brand-dark">Minimalist</p>
-                        <p class="text-xs text-gray-500">Clean & Modern</p>
-                    </button>
-                    <button onclick="selectCvTemplate('creative')" data-template="creative"
-                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
-                        <i class="fas fa-palette text-2xl text-gray-400 mb-2"></i>
-                        <p class="font-medium text-brand-dark">Creative</p>
-                        <p class="text-xs text-gray-500">Modern & Kreativ</p>
-                    </button>
-                    <button onclick="selectCvTemplate('corporate')" data-template="corporate"
-                            class="template-option p-4 border-2 border-brand-gold rounded-xl bg-brand-gold/5 text-left">
-                        <i class="fas fa-building text-2xl text-brand-gold mb-2"></i>
-                        <p class="font-medium text-brand-dark">Corporate</p>
-                        <p class="text-xs text-gray-500">Professionell</p>
-                    </button>
-                    <button onclick="selectCvTemplate('executive')" data-template="executive"
-                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
-                        <i class="fas fa-crown text-2xl text-gray-400 mb-2"></i>
-                        <p class="font-medium text-brand-dark">Executive</p>
-                        <p class="text-xs text-gray-500">C-Suite Level</p>
-                    </button>
-                    <button onclick="selectCvTemplate('brand')" data-template="brand"
-                            class="template-option p-4 border-2 border-gray-200 rounded-xl hover:border-brand-gold transition text-left">
-                        <i class="fas fa-user-tie text-2xl text-gray-400 mb-2"></i>
-                        <p class="font-medium text-brand-dark">Personal Brand</p>
-                        <p class="text-xs text-gray-500">Thought Leader</p>
-                    </button>
+            <!-- Progress Steps -->
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                <div class="flex items-center justify-center gap-4">
+                    <div class="flex items-center gap-2" id="step-indicator-1">
+                        <div class="w-8 h-8 rounded-full bg-brand-gold text-white flex items-center justify-center font-bold text-sm">1</div>
+                        <span class="text-sm font-medium text-brand-dark">Design wählen</span>
+                    </div>
+                    <div class="w-16 h-0.5 bg-gray-300" id="step-line"></div>
+                    <div class="flex items-center gap-2" id="step-indicator-2">
+                        <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-sm">2</div>
+                        <span class="text-sm font-medium text-gray-500">Inhalt generieren</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Sprache</label>
-                <select id="cv-language-select" class="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold">
-                    <option value="Deutsch" selected>Deutsch</option>
-                    <option value="Englisch">Englisch</option>
-                </select>
+            <!-- Content -->
+            <div id="cv-generator-content" class="p-6">
+                ${renderCvGeneratorStep1()}
             </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <p class="text-sm text-blue-800">
-                    <i class="fas fa-robot mr-2"></i>
-                    Die KI analysiert die Fragebogen-Daten und erstellt einen optimierten Lebenslauf.
-                    Dies kann 30-60 Sekunden dauern.
-                </p>
-            </div>
-
-            <div id="cv-generation-progress" class="hidden mb-6">
-                <div class="flex items-center gap-3 text-brand-dark">
-                    <i class="fas fa-spinner fa-spin text-xl"></i>
-                    <span id="cv-generation-status">CV wird generiert...</span>
-                </div>
-                <div class="mt-3 bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <div id="cv-generation-bar" class="bg-brand-gold h-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="flex gap-3 justify-end">
-                <button onclick="document.getElementById('cv-generator-modal')?.remove()"
-                        class="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                        id="cv-gen-cancel-btn">
-                    Abbrechen
+            <!-- Footer -->
+            <div class="flex items-center justify-between p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                <button onclick="app.cvGeneratorBack()" id="cv-gen-back-btn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition hidden">
+                    <i class="fas fa-arrow-left mr-2"></i>Zurück
                 </button>
-                <button onclick="app.startCvGeneration('${project.cvProjectId}', '${orderId}')"
-                        class="px-6 py-2 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition"
-                        id="cv-gen-start-btn">
-                    <i class="fas fa-magic mr-2"></i>
-                    Jetzt generieren
-                </button>
+                <div class="flex-1"></div>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('cv-generator-modal')?.remove()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition" id="cv-gen-cancel-btn">
+                        Abbrechen
+                    </button>
+                    <button onclick="app.cvGeneratorNext()" id="cv-gen-next-btn" class="px-6 py-2 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition">
+                        Weiter <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
 
-    // Add template selection handler
-    window.selectCvTemplate = function(template) {
-        document.querySelectorAll('.template-option').forEach(btn => {
-            btn.classList.remove('border-brand-gold', 'bg-brand-gold/5');
-            btn.classList.add('border-gray-200');
-            btn.querySelector('i').classList.remove('text-brand-gold');
-            btn.querySelector('i').classList.add('text-gray-400');
-        });
-        const selected = document.querySelector(`[data-template="${template}"]`);
-        if (selected) {
-            selected.classList.remove('border-gray-200');
-            selected.classList.add('border-brand-gold', 'bg-brand-gold/5');
-            selected.querySelector('i').classList.remove('text-gray-400');
-            selected.querySelector('i').classList.add('text-brand-gold');
+    // Initialize handlers
+    initCvGeneratorHandlers();
+}
+
+// Render Step 1: Design Selection
+function renderCvGeneratorStep1() {
+    return `
+        <!-- Template Selection -->
+        <div class="mb-8">
+            <h4 class="text-lg font-medium text-brand-dark mb-4">
+                <i class="fas fa-th-large mr-2 text-brand-gold"></i>
+                Template-Stil
+            </h4>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                ${['minimalist', 'creative', 'corporate', 'executive', 'brand'].map(t => `
+                    <button onclick="window.selectCvDesign('template', '${t}')" data-design="template-${t}"
+                            class="design-option p-4 border-2 ${cvGeneratorState.template === t ? 'border-brand-gold bg-brand-gold/5' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
+                        <i class="fas ${t === 'minimalist' ? 'fa-align-left' : t === 'creative' ? 'fa-palette' : t === 'corporate' ? 'fa-building' : t === 'executive' ? 'fa-crown' : 'fa-user-tie'} text-2xl ${cvGeneratorState.template === t ? 'text-brand-gold' : 'text-gray-400'} mb-2"></i>
+                        <p class="font-medium text-brand-dark text-sm">${t === 'minimalist' ? 'Minimalist' : t === 'creative' ? 'Creative' : t === 'corporate' ? 'Corporate' : t === 'executive' ? 'Executive' : 'Personal Brand'}</p>
+                        <p class="text-xs text-gray-500">${t === 'minimalist' ? 'Clean & Modern' : t === 'creative' ? 'Innovativ' : t === 'corporate' ? 'Professionell' : t === 'executive' ? 'C-Suite' : 'Thought Leader'}</p>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Color Scheme -->
+        <div class="mb-8">
+            <h4 class="text-lg font-medium text-brand-dark mb-4">
+                <i class="fas fa-paint-brush mr-2 text-brand-gold"></i>
+                Farbschema
+            </h4>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+                ${[
+                    { id: 'classic', name: 'Klassisch', colors: ['#1a1a2e', '#c9b99a'] },
+                    { id: 'navy', name: 'Navy Blue', colors: ['#1e3a5f', '#e8e8e8'] },
+                    { id: 'forest', name: 'Forest', colors: ['#2d4a3e', '#d4c5a9'] },
+                    { id: 'burgundy', name: 'Burgundy', colors: ['#722f37', '#f5f0eb'] },
+                    { id: 'slate', name: 'Slate', colors: ['#475569', '#f1f5f9'] },
+                    { id: 'charcoal', name: 'Charcoal', colors: ['#374151', '#fbbf24'] }
+                ].map(c => `
+                    <button onclick="window.selectCvDesign('colorScheme', '${c.id}')" data-design="color-${c.id}"
+                            class="design-option p-3 border-2 ${cvGeneratorState.colorScheme === c.id ? 'border-brand-gold' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
+                        <div class="flex justify-center gap-1 mb-2">
+                            <div class="w-6 h-6 rounded-full" style="background-color: ${c.colors[0]}"></div>
+                            <div class="w-6 h-6 rounded-full border border-gray-200" style="background-color: ${c.colors[1]}"></div>
+                        </div>
+                        <p class="text-xs font-medium text-brand-dark">${c.name}</p>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Layout -->
+        <div class="mb-8">
+            <h4 class="text-lg font-medium text-brand-dark mb-4">
+                <i class="fas fa-columns mr-2 text-brand-gold"></i>
+                Layout
+            </h4>
+            <div class="grid grid-cols-3 gap-4">
+                ${[
+                    { id: 'single-column', name: 'Eine Spalte', icon: 'fa-align-justify', desc: 'Klassisch & übersichtlich' },
+                    { id: 'two-column', name: 'Zwei Spalten', icon: 'fa-columns', desc: 'Modern & strukturiert' },
+                    { id: 'sidebar', name: 'Sidebar', icon: 'fa-window-maximize', desc: 'Kompakt & elegant' }
+                ].map(l => `
+                    <button onclick="window.selectCvDesign('layout', '${l.id}')" data-design="layout-${l.id}"
+                            class="design-option p-4 border-2 ${cvGeneratorState.layout === l.id ? 'border-brand-gold bg-brand-gold/5' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
+                        <i class="fas ${l.icon} text-2xl ${cvGeneratorState.layout === l.id ? 'text-brand-gold' : 'text-gray-400'} mb-2"></i>
+                        <p class="font-medium text-brand-dark text-sm">${l.name}</p>
+                        <p class="text-xs text-gray-500">${l.desc}</p>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Additional Options -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gray-50 rounded-xl p-4">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" id="cv-include-cover" ${cvGeneratorState.includeCover ? 'checked' : ''}
+                           onchange="window.selectCvDesign('includeCover', this.checked)"
+                           class="w-5 h-5 text-brand-gold rounded border-gray-300 focus:ring-brand-gold">
+                    <div>
+                        <p class="font-medium text-brand-dark">Anschreiben generieren</p>
+                        <p class="text-xs text-gray-500">Passendes Cover Letter zur Bewerbung</p>
+                    </div>
+                </label>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" id="cv-include-photo" ${cvGeneratorState.includePhoto ? 'checked' : ''}
+                           onchange="window.selectCvDesign('includePhoto', this.checked)"
+                           class="w-5 h-5 text-brand-gold rounded border-gray-300 focus:ring-brand-gold">
+                    <div>
+                        <p class="font-medium text-brand-dark">Foto-Platzhalter</p>
+                        <p class="text-xs text-gray-500">Bereich für Profilbild reservieren</p>
+                    </div>
+                </label>
+            </div>
+        </div>
+    `;
+}
+
+// Render Step 2: Content Options & Generation
+function renderCvGeneratorStep2() {
+    return `
+        <!-- Language -->
+        <div class="mb-6">
+            <h4 class="text-lg font-medium text-brand-dark mb-4">
+                <i class="fas fa-language mr-2 text-brand-gold"></i>
+                Sprache
+            </h4>
+            <div class="grid grid-cols-2 gap-4">
+                ${['Deutsch', 'Englisch'].map(lang => `
+                    <button onclick="window.selectCvDesign('language', '${lang}')" data-design="lang-${lang}"
+                            class="design-option p-4 border-2 ${cvGeneratorState.language === lang ? 'border-brand-gold bg-brand-gold/5' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
+                        <i class="fas fa-flag text-2xl ${cvGeneratorState.language === lang ? 'text-brand-gold' : 'text-gray-400'} mb-2"></i>
+                        <p class="font-medium text-brand-dark">${lang}</p>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Tone -->
+        <div class="mb-6">
+            <h4 class="text-lg font-medium text-brand-dark mb-4">
+                <i class="fas fa-comment-alt mr-2 text-brand-gold"></i>
+                Tonalität
+            </h4>
+            <div class="grid grid-cols-3 gap-4">
+                ${[
+                    { id: 'professional', name: 'Professionell', desc: 'Sachlich & seriös' },
+                    { id: 'confident', name: 'Selbstbewusst', desc: 'Stark & überzeugend' },
+                    { id: 'dynamic', name: 'Dynamisch', desc: 'Energisch & modern' }
+                ].map(t => `
+                    <button onclick="window.selectCvDesign('tone', '${t.id}')" data-design="tone-${t.id}"
+                            class="design-option p-4 border-2 ${cvGeneratorState.tone === t.id ? 'border-brand-gold bg-brand-gold/5' : 'border-gray-200'} rounded-xl hover:border-brand-gold transition text-center">
+                        <p class="font-medium text-brand-dark text-sm">${t.name}</p>
+                        <p class="text-xs text-gray-500">${t.desc}</p>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Focus Areas -->
+        <div class="mb-6">
+            <h4 class="text-lg font-medium text-brand-dark mb-4">
+                <i class="fas fa-bullseye mr-2 text-brand-gold"></i>
+                Schwerpunkte (optional)
+            </h4>
+            <div class="flex flex-wrap gap-2">
+                ${['Leadership', 'Strategie', 'Digitalisierung', 'Innovation', 'Vertrieb', 'Finanzen', 'Internationales', 'Teamführung', 'Change Management', 'Projektmanagement'].map(area => `
+                    <button onclick="window.toggleFocusArea('${area}')" data-focus="${area}"
+                            class="focus-area-btn px-4 py-2 border ${cvGeneratorState.focusAreas.includes(area) ? 'border-brand-gold bg-brand-gold/10 text-brand-dark' : 'border-gray-200 text-gray-600'} rounded-full text-sm hover:border-brand-gold transition">
+                        ${area}
+                    </button>
+                `).join('')}
+            </div>
+            <p class="text-xs text-gray-500 mt-2">Die KI wird diese Bereiche besonders hervorheben</p>
+        </div>
+
+        <!-- Summary -->
+        <div class="bg-gradient-to-br from-brand-gold/10 to-yellow-50 rounded-xl p-6 mb-6">
+            <h4 class="text-lg font-medium text-brand-dark mb-4">
+                <i class="fas fa-list-check mr-2 text-brand-gold"></i>
+                Zusammenfassung
+            </h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-500">Template</p>
+                    <p class="font-medium text-brand-dark capitalize">${cvGeneratorState.template}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Farbschema</p>
+                    <p class="font-medium text-brand-dark capitalize">${cvGeneratorState.colorScheme}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Layout</p>
+                    <p class="font-medium text-brand-dark">${cvGeneratorState.layout === 'single-column' ? 'Eine Spalte' : cvGeneratorState.layout === 'two-column' ? 'Zwei Spalten' : 'Sidebar'}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Extras</p>
+                    <p class="font-medium text-brand-dark">${[cvGeneratorState.includeCover ? 'Cover' : '', cvGeneratorState.includePhoto ? 'Foto' : ''].filter(Boolean).join(', ') || 'Keine'}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <p class="text-sm text-blue-800">
+                <i class="fas fa-robot mr-2"></i>
+                Die KI analysiert alle Daten und erstellt einen optimierten Lebenslauf${cvGeneratorState.includeCover ? ' mit Anschreiben' : ''}.
+                Dies kann 30-60 Sekunden dauern.
+            </p>
+        </div>
+
+        <!-- Progress (hidden initially) -->
+        <div id="cv-generation-progress" class="hidden mb-6">
+            <div class="flex items-center gap-3 text-brand-dark">
+                <i class="fas fa-spinner fa-spin text-xl"></i>
+                <span id="cv-generation-status">CV wird generiert...</span>
+            </div>
+            <div class="mt-3 bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div id="cv-generation-bar" class="bg-brand-gold h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+    `;
+}
+
+// Initialize CV Generator handlers
+function initCvGeneratorHandlers() {
+    window.selectCvDesign = function(type, value) {
+        cvGeneratorState[type] = value;
+
+        // Update UI for selection buttons
+        if (['template', 'colorScheme', 'layout', 'language', 'tone'].includes(type)) {
+            const prefix = type === 'template' ? 'template' : type === 'colorScheme' ? 'color' : type === 'layout' ? 'layout' : type === 'language' ? 'lang' : 'tone';
+            document.querySelectorAll(`[data-design^="${prefix}-"]`).forEach(btn => {
+                btn.classList.remove('border-brand-gold', 'bg-brand-gold/5');
+                btn.classList.add('border-gray-200');
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('text-brand-gold');
+                    icon.classList.add('text-gray-400');
+                }
+            });
+            const selected = document.querySelector(`[data-design="${prefix}-${value}"]`);
+            if (selected) {
+                selected.classList.remove('border-gray-200');
+                selected.classList.add('border-brand-gold', 'bg-brand-gold/5');
+                const icon = selected.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('text-gray-400');
+                    icon.classList.add('text-brand-gold');
+                }
+            }
         }
-        window.selectedCvTemplate = template;
     };
 
-    window.selectedCvTemplate = 'corporate'; // Default
+    window.toggleFocusArea = function(area) {
+        const index = cvGeneratorState.focusAreas.indexOf(area);
+        if (index > -1) {
+            cvGeneratorState.focusAreas.splice(index, 1);
+        } else {
+            cvGeneratorState.focusAreas.push(area);
+        }
+
+        // Update button UI
+        const btn = document.querySelector(`[data-focus="${area}"]`);
+        if (btn) {
+            if (cvGeneratorState.focusAreas.includes(area)) {
+                btn.classList.add('border-brand-gold', 'bg-brand-gold/10', 'text-brand-dark');
+                btn.classList.remove('border-gray-200', 'text-gray-600');
+            } else {
+                btn.classList.remove('border-brand-gold', 'bg-brand-gold/10', 'text-brand-dark');
+                btn.classList.add('border-gray-200', 'text-gray-600');
+            }
+        }
+    };
+}
+
+// CV Generator navigation
+export function cvGeneratorNext() {
+    if (cvGeneratorState.step === 1) {
+        // Go to step 2
+        cvGeneratorState.step = 2;
+        updateCvGeneratorUI();
+    } else {
+        // Start generation
+        startCvGeneration(cvGeneratorState.projectId, cvGeneratorState.orderId);
+    }
+}
+
+export function cvGeneratorBack() {
+    if (cvGeneratorState.step === 2) {
+        cvGeneratorState.step = 1;
+        updateCvGeneratorUI();
+    }
+}
+
+// Update CV Generator UI based on step
+function updateCvGeneratorUI() {
+    const content = document.getElementById('cv-generator-content');
+    const backBtn = document.getElementById('cv-gen-back-btn');
+    const nextBtn = document.getElementById('cv-gen-next-btn');
+    const step1Indicator = document.getElementById('step-indicator-1');
+    const step2Indicator = document.getElementById('step-indicator-2');
+    const stepLine = document.getElementById('step-line');
+
+    if (cvGeneratorState.step === 1) {
+        content.innerHTML = renderCvGeneratorStep1();
+        backBtn.classList.add('hidden');
+        nextBtn.innerHTML = 'Weiter <i class="fas fa-arrow-right ml-2"></i>';
+
+        // Update indicators
+        step1Indicator.querySelector('div').classList.add('bg-brand-gold', 'text-white');
+        step1Indicator.querySelector('div').classList.remove('bg-gray-300', 'text-gray-600');
+        step1Indicator.querySelector('span').classList.add('text-brand-dark');
+        step1Indicator.querySelector('span').classList.remove('text-gray-500');
+
+        step2Indicator.querySelector('div').classList.remove('bg-brand-gold', 'text-white');
+        step2Indicator.querySelector('div').classList.add('bg-gray-300', 'text-gray-600');
+        step2Indicator.querySelector('span').classList.remove('text-brand-dark');
+        step2Indicator.querySelector('span').classList.add('text-gray-500');
+
+        stepLine.classList.remove('bg-brand-gold');
+        stepLine.classList.add('bg-gray-300');
+    } else {
+        content.innerHTML = renderCvGeneratorStep2();
+        backBtn.classList.remove('hidden');
+        nextBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>CV generieren';
+
+        // Update indicators
+        step1Indicator.querySelector('div').classList.add('bg-brand-gold', 'text-white');
+        step2Indicator.querySelector('div').classList.add('bg-brand-gold', 'text-white');
+        step2Indicator.querySelector('div').classList.remove('bg-gray-300', 'text-gray-600');
+        step2Indicator.querySelector('span').classList.add('text-brand-dark');
+        step2Indicator.querySelector('span').classList.remove('text-gray-500');
+
+        stepLine.classList.add('bg-brand-gold');
+        stepLine.classList.remove('bg-gray-300');
+    }
+
+    initCvGeneratorHandlers();
 }
 
 // Start CV generation with Claude API
@@ -7811,8 +8113,17 @@ export async function startCvGeneration(projectId, orderId) {
     const statusSpan = document.getElementById('cv-generation-status');
     const progressBar = document.getElementById('cv-generation-bar');
 
-    const template = window.selectedCvTemplate || 'corporate';
-    const language = document.getElementById('cv-language-select')?.value || 'Deutsch';
+    // Get all design options from cvGeneratorState
+    const {
+        template,
+        colorScheme,
+        layout,
+        includeCover,
+        includePhoto,
+        language,
+        tone,
+        focusAreas
+    } = cvGeneratorState;
 
     // Update UI to show progress
     startBtn.disabled = true;
@@ -7829,21 +8140,28 @@ export async function startCvGeneration(projectId, orderId) {
         if (progress < 30) {
             statusSpan.textContent = 'Analysiere Fragebogen-Daten...';
         } else if (progress < 60) {
-            statusSpan.textContent = 'Generiere optimierten CV...';
+            statusSpan.textContent = includeCover ? 'Generiere CV & Anschreiben...' : 'Generiere optimierten CV...';
         } else {
             statusSpan.textContent = 'Finalisiere Dokument...';
         }
     }, 800);
 
     try {
-        // Call Cloud Function to generate CV
+        // Call Cloud Function to generate CV with all design options
         const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/generateCvContent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 projectId: projectId,
                 templateType: template,
-                language: language
+                language: language,
+                // New design options
+                colorScheme: colorScheme,
+                layout: layout,
+                includeCover: includeCover,
+                includePhoto: includePhoto,
+                tone: tone,
+                focusAreas: focusAreas
             })
         });
 
