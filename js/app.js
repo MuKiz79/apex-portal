@@ -1427,10 +1427,18 @@ export function renderOrders(orders) {
                                         <span class="font-semibold text-gray-800 text-sm sm:text-base">${new Date(order.appointment.datetime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
                                     </div>
                                 </div>
-                                <p class="text-xs text-green-600 mt-2 sm:mt-3 flex items-center gap-1">
-                                    <i class="fas fa-heart"></i>
-                                    Wir freuen uns auf Sie!
-                                </p>
+                                ${isMeetingTimeNow(order.appointment.datetime) ? `
+                                    <button onclick="app.joinMeeting('${order.id}')"
+                                            class="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                                        <i class="fas fa-video"></i>
+                                        <span>Meeting beitreten</span>
+                                    </button>
+                                ` : `
+                                    <p class="text-xs text-green-600 mt-3 flex items-center gap-1">
+                                        <i class="fas fa-video"></i>
+                                        Meeting-Button erscheint 15 Min. vor Termin
+                                    </p>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -1529,6 +1537,142 @@ export function toggleOrderDetails(orderId) {
             content.classList.add('hidden');
             icon.classList.remove('rotate-180');
         }
+    }
+}
+
+// Check if meeting time is now (15 min before to 2 hours after)
+function isMeetingTimeNow(datetime) {
+    const meetingTime = new Date(datetime);
+    const now = new Date();
+    const fifteenMinBefore = new Date(meetingTime.getTime() - 15 * 60 * 1000);
+    const twoHoursAfter = new Date(meetingTime.getTime() + 2 * 60 * 60 * 1000);
+
+    return now >= fifteenMinBefore && now <= twoHoursAfter;
+}
+
+// Join video meeting
+export async function joinMeeting(orderId) {
+    showToast('⏳ Meeting wird vorbereitet...');
+
+    try {
+        // Get order data to check if meeting room exists
+        const orderDoc = await getDoc(doc(db, "orders", orderId));
+        if (!orderDoc.exists()) {
+            showToast('❌ Bestellung nicht gefunden');
+            return;
+        }
+
+        const order = orderDoc.data();
+        let meetingUrl = order.meetingRoom?.url;
+        let roomName = order.meetingRoom?.roomName;
+
+        // If no meeting room exists, create one
+        if (!meetingUrl) {
+            const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/createMeetingRoom', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    appointmentDatetime: order.appointment.datetime,
+                    customerName: order.customerName || 'Kunde'
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                showToast('❌ Meeting konnte nicht erstellt werden');
+                return;
+            }
+
+            meetingUrl = result.meetingUrl;
+            roomName = result.roomName;
+        }
+
+        // Open meeting modal
+        openMeetingModal(meetingUrl, roomName, orderId);
+
+    } catch (error) {
+        logger.error('Failed to join meeting:', error);
+        showToast('❌ Fehler beim Beitreten');
+    }
+}
+
+// Open meeting modal with embedded Daily.co
+function openMeetingModal(meetingUrl, roomName, orderId) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('video-meeting-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'video-meeting-modal';
+        modal.className = 'fixed inset-0 bg-black/90 z-50 flex flex-col';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="flex items-center justify-between p-4 bg-brand-dark text-white">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-gold rounded-full flex items-center justify-center">
+                    <i class="fas fa-video text-brand-dark"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold">APEX Mentoring Session</h3>
+                    <p class="text-xs text-gray-400">Sichere Video-Verbindung</p>
+                </div>
+            </div>
+            <button onclick="app.closeMeetingModal()" class="w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+        <div class="flex-1 bg-black">
+            <iframe
+                id="daily-iframe"
+                src="${meetingUrl}"
+                allow="camera; microphone; fullscreen; display-capture; autoplay"
+                class="w-full h-full border-0"
+            ></iframe>
+        </div>
+        <div class="p-3 bg-brand-dark flex items-center justify-center gap-4">
+            <button onclick="app.toggleFullscreen()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition flex items-center gap-2">
+                <i class="fas fa-expand"></i>
+                <span class="hidden sm:inline">Vollbild</span>
+            </button>
+            <button onclick="app.closeMeetingModal()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center gap-2">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Meeting verlassen</span>
+            </button>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Close meeting modal
+export function closeMeetingModal() {
+    const modal = document.getElementById('video-meeting-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.innerHTML = ''; // Clear iframe
+    }
+    document.body.style.overflow = '';
+
+    // Exit fullscreen if active
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    }
+}
+
+// Toggle fullscreen for meeting
+export function toggleFullscreen() {
+    const modal = document.getElementById('video-meeting-modal');
+    if (!modal) return;
+
+    if (!document.fullscreenElement) {
+        modal.requestFullscreen().catch(err => {
+            logger.warn('Fullscreen not available:', err);
+        });
+    } else {
+        document.exitFullscreen();
     }
 }
 

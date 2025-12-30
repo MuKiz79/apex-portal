@@ -3612,6 +3612,9 @@
             // Dashboard functions
             loadUserOrders: () => App.loadUserOrders(window.app.state),
             toggleOrderDetails: (orderId) => App.toggleOrderDetails(orderId),
+            joinMeeting: (orderId) => App.joinMeeting(orderId),
+            closeMeetingModal: () => App.closeMeetingModal(),
+            toggleFullscreen: () => App.toggleFullscreen(),
             handleProfilePictureUpload: (input) => App.handleProfilePictureUpload(window.app.state, input),
             showAppointmentCalendar: (orderId) => App.showAppointmentCalendar(orderId),
             bookAppointment: (orderId, datetime) => App.bookAppointment(window.app.state, orderId, datetime),

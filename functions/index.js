@@ -11,6 +11,7 @@ const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
 const smtpHost = defineSecret('SMTP_HOST');
 const smtpUser = defineSecret('SMTP_USER');
 const smtpPass = defineSecret('SMTP_PASS');
+const dailyApiKey = defineSecret('DAILY_API_KEY');
 
 // Set global options
 setGlobalOptions({
@@ -981,5 +982,162 @@ exports.getOrderBySessionId = onCall(async (request) => {
     } catch (error) {
         console.error('Error fetching order:', error);
         throw new Error('Failed to fetch order');
+    }
+});
+
+// ========== DAILY.CO VIDEO INTEGRATION ==========
+
+// Create a Daily.co meeting room for an appointment
+exports.createMeetingRoom = onRequest({
+    secrets: [dailyApiKey],
+    invoker: 'public'
+}, async (req, res) => {
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { orderId, appointmentDatetime, customerName, mentorName } = req.body;
+
+        if (!orderId || !appointmentDatetime) {
+            return res.status(400).json({ error: 'orderId and appointmentDatetime required' });
+        }
+
+        // Create unique room name based on order ID
+        const roomName = `apex-${orderId.slice(-8).toLowerCase()}-${Date.now()}`;
+
+        // Calculate expiry time (appointment time + 2 hours)
+        const appointmentDate = new Date(appointmentDatetime);
+        const expiryTime = Math.floor(appointmentDate.getTime() / 1000) + (2 * 60 * 60); // +2 hours
+        const notBeforeTime = Math.floor(appointmentDate.getTime() / 1000) - (15 * 60); // 15 min before
+
+        // Create Daily.co room via API
+        const response = await fetch('https://api.daily.co/v1/rooms', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${dailyApiKey.value()}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: roomName,
+                privacy: 'private',
+                properties: {
+                    exp: expiryTime,
+                    nbf: notBeforeTime,
+                    max_participants: 4,
+                    enable_chat: true,
+                    enable_screenshare: true,
+                    enable_recording: 'cloud', // Optional: enable recording
+                    start_video_off: false,
+                    start_audio_off: false,
+                    lang: 'de'
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Daily.co API error:', errorData);
+            return res.status(500).json({ error: 'Failed to create meeting room', details: errorData });
+        }
+
+        const roomData = await response.json();
+
+        // Store meeting room URL in the order
+        const orderRef = admin.firestore().collection('orders').doc(orderId);
+        await orderRef.update({
+            meetingRoom: {
+                url: roomData.url,
+                roomName: roomData.name,
+                createdAt: new Date(),
+                expiresAt: new Date(expiryTime * 1000)
+            }
+        });
+
+        console.log(`Meeting room created for order ${orderId}: ${roomData.url}`);
+
+        return res.status(200).json({
+            success: true,
+            meetingUrl: roomData.url,
+            roomName: roomData.name,
+            expiresAt: new Date(expiryTime * 1000).toISOString()
+        });
+
+    } catch (error) {
+        console.error('Error creating meeting room:', error);
+        return res.status(500).json({ error: 'Failed to create meeting room', message: error.message });
+    }
+});
+
+// Create meeting token for secure access
+exports.createMeetingToken = onRequest({
+    secrets: [dailyApiKey],
+    invoker: 'public'
+}, async (req, res) => {
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { roomName, userName, userId, isOwner } = req.body;
+
+        if (!roomName || !userName) {
+            return res.status(400).json({ error: 'roomName and userName required' });
+        }
+
+        // Token expires in 2 hours
+        const expiryTime = Math.floor(Date.now() / 1000) + (2 * 60 * 60);
+
+        // Create meeting token
+        const response = await fetch('https://api.daily.co/v1/meeting-tokens', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${dailyApiKey.value()}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                properties: {
+                    room_name: roomName,
+                    user_name: userName,
+                    user_id: userId || undefined,
+                    exp: expiryTime,
+                    is_owner: isOwner || false,
+                    enable_screenshare: true,
+                    start_video_off: false,
+                    start_audio_off: false
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Daily.co token API error:', errorData);
+            return res.status(500).json({ error: 'Failed to create meeting token', details: errorData });
+        }
+
+        const tokenData = await response.json();
+
+        return res.status(200).json({
+            success: true,
+            token: tokenData.token
+        });
+
+    } catch (error) {
+        console.error('Error creating meeting token:', error);
+        return res.status(500).json({ error: 'Failed to create meeting token', message: error.message });
     }
 });
