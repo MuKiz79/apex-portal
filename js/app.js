@@ -725,10 +725,32 @@ async function checkAndSetupMentor(state) {
     }
 
     try {
-        // Query coaches collection to find a coach with matching email
+        // Query coaches collection to find a coach with matching email (case-insensitive)
+        const userEmail = state.user.email.toLowerCase();
         const coachesRef = collection(db, 'coaches');
-        const q = query(coachesRef, where('email', '==', state.user.email));
-        const snapshot = await getDocs(q);
+
+        // First try exact match
+        let q = query(coachesRef, where('email', '==', state.user.email));
+        let snapshot = await getDocs(q);
+
+        // If no exact match, try lowercase match
+        if (snapshot.empty) {
+            q = query(coachesRef, where('email', '==', userEmail));
+            snapshot = await getDocs(q);
+        }
+
+        // If still no match, check all coaches for case-insensitive match
+        if (snapshot.empty) {
+            const allCoaches = await getDocs(coachesRef);
+            allCoaches.forEach(doc => {
+                const coachEmail = doc.data().email?.toLowerCase();
+                if (coachEmail === userEmail) {
+                    snapshot = { empty: false, docs: [doc] };
+                }
+            });
+        }
+
+        console.log('[Mentor Check] User email:', state.user.email, '| Found coach:', !snapshot.empty);
 
         if (!snapshot.empty) {
             const coachDoc = snapshot.docs[0];
@@ -745,11 +767,14 @@ async function checkAndSetupMentor(state) {
                 currentMentorData.userId = state.user.uid;
             }
 
+            console.log('[Mentor Check] ✅ Mentor detected:', currentMentorData.name);
             logger.log('Mentor detected:', currentMentorData.name);
         } else {
+            console.log('[Mentor Check] ❌ No matching coach found for email');
             currentMentorData = null;
         }
     } catch (e) {
+        console.error('[Mentor Check] Error:', e);
         logger.error('Error checking mentor status:', e);
         currentMentorData = null;
     }
