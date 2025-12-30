@@ -3571,12 +3571,14 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Vollständiger Name <span class="text-red-500">*</span></label>
                                         <input type="text" id="cv-q-smart-name" required
+                                               oninput="app.updateSmartNextButton()"
                                                class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                                                placeholder="Max Mustermann">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">E-Mail <span class="text-red-500">*</span></label>
                                         <input type="email" id="cv-q-smart-email" required
+                                               oninput="app.updateSmartNextButton()"
                                                class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                                                placeholder="max@beispiel.de">
                                     </div>
@@ -3585,8 +3587,31 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Gewünschte Position <span class="text-red-500">*</span></label>
                                     <input type="text" id="cv-q-smart-target-role" required
+                                           oninput="app.updateSmartNextButton()"
                                            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                                            placeholder="z.B. Senior Product Manager, Head of Marketing">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="fab fa-linkedin text-blue-600 mr-1"></i>
+                                        LinkedIn Profil <span class="text-gray-400">(optional)</span>
+                                    </label>
+                                    <input type="url" id="cv-q-smart-linkedin"
+                                           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                                           placeholder="https://www.linkedin.com/in/ihr-profil">
+                                    <p class="text-xs text-gray-400 mt-1">Wir extrahieren automatisch relevante Daten von Ihrem LinkedIn Profil</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="fas fa-link text-brand-gold mr-1"></i>
+                                        Weitere Links <span class="text-gray-400">(optional)</span>
+                                    </label>
+                                    <textarea id="cv-q-smart-links" rows="2"
+                                              class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold resize-none"
+                                              placeholder="Portfolio, GitHub, XING, persönliche Website etc. (ein Link pro Zeile)"></textarea>
+                                    <p class="text-xs text-gray-400 mt-1">Links zu Portfolios, GitHub, XING oder anderen relevanten Profilen</p>
                                 </div>
 
                                 <div>
@@ -4695,6 +4720,7 @@
             smartQuestionnaireNext: () => App.smartQuestionnaireNext(),
             smartQuestionnaireBack: () => App.smartQuestionnaireBack(),
             submitSmartQuestionnaire: () => App.submitSmartQuestionnaire(),
+            updateSmartNextButton: () => App.updateSmartNextButton(),
             // Manual mode
             nextCvQuestionnaireStep: () => App.nextCvQuestionnaireStep(),
             prevCvQuestionnaireStep: () => App.prevCvQuestionnaireStep(),

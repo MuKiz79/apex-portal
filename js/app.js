@@ -8344,6 +8344,8 @@ let smartUploadData = {
     name: '',
     email: '',
     targetRole: '',
+    linkedin: '',
+    links: '',
     notes: ''
 };
 let experienceCounter = 0;
@@ -8440,6 +8442,9 @@ export function selectQuestionnaireMode(mode) {
         // Reset smart mode
         smartQuestionnaireStep = 1;
         updateSmartQuestionnaireUI();
+
+        // Initialize smart mode input listeners (with small delay to ensure DOM is ready)
+        setTimeout(() => initSmartModeListeners(), 100);
     } else {
         // Show manual mode
         document.getElementById('cv-q-smart-mode')?.classList.add('hidden');
@@ -8566,7 +8571,7 @@ async function uploadQuestionnaireFile(file, docType) {
 }
 
 // Update smart mode next button state
-function updateSmartNextButton() {
+export function updateSmartNextButton() {
     const nextBtn = document.getElementById('cv-q-smart-next-btn');
     if (!nextBtn) return;
 
@@ -8652,6 +8657,8 @@ export function smartQuestionnaireNext() {
         smartUploadData.name = document.getElementById('cv-q-smart-name')?.value?.trim() || '';
         smartUploadData.email = document.getElementById('cv-q-smart-email')?.value?.trim() || '';
         smartUploadData.targetRole = document.getElementById('cv-q-smart-target-role')?.value?.trim() || '';
+        smartUploadData.linkedin = document.getElementById('cv-q-smart-linkedin')?.value?.trim() || '';
+        smartUploadData.links = document.getElementById('cv-q-smart-links')?.value?.trim() || '';
         smartUploadData.notes = document.getElementById('cv-q-smart-notes')?.value?.trim() || '';
 
         if (!smartUploadData.name || !smartUploadData.email || !smartUploadData.targetRole) {
@@ -8692,7 +8699,28 @@ function fillSmartSummary() {
             <i class="fas fa-bullseye text-brand-gold"></i>
             <span><strong>Zielposition:</strong> ${smartUploadData.targetRole}</span>
         </div>
-        <div class="flex items-center gap-2">
+    `;
+
+    if (smartUploadData.linkedin) {
+        html += `
+            <div class="flex items-center gap-2">
+                <i class="fab fa-linkedin text-blue-600"></i>
+                <span><strong>LinkedIn:</strong> <a href="${smartUploadData.linkedin}" target="_blank" class="text-brand-gold hover:underline">${smartUploadData.linkedin}</a></span>
+            </div>
+        `;
+    }
+
+    if (smartUploadData.links) {
+        html += `
+            <div class="flex items-start gap-2">
+                <i class="fas fa-link text-brand-gold mt-0.5"></i>
+                <span><strong>Weitere Links:</strong> ${smartUploadData.links}</span>
+            </div>
+        `;
+    }
+
+    html += `
+        <div class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
             <i class="fas fa-file-pdf text-green-500"></i>
             <span><strong>CV:</strong> ${smartUploadData.cvFile?.name || 'Hochgeladen'}</span>
         </div>
@@ -8745,7 +8773,9 @@ export async function submitSmartQuestionnaire() {
                 personal: {
                     fullName: smartUploadData.name,
                     email: smartUploadData.email,
-                    targetRole: smartUploadData.targetRole
+                    targetRole: smartUploadData.targetRole,
+                    linkedin: smartUploadData.linkedin || '',
+                    links: smartUploadData.links || ''
                 },
                 additional: {
                     notes: smartUploadData.notes
@@ -8830,10 +8860,12 @@ function showSmartSubmitSuccess() {
 // Add event listeners for smart mode form inputs
 export function initSmartModeListeners() {
     // Add input listeners for step 2 validation
-    const fields = ['cv-q-smart-name', 'cv-q-smart-email', 'cv-q-smart-target-role'];
+    const fields = ['cv-q-smart-name', 'cv-q-smart-email', 'cv-q-smart-target-role', 'cv-q-smart-linkedin', 'cv-q-smart-links'];
     fields.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
+            // Remove existing listener first to avoid duplicates
+            el.removeEventListener('input', updateSmartNextButton);
             el.addEventListener('input', updateSmartNextButton);
         }
     });
