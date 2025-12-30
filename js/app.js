@@ -7258,10 +7258,15 @@ function renderCvProjects() {
                                 <i class="fas fa-eye"></i>
                                 CV Vorschau
                             </button>
+                            <button onclick="app.exportCvWord('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition">
+                                <i class="fas fa-file-word"></i>
+                                Word
+                            </button>
                             <button onclick="app.exportCvPdf('${project.id}')"
-                                    class="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition">
+                                    class="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition">
                                 <i class="fas fa-file-pdf"></i>
-                                PDF Export
+                                PDF
                             </button>
                             <button onclick="app.sendCvToCustomer('${project.id}')"
                                     class="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">
@@ -7276,10 +7281,15 @@ function renderCvProjects() {
                                 <i class="fas fa-eye"></i>
                                 CV ansehen
                             </button>
+                            <button onclick="app.exportCvWord('${project.id}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition">
+                                <i class="fas fa-file-word"></i>
+                                Word
+                            </button>
                             <button onclick="app.exportCvPdf('${project.id}')"
                                     class="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">
                                 <i class="fas fa-file-pdf"></i>
-                                PDF Export
+                                PDF
                             </button>
                         ` : ''}
                     </div>
@@ -8281,9 +8291,13 @@ export async function openCvPreview(orderId) {
                                 class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition">
                             <i class="fas fa-redo mr-2"></i>Neu generieren
                         </button>
+                        <button onclick="app.exportCvWord('${orderId}')"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-file-word mr-2"></i>Word
+                        </button>
                         <button onclick="app.exportCvPdf('${orderId}')"
-                                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                            <i class="fas fa-file-pdf mr-2"></i>PDF Export
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                            <i class="fas fa-file-pdf mr-2"></i>PDF
                         </button>
                     </div>
                 </div>
@@ -8493,8 +8507,81 @@ export async function regenerateCv(projectId, orderId) {
     openCvGenerator(orderId);
 }
 
-// Export CV as PDF
+// Export CV as PDF (Server-side generation for professional quality)
 export async function exportCvPdf(orderId) {
+    await exportCvDocument(orderId, 'pdf');
+}
+
+// Export CV as Word document
+export async function exportCvWord(orderId) {
+    await exportCvDocument(orderId, 'docx');
+}
+
+// Generic function to export CV in different formats
+async function exportCvDocument(orderId, format = 'docx') {
+    const project = cvProjectsCache.find(p => p.id === orderId);
+    if (!project || !project.cvProjectId) {
+        showToast('Projekt nicht gefunden');
+        return;
+    }
+
+    const formatLabel = format === 'docx' ? 'Word' : 'PDF';
+    showToast(`${formatLabel}-Dokument wird generiert...`);
+
+    try {
+        // Get the project data to determine template style
+        const projectDoc = await getDoc(doc(db, 'cvProjects', project.cvProjectId));
+        if (!projectDoc.exists() || !projectDoc.data().generatedCv) {
+            showToast('Kein generierter CV gefunden. Bitte zuerst CV generieren.');
+            return;
+        }
+
+        const projectData = projectDoc.data();
+        const templateStyle = projectData.generatedCv.templateType || 'executive';
+
+        // Call the Cloud Function to generate the document
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/generateCvDocument', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                projectId: project.cvProjectId,
+                format: format,
+                templateStyle: templateStyle
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Dokumentgenerierung fehlgeschlagen');
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.downloadUrl) {
+            // Download the file
+            const link = document.createElement('a');
+            link.href = result.downloadUrl;
+            link.download = `CV_${project.customerName?.replace(/\s+/g, '_') || 'APEX'}_${new Date().toISOString().split('T')[0]}.${format}`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`${formatLabel}-Dokument wurde heruntergeladen!`);
+        } else {
+            throw new Error('Keine Download-URL erhalten');
+        }
+
+    } catch (e) {
+        logger.error(`Error generating ${format}:`, e);
+        showToast(`Fehler beim ${formatLabel}-Export: ` + e.message);
+    }
+}
+
+// Export CV as PDF using html2pdf (client-side fallback)
+export async function exportCvPdfClientSide(orderId) {
     const project = cvProjectsCache.find(p => p.id === orderId);
     if (!project || !project.cvProjectId) {
         showToast('Projekt nicht gefunden');
