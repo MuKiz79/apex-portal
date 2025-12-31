@@ -7,6 +7,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import './App.css';
 import { getExecutiveCoverTemplate } from './templates/executiveCover';
+import { getSchwarzBeigeModernTemplate } from './templates/schwarzBeigeModern';
 
 // Firebase Config - same as main app
 const firebaseConfig = {
@@ -347,6 +348,15 @@ function App() {
     showMessage('Executive Cover Template geladen!', 'success');
   };
 
+  // Load Schwarz Beige Modern template
+  const loadSchwarzBeigeModern = () => {
+    if (!designerInstance.current) return;
+
+    designerInstance.current.updateTemplate(getSchwarzBeigeModernTemplate());
+    setCurrentTemplateName('Schwarz Beige Modern');
+    showMessage('Schwarz Beige Modern Template geladen!', 'success');
+  };
+
   // Export template as JSON
   const exportTemplate = () => {
     if (!designerInstance.current) return;
@@ -426,11 +436,14 @@ function App() {
         <aside className="sidebar">
           <h3>Basis-Templates</h3>
           <div className="base-templates">
-            <button onClick={resetTemplate} className="btn btn-template">
-              📄 CV Template
+            <button onClick={loadSchwarzBeigeModern} className="btn btn-template">
+              📄 Schwarz Beige Modern
             </button>
             <button onClick={loadExecutiveCover} className="btn btn-template">
               📋 Executive Cover
+            </button>
+            <button onClick={resetTemplate} className="btn btn-template btn-template-secondary">
+              🔄 Standard Template
             </button>
           </div>
 

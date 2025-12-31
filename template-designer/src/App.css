@@ -199,6 +199,16 @@ body {
   transform: translateX(3px);
 }
 
+.btn-template-secondary {
+  background: #2a2a4e;
+  border: 1px dashed #4a4a6e;
+}
+
+.btn-template-secondary:hover {
+  background: #3a3a5e;
+  border-style: solid;
+}
+
 .template-list {
   display: flex;
   flex-direction: column;
