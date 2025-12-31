@@ -20,153 +20,186 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Default CV Template
+// Schwarz Beige Modern CV Template - Muammer Kizilaslan
 const getDefaultTemplate = (): Template => ({
   basePdf: BLANK_PDF,
   schemas: [
     [
-      // Header Section
+      // Header Background
       {
         name: 'headerBackground',
         type: 'rectangle',
         position: { x: 0, y: 0 },
         width: 210,
-        height: 45,
-        color: '#2c3e50'
+        height: 85,
+        color: '#2d2d2d'
       },
+      // Photo placeholder
       {
-        name: 'fullName',
-        type: 'text',
-        position: { x: 15, y: 12 },
-        width: 180,
-        height: 12,
-        fontSize: 28,
-        fontColor: '#ffffff',
-        alignment: 'left',
-        content: 'Max Mustermann'
+        name: 'photoPlaceholder',
+        type: 'rectangle',
+        position: { x: 0, y: 0 },
+        width: 65,
+        height: 85,
+        color: '#1a1a1a'
       },
+      // First Name
+      {
+        name: 'firstName',
+        type: 'text',
+        position: { x: 75, y: 20 },
+        width: 125,
+        height: 15,
+        fontSize: 36,
+        fontColor: '#ffffff'
+      },
+      // Last Name
+      {
+        name: 'lastName',
+        type: 'text',
+        position: { x: 75, y: 40 },
+        width: 125,
+        height: 15,
+        fontSize: 36,
+        fontColor: '#ffffff'
+      },
+      // Job Title
       {
         name: 'jobTitle',
         type: 'text',
-        position: { x: 15, y: 28 },
-        width: 180,
-        height: 8,
-        fontSize: 14,
-        fontColor: '#ecf0f1',
-        alignment: 'left',
-        content: 'Senior Project Manager'
+        position: { x: 75, y: 62 },
+        width: 125,
+        height: 10,
+        fontSize: 10,
+        fontColor: '#b0b0b0'
       },
-      // Contact Info
+      // Contact Bar
       {
-        name: 'contactInfo',
+        name: 'contactBar',
+        type: 'rectangle',
+        position: { x: 0, y: 85 },
+        width: 210,
+        height: 12,
+        color: '#f5f5f5'
+      },
+      // Contact Phone
+      {
+        name: 'contactPhone',
         type: 'text',
-        position: { x: 15, y: 52 },
-        width: 180,
+        position: { x: 10, y: 88 },
+        width: 50,
         height: 6,
+        fontSize: 8,
+        fontColor: '#666666'
+      },
+      // Contact Email
+      {
+        name: 'contactEmail',
+        type: 'text',
+        position: { x: 65, y: 88 },
+        width: 75,
+        height: 6,
+        fontSize: 8,
+        fontColor: '#666666'
+      },
+      // Contact Address
+      {
+        name: 'contactAddress',
+        type: 'text',
+        position: { x: 145, y: 88 },
+        width: 60,
+        height: 6,
+        fontSize: 8,
+        fontColor: '#666666'
+      },
+      // Sidebar Background
+      {
+        name: 'sidebarBackground',
+        type: 'rectangle',
+        position: { x: 0, y: 97 },
+        width: 65,
+        height: 200,
+        color: '#f8f6f3'
+      },
+      // BILDUNG Title
+      {
+        name: 'bildungTitle',
+        type: 'text',
+        position: { x: 5, y: 105 },
+        width: 55,
+        height: 8,
         fontSize: 10,
-        fontColor: '#7f8c8d',
-        alignment: 'left',
-        content: 'max@email.de | +49 170 1234567 | München, Deutschland'
+        fontColor: '#2d2d2d'
       },
-      // Divider
+      // Bildung Content
       {
-        name: 'divider1',
-        type: 'line',
-        position: { x: 15, y: 62 },
-        width: 180,
-        height: 0.5,
-        color: '#bdc3c7'
-      },
-      // Profile Section
-      {
-        name: 'profileTitle',
+        name: 'bildungContent',
         type: 'text',
-        position: { x: 15, y: 68 },
-        width: 50,
-        height: 7,
-        fontSize: 12,
-        fontColor: '#2c3e50',
-        fontName: 'Helvetica-Bold',
-        content: 'PROFIL'
-      },
-      {
-        name: 'profileText',
-        type: 'text',
-        position: { x: 15, y: 78 },
-        width: 180,
-        height: 25,
-        fontSize: 10,
-        fontColor: '#34495e',
-        lineHeight: 1.4,
-        content: 'Erfahrener Projektmanager mit über 7 Jahren Expertise in der Leitung komplexer IT-Projekte. Spezialisiert auf agile Methoden und digitale Transformation.'
-      },
-      // Experience Section
-      {
-        name: 'experienceTitle',
-        type: 'text',
-        position: { x: 15, y: 110 },
-        width: 80,
-        height: 7,
-        fontSize: 12,
-        fontColor: '#2c3e50',
-        fontName: 'Helvetica-Bold',
-        content: 'BERUFSERFAHRUNG'
-      },
-      {
-        name: 'experience1',
-        type: 'text',
-        position: { x: 15, y: 120 },
-        width: 180,
-        height: 40,
-        fontSize: 10,
-        fontColor: '#34495e',
-        lineHeight: 1.4,
-        content: 'Senior Project Lead | Tech Solutions GmbH | 2021 - heute\n• Leitung eines Teams von 12 Entwicklern\n• Steigerung der Projektabschlussrate um 35%\n• Implementierung von Scrum-Prozessen'
-      },
-      // Education Section
-      {
-        name: 'educationTitle',
-        type: 'text',
-        position: { x: 15, y: 165 },
-        width: 50,
-        height: 7,
-        fontSize: 12,
-        fontColor: '#2c3e50',
-        fontName: 'Helvetica-Bold',
-        content: 'AUSBILDUNG'
-      },
-      {
-        name: 'education1',
-        type: 'text',
-        position: { x: 15, y: 175 },
-        width: 180,
+        position: { x: 5, y: 116 },
+        width: 55,
         height: 20,
-        fontSize: 10,
-        fontColor: '#34495e',
-        lineHeight: 1.4,
-        content: 'Master of Science, Informatik | TU München | 2014 - 2016\nBachelor of Science, Wirtschaftsinformatik | LMU München | 2011 - 2014'
+        fontSize: 8,
+        fontColor: '#666666'
       },
-      // Skills Section
+      // SKILLS Title
       {
         name: 'skillsTitle',
         type: 'text',
-        position: { x: 15, y: 200 },
-        width: 50,
-        height: 7,
-        fontSize: 12,
-        fontColor: '#2c3e50',
-        fontName: 'Helvetica-Bold',
-        content: 'SKILLS'
-      },
-      {
-        name: 'skillsText',
-        type: 'text',
-        position: { x: 15, y: 210 },
-        width: 180,
-        height: 15,
+        position: { x: 5, y: 145 },
+        width: 55,
+        height: 8,
         fontSize: 10,
-        fontColor: '#34495e',
-        content: 'Projektmanagement • Scrum/Agile • Python • JavaScript • SQL • Jira • Confluence'
+        fontColor: '#2d2d2d'
+      },
+      // Skills Content
+      {
+        name: 'skillsContent',
+        type: 'text',
+        position: { x: 5, y: 156 },
+        width: 55,
+        height: 35,
+        fontSize: 8,
+        fontColor: '#666666'
+      },
+      // SPRACHEN Title
+      {
+        name: 'sprachenTitle',
+        type: 'text',
+        position: { x: 5, y: 200 },
+        width: 55,
+        height: 8,
+        fontSize: 10,
+        fontColor: '#2d2d2d'
+      },
+      // Sprachen Content
+      {
+        name: 'sprachenContent',
+        type: 'text',
+        position: { x: 5, y: 211 },
+        width: 55,
+        height: 50,
+        fontSize: 8,
+        fontColor: '#666666'
+      },
+      // BERUFSERFAHRUNG Title
+      {
+        name: 'experienceTitle',
+        type: 'text',
+        position: { x: 72, y: 105 },
+        width: 130,
+        height: 8,
+        fontSize: 10,
+        fontColor: '#2d2d2d'
+      },
+      // Experience Content
+      {
+        name: 'experienceContent',
+        type: 'text',
+        position: { x: 72, y: 118 },
+        width: 130,
+        height: 160,
+        fontSize: 8,
+        fontColor: '#444444'
       }
     ]
   ]
