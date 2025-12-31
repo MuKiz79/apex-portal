@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/template-designer/',
   build: {
-    outDir: '../dist/template-designer',
+    outDir: 'dist',
     emptyOutDir: true
   }
 })
