@@ -8805,9 +8805,9 @@ export async function openCvPreview(orderId) {
 
         const modal = document.createElement('div');
         modal.id = 'cv-preview-modal';
-        modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto';
+        modal.className = 'fixed inset-0 bg-black/80 flex items-start justify-center z-50 p-4 overflow-y-auto';
         modal.innerHTML = `
-            <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden shadow-2xl my-4 flex flex-col">
+            <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl my-4 flex flex-col">
                 <!-- Header -->
                 <div class="bg-brand-dark text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
                     <div class="flex items-center gap-4">
