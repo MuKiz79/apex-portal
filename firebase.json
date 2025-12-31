@@ -20,10 +20,6 @@
     ],
     "rewrites": [
       {
-        "source": "/template-designer/**",
-        "destination": "/template-designer/index.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
