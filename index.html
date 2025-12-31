@@ -4759,6 +4759,9 @@
             closeEmailVerifiedModal: () => App.closeEmailVerifiedModal(),
             handleEmailAction: () => App.handleEmailAction(),
 
+            // Pagination
+            changePage: (type, page) => App.changePage(type, page),
+
             // UX Helper Functions
             updatePackageButton: (packageId, basePrice, expressPrice, isExpress) => {
                 const btn = document.getElementById(`btn-${packageId}`);

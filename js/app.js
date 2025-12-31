@@ -42,6 +42,22 @@ const ALLOWED_FILE_TYPES = {
     DOCUMENTS: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
 };
 
+// Pagination Settings
+const PAGINATION = {
+    USERS_PER_PAGE: 20,
+    ORDERS_PER_PAGE: 15,
+    CALLS_PER_PAGE: 15,
+    DOCS_PER_PAGE: 20
+};
+
+// Pagination State
+const paginationState = {
+    users: { page: 1, total: 0, data: [] },
+    orders: { page: 1, total: 0, data: [] },
+    calls: { page: 1, total: 0, data: [] },
+    docs: { page: 1, total: 0, data: [] }
+};
+
 // Production Logger - suppresses logs in production
 const logger = {
     log: (...args) => { if (!IS_PRODUCTION) console.log(...args); },
@@ -49,6 +65,80 @@ const logger = {
     error: (...args) => console.error(...args), // Always log errors
     debug: (...args) => { if (!IS_PRODUCTION) console.debug(...args); }
 };
+
+// ========== PAGINATION HELPERS ==========
+
+function renderPagination(type) {
+    const state = paginationState[type];
+    const perPage = PAGINATION[`${type.toUpperCase()}_PER_PAGE`] || 20;
+    const totalPages = Math.ceil(state.total / perPage);
+
+    if (totalPages <= 1) return '';
+
+    const pages = [];
+    const currentPage = state.page;
+
+    // Always show first page
+    pages.push(1);
+
+    // Show ellipsis and pages around current
+    if (currentPage > 3) pages.push('...');
+
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        if (!pages.includes(i)) pages.push(i);
+    }
+
+    // Show ellipsis and last page
+    if (currentPage < totalPages - 2) pages.push('...');
+    if (totalPages > 1 && !pages.includes(totalPages)) pages.push(totalPages);
+
+    return `
+        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-700">
+            <div class="text-sm text-gray-400">
+                Seite ${currentPage} von ${totalPages} (${state.total} Einträge)
+            </div>
+            <div class="flex items-center gap-1">
+                <button onclick="app.changePage('${type}', ${currentPage - 1})"
+                        class="px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark'} transition"
+                        ${currentPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                ${pages.map(p => p === '...'
+                    ? '<span class="px-2 text-gray-500">...</span>'
+                    : `<button onclick="app.changePage('${type}', ${p})"
+                              class="px-3 py-1 rounded ${p === currentPage ? 'bg-brand-gold text-brand-dark font-bold' : 'bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark'} transition">
+                         ${p}
+                       </button>`
+                ).join('')}
+                <button onclick="app.changePage('${type}', ${currentPage + 1})"
+                        class="px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark'} transition"
+                        ${currentPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+export function changePage(type, page) {
+    const state = paginationState[type];
+    const perPage = PAGINATION[`${type.toUpperCase()}_PER_PAGE`] || 20;
+    const totalPages = Math.ceil(state.total / perPage);
+
+    if (page < 1 || page > totalPages) return;
+
+    state.page = page;
+
+    // Re-render the appropriate list
+    switch(type) {
+        case 'users':
+            renderAdminUsersList();
+            break;
+        case 'calls':
+            renderStrategyCallsList();
+            break;
+    }
+}
 
 // ========== AUTHENTICATION ==========
 
@@ -6819,8 +6909,11 @@ export async function loadAdminUsers() {
             .map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(u => !u.deleted); // Gelöschte Benutzer ausblenden
 
-        // Speichere für Export
+        // Speichere für Export und Pagination
         window._adminUsers = users;
+        paginationState.users.data = users;
+        paginationState.users.total = users.length;
+        paginationState.users.page = 1; // Reset to first page on reload
 
         if (users.length === 0) {
             container.innerHTML = '<p class="text-gray-400">Keine Benutzer gefunden.</p>';
@@ -6840,37 +6933,50 @@ export async function loadAdminUsers() {
         if (statCookiesAll) statCookiesAll.textContent = cookiesAll;
         if (statCookiesEssential) statCookiesEssential.textContent = cookiesEssential;
 
-        container.innerHTML = users.map(user => `
-            <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center">
-                        <span class="text-brand-gold font-bold">${(user.firstname || user.email || '?')[0].toUpperCase()}</span>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-white">${user.firstname || ''} ${user.lastname || ''}</h4>
-                        <p class="text-sm text-gray-400">${user.email || user.id}</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="app.verifyUserEmail('${user.email}')" class="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition" title="E-Mail als verifiziert markieren">
-                        <i class="fas fa-check-circle mr-1"></i>Verifizieren
-                    </button>
-                    <button onclick="app.deleteUser('${user.id}', '${user.email}')" class="text-xs px-3 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition" title="Benutzer deaktivieren">
-                        <i class="fas fa-trash mr-1"></i>Löschen
-                    </button>
-                    <span class="text-xs px-2 py-1 rounded ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'bg-green-500/20 text-green-400' : user.cookieConsent === 'essential' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}">
-                        ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'Alle Cookies' : user.cookieConsent === 'essential' ? 'Nur notwendige' : 'Keine Auswahl'}
-                    </span>
-                    <div class="text-sm text-gray-400">
-                        ${user.company || ''}
-                    </div>
-                </div>
-            </div>
-        `).join('');
+        renderAdminUsersList();
     } catch (e) {
         logger.error('Error loading users:', e);
         container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Benutzer.</p>';
     }
+}
+
+function renderAdminUsersList() {
+    const container = document.getElementById('admin-users-list');
+    if (!container) return;
+
+    const state = paginationState.users;
+    const perPage = PAGINATION.USERS_PER_PAGE;
+    const start = (state.page - 1) * perPage;
+    const end = start + perPage;
+    const usersToShow = state.data.slice(start, end);
+
+    container.innerHTML = usersToShow.map(user => `
+        <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center">
+                    <span class="text-brand-gold font-bold">${(user.firstname || user.email || '?')[0].toUpperCase()}</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white">${user.firstname || ''} ${user.lastname || ''}</h4>
+                    <p class="text-sm text-gray-400">${user.email || user.id}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="app.verifyUserEmail('${user.email}')" class="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition" title="E-Mail als verifiziert markieren">
+                    <i class="fas fa-check-circle mr-1"></i>Verifizieren
+                </button>
+                <button onclick="app.deleteUser('${user.id}', '${user.email}')" class="text-xs px-3 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition" title="Benutzer deaktivieren">
+                    <i class="fas fa-trash mr-1"></i>Löschen
+                </button>
+                <span class="text-xs px-2 py-1 rounded ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'bg-green-500/20 text-green-400' : user.cookieConsent === 'essential' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}">
+                    ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'Alle Cookies' : user.cookieConsent === 'essential' ? 'Nur notwendige' : 'Keine Auswahl'}
+                </span>
+                <div class="text-sm text-gray-400">
+                    ${user.company || ''}
+                </div>
+            </div>
+        </div>
+    `).join('') + renderPagination('users');
 }
 
 // Admin: E-Mail eines Users als verifiziert markieren
@@ -6932,6 +7038,11 @@ export async function loadStrategyCalls() {
         // Sort by date (newest first)
         calls.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+        // Store for pagination
+        paginationState.calls.data = calls;
+        paginationState.calls.total = calls.length;
+        paginationState.calls.page = 1;
+
         // Update statistics
         const totalCalls = calls.length;
         const newCalls = calls.filter(c => !c.status || c.status === 'new').length;
@@ -6945,31 +7056,44 @@ export async function loadStrategyCalls() {
         if (statNew) statNew.textContent = newCalls;
         if (statDone) statDone.textContent = doneCalls;
 
-        container.innerHTML = calls.map(call => `
-            <div class="bg-brand-dark/50 rounded-lg p-4">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h4 class="font-bold text-white">${call.name || 'Unbekannt'}</h4>
-                        <p class="text-sm text-gray-400">${call.email || ''}</p>
-                        ${call.phone ? `<p class="text-sm text-gray-400">${call.phone}</p>` : ''}
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <select onchange="app.updateStrategyCallStatus('${call.id}', this.value)"
-                                class="bg-brand-dark border border-gray-600 rounded px-2 py-1 text-sm text-white">
-                            <option value="new" ${call.status === 'new' ? 'selected' : ''}>Neu</option>
-                            <option value="contacted" ${call.status === 'contacted' ? 'selected' : ''}>Kontaktiert</option>
-                            <option value="completed" ${call.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
-                        </select>
-                    </div>
-                </div>
-                ${call.message ? `<p class="text-sm text-gray-300 mt-2">${call.message}</p>` : ''}
-                <p class="text-xs text-gray-500 mt-2">${new Date(call.createdAt).toLocaleString('de-DE')}</p>
-            </div>
-        `).join('');
+        renderStrategyCallsList();
     } catch (e) {
         logger.error('Error loading strategy calls:', e);
         container.innerHTML = '<p class="text-red-400">Fehler beim Laden der Anfragen.</p>';
     }
+}
+
+function renderStrategyCallsList() {
+    const container = document.getElementById('admin-strategy-list');
+    if (!container) return;
+
+    const state = paginationState.calls;
+    const perPage = PAGINATION.CALLS_PER_PAGE;
+    const start = (state.page - 1) * perPage;
+    const end = start + perPage;
+    const callsToShow = state.data.slice(start, end);
+
+    container.innerHTML = callsToShow.map(call => `
+        <div class="bg-brand-dark/50 rounded-lg p-4">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <h4 class="font-bold text-white">${call.name || 'Unbekannt'}</h4>
+                    <p class="text-sm text-gray-400">${call.email || ''}</p>
+                    ${call.phone ? `<p class="text-sm text-gray-400">${call.phone}</p>` : ''}
+                </div>
+                <div class="flex items-center gap-2">
+                    <select onchange="app.updateStrategyCallStatus('${call.id}', this.value)"
+                            class="bg-brand-dark border border-gray-600 rounded px-2 py-1 text-sm text-white">
+                        <option value="new" ${call.status === 'new' ? 'selected' : ''}>Neu</option>
+                        <option value="contacted" ${call.status === 'contacted' ? 'selected' : ''}>Kontaktiert</option>
+                        <option value="completed" ${call.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
+                    </select>
+                </div>
+            </div>
+            ${call.message ? `<p class="text-sm text-gray-300 mt-2">${call.message}</p>` : ''}
+            <p class="text-xs text-gray-500 mt-2">${new Date(call.createdAt).toLocaleString('de-DE')}</p>
+        </div>
+    `).join('') + renderPagination('calls');
 }
 
 export async function updateStrategyCallStatus(callId, status) {

@@ -31,7 +31,7 @@ Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuel
 
 ---
 
-## Aktuelle Features (Stand: 30.12.2024)
+## Aktuelle Features (Stand: 31.12.2024)
 
 ### Implementiert
 - [x] CV-Pakete mit Konfigurator (Sprache, Express, Add-ons)
@@ -45,11 +45,11 @@ Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuel
 - [x] Automatische Account-Erstellung bei Checkout
 - [x] PDF-Rechnungen per Email
 - [x] Dokumenten-Upload/Download
+- [x] **Coach-Bearbeitung im Admin** (Hinzufügen, Bearbeiten, Löschen, Sichtbarkeit)
+- [x] **Pagination** für Admin-Listen (Users, Strategy Calls)
 
 ### Pending / Bekannte Einschränkungen
 - Daily.co API Key muss noch gesetzt werden (`firebase functions:secrets:set DAILY_API_KEY`)
-- Coach-Bearbeitung im Admin nur über Firestore Console
-- Keine Pagination bei großen Datenmengen
 
 ---
 
@@ -102,6 +102,10 @@ settings/        # System-Einstellungen
 
 ## Letzte Änderungen
 
+### 31.12.2024
+- **Pagination** für Admin-Listen implementiert (Users: 20/Seite, Strategy Calls: 15/Seite)
+- CLAUDE.md aktualisiert - Coach-Bearbeitung war bereits implementiert
+
 ### 30.12.2024
 - Mentor-Dashboard mit Verfügbarkeitskalender implementiert
 - Daily.co Video-Integration hinzugefügt
@@ -116,9 +120,11 @@ settings/        # System-Einstellungen
 
 ## Häufige Aufgaben
 
-### Neuen Coach hinzufügen
-1. Firestore → coaches → Dokument hinzufügen
-2. Felder: name, email, role, experience, bio, image, expertise[], visible: true
+### Neuen Coach hinzufügen (via Admin-Panel)
+1. Als Admin einloggen → Admin-Bereich → Tab "Mentoren"
+2. "Neuer Mentor" Button klicken
+3. Formular ausfüllen (Name, Email, Rolle, Erfahrung, Bio, Bild-URL, Expertise)
+4. Speichern
 
 ### Feature testen
 1. Login mit Test-Account
