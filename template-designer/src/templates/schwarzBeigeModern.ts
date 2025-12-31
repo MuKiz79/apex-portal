@@ -8,23 +8,23 @@ export const getSchwarzBeigeModernTemplate = (): Template => ({
   schemas: [
     [
       // ============ HEADER SECTION (Dark background) ============
-      // Dark header background
+      // Dark header background (charcoal gray)
       {
         name: 'headerBackground',
         type: 'rectangle',
         position: { x: 0, y: 0 },
         width: 210,
         height: 85,
-        color: '#2d2d2d'
+        color: '#3d3d3d'
       },
-      // Photo area (darker)
+      // Photo area (slightly darker)
       {
         name: 'photoBackground',
         type: 'rectangle',
         position: { x: 0, y: 0 },
         width: 65,
         height: 85,
-        color: '#1a1a1a'
+        color: '#2d2d2d'
       },
       // Profile Photo
       {
@@ -70,14 +70,14 @@ export const getSchwarzBeigeModernTemplate = (): Template => ({
         characterSpacing: 4
       },
 
-      // ============ CONTACT BAR ============
+      // ============ CONTACT BAR (White) ============
       {
         name: 'contactBar',
         type: 'rectangle',
         position: { x: 0, y: 85 },
         width: 210,
         height: 14,
-        color: '#f5f5f0'
+        color: '#ffffff'
       },
       // Phone
       {
@@ -110,14 +110,14 @@ export const getSchwarzBeigeModernTemplate = (): Template => ({
         fontColor: '#333333'
       },
 
-      // ============ LEFT SIDEBAR (Beige) ============
+      // ============ LEFT SIDEBAR (Warm Beige/Cream) ============
       {
         name: 'sidebarBackground',
         type: 'rectangle',
         position: { x: 0, y: 99 },
         width: 65,
         height: 198,
-        color: '#f5f5f0'
+        color: '#f5f0e8'
       },
 
       // --- BILDUNG Section ---
@@ -239,7 +239,7 @@ export const getSchwarzBeigeModernTemplate = (): Template => ({
         width: 50,
         height: 6,
         fontSize: 8,
-        fontColor: '#c4a35a',
+        fontColor: '#a08060',
         fontName: 'Helvetica-Oblique'
       },
       {
@@ -259,7 +259,7 @@ export const getSchwarzBeigeModernTemplate = (): Template => ({
         width: 50,
         height: 6,
         fontSize: 8,
-        fontColor: '#c4a35a',
+        fontColor: '#a08060',
         fontName: 'Helvetica-Oblique'
       },
       {
@@ -279,7 +279,7 @@ export const getSchwarzBeigeModernTemplate = (): Template => ({
         width: 50,
         height: 6,
         fontSize: 8,
-        fontColor: '#c4a35a',
+        fontColor: '#a08060',
         fontName: 'Helvetica-Oblique'
       },
 
