@@ -6,6 +6,7 @@ import { text, image, line, rectangle } from '@pdfme/schemas';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import './App.css';
+import { getExecutiveCoverTemplate } from './templates/executiveCover';
 
 // Firebase Config - same as main app
 const firebaseConfig = {
@@ -337,6 +338,15 @@ function App() {
     showMessage('Template zurückgesetzt!', 'success');
   };
 
+  // Load Executive Cover template
+  const loadExecutiveCover = () => {
+    if (!designerInstance.current) return;
+
+    designerInstance.current.updateTemplate(getExecutiveCoverTemplate());
+    setCurrentTemplateName('Executive Cover');
+    showMessage('Executive Cover Template geladen!', 'success');
+  };
+
   // Export template as JSON
   const exportTemplate = () => {
     if (!designerInstance.current) return;
@@ -414,6 +424,16 @@ function App() {
       <div className="main-content">
         {/* Sidebar with saved templates */}
         <aside className="sidebar">
+          <h3>Basis-Templates</h3>
+          <div className="base-templates">
+            <button onClick={resetTemplate} className="btn btn-template">
+              📄 CV Template
+            </button>
+            <button onClick={loadExecutiveCover} className="btn btn-template">
+              📋 Executive Cover
+            </button>
+          </div>
+
           <h3>Gespeicherte Templates</h3>
           <div className="template-list">
             {savedTemplates.length === 0 ? (
