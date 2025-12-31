@@ -7929,9 +7929,9 @@ const canvaTemplates = [
         description: 'Elegantes Design mit dunklem Header und Beige-Akzenten',
         tags: ['Executive', 'Senior', 'Klassisch', 'Canva'],
         preview: `
-            <div class="w-full h-full flex flex-col">
-                <div class="bg-[#3d3d3d] text-white p-2 flex gap-2" style="min-height: 35%;">
-                    <div class="w-8 h-10 bg-gray-600 flex-shrink-0"></div>
+            <div class="absolute inset-0 flex flex-col">
+                <div class="bg-[#3d3d3d] text-white p-2 flex gap-2" style="height: 30%;">
+                    <div class="w-8 bg-gray-600 flex-shrink-0"></div>
                     <div class="flex-1 flex flex-col justify-center">
                         <div class="h-2 bg-white rounded w-3/4 mb-1"></div>
                         <div class="h-1.5 bg-white/60 rounded w-1/2"></div>
@@ -7969,7 +7969,7 @@ const canvaTemplates = [
         description: 'Kreatives Design mit Teal und Gelb-Akzenten',
         tags: ['Young Professional', 'Kreativ', 'Modern', 'Canva'],
         preview: `
-            <div class="w-full h-full flex flex-col bg-white">
+            <div class="absolute inset-0 flex flex-col bg-white">
                 <div class="h-1 bg-[#f5c842]"></div>
                 <div class="p-2 flex gap-2">
                     <div class="w-8 h-10 rounded bg-gray-300 flex-shrink-0"></div>
@@ -8006,7 +8006,7 @@ const canvaTemplates = [
         description: 'Zeitloses Design mit Navy-Seitenleiste',
         tags: ['C-Suite', 'Führungskraft', 'Klassisch'],
         preview: `
-            <div class="w-full h-full flex text-[6px]">
+            <div class="absolute inset-0 flex">
                 <div class="w-1/3 bg-[#1e3a5f] text-white p-2">
                     <div class="w-8 h-8 rounded-full bg-gray-300 mx-auto mb-2"></div>
                     <div class="h-1.5 bg-white/80 rounded mb-1"></div>
@@ -8041,7 +8041,7 @@ const canvaTemplates = [
         description: 'Sauberes, minimalistisches Design',
         tags: ['Modern', 'Tech', 'Startup'],
         preview: `
-            <div class="w-full h-full bg-white p-3 text-[6px]">
+            <div class="absolute inset-0 flex flex-col bg-white p-3">
                 <div class="text-center mb-3">
                     <div class="h-2 bg-black rounded w-1/2 mx-auto mb-1"></div>
                     <div class="h-1 bg-gray-400 rounded w-1/3 mx-auto"></div>
@@ -8075,7 +8075,7 @@ const canvaTemplates = [
         description: 'Auffälliges Design für Kreative',
         tags: ['Design', 'Marketing', 'Kreativ'],
         preview: `
-            <div class="w-full h-full bg-[#f1faee] text-[6px]">
+            <div class="absolute inset-0 flex flex-col bg-[#f1faee]">
                 <div class="bg-[#e63946] p-2 mb-2">
                     <div class="h-2 bg-white rounded w-1/2 mb-1"></div>
                     <div class="h-1 bg-white/70 rounded w-1/3"></div>
@@ -8109,7 +8109,7 @@ const canvaTemplates = [
         description: 'Professionell für Konzernumfeld',
         tags: ['Konzern', 'Finance', 'Consulting'],
         preview: `
-            <div class="w-full h-full bg-white text-[6px]">
+            <div class="absolute inset-0 flex flex-col bg-white">
                 <div class="bg-[#2c3e50] p-2">
                     <div class="h-2 bg-white rounded w-2/3 mb-1"></div>
                     <div class="h-0.5 bg-[#3498db] rounded w-1/2"></div>
@@ -8140,7 +8140,7 @@ const canvaTemplates = [
         description: 'Premium-Design für Top-Manager',
         tags: ['CEO', 'Vorstand', 'Executive'],
         preview: `
-            <div class="w-full h-full flex text-[6px]">
+            <div class="absolute inset-0 flex">
                 <div class="w-1/3 bg-[#1a1a2e] text-white p-2">
                     <div class="w-8 h-8 rounded-full bg-[#c9b99a] mx-auto mb-2"></div>
                     <div class="h-0.5 bg-[#c9b99a] rounded mb-2"></div>
@@ -8175,7 +8175,7 @@ const canvaTemplates = [
         description: 'Modern für Tech-Industrie',
         tags: ['IT', 'Software', 'Developer'],
         preview: `
-            <div class="w-full h-full bg-[#f8fafc] text-[6px]">
+            <div class="absolute inset-0 flex flex-col bg-[#f8fafc]">
                 <div class="p-2">
                     <div class="flex items-center gap-2 mb-2">
                         <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#818cf8]"></div>
@@ -8213,7 +8213,7 @@ const canvaTemplates = [
         description: 'Elegantes Weinrot für Führungskräfte',
         tags: ['Luxury', 'Fashion', 'Hospitality'],
         preview: `
-            <div class="w-full h-full bg-[#faf7f5] text-[6px]">
+            <div class="absolute inset-0 flex flex-col bg-[#faf7f5]">
                 <div class="border-b-2 border-[#722f37] p-2 text-center">
                     <div class="h-2 bg-[#722f37] rounded w-1/2 mx-auto mb-1"></div>
                     <div class="h-0.5 bg-[#d4a574] rounded w-1/3 mx-auto"></div>
@@ -8240,8 +8240,8 @@ const canvaTemplates = [
         description: 'Swiss Design - Klarheit & Präzision',
         tags: ['Design', 'Architecture', 'Engineering'],
         preview: `
-            <div class="w-full h-full bg-white text-[6px] p-2">
-                <div class="flex gap-2">
+            <div class="absolute inset-0 flex flex-col bg-white p-2">
+                <div class="flex gap-2 flex-1">
                     <div class="w-1/3">
                         <div class="h-2 bg-[#333333] rounded mb-1"></div>
                         <div class="h-0.5 bg-[#e74c3c] rounded w-2/3 mb-2"></div>
@@ -8295,15 +8295,15 @@ function renderCvGeneratorStep1() {
                     <div class="relative border-2 ${cvGeneratorState.template === t.id ? 'border-brand-gold ring-2 ring-brand-gold/20' : 'border-gray-200'}
                                 rounded-xl overflow-hidden transition-all hover:border-brand-gold hover:shadow-lg">
                         <!-- Preview -->
-                        <div class="aspect-[3/4] bg-gray-50 relative overflow-hidden">
-                            <div class="absolute inset-0">${t.preview}</div>
+                        <div class="aspect-[210/297] bg-gray-50 relative">
+                            ${t.preview}
                             <!-- Hover overlay -->
                             <div class="absolute inset-0 bg-brand-gold/90 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <span class="text-brand-dark font-medium text-sm">Auswählen</span>
                             </div>
                             <!-- Selected checkmark -->
                             ${cvGeneratorState.template === t.id ? `
-                                <div class="absolute top-2 right-2 w-6 h-6 bg-brand-gold rounded-full flex items-center justify-center">
+                                <div class="absolute top-2 right-2 w-6 h-6 bg-brand-gold rounded-full flex items-center justify-center z-10">
                                     <i class="fas fa-check text-brand-dark text-xs"></i>
                                 </div>
                             ` : ''}
