@@ -124,6 +124,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ========== CV TEMPLATES ==========
+
+    // CV Templates Collection - Admin kann alles lesen/schreiben (für Template Designer)
+    match /cvTemplates/{templateId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
     // ========== CV PROJECTS ==========
 
     // CV Projects Collection - Admin kann alles, Kunden können eigene lesen/schreiben (Fragebogen)
