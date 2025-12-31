@@ -8298,7 +8298,7 @@ function renderCvGeneratorStep1() {
                                 rounded-xl overflow-hidden transition-all hover:border-brand-gold hover:shadow-lg">
                         <!-- Preview -->
                         <div class="aspect-[3/4] bg-gray-50 relative overflow-hidden">
-                            ${t.preview}
+                            <div class="absolute inset-0 origin-top-left scale-[0.85]">${t.preview}</div>
                             <!-- Hover overlay -->
                             <div class="absolute inset-0 bg-brand-gold/90 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <span class="text-brand-dark font-medium text-sm">Auswählen</span>
