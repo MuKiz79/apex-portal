@@ -7814,6 +7814,26 @@ export async function viewCvData(orderId) {
     }
 }
 
+// Scale CV template previews to fit their containers
+function scaleCvPreviews() {
+    const previewBoxes = document.querySelectorAll('.cv-preview-box');
+    previewBoxes.forEach(box => {
+        const scaled = box.querySelector('.cv-preview-scaled');
+        if (scaled) {
+            const containerWidth = box.offsetWidth;
+            const scale = containerWidth / 210;
+            scaled.style.transform = `scale(${scale})`;
+        }
+    });
+}
+
+// Also scale on window resize
+window.addEventListener('resize', () => {
+    if (document.querySelector('.cv-preview-box')) {
+        scaleCvPreviews();
+    }
+});
+
 // CV Generator State
 let cvGeneratorState = {
     step: 1,
@@ -7916,6 +7936,9 @@ export async function openCvGenerator(orderId) {
 
     // Initialize handlers
     initCvGeneratorHandlers();
+
+    // Scale previews after modal is rendered
+    setTimeout(() => scaleCvPreviews(), 100);
 }
 
 // Canva-style CV Template definitions with visual previews
@@ -8304,8 +8327,8 @@ function renderCvGeneratorStep1() {
                     <div class="relative border-2 ${cvGeneratorState.template === t.id ? 'border-brand-gold ring-2 ring-brand-gold/20' : 'border-gray-200'}
                                 rounded-xl overflow-hidden transition-all hover:border-brand-gold hover:shadow-lg">
                         <!-- Preview -->
-                        <div class="aspect-[210/297] bg-gray-50 relative overflow-hidden cv-preview-container">
-                            <div class="cv-preview-content">
+                        <div class="aspect-[210/297] bg-gray-50 relative overflow-hidden cv-preview-box">
+                            <div class="cv-preview-scaled" style="position: absolute; top: 0; left: 0; width: 210px; height: 297px; transform-origin: top left;">
                                 ${t.preview}
                             </div>
                             <!-- Hover overlay -->
@@ -8645,6 +8668,9 @@ function updateCvGeneratorUI() {
         content.innerHTML = renderCvGeneratorStep1();
         backBtn.classList.add('hidden');
         nextBtn.innerHTML = 'Weiter <i class="fas fa-arrow-right ml-2"></i>';
+
+        // Apply preview scaling after DOM is ready
+        setTimeout(() => scaleCvPreviews(), 50);
 
         // Update indicators
         step1Indicator.querySelector('div').classList.add('bg-brand-gold', 'text-white');
