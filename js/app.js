@@ -2041,12 +2041,26 @@ function renderCvProjectSection(order) {
                 </div>
             </div>
 
-            ${(cvStatus === 'new' || cvStatus === 'questionnaire_sent') && order.cvProjectId ? `
-                <!-- Questionnaire CTA - Ausfüllen möglich -->
-                <a href="?questionnaire=${order.cvProjectId}"
-                   class="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-center font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                    <i class="fas fa-edit mr-2"></i>Fragebogen ausfüllen
-                </a>
+            ${(cvStatus === 'new' || cvStatus === 'questionnaire_sent') ? `
+                ${order.cvProjectId ? `
+                    <!-- Questionnaire CTA - Ausfüllen möglich -->
+                    <a href="?questionnaire=${order.cvProjectId}"
+                       class="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-center font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                        <i class="fas fa-edit mr-2"></i>Fragebogen ausfüllen
+                    </a>
+                ` : `
+                    <!-- Fragebogen noch nicht bereit -->
+                    <div class="bg-white rounded-lg p-3 border border-amber-200">
+                        <div class="flex items-center gap-2 text-amber-700">
+                            <i class="fas fa-clock text-amber-500"></i>
+                            <span class="text-sm font-medium">Fragebogen wird vorbereitet</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Sie erhalten in Kürze eine E-Mail mit dem Link zum Fragebogen.
+                            Alternativ können Sie ihn dann auch hier im Dashboard ausfüllen.
+                        </p>
+                    </div>
+                `}
             ` : ''}
 
             ${(cvStatus === 'data_received' || cvStatus === 'generating' || cvStatus === 'ready' || cvStatus === 'delivered') ? `
@@ -6344,6 +6358,35 @@ export async function loadAllOrders() {
             allAdminOrders.push({ id: docSnap.id, ...docSnap.data() });
         });
 
+        // Load all CV projects to merge with orders
+        let cvProjectsMap = {};
+        try {
+            const cvProjectsSnapshot = await getDocs(collection(db, 'cvProjects'));
+            cvProjectsSnapshot.forEach(docSnap => {
+                const project = { id: docSnap.id, ...docSnap.data() };
+                if (project.orderId) {
+                    cvProjectsMap[project.orderId] = project;
+                }
+            });
+        } catch (e) {
+            logger.warn('Could not load CV projects for admin:', e);
+        }
+
+        // Merge orders with CV project data
+        allAdminOrders = allAdminOrders.map(order => {
+            const cvProject = cvProjectsMap[order.id];
+            if (cvProject) {
+                return {
+                    ...order,
+                    cvProject: cvProject,
+                    cvProjectId: cvProject.id,
+                    cvStatus: cvProject.status || 'new',
+                    questionnaire: cvProject.questionnaire || null
+                };
+            }
+            return order;
+        });
+
         // Sort by date (newest first)
         allAdminOrders.sort((a, b) => {
             const dateA = a.date?.seconds || 0;
@@ -6555,6 +6598,7 @@ function renderAdminOrders(orders) {
 
         // Determine what type of order this is
         const isSession = hasCoachSession(order);
+        const isCvOrderType = isCvOrder(order);
         const hasAppointment = order.appointment?.confirmed;
         const hasPendingProposals = order.appointmentProposals && !order.appointment?.confirmed && order.appointmentStatus !== 'declined';
         const needsAttention = isSession && !order.assignedCoachId;
@@ -6704,6 +6748,48 @@ function renderAdminOrders(orders) {
                                             class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
                                         <i class="fas fa-user-plus"></i>
                                         Mentor zuweisen
+                                    </button>
+                                `}
+                            </div>
+                        ` : ''}
+
+                        <!-- CV Questionnaire Section (only for CV orders) -->
+                        ${isCvOrderType ? `
+                            <div class="bg-white rounded-lg p-3 border ${order.cvProjectId ? 'border-indigo-200' : 'border-amber-200'}">
+                                <div class="flex items-center justify-between mb-3">
+                                    <p class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fas fa-file-alt ${order.cvProjectId ? 'text-indigo-500' : 'text-amber-500'}"></i>
+                                        CV-Fragebogen
+                                    </p>
+                                    ${!order.cvProjectId ? `
+                                        <span class="text-xs text-amber-600 font-medium">Noch nicht gesendet</span>
+                                    ` : ''}
+                                </div>
+                                ${order.cvProjectId ? `
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-check text-indigo-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-brand-dark">Fragebogen gesendet</p>
+                                                <p class="text-xs text-gray-500">
+                                                    Status: ${order.cvStatus === 'data_received' ? 'Daten erhalten' :
+                                                             order.cvStatus === 'ready' ? 'CV fertig' :
+                                                             order.cvStatus === 'delivered' ? 'Zugestellt' : 'Wartet auf Kunde'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <a href="?questionnaire=${order.cvProjectId}" target="_blank"
+                                           class="text-sm text-indigo-600 hover:text-indigo-800 underline">
+                                            Ansehen
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <button onclick="app.sendCvQuestionnaireFromOrder('${order.id}', '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')"
+                                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                                        <i class="fas fa-paper-plane"></i>
+                                        Fragebogen senden
                                     </button>
                                 `}
                             </div>
@@ -8225,6 +8311,75 @@ function showQuestionnaireLink(projectId, customerEmail, url) {
 // Resend questionnaire
 export async function resendCvQuestionnaire(orderId) {
     await sendCvQuestionnaire(orderId);
+}
+
+// Send CV questionnaire directly from admin orders view
+export async function sendCvQuestionnaireFromOrder(orderId, customerEmail, customerName) {
+    if (!orderId) {
+        showToast('Fehler: Keine Bestell-ID');
+        return;
+    }
+
+    // Get the order to find userId
+    try {
+        const orderDoc = await getDoc(doc(db, 'orders', orderId));
+        if (!orderDoc.exists()) {
+            showToast('Bestellung nicht gefunden');
+            return;
+        }
+
+        const order = orderDoc.data();
+        const userId = order.userId;
+        const email = customerEmail || order.customerEmail;
+        const name = customerName || order.customerName || 'Kunde';
+
+        showToast('Erstelle CV-Projekt...');
+
+        // Create cvProject document
+        const cvProjectRef = await addDoc(collection(db, 'cvProjects'), {
+            orderId: orderId,
+            userId: userId,
+            customerEmail: email,
+            customerName: name,
+            status: 'questionnaire_sent',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        const projectId = cvProjectRef.id;
+        const questionnaireUrl = `${window.location.origin}/?questionnaire=${projectId}`;
+
+        // Try to send email via Cloud Function
+        try {
+            const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/sendQuestionnaireEmail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    projectId: projectId,
+                    customerEmail: email,
+                    customerName: name,
+                    questionnaireUrl: questionnaireUrl
+                })
+            });
+
+            if (response.ok) {
+                showToast('✅ Fragebogen wurde per E-Mail gesendet!');
+            } else {
+                showQuestionnaireLink(projectId, email, questionnaireUrl);
+            }
+        } catch (emailError) {
+            logger.warn('Email function not available:', emailError);
+            showQuestionnaireLink(projectId, email, questionnaireUrl);
+        }
+
+        // Refresh admin orders to show updated status
+        await loadAllOrders();
+
+    } catch (e) {
+        logger.error('Error sending questionnaire:', e);
+        showToast('Fehler: ' + e.message);
+    }
 }
 
 // Open CV questionnaire view (to check status)
