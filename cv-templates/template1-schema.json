@@ -1,0 +1,276 @@
+{
+  "id": "lebenslauf-template-1",
+  "name": "Lebenslauf Template 1",
+  "basePdf": "/cv-templates/template1.pdf",
+  "schemas": [
+    [
+      {
+        "name": "firstName",
+        "type": "text",
+        "position": { "x": 25, "y": 95 },
+        "width": 150,
+        "height": 35,
+        "fontSize": 48,
+        "fontColor": "#1a3a5c",
+        "fontName": "Helvetica-Bold"
+      },
+      {
+        "name": "lastName",
+        "type": "text",
+        "position": { "x": 25, "y": 130 },
+        "width": 150,
+        "height": 35,
+        "fontSize": 48,
+        "fontColor": "#1a3a5c",
+        "fontName": "Helvetica-Bold"
+      },
+      {
+        "name": "jobTitle",
+        "type": "text",
+        "position": { "x": 25, "y": 168 },
+        "width": 150,
+        "height": 15,
+        "fontSize": 14,
+        "fontColor": "#d4912a"
+      },
+      {
+        "name": "profileText",
+        "type": "text",
+        "position": { "x": 25, "y": 215 },
+        "width": 160,
+        "height": 50,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "lineHeight": 1.4
+      },
+      {
+        "name": "languages",
+        "type": "text",
+        "position": { "x": 25, "y": 295 },
+        "width": 160,
+        "height": 15,
+        "fontSize": 9,
+        "fontColor": "#333333"
+      },
+      {
+        "name": "skills",
+        "type": "text",
+        "position": { "x": 25, "y": 355 },
+        "width": 160,
+        "height": 60,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "lineHeight": 1.4
+      },
+      {
+        "name": "phone",
+        "type": "text",
+        "position": { "x": 35, "y": 455 },
+        "width": 120,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333"
+      },
+      {
+        "name": "email",
+        "type": "text",
+        "position": { "x": 35, "y": 472 },
+        "width": 120,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333"
+      },
+      {
+        "name": "social",
+        "type": "text",
+        "position": { "x": 35, "y": 489 },
+        "width": 120,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333"
+      },
+      {
+        "name": "address",
+        "type": "text",
+        "position": { "x": 35, "y": 506 },
+        "width": 120,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333"
+      },
+      {
+        "name": "website",
+        "type": "text",
+        "position": { "x": 35, "y": 523 },
+        "width": 120,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333"
+      },
+      {
+        "name": "eduTitle",
+        "type": "text",
+        "position": { "x": 220, "y": 195 },
+        "width": 170,
+        "height": 20,
+        "fontSize": 24,
+        "fontColor": "#1a3a5c",
+        "fontName": "Helvetica-Bold"
+      },
+      {
+        "name": "eduInstitution",
+        "type": "text",
+        "position": { "x": 220, "y": 225 },
+        "width": 170,
+        "height": 12,
+        "fontSize": 11,
+        "fontColor": "#333333",
+        "fontName": "Helvetica-Bold"
+      },
+      {
+        "name": "eduDegree",
+        "type": "text",
+        "position": { "x": 220, "y": 238 },
+        "width": 170,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "fontName": "Helvetica-Oblique"
+      },
+      {
+        "name": "eduPeriod",
+        "type": "text",
+        "position": { "x": 220, "y": 250 },
+        "width": 170,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#d4912a"
+      },
+      {
+        "name": "eduDetails",
+        "type": "text",
+        "position": { "x": 220, "y": 265 },
+        "width": 170,
+        "height": 40,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "lineHeight": 1.4
+      },
+      {
+        "name": "careerTitle",
+        "type": "text",
+        "position": { "x": 220, "y": 320 },
+        "width": 170,
+        "height": 20,
+        "fontSize": 24,
+        "fontColor": "#1a3a5c",
+        "fontName": "Helvetica-Bold"
+      },
+      {
+        "name": "job1Title",
+        "type": "text",
+        "position": { "x": 220, "y": 350 },
+        "width": 170,
+        "height": 12,
+        "fontSize": 11,
+        "fontColor": "#333333",
+        "fontName": "Helvetica-Bold"
+      },
+      {
+        "name": "job1Company",
+        "type": "text",
+        "position": { "x": 220, "y": 363 },
+        "width": 170,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "fontName": "Helvetica-Oblique"
+      },
+      {
+        "name": "job1Period",
+        "type": "text",
+        "position": { "x": 220, "y": 375 },
+        "width": 170,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#d4912a"
+      },
+      {
+        "name": "job1Details",
+        "type": "text",
+        "position": { "x": 220, "y": 390 },
+        "width": 170,
+        "height": 45,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "lineHeight": 1.4
+      },
+      {
+        "name": "job2Title",
+        "type": "text",
+        "position": { "x": 220, "y": 445 },
+        "width": 170,
+        "height": 12,
+        "fontSize": 11,
+        "fontColor": "#333333",
+        "fontName": "Helvetica-Bold"
+      },
+      {
+        "name": "job2Company",
+        "type": "text",
+        "position": { "x": 220, "y": 458 },
+        "width": 170,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "fontName": "Helvetica-Oblique"
+      },
+      {
+        "name": "job2Period",
+        "type": "text",
+        "position": { "x": 220, "y": 470 },
+        "width": 170,
+        "height": 10,
+        "fontSize": 9,
+        "fontColor": "#d4912a"
+      },
+      {
+        "name": "job2Details",
+        "type": "text",
+        "position": { "x": 220, "y": 485 },
+        "width": 170,
+        "height": 45,
+        "fontSize": 9,
+        "fontColor": "#333333",
+        "lineHeight": 1.4
+      }
+    ]
+  ],
+  "fieldMapping": {
+    "firstName": "personal.fullName.split(' ')[0]",
+    "lastName": "personal.fullName.split(' ').slice(1).join(' ')",
+    "jobTitle": "personal.title",
+    "profileText": "summary",
+    "languages": "skills.languages.map(l => l.language).join(' | ')",
+    "skills": "skills.technical.concat(skills.soft || []).join(' | ')",
+    "phone": "personal.phone",
+    "email": "personal.email",
+    "social": "personal.linkedin",
+    "address": "personal.location",
+    "website": "personal.website",
+    "eduTitle": "'Akademische Geschichte'",
+    "eduInstitution": "education[0]?.institution",
+    "eduDegree": "education[0]?.degree + (education[0]?.field ? ', ' + education[0]?.field : '')",
+    "eduPeriod": "education[0]?.period",
+    "eduDetails": "education[0]?.highlights",
+    "careerTitle": "'Berufliche Karriere'",
+    "job1Title": "experience[0]?.role",
+    "job1Company": "experience[0]?.company",
+    "job1Period": "experience[0]?.period",
+    "job1Details": "experience[0]?.achievements?.join('\\n• ')",
+    "job2Title": "experience[1]?.role",
+    "job2Company": "experience[1]?.company",
+    "job2Period": "experience[1]?.period",
+    "job2Details": "experience[1]?.achievements?.join('\\n• ')"
+  }
+}

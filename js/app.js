@@ -5,7 +5,7 @@
 import { auth, db, storage, navigateTo } from './core.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, reload, applyActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL, getMetadata } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
 import { sampleArticles } from './data.js';
 
@@ -1434,17 +1434,48 @@ export async function loadUserOrders(state) {
             ...doc.data()
         }));
 
+        // Load CV projects for this user to merge with orders
+        let cvProjectsMap = {};
+        try {
+            const cvProjectsQuery = query(
+                collection(db, "cvProjects"),
+                where("userId", "==", state.user.uid)
+            );
+            const cvProjectsSnapshot = await getDocs(cvProjectsQuery);
+            cvProjectsSnapshot.forEach(docSnap => {
+                const project = { id: docSnap.id, ...docSnap.data() };
+                cvProjectsMap[project.orderId] = project;
+            });
+        } catch (e) {
+            logger.warn('Could not load CV projects:', e);
+        }
+
+        // Merge orders with CV project data
+        const ordersWithCvData = orders.map(order => {
+            const cvProject = cvProjectsMap[order.id];
+            if (cvProject) {
+                return {
+                    ...order,
+                    cvProject: cvProject,
+                    cvProjectId: cvProject.id,
+                    cvStatus: cvProject.status || 'new',
+                    questionnaire: cvProject.questionnaire || null
+                };
+            }
+            return order;
+        });
+
         // Sortiere nach Datum (client-side, um Index-Probleme zu vermeiden)
-        orders.sort((a, b) => {
+        ordersWithCvData.sort((a, b) => {
             const dateA = a.date?.seconds || 0;
             const dateB = b.date?.seconds || 0;
             return dateB - dateA;
         });
 
-        renderOrders(orders);
+        renderOrders(ordersWithCvData);
 
         // Update Dashboard Stats
-        updateDashboardStats(orders);
+        updateDashboardStats(ordersWithCvData);
 
     } catch (e) {
         logger.error('Failed to load orders:', e);
@@ -1599,6 +1630,60 @@ export function renderOrders(orders) {
                                 ${statusInfo.description}
                             </p>
                         </div>
+
+                        <!-- Documents Section - Customer Upload & Received Documents -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    <i class="fas fa-folder-open mr-1"></i>Dokumente
+                                </span>
+                                <button onclick="app.toggleOrderDocuments('${order.id}')"
+                                        class="text-xs text-brand-gold hover:text-brand-dark transition">
+                                    <i class="fas fa-chevron-down" id="docs-toggle-${order.id}"></i>
+                                </button>
+                            </div>
+
+                            <div id="order-docs-${order.id}" class="space-y-4">
+                                <!-- Customer Upload Section -->
+                                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                                    <p class="text-xs font-semibold text-gray-700 mb-2">
+                                        <i class="fas fa-upload text-blue-500 mr-1"></i>Ihre Dokumente hochladen
+                                    </p>
+                                    <div class="flex flex-col sm:flex-row gap-2">
+                                        <label class="flex-1 cursor-pointer">
+                                            <input type="file"
+                                                   onchange="app.uploadOrderDocument('${order.id}', this)"
+                                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                                   multiple
+                                                   class="hidden">
+                                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-brand-gold hover:bg-brand-gold/5 transition">
+                                                <i class="fas fa-cloud-upload-alt text-gray-400 text-lg mb-1"></i>
+                                                <p class="text-xs text-gray-500">Klicken oder Datei hierher ziehen</p>
+                                                <p class="text-[10px] text-gray-400 mt-1">PDF, Word, Bilder (max. 10MB)</p>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- Uploaded by Customer -->
+                                    <div id="customer-docs-${order.id}" class="mt-3 space-y-2">
+                                        ${renderCustomerDocuments(order)}
+                                    </div>
+                                </div>
+
+                                <!-- Received Documents from APEX -->
+                                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                                    <p class="text-xs font-semibold text-gray-700 mb-2">
+                                        <i class="fas fa-download text-green-500 mr-1"></i>Von APEX erhalten
+                                    </p>
+                                    <div id="received-docs-${order.id}" class="space-y-2">
+                                        ${renderReceivedDocuments(order)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CV Project Section (for CV orders) -->
+                        ${renderCvProjectSection(order)}
 
                         <!-- Professional Appointment Section - Mobile Optimized -->
                 ${order.appointment?.confirmed ? `
@@ -1783,6 +1868,431 @@ export function toggleOrderDetails(orderId) {
             content.classList.add('hidden');
             icon.classList.remove('rotate-180');
         }
+    }
+}
+
+// Toggle order documents section
+export function toggleOrderDocuments(orderId) {
+    const docsContainer = document.getElementById(`order-docs-${orderId}`);
+    const toggleIcon = document.getElementById(`docs-toggle-${orderId}`);
+
+    if (docsContainer && toggleIcon) {
+        const isHidden = docsContainer.classList.contains('hidden');
+        if (isHidden) {
+            docsContainer.classList.remove('hidden');
+            toggleIcon.classList.add('rotate-180');
+        } else {
+            docsContainer.classList.add('hidden');
+            toggleIcon.classList.remove('rotate-180');
+        }
+    }
+}
+
+// Render customer-uploaded documents
+function renderCustomerDocuments(order) {
+    const docs = order.customerDocuments || [];
+
+    if (docs.length === 0) {
+        return `<p class="text-xs text-gray-400 italic">Noch keine Dokumente hochgeladen</p>`;
+    }
+
+    return docs.map(doc => `
+        <div class="flex items-center justify-between bg-gray-50 rounded-lg p-2 group">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+                <i class="fas ${getFileIcon(doc.name)} text-gray-400"></i>
+                <span class="text-xs text-gray-700 truncate">${sanitizeHTML(doc.name)}</span>
+                <span class="text-[10px] text-gray-400">${formatFileSize(doc.size)}</span>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+                <a href="${doc.url}" target="_blank"
+                   class="p-1.5 text-gray-400 hover:text-brand-gold transition" title="Herunterladen">
+                    <i class="fas fa-download text-xs"></i>
+                </a>
+                <button onclick="app.deleteOrderDocument('${order.id}', '${doc.id}')"
+                        class="p-1.5 text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Löschen">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Render documents received from APEX (admin-uploaded)
+function renderReceivedDocuments(order) {
+    const docs = order.deliveredDocuments || [];
+
+    if (docs.length === 0) {
+        return `<p class="text-xs text-gray-400 italic">Noch keine Dokumente erhalten</p>`;
+    }
+
+    return docs.map(doc => `
+        <div class="flex items-center justify-between bg-green-50 rounded-lg p-2">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+                <i class="fas ${getFileIcon(doc.name)} text-green-500"></i>
+                <div class="min-w-0 flex-1">
+                    <span class="text-xs text-gray-700 truncate block">${sanitizeHTML(doc.name)}</span>
+                    <span class="text-[10px] text-gray-400">
+                        ${doc.uploadedAt ? new Date(doc.uploadedAt.seconds * 1000).toLocaleDateString('de-DE') : ''}
+                    </span>
+                </div>
+            </div>
+            <a href="${doc.url}" target="_blank" download
+               class="flex items-center gap-1 px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 transition flex-shrink-0">
+                <i class="fas fa-download"></i>
+                <span class="hidden sm:inline">Download</span>
+            </a>
+        </div>
+    `).join('');
+}
+
+// Get file icon based on extension
+function getFileIcon(filename) {
+    const ext = filename?.split('.').pop()?.toLowerCase();
+    switch (ext) {
+        case 'pdf': return 'fa-file-pdf text-red-500';
+        case 'doc':
+        case 'docx': return 'fa-file-word text-blue-500';
+        case 'jpg':
+        case 'jpeg':
+        case 'png':
+        case 'gif': return 'fa-file-image text-purple-500';
+        case 'xls':
+        case 'xlsx': return 'fa-file-excel text-green-500';
+        default: return 'fa-file text-gray-400';
+    }
+}
+
+// Format file size
+function formatFileSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// CV Status configuration for customer view
+const CV_CUSTOMER_STATUS = {
+    'new': { label: 'Bestellung erhalten', color: 'bg-blue-100 text-blue-800', icon: 'fa-check-circle', description: 'Ihre Bestellung wurde bestätigt.' },
+    'questionnaire_sent': { label: 'Fragebogen bereit', color: 'bg-yellow-100 text-yellow-800', icon: 'fa-edit', description: 'Bitte füllen Sie den Fragebogen aus.' },
+    'data_received': { label: 'Daten erhalten', color: 'bg-indigo-100 text-indigo-800', icon: 'fa-check-double', description: 'Wir haben Ihre Daten erhalten und arbeiten an Ihrem CV.' },
+    'generating': { label: 'CV wird erstellt', color: 'bg-purple-100 text-purple-800', icon: 'fa-cog fa-spin', description: 'Ihr CV wird gerade von unseren Experten erstellt.' },
+    'ready': { label: 'CV fertig', color: 'bg-green-100 text-green-800', icon: 'fa-file-alt', description: 'Ihr CV ist fertig und bereit zum Download!' },
+    'delivered': { label: 'Zugestellt', color: 'bg-gray-100 text-gray-800', icon: 'fa-check-double', description: 'Ihr CV wurde Ihnen zugestellt.' }
+};
+
+// Check if order contains CV package
+function isCvOrder(order) {
+    const cvKeywords = ['CV', 'Lebenslauf', 'Quick-Check', 'Young Professional', 'Senior Professional', 'Executive', 'C-Suite'];
+    return order.items?.some(item =>
+        cvKeywords.some(keyword =>
+            item.title?.toLowerCase().includes(keyword.toLowerCase())
+        )
+    );
+}
+
+// Render CV project section for customer order
+function renderCvProjectSection(order) {
+    // Only show for CV orders
+    if (!isCvOrder(order)) return '';
+
+    const cvProject = order.cvProject;
+    const cvStatus = order.cvStatus || 'new';
+    const statusConfig = CV_CUSTOMER_STATUS[cvStatus] || CV_CUSTOMER_STATUS['new'];
+    const questionnaire = order.questionnaire;
+
+    return `
+        <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 mb-3 border border-indigo-200">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                    <i class="fas fa-file-alt mr-1"></i>CV-Erstellung
+                </span>
+                <span class="${statusConfig.color} text-xs px-2 py-1 rounded-full font-medium">
+                    <i class="fas ${statusConfig.icon} mr-1"></i>${statusConfig.label}
+                </span>
+            </div>
+
+            <!-- Status Description -->
+            <p class="text-sm text-gray-600 mb-3">
+                <i class="fas fa-info-circle text-indigo-400 mr-1"></i>
+                ${statusConfig.description}
+            </p>
+
+            <!-- CV Progress Bar -->
+            <div class="mb-4">
+                <div class="flex items-center gap-1 text-[10px] text-gray-500 mb-1">
+                    ${['new', 'questionnaire_sent', 'data_received', 'generating', 'ready'].map((step, idx) => {
+                        const stepOrder = ['new', 'questionnaire_sent', 'data_received', 'generating', 'ready'];
+                        const currentIdx = stepOrder.indexOf(cvStatus);
+                        const isComplete = idx <= currentIdx;
+                        const isCurrent = idx === currentIdx;
+                        return `
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full h-1.5 rounded-full ${isComplete ? 'bg-indigo-500' : 'bg-gray-200'} ${isCurrent ? 'animate-pulse' : ''}"></div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="flex justify-between text-[9px] text-gray-400">
+                    <span>Bestellt</span>
+                    <span>Fragebogen</span>
+                    <span>Daten</span>
+                    <span>Erstellen</span>
+                    <span>Fertig</span>
+                </div>
+            </div>
+
+            ${cvStatus === 'questionnaire_sent' && order.cvProjectId ? `
+                <!-- Questionnaire CTA -->
+                <a href="?questionnaire=${order.cvProjectId}"
+                   class="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-center font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                    <i class="fas fa-edit mr-2"></i>Fragebogen ausfüllen
+                </a>
+            ` : ''}
+
+            ${(cvStatus === 'data_received' || cvStatus === 'ready' || cvStatus === 'delivered') && questionnaire ? `
+                <!-- Show Questionnaire Summary -->
+                <div class="bg-white rounded-lg p-3 border border-indigo-100">
+                    <button onclick="app.toggleCvQuestionnaireView('${order.id}')"
+                            class="w-full flex items-center justify-between text-left">
+                        <span class="text-xs font-semibold text-gray-700">
+                            <i class="fas fa-list-alt text-indigo-500 mr-1"></i>Ihre eingegebenen Daten
+                        </span>
+                        <i class="fas fa-chevron-down text-gray-400 transition-transform" id="cv-q-toggle-${order.id}"></i>
+                    </button>
+
+                    <div id="cv-questionnaire-view-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-100 space-y-3 text-xs">
+                        ${renderQuestionnaireDataForCustomer(questionnaire)}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${(cvStatus === 'ready' || cvStatus === 'delivered') && order.cvProject?.generatedCv ? `
+                <!-- Download CV -->
+                <div class="mt-3 bg-green-50 rounded-lg p-3 border border-green-200">
+                    <p class="text-xs font-semibold text-green-700 mb-2">
+                        <i class="fas fa-check-circle mr-1"></i>Ihr CV ist bereit!
+                    </p>
+                    <a href="${order.cvProject.generatedCv.url}"
+                       target="_blank"
+                       download
+                       class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg transition">
+                        <i class="fas fa-download"></i>
+                        CV herunterladen
+                    </a>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Toggle CV questionnaire view
+export function toggleCvQuestionnaireView(orderId) {
+    const container = document.getElementById(`cv-questionnaire-view-${orderId}`);
+    const toggleIcon = document.getElementById(`cv-q-toggle-${orderId}`);
+
+    if (container && toggleIcon) {
+        const isHidden = container.classList.contains('hidden');
+        if (isHidden) {
+            container.classList.remove('hidden');
+            toggleIcon.classList.add('rotate-180');
+        } else {
+            container.classList.add('hidden');
+            toggleIcon.classList.remove('rotate-180');
+        }
+    }
+}
+
+// Render questionnaire data summary for customer
+function renderQuestionnaireDataForCustomer(questionnaire) {
+    if (!questionnaire) return '<p class="text-gray-400 italic">Keine Daten vorhanden</p>';
+
+    let html = '';
+
+    // Personal Info
+    if (questionnaire.personal) {
+        const p = questionnaire.personal;
+        html += `
+            <div class="bg-gray-50 rounded p-2">
+                <p class="font-semibold text-gray-700 mb-1"><i class="fas fa-user text-indigo-400 mr-1"></i>Persönliche Daten</p>
+                <div class="grid grid-cols-2 gap-1 text-gray-600">
+                    ${p.fullName ? `<p><span class="text-gray-400">Name:</span> ${sanitizeHTML(p.fullName)}</p>` : ''}
+                    ${p.email ? `<p><span class="text-gray-400">E-Mail:</span> ${sanitizeHTML(p.email)}</p>` : ''}
+                    ${p.phone ? `<p><span class="text-gray-400">Telefon:</span> ${sanitizeHTML(p.phone)}</p>` : ''}
+                    ${p.location ? `<p><span class="text-gray-400">Ort:</span> ${sanitizeHTML(p.location)}</p>` : ''}
+                    ${p.targetRole ? `<p class="col-span-2"><span class="text-gray-400">Zielposition:</span> ${sanitizeHTML(p.targetRole)}</p>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Experience
+    if (questionnaire.experience?.length > 0) {
+        html += `
+            <div class="bg-gray-50 rounded p-2">
+                <p class="font-semibold text-gray-700 mb-1"><i class="fas fa-briefcase text-indigo-400 mr-1"></i>Berufserfahrung (${questionnaire.experience.length})</p>
+                <div class="space-y-2">
+                    ${questionnaire.experience.slice(0, 3).map(exp => `
+                        <div class="text-gray-600 border-l-2 border-indigo-200 pl-2">
+                            <p class="font-medium">${sanitizeHTML(exp.role || exp.title || 'Position')}</p>
+                            <p class="text-gray-400">${sanitizeHTML(exp.company || '')} ${exp.startDate ? `• ${exp.startDate}` : ''}</p>
+                        </div>
+                    `).join('')}
+                    ${questionnaire.experience.length > 3 ? `<p class="text-gray-400">+ ${questionnaire.experience.length - 3} weitere...</p>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Education
+    if (questionnaire.education?.length > 0) {
+        html += `
+            <div class="bg-gray-50 rounded p-2">
+                <p class="font-semibold text-gray-700 mb-1"><i class="fas fa-graduation-cap text-indigo-400 mr-1"></i>Ausbildung (${questionnaire.education.length})</p>
+                <div class="space-y-1">
+                    ${questionnaire.education.slice(0, 2).map(edu => `
+                        <div class="text-gray-600">
+                            <p>${sanitizeHTML(edu.degree || edu.field || 'Abschluss')} - ${sanitizeHTML(edu.institution || '')}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Skills
+    if (questionnaire.skills) {
+        const skills = questionnaire.skills;
+        html += `
+            <div class="bg-gray-50 rounded p-2">
+                <p class="font-semibold text-gray-700 mb-1"><i class="fas fa-tools text-indigo-400 mr-1"></i>Fähigkeiten</p>
+                <div class="flex flex-wrap gap-1">
+                    ${(skills.technical || []).slice(0, 5).map(s => `<span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[10px]">${sanitizeHTML(s)}</span>`).join('')}
+                    ${(skills.soft || []).slice(0, 3).map(s => `<span class="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[10px]">${sanitizeHTML(s)}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Languages
+    if (questionnaire.skills?.languages?.length > 0) {
+        html += `
+            <div class="bg-gray-50 rounded p-2">
+                <p class="font-semibold text-gray-700 mb-1"><i class="fas fa-globe text-indigo-400 mr-1"></i>Sprachen</p>
+                <div class="flex flex-wrap gap-2">
+                    ${questionnaire.skills.languages.map(lang => `
+                        <span class="text-gray-600">${sanitizeHTML(lang.name || lang)} ${lang.level ? `(${lang.level})` : ''}</span>
+                    `).join(' • ')}
+                </div>
+            </div>
+        `;
+    }
+
+    return html || '<p class="text-gray-400 italic">Keine Daten vorhanden</p>';
+}
+
+// Upload document to order
+export async function uploadOrderDocument(orderId, input) {
+    const files = input.files;
+    if (!files || files.length === 0) return;
+
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    for (const file of files) {
+        if (file.size > maxSize) {
+            showToast(`❌ ${file.name} ist zu groß (max. 10MB)`);
+            continue;
+        }
+
+        showToast(`⏳ ${file.name} wird hochgeladen...`);
+
+        try {
+            const timestamp = Date.now();
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const path = `order-documents/${orderId}/customer/${timestamp}_${safeName}`;
+
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+
+            // Add document to order in Firestore
+            const orderRef = doc(db, 'orders', orderId);
+            const orderDoc = await getDoc(orderRef);
+
+            if (orderDoc.exists()) {
+                const currentDocs = orderDoc.data().customerDocuments || [];
+                const newDoc = {
+                    id: `doc_${timestamp}`,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    url: url,
+                    path: path,
+                    uploadedAt: new Date()
+                };
+
+                await updateDoc(orderRef, {
+                    customerDocuments: [...currentDocs, newDoc]
+                });
+
+                showToast(`✅ ${file.name} hochgeladen`);
+
+                // Refresh the documents display
+                const container = document.getElementById(`customer-docs-${orderId}`);
+                if (container) {
+                    const updatedOrder = { ...orderDoc.data(), customerDocuments: [...currentDocs, newDoc] };
+                    container.innerHTML = renderCustomerDocuments(updatedOrder);
+                }
+            }
+        } catch (error) {
+            logger.error('Upload error:', error);
+            showToast(`❌ Fehler beim Hochladen: ${file.name}`);
+        }
+    }
+
+    // Reset input
+    input.value = '';
+}
+
+// Delete customer document from order
+export async function deleteOrderDocument(orderId, docId) {
+    if (!confirm('Möchten Sie dieses Dokument wirklich löschen?')) return;
+
+    try {
+        const orderRef = doc(db, 'orders', orderId);
+        const orderDoc = await getDoc(orderRef);
+
+        if (orderDoc.exists()) {
+            const currentDocs = orderDoc.data().customerDocuments || [];
+            const docToDelete = currentDocs.find(d => d.id === docId);
+
+            // Delete from Storage
+            if (docToDelete?.path) {
+                try {
+                    const storageRef = ref(storage, docToDelete.path);
+                    await deleteObject(storageRef);
+                } catch (e) {
+                    logger.warn('Could not delete file from storage:', e);
+                }
+            }
+
+            // Remove from Firestore
+            const updatedDocs = currentDocs.filter(d => d.id !== docId);
+            await updateDoc(orderRef, {
+                customerDocuments: updatedDocs
+            });
+
+            showToast('✅ Dokument gelöscht');
+
+            // Refresh the documents display
+            const container = document.getElementById(`customer-docs-${orderId}`);
+            if (container) {
+                const updatedOrder = { ...orderDoc.data(), customerDocuments: updatedDocs };
+                container.innerHTML = renderCustomerDocuments(updatedOrder);
+            }
+        }
+    } catch (error) {
+        logger.error('Delete error:', error);
+        showToast('❌ Fehler beim Löschen');
     }
 }
 
@@ -2778,6 +3288,73 @@ export async function confirmBooking(orderId, datetime) {
     }
 
     try {
+        // ========== VERFÜGBARKEITS-CHECK: Prüfe ob Mentor noch frei ist ==========
+        const orderDoc = await getDoc(doc(db, 'orders', orderId));
+        if (!orderDoc.exists()) {
+            throw new Error('Order nicht gefunden');
+        }
+        const orderData = orderDoc.data();
+        const coachId = orderData.assignedCoachId;
+
+        if (coachId) {
+            // Prüfe ob bereits eine andere Buchung für diesen Zeitslot existiert
+            const appointmentDate = new Date(datetime);
+            const dateKey = appointmentDate.toISOString().split('T')[0];
+            const timeKey = appointmentDate.toTimeString().slice(0, 5);
+
+            const conflictQuery = query(
+                collection(db, 'orders'),
+                where('assignedCoachId', '==', coachId),
+                where('appointmentStatus', '==', 'confirmed')
+            );
+            const conflictSnapshot = await getDocs(conflictQuery);
+
+            let hasConflict = false;
+            conflictSnapshot.forEach(docSnap => {
+                if (docSnap.id !== orderId) { // Ignoriere aktuelle Order
+                    const existingAppointment = docSnap.data().appointment?.datetime;
+                    if (existingAppointment) {
+                        const existingDate = new Date(existingAppointment);
+                        const existingDateKey = existingDate.toISOString().split('T')[0];
+                        const existingTimeKey = existingDate.toTimeString().slice(0, 5);
+
+                        if (existingDateKey === dateKey && existingTimeKey === timeKey) {
+                            hasConflict = true;
+                        }
+                    }
+                }
+            });
+
+            if (hasConflict) {
+                showToast('⚠️ Dieser Termin ist leider nicht mehr verfügbar. Bitte wählen Sie einen anderen.', 5000);
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Bestätigen';
+                }
+                return;
+            }
+        }
+
+        // ========== MEETING-RAUM ERSTELLEN ==========
+        try {
+            const meetingResponse = await fetch('https://us-central1-apex-executive.cloudfunctions.net/createMeetingRoom', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    appointmentDatetime: datetime,
+                    customerName: orderData.customerName,
+                    mentorName: orderData.assignedCoachName
+                })
+            });
+            if (meetingResponse.ok) {
+                logger.log('Meeting room created for order:', orderId);
+            }
+        } catch (meetingError) {
+            logger.warn('Failed to pre-create meeting room:', meetingError);
+            // Nicht kritisch - Meeting kann auch später erstellt werden
+        }
+
         await updateDoc(doc(db, 'orders', orderId), {
             appointment: {
                 datetime: datetime,
@@ -3840,6 +4417,15 @@ export async function assignCoachToOrder(coachId, coachName) {
     }
 
     try {
+        // Hole Order-Details für Benachrichtigung
+        const orderDoc = await getDoc(doc(db, 'orders', currentAssignOrderId));
+        const orderData = orderDoc.exists() ? orderDoc.data() : {};
+
+        // Hole Coach-Email für Benachrichtigung
+        const coachDoc = await getDoc(doc(db, 'coaches', coachId));
+        const coachData = coachDoc.exists() ? coachDoc.data() : {};
+        const coachEmail = coachData.email;
+
         await updateDoc(doc(db, 'orders', currentAssignOrderId), {
             assignedCoachId: coachId,
             assignedCoachName: coachName,
@@ -3848,6 +4434,28 @@ export async function assignCoachToOrder(coachId, coachName) {
 
         showToast(`✅ ${coachName} wurde zugewiesen`);
         closeAssignCoachModal();
+
+        // ========== MENTOR-BENACHRICHTIGUNG ==========
+        if (coachEmail) {
+            try {
+                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyMentorAssignment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        coachEmail: coachEmail,
+                        coachName: coachName,
+                        orderId: currentAssignOrderId,
+                        customerName: orderData.customerName || 'Kunde',
+                        customerEmail: orderData.customerEmail,
+                        productTitle: orderData.items?.[0]?.title || 'Mentoring Session'
+                    })
+                });
+                logger.log('Mentor notification sent to:', coachEmail);
+            } catch (notifyError) {
+                logger.warn('Failed to send mentor notification:', notifyError);
+                // Nicht kritisch - Zuweisung war erfolgreich
+            }
+        }
 
         // Refresh admin orders
         loadAllOrders();
@@ -7878,11 +8486,11 @@ export async function openCvGenerator(orderId) {
 
     const modal = document.createElement('div');
     modal.id = 'cv-generator-modal';
-    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-8 overflow-y-auto';
     modal.innerHTML = `
-        <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl my-8">
+        <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl mb-8 flex flex-col" style="max-height: calc(100vh - 4rem);">
             <!-- Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 bg-gradient-to-br from-brand-gold to-yellow-600 rounded-xl flex items-center justify-center">
                         <i class="fas fa-magic text-white text-xl"></i>
@@ -7896,7 +8504,7 @@ export async function openCvGenerator(orderId) {
             </div>
 
             <!-- Progress Steps -->
-            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex-shrink-0">
                 <div class="flex items-center justify-center gap-4">
                     <div class="flex items-center gap-2" id="step-indicator-1">
                         <div class="w-8 h-8 rounded-full bg-brand-gold text-white flex items-center justify-center font-bold text-sm">1</div>
@@ -7911,12 +8519,12 @@ export async function openCvGenerator(orderId) {
             </div>
 
             <!-- Content -->
-            <div id="cv-generator-content" class="p-6">
+            <div id="cv-generator-content" class="p-6 overflow-y-auto flex-1">
                 ${renderCvGeneratorStep1()}
             </div>
 
             <!-- Footer -->
-            <div class="flex items-center justify-between p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+            <div class="flex items-center justify-between p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex-shrink-0">
                 <button onclick="app.cvGeneratorBack()" id="cv-gen-back-btn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition hidden">
                     <i class="fas fa-arrow-left mr-2"></i>Zurück
                 </button>
@@ -7939,6 +8547,36 @@ export async function openCvGenerator(orderId) {
 
     // Scale previews after modal is rendered
     setTimeout(() => scaleCvPreviews(), 100);
+}
+
+// Custom PDF templates loaded from cv-templates folder
+let customPdfTemplates = [];
+
+// Load custom templates from JSON file
+async function loadCustomTemplates() {
+    try {
+        const response = await fetch('/cv-templates/templates.json');
+        if (response.ok) {
+            customPdfTemplates = await response.json();
+            console.log('Loaded custom templates:', customPdfTemplates);
+        }
+    } catch (error) {
+        console.log('No custom templates found:', error);
+    }
+}
+
+// Initialize custom templates on page load
+loadCustomTemplates();
+
+// Get all templates (custom PDF templates + built-in HTML templates)
+function getAllCvTemplates() {
+    // Custom templates first, then built-in templates
+    const customWithPreview = customPdfTemplates.map(t => ({
+        ...t,
+        isCustomPdf: true,
+        preview: `<img src="${t.previewImage}" alt="${t.name}" class="w-full h-full object-cover object-top" />`
+    }));
+    return [...customWithPreview, ...canvaTemplates];
 }
 
 // Canva-style CV Template definitions with visual previews
@@ -8303,7 +8941,8 @@ const canvaTemplates = [
 
 // Render Step 1: Design Selection with Canva-style previews
 function renderCvGeneratorStep1() {
-    const categories = ['Alle', 'Executive', 'Senior Professional', 'Young Professional', 'Creative', 'Tech & IT'];
+    const allTemplates = getAllCvTemplates();
+    const categories = ['Alle', 'Executive', 'Senior Professional', 'Young Professional', 'Creative', 'Tech & IT', 'Professional'];
 
     return `
         <!-- Category Filter -->
@@ -8321,16 +8960,20 @@ function renderCvGeneratorStep1() {
 
         <!-- Template Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="cv-template-grid">
-            ${canvaTemplates.map(t => `
+            ${allTemplates.map(t => `
                 <div class="template-card cursor-pointer group" data-template="${t.id}" data-category="${t.category}"
                      onclick="window.selectCvTemplate('${t.id}')">
                     <div class="relative border-2 ${cvGeneratorState.template === t.id ? 'border-brand-gold ring-2 ring-brand-gold/20' : 'border-gray-200'}
                                 rounded-xl overflow-hidden transition-all hover:border-brand-gold hover:shadow-lg">
                         <!-- Preview -->
                         <div class="aspect-[210/297] bg-gray-50 relative overflow-hidden">
-                            <div style="position: absolute; top: 0; left: 0; width: 210px; height: 297px; transform-origin: top left; transform: scale(0.76);">
-                                ${t.preview}
-                            </div>
+                            ${t.isCustomPdf ? `
+                                <img src="${t.previewImage}" alt="${t.name}" class="w-full h-full object-cover object-top" />
+                            ` : `
+                                <div style="position: absolute; top: 0; left: 0; width: 210px; height: 297px; transform-origin: top left; transform: scale(0.76);">
+                                    ${t.preview}
+                                </div>
+                            `}
                             <!-- Hover overlay -->
                             <div class="absolute inset-0 bg-brand-gold/90 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <span class="text-brand-dark font-medium text-sm">Auswählen</span>
@@ -8387,11 +9030,18 @@ function renderCvGeneratorStep1() {
 
 // Render selected template info panel
 function renderSelectedTemplateInfo() {
-    const selected = canvaTemplates.find(t => t.id === cvGeneratorState.template) || canvaTemplates[0];
+    const allTemplates = getAllCvTemplates();
+    const selected = allTemplates.find(t => t.id === cvGeneratorState.template) || allTemplates[0];
+
+    // Handle preview differently for custom PDF templates vs built-in templates
+    const previewHtml = selected.isCustomPdf
+        ? `<img src="${selected.previewImage}" alt="${selected.name}" class="w-full h-full object-cover object-top" />`
+        : selected.preview;
+
     return `
         <div class="flex items-start gap-4">
             <div class="w-20 h-28 rounded-lg overflow-hidden border-2 border-brand-gold flex-shrink-0">
-                ${selected.preview}
+                ${previewHtml}
             </div>
             <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1">
@@ -8399,15 +9049,19 @@ function renderSelectedTemplateInfo() {
                     <span class="px-2 py-0.5 bg-brand-gold/20 text-brand-dark text-xs rounded-full">${selected.category}</span>
                 </div>
                 <p class="text-sm text-gray-600 mb-2">${selected.description}</p>
+                ${selected.layout ? `
                 <div class="flex items-center gap-4 text-xs text-gray-500">
                     <span><i class="fas fa-palette mr-1"></i>Layout: ${selected.layout === 'sidebar' ? 'Seitenleiste' : selected.layout === 'two-column' ? 'Zwei Spalten' : 'Eine Spalte'}</span>
+                    ${selected.colors ? `
                     <span class="flex items-center gap-1">
                         <span class="w-3 h-3 rounded-full" style="background-color: ${selected.colors.primary}"></span>
                         <span class="w-3 h-3 rounded-full" style="background-color: ${selected.colors.secondary}"></span>
                     </span>
+                    ` : ''}
                 </div>
+                ` : ''}
                 <div class="flex flex-wrap gap-1 mt-2">
-                    ${selected.tags.map(tag => `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${tag}</span>`).join('')}
+                    ${(selected.tags || []).map(tag => `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${tag}</span>`).join('')}
                 </div>
             </div>
         </div>
@@ -8555,10 +9209,15 @@ function initCvGeneratorHandlers() {
         cvGeneratorState.template = templateId;
 
         // Find the selected template to get its properties
-        const template = canvaTemplates.find(t => t.id === templateId);
+        const allTemplates = getAllCvTemplates();
+        const template = allTemplates.find(t => t.id === templateId);
         if (template) {
             cvGeneratorState.colorScheme = templateId; // Use template id as color scheme reference
-            cvGeneratorState.layout = template.layout;
+            cvGeneratorState.layout = template.layout || 'two-column';
+            cvGeneratorState.isCustomPdf = template.isCustomPdf || false;
+            if (template.pdfFile) {
+                cvGeneratorState.pdfFile = template.pdfFile;
+            }
         }
 
         // Update all template cards UI
@@ -8750,6 +9409,12 @@ export async function startCvGeneration(projectId, orderId) {
         }
     }, 800);
 
+    // Check if this is a custom PDF template
+    const allTemplates = getAllCvTemplates();
+    const selectedTemplateInfo = allTemplates.find(t => t.id === template);
+    const isCustomPdf = selectedTemplateInfo?.isCustomPdf || false;
+    const pdfFile = selectedTemplateInfo?.pdfFile || null;
+
     try {
         // Call Cloud Function to generate CV with all design options
         const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/generateCvContent', {
@@ -8765,7 +9430,10 @@ export async function startCvGeneration(projectId, orderId) {
                 includeCover: includeCover,
                 includePhoto: includePhoto,
                 tone: tone,
-                focusAreas: focusAreas
+                focusAreas: focusAreas,
+                // Custom PDF template info
+                isCustomPdf: isCustomPdf,
+                pdfFile: pdfFile
             })
         });
 
@@ -8868,13 +9536,7 @@ export async function openCvPreview(orderId) {
                         <span class="text-sm text-gray-500">Template:</span>
                         <select id="preview-template-select" onchange="app.changeCvTemplate('${project.cvProjectId}', '${orderId}')"
                                 class="text-sm border border-gray-200 rounded px-2 py-1">
-                            <option value="schwarz-beige-modern" ${template === 'schwarz-beige-modern' ? 'selected' : ''}>Schwarz Beige Modern (Canva)</option>
-                            <option value="green-yellow-modern" ${template === 'green-yellow-modern' ? 'selected' : ''}>Green Yellow Modern (Canva)</option>
-                            <option value="minimalist" ${template === 'minimalist' ? 'selected' : ''}>Minimalist</option>
-                            <option value="creative" ${template === 'creative' ? 'selected' : ''}>Creative</option>
-                            <option value="corporate" ${template === 'corporate' ? 'selected' : ''}>Corporate</option>
-                            <option value="executive" ${template === 'executive' ? 'selected' : ''}>Executive</option>
-                            <option value="brand" ${template === 'brand' ? 'selected' : ''}>Personal Brand</option>
+                            ${buildTemplateOptions(template)}
                         </select>
                     </div>
                     <div class="flex items-center gap-3">
@@ -8902,8 +9564,41 @@ export async function openCvPreview(orderId) {
     }
 }
 
+// Build template options for dropdown
+function buildTemplateOptions(selectedTemplate) {
+    const allTemplates = getAllCvTemplates();
+    return allTemplates.map(t => `
+        <option value="${t.id}" ${selectedTemplate === t.id ? 'selected' : ''}>
+            ${t.name}${t.isCustomPdf ? ' (PDF)' : ''}
+        </option>
+    `).join('');
+}
+
 // Render CV template HTML
 function renderCvTemplate(cv, template) {
+    // Check if this is a custom PDF template
+    const allTemplates = getAllCvTemplates();
+    const customTemplate = allTemplates.find(t => t.id === template && t.isCustomPdf);
+
+    if (customTemplate) {
+        // For custom PDF templates, show an embedded PDF viewer or preview image
+        return `
+            <div class="cv-template cv-template-custom-pdf p-8 text-center">
+                <div class="mb-6">
+                    <img src="${customTemplate.previewImage}" alt="${customTemplate.name}"
+                         class="max-w-full h-auto mx-auto shadow-lg rounded-lg" style="max-height: 800px;" />
+                </div>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Dies ist ein PDF-Template. Die generierten Inhalte werden beim PDF-Export in dieses Layout eingefügt.
+                    <br><br>
+                    <a href="${customTemplate.pdfFile}" target="_blank" class="text-blue-600 hover:underline">
+                        <i class="fas fa-external-link-alt mr-1"></i>Original-PDF öffnen
+                    </a>
+                </div>
+            </div>
+        `;
+    }
     const personal = cv.personal || {};
     const summary = cv.summary || '';
     const experience = cv.experience || [];
@@ -9378,35 +10073,58 @@ export async function initCvQuestionnaire() {
 
     if (!projectId) return false;
 
+    // ========== VALIDIERUNG: ProjectId Format prüfen ==========
+    // Verhindert dass zufällige IDs probiert werden
+    if (!projectId.match(/^[a-zA-Z0-9]{20,}$/)) {
+        showToast('❌ Ungültiger Fragebogen-Link');
+        window.location.href = window.location.origin;
+        return false;
+    }
+
     cvQuestionnaireProjectId = projectId;
 
     try {
         // Load existing project data
         const projectDoc = await getDoc(doc(db, 'cvProjects', projectId));
 
-        if (projectDoc.exists()) {
-            const data = projectDoc.data();
+        // ========== VALIDIERUNG: Projekt muss existieren ==========
+        if (!projectDoc.exists()) {
+            showToast('❌ Fragebogen nicht gefunden oder abgelaufen');
+            window.location.href = window.location.origin;
+            return false;
+        }
 
-            // Pre-fill form with existing data
-            if (data.questionnaire) {
-                cvQuestionnaireData = { ...cvQuestionnaireData, ...data.questionnaire };
-            }
+        const data = projectDoc.data();
 
-            // Pre-fill email and name for both modes
-            if (data.customerEmail) {
-                smartUploadData.email = data.customerEmail;
-                const emailInput = document.getElementById('cv-q-email');
-                const smartEmailInput = document.getElementById('cv-q-smart-email');
-                if (emailInput) emailInput.value = data.customerEmail;
-                if (smartEmailInput) smartEmailInput.value = data.customerEmail;
-            }
-            if (data.customerName) {
-                smartUploadData.name = data.customerName;
-                const nameInput = document.getElementById('cv-q-fullname');
-                const smartNameInput = document.getElementById('cv-q-smart-name');
-                if (nameInput) nameInput.value = data.customerName;
-                if (smartNameInput) smartNameInput.value = data.customerName;
-            }
+        // ========== VALIDIERUNG: Status prüfen ==========
+        if (data.status === 'delivered' || data.status === 'ready') {
+            showToast('ℹ️ Dieser Fragebogen wurde bereits ausgefüllt');
+            // Weiterleiten zur Startseite nach 2 Sekunden
+            setTimeout(() => {
+                window.location.href = window.location.origin;
+            }, 2000);
+            return false;
+        }
+
+        // Pre-fill form with existing data
+        if (data.questionnaire) {
+            cvQuestionnaireData = { ...cvQuestionnaireData, ...data.questionnaire };
+        }
+
+        // Pre-fill email and name for both modes
+        if (data.customerEmail) {
+            smartUploadData.email = data.customerEmail;
+            const emailInput = document.getElementById('cv-q-email');
+            const smartEmailInput = document.getElementById('cv-q-smart-email');
+            if (emailInput) emailInput.value = data.customerEmail;
+            if (smartEmailInput) smartEmailInput.value = data.customerEmail;
+        }
+        if (data.customerName) {
+            smartUploadData.name = data.customerName;
+            const nameInput = document.getElementById('cv-q-fullname');
+            const smartNameInput = document.getElementById('cv-q-smart-name');
+            if (nameInput) nameInput.value = data.customerName;
+            if (smartNameInput) smartNameInput.value = data.customerName;
         }
 
         // Show questionnaire view with mode selection

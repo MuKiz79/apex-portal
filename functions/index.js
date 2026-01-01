@@ -75,6 +75,24 @@ exports.createCheckoutSession = onRequest({
             quantity: 1
         }));
 
+        // ========== METADATA-LIMIT FIX: Stripe hat 500 Zeichen pro Feld ==========
+        // Wir speichern nur die essentiellen Daten (id, title gekürzt, price)
+        const compactItems = items.map(item => ({
+            id: item.id || item.title?.substring(0, 20),
+            t: item.title?.substring(0, 50), // Titel gekürzt
+            p: item.price
+        }));
+
+        // Falls immer noch zu lang, nur IDs und Preise speichern
+        let itemsMetadata = JSON.stringify(compactItems);
+        if (itemsMetadata.length > 450) {
+            const minimalItems = items.map(item => ({
+                t: item.title?.substring(0, 30),
+                p: item.price
+            }));
+            itemsMetadata = JSON.stringify(minimalItems);
+        }
+
         // Create checkout session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card', 'paypal'],
@@ -86,7 +104,8 @@ exports.createCheckoutSession = onRequest({
             cancel_url: `${req.headers.origin || 'https://mukiz79.github.io/apex-portal'}?payment=cancelled`,
             metadata: {
                 userId: userId || '',
-                items: JSON.stringify(items),
+                items: itemsMetadata,
+                itemsFull: JSON.stringify(items).substring(0, 450), // Backup der vollen Daten (gekürzt)
                 createAccount: !userId ? 'true' : 'false' // Flag für Account-Erstellung
             },
             billing_address_collection: 'required',
@@ -143,6 +162,17 @@ exports.stripeWebhook = onRequest({
         const session = event.data.object;
 
         try {
+            // ========== DUPLIKAT-CHECK: Verhindere doppelte Order-Erstellung bei Webhook-Retries ==========
+            const existingOrderQuery = await admin.firestore().collection('orders')
+                .where('stripeSessionId', '==', session.id)
+                .limit(1)
+                .get();
+
+            if (!existingOrderQuery.empty) {
+                console.log('⚠️ Order bereits vorhanden für Session:', session.id, '- Überspringe Duplikat');
+                return res.status(200).json({ received: true, duplicate: true });
+            }
+
             let userId = session.client_reference_id;
             const customerEmail = session.customer_email;
             const customerName = session.customer_details?.name || 'APEX User';
@@ -241,11 +271,32 @@ exports.stripeWebhook = onRequest({
 
             // Order in Firestore speichern
             // WICHTIG: Firestore akzeptiert keine undefined-Werte, also filtern wir sie raus
+
+            // ========== ITEMS PARSING: Unterstützt sowohl kompakte als auch volle Items ==========
+            let parsedItems = [];
+            try {
+                const rawItems = JSON.parse(session.metadata.items || '[]');
+                // Prüfe ob kompaktes Format (t statt title)
+                parsedItems = rawItems.map(item => ({
+                    id: item.id || item.t?.substring(0, 20),
+                    title: item.title || item.t, // Unterstützt beide Formate
+                    price: item.price || item.p
+                }));
+            } catch (parseError) {
+                console.error('Error parsing items metadata:', parseError);
+                // Fallback: Versuche itemsFull
+                try {
+                    parsedItems = JSON.parse(session.metadata.itemsFull || '[]');
+                } catch (e) {
+                    parsedItems = [{ title: 'APEX Bestellung', price: session.amount_total / 100 }];
+                }
+            }
+
             const orderData = {
                 userId: userId || `guest_${session.id}`,
                 customerEmail: customerEmail || null,
                 customerName: customerName || 'Kunde',
-                items: JSON.parse(session.metadata.items || '[]'),
+                items: parsedItems,
                 total: session.amount_total / 100,
                 currency: session.currency || 'eur',
                 paymentStatus: 'paid',
@@ -993,6 +1044,122 @@ exports.setEmailVerified = onRequest({
     }
 });
 
+// ========== NOTIFY MENTOR ON ASSIGNMENT ==========
+exports.notifyMentorAssignment = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { coachEmail, coachName, orderId, customerName, customerEmail, productTitle } = req.body;
+
+        if (!coachEmail || !orderId) {
+            return res.status(400).json({ error: 'coachEmail and orderId required' });
+        }
+
+        // Create transporter
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 587,
+            secure: false,
+            auth: {
+                user: smtpUser.value(),
+                pass: smtpPass.value()
+            }
+        });
+
+        // Email content
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Neue Session zugewiesen - APEX Executive</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
+        <tr>
+            <td style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 40px 30px;">
+                            <h1 style="color: #C9B99A; font-size: 24px; margin: 0; font-family: Georgia, serif;">Neue Session zugewiesen</h1>
+                            <p style="color: #ffffff; font-size: 14px; margin: 10px 0 0;">APEX Executive Mentoring</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333333; font-size: 16px; margin: 0 0 20px;">
+                                Hallo ${coachName || 'Mentor'},
+                            </p>
+                            <p style="color: #333333; font-size: 16px; margin: 0 0 20px;">
+                                Ihnen wurde eine neue Mentoring-Session zugewiesen:
+                            </p>
+                            <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                                <p style="margin: 0 0 10px;"><strong>Kunde:</strong> ${customerName || 'Nicht angegeben'}</p>
+                                <p style="margin: 0 0 10px;"><strong>Email:</strong> ${customerEmail || 'Nicht angegeben'}</p>
+                                <p style="margin: 0;"><strong>Produkt:</strong> ${productTitle || 'Mentoring Session'}</p>
+                            </div>
+                            <p style="color: #333333; font-size: 16px; margin: 20px 0;">
+                                Bitte loggen Sie sich in Ihr Mentor-Dashboard ein, um Ihre Verfügbarkeit zu aktualisieren und die Terminplanung zu starten.
+                            </p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://apex-executive.de/#dashboard" style="background: #C9B99A; color: #1a1a2e; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Zum Dashboard</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
+                            <p style="color: #999999; font-size: 12px; margin: 0;">
+                                © ${new Date().getFullYear()} APEX Executive Career Services
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+        `;
+
+        // Send email
+        await transporter.sendMail({
+            from: `"APEX Executive" <${smtpUser.value()}>`,
+            to: coachEmail,
+            subject: `Neue Mentoring-Session zugewiesen - ${customerName || 'Kunde'}`,
+            html: emailHtml
+        });
+
+        console.log(`Mentor assignment notification sent to ${coachEmail} for order ${orderId}`);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Notification sent successfully'
+        });
+
+    } catch (error) {
+        console.error('Error sending mentor notification:', error);
+        return res.status(500).json({
+            error: 'Failed to send notification',
+            message: error.message
+        });
+    }
+});
+
 // ========== GET ORDER BY SESSION ID ==========
 exports.getOrderBySessionId = onCall(async (request) => {
     // Check authentication
@@ -1383,7 +1550,10 @@ exports.generateCvContent = onRequest({
             includeCover = false,
             includePhoto = false,
             tone = 'professional',
-            focusAreas = []
+            focusAreas = [],
+            // Custom PDF template info
+            isCustomPdf = false,
+            pdfFile = null
         } = req.body;
 
         if (!projectId) {
@@ -1694,6 +1864,9 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (keine Markdown-Codeblöc
                 includePhoto: includePhoto,
                 tone: tone,
                 focusAreas: focusAreas,
+                // Custom PDF template info
+                isCustomPdf: isCustomPdf,
+                pdfFile: pdfFile,
                 // Generated content
                 data: generatedCvData,
                 generatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1855,13 +2028,22 @@ exports.generateCvDocument = onRequest({
             contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             fileExtension = 'docx';
         } else if (format === 'pdf') {
-            // Use Pdfme for template-based PDF generation (new method)
-            // Falls back to PDFKit for unsupported templates
-            const pdfmeTemplates = ['schwarz-beige-modern', 'green-yellow-modern', 'minimalist', 'corporate'];
-            if (pdfmeTemplates.includes(templateStyle)) {
-                documentBuffer = await generatePdfWithPdfme(cvData, templateStyle);
+            // Check if this is a custom PDF template
+            const isCustomPdf = projectData.generatedCv?.isCustomPdf || false;
+            const pdfFile = projectData.generatedCv?.pdfFile || null;
+
+            if (isCustomPdf && pdfFile) {
+                // Use custom PDF template with pdfme
+                documentBuffer = await generatePdfWithCustomTemplate(cvData, templateStyle, pdfFile);
             } else {
-                documentBuffer = await generatePdfDocument(cvData, templateStyle, projectData.generatedCv);
+                // Use Pdfme for template-based PDF generation (new method)
+                // Falls back to PDFKit for unsupported templates
+                const pdfmeTemplates = ['schwarz-beige-modern', 'green-yellow-modern', 'minimalist', 'corporate'];
+                if (pdfmeTemplates.includes(templateStyle)) {
+                    documentBuffer = await generatePdfWithPdfme(cvData, templateStyle);
+                } else {
+                    documentBuffer = await generatePdfDocument(cvData, templateStyle, projectData.generatedCv);
+                }
             }
             contentType = 'application/pdf';
             fileExtension = 'pdf';
@@ -1882,19 +2064,17 @@ exports.generateCvDocument = onRequest({
                     templateStyle: templateStyle,
                     generatedAt: new Date().toISOString()
                 }
-            }
+            },
+            public: true  // Make file publicly accessible
         });
 
-        // Get signed URL (valid for 7 days)
-        const [signedUrl] = await file.getSignedUrl({
-            action: 'read',
-            expires: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        // Use public URL instead of signed URL (avoids IAM permission issues)
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
         // Update project with export info
         await projectRef.update({
             [`exportedDocuments.${format}`]: {
-                url: signedUrl,
+                url: publicUrl,
                 fileName: fileName,
                 templateStyle: templateStyle,
                 exportedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -1906,7 +2086,7 @@ exports.generateCvDocument = onRequest({
 
         return res.status(200).json({
             success: true,
-            downloadUrl: signedUrl,
+            downloadUrl: publicUrl,
             fileName: fileName,
             format: format
         });
@@ -3712,4 +3892,407 @@ async function generateGreenYellowModernTemplate(cvData, generatedCvOptions) {
     });
 
     return await docx.Packer.toBuffer(doc);
+}
+
+// ========== CUSTOM PDF TEMPLATE GENERATOR ==========
+// Generates PDF using a custom template with pdfme
+async function generatePdfWithCustomTemplate(cvData, templateStyle, pdfFilePath) {
+    console.log(`Generating PDF with custom template: ${templateStyle}, PDF: ${pdfFilePath}`);
+
+    const personal = cvData.personal || {};
+    const experience = cvData.experience || [];
+    const education = cvData.education || [];
+    const skills = cvData.skills || {};
+    const summary = cvData.summary || '';
+
+    // Load the base PDF from hosting URL
+    const baseUrl = 'https://apex-executive.web.app';
+    const pdfUrl = `${baseUrl}${pdfFilePath}`;
+
+    console.log(`Loading PDF from: ${pdfUrl}`);
+
+    // Fetch the base PDF
+    let basePdfBuffer;
+    try {
+        const pdfResponse = await fetch(pdfUrl);
+        if (!pdfResponse.ok) {
+            throw new Error(`Failed to load PDF template: ${pdfResponse.status}`);
+        }
+        basePdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+    } catch (error) {
+        console.error('Error loading base PDF:', error);
+        // Fallback to default template
+        return generatePdfWithPdfme(cvData, 'corporate');
+    }
+
+    // Convert to base64 for pdfme
+    const basePdfBase64 = `data:application/pdf;base64,${basePdfBuffer.toString('base64')}`;
+
+    // Template schema for "Lebenslauf Template 1" - matching the visual layout
+    // These positions were determined by analyzing the PDF structure
+    const template = {
+        basePdf: basePdfBase64,
+        schemas: [
+            [
+                // Name (First Name)
+                {
+                    name: 'firstName',
+                    type: 'text',
+                    position: { x: 22, y: 92 },
+                    width: 155,
+                    height: 30,
+                    fontSize: 44,
+                    fontColor: '#1a3a5c'
+                },
+                // Name (Last Name)
+                {
+                    name: 'lastName',
+                    type: 'text',
+                    position: { x: 22, y: 122 },
+                    width: 155,
+                    height: 30,
+                    fontSize: 44,
+                    fontColor: '#1a3a5c'
+                },
+                // Job Title
+                {
+                    name: 'jobTitle',
+                    type: 'text',
+                    position: { x: 22, y: 158 },
+                    width: 155,
+                    height: 12,
+                    fontSize: 13,
+                    fontColor: '#d4912a'
+                },
+                // Profile Section Title
+                {
+                    name: 'profileTitle',
+                    type: 'text',
+                    position: { x: 22, y: 185 },
+                    width: 80,
+                    height: 14,
+                    fontSize: 18,
+                    fontColor: '#1a3a5c'
+                },
+                // Profile Text
+                {
+                    name: 'profileText',
+                    type: 'text',
+                    position: { x: 22, y: 205 },
+                    width: 160,
+                    height: 55,
+                    fontSize: 9,
+                    fontColor: '#333333',
+                    lineHeight: 1.5
+                },
+                // Languages Section Title
+                {
+                    name: 'languagesTitle',
+                    type: 'text',
+                    position: { x: 22, y: 270 },
+                    width: 80,
+                    height: 14,
+                    fontSize: 18,
+                    fontColor: '#1a3a5c'
+                },
+                // Languages
+                {
+                    name: 'languages',
+                    type: 'text',
+                    position: { x: 22, y: 290 },
+                    width: 160,
+                    height: 15,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Skills Section Title
+                {
+                    name: 'skillsTitle',
+                    type: 'text',
+                    position: { x: 22, y: 315 },
+                    width: 80,
+                    height: 14,
+                    fontSize: 18,
+                    fontColor: '#1a3a5c'
+                },
+                // Skills
+                {
+                    name: 'skills',
+                    type: 'text',
+                    position: { x: 22, y: 335 },
+                    width: 160,
+                    height: 55,
+                    fontSize: 9,
+                    fontColor: '#333333',
+                    lineHeight: 1.5
+                },
+                // Contact Section Title
+                {
+                    name: 'contactTitle',
+                    type: 'text',
+                    position: { x: 22, y: 400 },
+                    width: 80,
+                    height: 14,
+                    fontSize: 18,
+                    fontColor: '#1a3a5c'
+                },
+                // Phone
+                {
+                    name: 'phone',
+                    type: 'text',
+                    position: { x: 32, y: 425 },
+                    width: 130,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Email
+                {
+                    name: 'email',
+                    type: 'text',
+                    position: { x: 32, y: 440 },
+                    width: 130,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Address
+                {
+                    name: 'address',
+                    type: 'text',
+                    position: { x: 32, y: 470 },
+                    width: 130,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Website
+                {
+                    name: 'website',
+                    type: 'text',
+                    position: { x: 32, y: 485 },
+                    width: 130,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Education Section Title
+                {
+                    name: 'educationTitle',
+                    type: 'text',
+                    position: { x: 215, y: 185 },
+                    width: 170,
+                    height: 14,
+                    fontSize: 18,
+                    fontColor: '#1a3a5c'
+                },
+                // Education Institution
+                {
+                    name: 'eduInstitution',
+                    type: 'text',
+                    position: { x: 215, y: 215 },
+                    width: 170,
+                    height: 12,
+                    fontSize: 11,
+                    fontColor: '#333333'
+                },
+                // Education Degree
+                {
+                    name: 'eduDegree',
+                    type: 'text',
+                    position: { x: 215, y: 228 },
+                    width: 170,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Education Period
+                {
+                    name: 'eduPeriod',
+                    type: 'text',
+                    position: { x: 215, y: 240 },
+                    width: 170,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#d4912a'
+                },
+                // Education Details
+                {
+                    name: 'eduDetails',
+                    type: 'text',
+                    position: { x: 215, y: 255 },
+                    width: 170,
+                    height: 40,
+                    fontSize: 9,
+                    fontColor: '#333333',
+                    lineHeight: 1.4
+                },
+                // Career Section Title
+                {
+                    name: 'careerTitle',
+                    type: 'text',
+                    position: { x: 215, y: 305 },
+                    width: 170,
+                    height: 14,
+                    fontSize: 18,
+                    fontColor: '#1a3a5c'
+                },
+                // Job 1 Title
+                {
+                    name: 'job1Role',
+                    type: 'text',
+                    position: { x: 215, y: 330 },
+                    width: 170,
+                    height: 12,
+                    fontSize: 11,
+                    fontColor: '#333333'
+                },
+                // Job 1 Company
+                {
+                    name: 'job1Company',
+                    type: 'text',
+                    position: { x: 215, y: 343 },
+                    width: 170,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Job 1 Period
+                {
+                    name: 'job1Period',
+                    type: 'text',
+                    position: { x: 215, y: 355 },
+                    width: 170,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#d4912a'
+                },
+                // Job 1 Details
+                {
+                    name: 'job1Details',
+                    type: 'text',
+                    position: { x: 215, y: 370 },
+                    width: 170,
+                    height: 50,
+                    fontSize: 9,
+                    fontColor: '#333333',
+                    lineHeight: 1.4
+                },
+                // Job 2 Title
+                {
+                    name: 'job2Role',
+                    type: 'text',
+                    position: { x: 215, y: 430 },
+                    width: 170,
+                    height: 12,
+                    fontSize: 11,
+                    fontColor: '#333333'
+                },
+                // Job 2 Company
+                {
+                    name: 'job2Company',
+                    type: 'text',
+                    position: { x: 215, y: 443 },
+                    width: 170,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#333333'
+                },
+                // Job 2 Period
+                {
+                    name: 'job2Period',
+                    type: 'text',
+                    position: { x: 215, y: 455 },
+                    width: 170,
+                    height: 10,
+                    fontSize: 9,
+                    fontColor: '#d4912a'
+                },
+                // Job 2 Details
+                {
+                    name: 'job2Details',
+                    type: 'text',
+                    position: { x: 215, y: 470 },
+                    width: 170,
+                    height: 50,
+                    fontSize: 9,
+                    fontColor: '#333333',
+                    lineHeight: 1.4
+                }
+            ]
+        ]
+    };
+
+    // Extract name parts
+    const nameParts = (personal.fullName || 'Vorname Nachname').split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Format skills
+    const allSkills = [...(skills.technical || []), ...(skills.soft || [])];
+    const skillsText = allSkills.length > 0
+        ? '• ' + allSkills.slice(0, 10).join(' | ')
+        : '';
+
+    // Format languages
+    const languagesText = (skills.languages || [])
+        .map(l => l.language)
+        .join(' | ');
+
+    // Format job details with bullet points
+    const formatAchievements = (achievements) => {
+        if (!achievements || achievements.length === 0) return '';
+        return achievements.slice(0, 4).map(a => '• ' + a).join('\n');
+    };
+
+    // Create input values matching the schema
+    const inputs = [{
+        firstName: firstName,
+        lastName: lastName,
+        jobTitle: personal.title || '',
+        profileTitle: 'Profil',
+        profileText: summary || '',
+        languagesTitle: 'Sprachen',
+        languages: languagesText || 'Deutsch | Englisch',
+        skillsTitle: 'Fähigkeiten',
+        skills: skillsText || '',
+        contactTitle: 'Kontakt',
+        phone: personal.phone || '',
+        email: personal.email || '',
+        address: personal.location || '',
+        website: personal.website || personal.linkedin || '',
+        educationTitle: 'Akademische Geschichte',
+        eduInstitution: education[0]?.institution || '',
+        eduDegree: `${education[0]?.degree || ''} ${education[0]?.field ? '- ' + education[0].field : ''}`.trim(),
+        eduPeriod: education[0]?.period || '',
+        eduDetails: education[0]?.highlights || '',
+        careerTitle: 'Berufliche Karriere',
+        job1Role: experience[0]?.role || '',
+        job1Company: experience[0]?.company || '',
+        job1Period: experience[0]?.period || '',
+        job1Details: formatAchievements(experience[0]?.achievements),
+        job2Role: experience[1]?.role || '',
+        job2Company: experience[1]?.company || '',
+        job2Period: experience[1]?.period || '',
+        job2Details: formatAchievements(experience[1]?.achievements)
+    }];
+
+    console.log('Generating PDF with inputs:', JSON.stringify(inputs[0], null, 2));
+
+    // Generate PDF with pdfme
+    const plugins = { text };
+
+    try {
+        const pdfBuffer = await generate({
+            template,
+            inputs,
+            plugins
+        });
+
+        return Buffer.from(pdfBuffer);
+    } catch (error) {
+        console.error('Error generating PDF with pdfme:', error);
+        // Fallback to default template
+        return generatePdfWithPdfme(cvData, 'corporate');
+    }
 }

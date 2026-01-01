@@ -4739,6 +4739,14 @@
             loadDeliveredDocuments: () => App.loadDeliveredDocuments(window.app.state),
             loadUserUploads: () => App.loadUserUploads(window.app.state),
 
+            // Order documents (customer upload)
+            toggleOrderDocuments: (orderId) => App.toggleOrderDocuments(orderId),
+            uploadOrderDocument: (orderId, input) => App.uploadOrderDocument(orderId, input),
+            deleteOrderDocument: (orderId, docId) => App.deleteOrderDocument(orderId, docId),
+
+            // CV questionnaire view for customers
+            toggleCvQuestionnaireView: (orderId) => App.toggleCvQuestionnaireView(orderId),
+
             // CV Generator (two-step wizard)
             openCvGenerator: (orderId) => App.openCvGenerator(orderId),
             cvGeneratorNext: () => App.cvGeneratorNext(),

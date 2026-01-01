@@ -1,0 +1,12 @@
+[
+  {
+    "id": "lebenslauf-template-1",
+    "name": "Lebenslauf Template 1",
+    "category": "Creative",
+    "description": "Modernes kreatives Design mit Foto-Header und zweispaltiger Struktur",
+    "tags": ["Kreativ", "Modern", "Foto", "PDF"],
+    "previewImage": "/cv-templates/template1-preview.png",
+    "pdfFile": "/cv-templates/template1.pdf",
+    "schemaFile": "/cv-templates/template1-schema.json"
+  }
+]

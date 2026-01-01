@@ -32,28 +32,26 @@ service cloud.firestore {
 
     // Orders Collection - Users lesen eigene, Mentoren lesen zugewiesene, Admins lesen/schreiben alle
     match /orders/{orderId} {
-      // Lesen: User kann eigene Orders lesen, Mentor kann zugewiesene lesen, Admin kann alle lesen
+      // Lesen (get + list): User kann eigene Orders lesen, Mentor kann zugewiesene lesen, Admin kann alle lesen
+      // WICHTIG: Bei list-Queries prüft Firestore ob ALLE zurückgegebenen Dokumente die Regel erfüllen
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid ||
         resource.data.customerEmail == request.auth.token.email ||
         resource.data.assignedCoachId == request.auth.uid ||
         isAdmin()
       );
-      // Für Queries: User muss nach eigener userId oder customerEmail filtern
-      allow list: if isSignedIn() && (
-        request.query.limit <= 100 &&
-        (
-          request.auth.uid != null ||
-          isAdmin()
-        )
-      );
       allow create: if false; // Nur Cloud Functions
       // Update: Admin kann alles ändern, User kann nur Termine bestätigen/ablehnen
+      // Mentor (assignedCoachId) kann auch appointment-Felder ändern
       allow update: if isAdmin() || (
         isSignedIn() &&
-        resource.data.userId == request.auth.uid &&
-        // Nur appointment-bezogene Felder dürfen geändert werden
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['appointment', 'appointmentStatus', 'appointmentDeclineReason', 'appointmentDeclinedAt'])
+        (resource.data.userId == request.auth.uid || resource.data.assignedCoachId == request.auth.uid) &&
+        // Erlaubte Felder für Kunden/Mentoren
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'appointment', 'appointmentStatus', 'appointmentDeclineReason', 'appointmentDeclinedAt',
+          'customerProposals', 'customerProposalNote', 'customerProposalSubmittedAt',
+          'customerDocuments'  // Kunden können eigene Dokumente hochladen
+        ])
       );
       allow delete: if false;
     }
