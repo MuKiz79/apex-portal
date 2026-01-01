@@ -6763,28 +6763,43 @@ function renderAdminOrders(orders) {
                                     </p>
                                     ${!order.cvProjectId ? `
                                         <span class="text-xs text-amber-600 font-medium">Noch nicht gesendet</span>
-                                    ` : ''}
+                                    ` : `
+                                        <span class="text-xs ${order.cvStatus === 'data_received' || order.cvStatus === 'ready' || order.cvStatus === 'delivered' ? 'text-green-600 bg-green-50' : 'text-indigo-600 bg-indigo-50'} px-2 py-0.5 rounded font-medium">
+                                            ${order.cvStatus === 'data_received' ? 'Daten erhalten' :
+                                              order.cvStatus === 'generating' ? 'In Erstellung' :
+                                              order.cvStatus === 'ready' ? 'CV fertig' :
+                                              order.cvStatus === 'delivered' ? 'Zugestellt' : 'Wartet auf Kunde'}
+                                        </span>
+                                    `}
                                 </div>
                                 ${order.cvProjectId ? `
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-check text-indigo-600"></i>
-                                            </div>
-                                            <div>
-                                                <p class="font-medium text-brand-dark">Fragebogen gesendet</p>
-                                                <p class="text-xs text-gray-500">
-                                                    Status: ${order.cvStatus === 'data_received' ? 'Daten erhalten' :
-                                                             order.cvStatus === 'ready' ? 'CV fertig' :
-                                                             order.cvStatus === 'delivered' ? 'Zugestellt' : 'Wartet auf Kunde'}
-                                                </p>
+                                    ${(order.cvStatus === 'data_received' || order.cvStatus === 'generating' || order.cvStatus === 'ready' || order.cvStatus === 'delivered') && order.questionnaire ? `
+                                        <!-- Ausgefüllter Fragebogen -->
+                                        <div class="mb-3">
+                                            <button onclick="app.toggleAdminQuestionnaireView('${order.id}')"
+                                                    class="w-full flex items-center justify-between text-left p-2 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition">
+                                                <span class="text-sm font-medium text-green-700">
+                                                    <i class="fas fa-check-circle mr-2"></i>Fragebogen ausgefüllt - Daten ansehen
+                                                </span>
+                                                <i class="fas fa-chevron-down text-green-500 transition-transform" id="admin-cv-q-toggle-${order.id}"></i>
+                                            </button>
+                                            <div id="admin-cv-questionnaire-view-${order.id}" class="hidden mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200 max-h-96 overflow-y-auto">
+                                                ${renderAdminQuestionnaireData(order.questionnaire)}
                                             </div>
                                         </div>
-                                        <a href="?questionnaire=${order.cvProjectId}" target="_blank"
-                                           class="text-sm text-indigo-600 hover:text-indigo-800 underline">
-                                            Ansehen
-                                        </a>
-                                    </div>
+                                    ` : `
+                                        <!-- Fragebogen gesendet, warte auf Kunde -->
+                                        <div class="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-hourglass-half text-indigo-500 animate-pulse"></i>
+                                                <span class="text-sm text-indigo-700">Wartet auf Kundenantwort</span>
+                                            </div>
+                                            <a href="?questionnaire=${order.cvProjectId}" target="_blank"
+                                               class="text-xs text-indigo-600 hover:text-indigo-800 underline">
+                                                Link kopieren
+                                            </a>
+                                        </div>
+                                    `}
                                 ` : `
                                     <button onclick="app.sendCvQuestionnaireFromOrder('${order.id}', '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')"
                                             class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
@@ -8380,6 +8395,164 @@ export async function sendCvQuestionnaireFromOrder(orderId, customerEmail, custo
         logger.error('Error sending questionnaire:', e);
         showToast('Fehler: ' + e.message);
     }
+}
+
+// Toggle admin questionnaire view
+export function toggleAdminQuestionnaireView(orderId) {
+    const container = document.getElementById(`admin-cv-questionnaire-view-${orderId}`);
+    const toggleIcon = document.getElementById(`admin-cv-q-toggle-${orderId}`);
+
+    if (container && toggleIcon) {
+        const isHidden = container.classList.contains('hidden');
+        if (isHidden) {
+            container.classList.remove('hidden');
+            toggleIcon.classList.add('rotate-180');
+        } else {
+            container.classList.add('hidden');
+            toggleIcon.classList.remove('rotate-180');
+        }
+    }
+}
+
+// Render questionnaire data for admin view (more detailed than customer view)
+function renderAdminQuestionnaireData(questionnaire) {
+    if (!questionnaire) return '<p class="text-gray-400 italic text-sm">Keine Daten vorhanden</p>';
+
+    let html = '<div class="space-y-4 text-sm">';
+
+    // Personal Info
+    if (questionnaire.personal) {
+        const p = questionnaire.personal;
+        html += `
+            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-user text-indigo-500"></i>Persönliche Daten
+                </p>
+                <div class="grid grid-cols-2 gap-2 text-gray-600">
+                    ${p.fullName ? `<p><span class="text-gray-400 text-xs">Name:</span><br><strong>${sanitizeHTML(p.fullName)}</strong></p>` : ''}
+                    ${p.email ? `<p><span class="text-gray-400 text-xs">E-Mail:</span><br><strong>${sanitizeHTML(p.email)}</strong></p>` : ''}
+                    ${p.phone ? `<p><span class="text-gray-400 text-xs">Telefon:</span><br><strong>${sanitizeHTML(p.phone)}</strong></p>` : ''}
+                    ${p.location ? `<p><span class="text-gray-400 text-xs">Ort:</span><br><strong>${sanitizeHTML(p.location)}</strong></p>` : ''}
+                    ${p.birthDate ? `<p><span class="text-gray-400 text-xs">Geburtsdatum:</span><br><strong>${sanitizeHTML(p.birthDate)}</strong></p>` : ''}
+                    ${p.nationality ? `<p><span class="text-gray-400 text-xs">Nationalität:</span><br><strong>${sanitizeHTML(p.nationality)}</strong></p>` : ''}
+                    ${p.targetRole ? `<p class="col-span-2"><span class="text-gray-400 text-xs">Zielposition:</span><br><strong>${sanitizeHTML(p.targetRole)}</strong></p>` : ''}
+                    ${p.linkedin ? `<p class="col-span-2"><span class="text-gray-400 text-xs">LinkedIn:</span><br><a href="${sanitizeHTML(p.linkedin)}" target="_blank" class="text-indigo-600 underline">${sanitizeHTML(p.linkedin)}</a></p>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Summary
+    if (questionnaire.summary) {
+        html += `
+            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-quote-left text-indigo-500"></i>Zusammenfassung / Profil
+                </p>
+                <p class="text-gray-600 whitespace-pre-line">${sanitizeHTML(questionnaire.summary)}</p>
+            </div>
+        `;
+    }
+
+    // Experience
+    if (questionnaire.experience?.length > 0) {
+        html += `
+            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-briefcase text-indigo-500"></i>Berufserfahrung (${questionnaire.experience.length})
+                </p>
+                <div class="space-y-3">
+                    ${questionnaire.experience.map((exp, idx) => `
+                        <div class="border-l-3 border-indigo-300 pl-3 ${idx > 0 ? 'pt-3 border-t border-gray-100' : ''}">
+                            <p class="font-semibold text-gray-800">${sanitizeHTML(exp.role || exp.title || 'Position')}</p>
+                            <p class="text-indigo-600">${sanitizeHTML(exp.company || '')}</p>
+                            <p class="text-xs text-gray-400">${exp.startDate || ''} ${exp.endDate ? '- ' + exp.endDate : exp.current ? '- Heute' : ''}</p>
+                            ${exp.achievements ? `<p class="text-gray-600 mt-1 text-xs whitespace-pre-line">${sanitizeHTML(Array.isArray(exp.achievements) ? exp.achievements.join('\\n• ') : exp.achievements)}</p>` : ''}
+                            ${exp.description ? `<p class="text-gray-600 mt-1 text-xs">${sanitizeHTML(exp.description)}</p>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Education
+    if (questionnaire.education?.length > 0) {
+        html += `
+            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-graduation-cap text-indigo-500"></i>Ausbildung (${questionnaire.education.length})
+                </p>
+                <div class="space-y-3">
+                    ${questionnaire.education.map((edu, idx) => `
+                        <div class="border-l-3 border-indigo-300 pl-3 ${idx > 0 ? 'pt-3 border-t border-gray-100' : ''}">
+                            <p class="font-semibold text-gray-800">${sanitizeHTML(edu.degree || edu.title || 'Abschluss')}</p>
+                            <p class="text-indigo-600">${sanitizeHTML(edu.institution || edu.school || '')}</p>
+                            <p class="text-xs text-gray-400">${edu.startDate || ''} ${edu.endDate ? '- ' + edu.endDate : ''}</p>
+                            ${edu.field ? `<p class="text-gray-600 text-xs">Fachrichtung: ${sanitizeHTML(edu.field)}</p>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Skills
+    if (questionnaire.skills) {
+        const skills = questionnaire.skills;
+        html += `
+            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-tools text-indigo-500"></i>Fähigkeiten
+                </p>
+                <div class="space-y-2">
+                    ${skills.technical?.length > 0 ? `
+                        <div>
+                            <p class="text-xs text-gray-400 mb-1">Technische Skills:</p>
+                            <div class="flex flex-wrap gap-1">
+                                ${skills.technical.map(s => `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs">${sanitizeHTML(s)}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${skills.soft?.length > 0 ? `
+                        <div>
+                            <p class="text-xs text-gray-400 mb-1">Soft Skills:</p>
+                            <div class="flex flex-wrap gap-1">
+                                ${skills.soft.map(s => `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">${sanitizeHTML(s)}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${skills.languages?.length > 0 ? `
+                        <div>
+                            <p class="text-xs text-gray-400 mb-1">Sprachen:</p>
+                            <div class="flex flex-wrap gap-1">
+                                ${skills.languages.map(l => `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">${sanitizeHTML(typeof l === 'string' ? l : l.language + (l.level ? ' (' + l.level + ')' : ''))}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Certificates
+    if (questionnaire.certificates?.length > 0) {
+        html += `
+            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-certificate text-indigo-500"></i>Zertifikate (${questionnaire.certificates.length})
+                </p>
+                <div class="space-y-1">
+                    ${questionnaire.certificates.map(cert => `
+                        <p class="text-gray-600">• ${sanitizeHTML(typeof cert === 'string' ? cert : cert.name + (cert.issuer ? ' (' + cert.issuer + ')' : ''))}</p>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    return html;
 }
 
 // Open CV questionnaire view (to check status)
