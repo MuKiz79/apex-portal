@@ -4,7 +4,7 @@
       "id": "kreativ",
       "name": "Kreativ Design",
       "description": "Modernes kreatives Design mit dekorativen Elementen und Fotokreis",
-      "previewImage": "/template-designer/preview.html",
+      "previewImage": "/template-designer/preview.html?template=kreativ",
       "svgFile": "/template-designer/template-kreativ.svg",
       "defaultColors": {
         "primary": "#b76e22",
@@ -20,16 +20,16 @@
       "isActive": true
     },
     {
-      "id": "yp-template-1",
-      "name": "Modern Klassisch",
-      "description": "Klassisches Design mit Foto-Header und zweispaltiger Struktur",
-      "previewImage": "/cv-templates/young-professional/template1-preview.png",
-      "pdfFile": "/cv-templates/young-professional/template1.pdf",
-      "schemaFile": "/cv-templates/young-professional/template1-schema.json",
+      "id": "compact",
+      "name": "Compact Design",
+      "description": "Kompaktes, professionelles Design mit klarer Struktur",
+      "previewImage": "/template-designer/preview.html?template=compact",
+      "svgFile": "/template-designer/template-compact.svg",
       "defaultColors": {
-        "primary": "#1a3a5c",
-        "accent": "#d4912a",
-        "circle": "#f4b4b7"
+        "primary": "#374f59"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Header, Akzente)"
       },
       "sortOrder": 2,
       "isActive": true
@@ -37,49 +37,109 @@
   ],
   "senior-professional": [
     {
-      "id": "sp-template-1",
-      "name": "Executive Klassisch",
-      "description": "Professionelles Design für erfahrene Fachkräfte",
-      "previewImage": "/cv-templates/senior-professional/template1-preview.png",
-      "pdfFile": "/cv-templates/senior-professional/template1.pdf",
-      "schemaFile": "/cv-templates/senior-professional/template1-schema.json",
+      "id": "kreativ",
+      "name": "Kreativ Design",
+      "description": "Modernes kreatives Design mit dekorativen Elementen und Fotokreis",
+      "previewImage": "/template-designer/preview.html?template=kreativ",
+      "svgFile": "/template-designer/template-kreativ.svg",
       "defaultColors": {
-        "primary": "#1a3a5c",
-        "accent": "#d4912a"
+        "primary": "#b76e22",
+        "accent": "#8fa3b4",
+        "circle": "#f4b4b7"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Überschriften, Formen)",
+        "accent": "Akzentfarbe (Icons, Fotokreis)",
+        "circle": "Dekorkreis (großer Kreis oben links)"
       },
       "sortOrder": 1,
+      "isActive": true
+    },
+    {
+      "id": "compact",
+      "name": "Compact Design",
+      "description": "Kompaktes, professionelles Design mit klarer Struktur",
+      "previewImage": "/template-designer/preview.html?template=compact",
+      "svgFile": "/template-designer/template-compact.svg",
+      "defaultColors": {
+        "primary": "#374f59"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Header, Akzente)"
+      },
+      "sortOrder": 2,
       "isActive": true
     }
   ],
   "executive": [
     {
-      "id": "exec-template-1",
-      "name": "C-Level Premium",
-      "description": "Premium Design für C-Suite und Führungskräfte",
-      "previewImage": "/cv-templates/executive/template1-preview.png",
-      "pdfFile": "/cv-templates/executive/template1.pdf",
-      "schemaFile": "/cv-templates/executive/template1-schema.json",
+      "id": "kreativ",
+      "name": "Kreativ Design",
+      "description": "Modernes kreatives Design mit dekorativen Elementen und Fotokreis",
+      "previewImage": "/template-designer/preview.html?template=kreativ",
+      "svgFile": "/template-designer/template-kreativ.svg",
       "defaultColors": {
-        "primary": "#1a3a5c",
-        "accent": "#d4912a"
+        "primary": "#b76e22",
+        "accent": "#8fa3b4",
+        "circle": "#f4b4b7"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Überschriften, Formen)",
+        "accent": "Akzentfarbe (Icons, Fotokreis)",
+        "circle": "Dekorkreis (großer Kreis oben links)"
       },
       "sortOrder": 1,
+      "isActive": true
+    },
+    {
+      "id": "compact",
+      "name": "Compact Design",
+      "description": "Kompaktes, professionelles Design mit klarer Struktur",
+      "previewImage": "/template-designer/preview.html?template=compact",
+      "svgFile": "/template-designer/template-compact.svg",
+      "defaultColors": {
+        "primary": "#374f59"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Header, Akzente)"
+      },
+      "sortOrder": 2,
       "isActive": true
     }
   ],
   "quick-check": [
     {
-      "id": "qc-template-1",
-      "name": "Quick Check Standard",
-      "description": "Schnelles, übersichtliches Design",
-      "previewImage": "/cv-templates/young-professional/template1-preview.png",
-      "pdfFile": "/cv-templates/young-professional/template1.pdf",
-      "schemaFile": "/cv-templates/young-professional/template1-schema.json",
+      "id": "kreativ",
+      "name": "Kreativ Design",
+      "description": "Modernes kreatives Design mit dekorativen Elementen und Fotokreis",
+      "previewImage": "/template-designer/preview.html?template=kreativ",
+      "svgFile": "/template-designer/template-kreativ.svg",
       "defaultColors": {
-        "primary": "#1a3a5c",
-        "accent": "#d4912a"
+        "primary": "#b76e22",
+        "accent": "#8fa3b4",
+        "circle": "#f4b4b7"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Überschriften, Formen)",
+        "accent": "Akzentfarbe (Icons, Fotokreis)",
+        "circle": "Dekorkreis (großer Kreis oben links)"
       },
       "sortOrder": 1,
+      "isActive": true
+    },
+    {
+      "id": "compact",
+      "name": "Compact Design",
+      "description": "Kompaktes, professionelles Design mit klarer Struktur",
+      "previewImage": "/template-designer/preview.html?template=compact",
+      "svgFile": "/template-designer/template-compact.svg",
+      "defaultColors": {
+        "primary": "#374f59"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Header, Akzente)"
+      },
+      "sortOrder": 2,
       "isActive": true
     }
   ]

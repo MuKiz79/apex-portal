@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template - Kreativ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #e5e5e5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #preview-container {
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        #preview-image {
+            width: 595px;
+            height: auto;
+            display: block;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        #error {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fee;
+            padding: 20px;
+            border-radius: 8px;
+            color: #c00;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        #color-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 12px;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            font-size: 12px;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .color-label {
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Lade Vorschau...</div>
+    <div id="error"></div>
+    <div id="preview-container" style="display: none;">
+        <img id="preview-image" alt="CV Vorschau">
+    </div>
+
+    <div id="color-indicator">
+        <div class="color-item">
+            <div class="color-box" id="primary-box"></div>
+            <span class="color-label">Primary</span>
+        </div>
+        <div class="color-item">
+            <div class="color-box" id="accent-box"></div>
+            <span class="color-label">Accent</span>
+        </div>
+        <div class="color-item">
+            <div class="color-box" id="circle-box"></div>
+            <span class="color-label">Circle</span>
+        </div>
+    </div>
+
+    <script>
+        // Original colors in the SVG
+        const COLOR_MAP = {
+            primary: '#b76e22',   // Bronze - Job title, section headers, bottom shapes
+            accent: '#8fa3b4',    // Blue-gray - Photo circle, contact icons
+            circle: '#f4b4b7'     // Pink - Large decorative circle
+        };
+
+        // Get colors from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const primaryColor = urlParams.get('primary') || COLOR_MAP.primary;
+        const accentColor = urlParams.get('accent') || COLOR_MAP.accent;
+        const circleColor = urlParams.get('circle') || COLOR_MAP.circle;
+
+        // Update color indicators
+        document.getElementById('primary-box').style.background = primaryColor;
+        document.getElementById('accent-box').style.background = accentColor;
+        document.getElementById('circle-box').style.background = circleColor;
+
+        // Load and process SVG
+        async function loadSvg() {
+            try {
+                // Add cache-busting parameter
+                const response = await fetch('/template-designer/template-kreativ.svg?t=' + Date.now());
+                if (!response.ok) throw new Error('SVG nicht gefunden (Status: ' + response.status + ')');
+
+                let svgText = await response.text();
+
+                // Replace all color occurrences (case-insensitive)
+                // Primary color (bronze)
+                svgText = svgText.replace(new RegExp(escapeRegex(COLOR_MAP.primary), 'gi'), primaryColor);
+
+                // Accent color (blue-gray)
+                svgText = svgText.replace(new RegExp(escapeRegex(COLOR_MAP.accent), 'gi'), accentColor);
+
+                // Circle color (pink)
+                svgText = svgText.replace(new RegExp(escapeRegex(COLOR_MAP.circle), 'gi'), circleColor);
+
+                // Convert to data URL
+                const base64 = btoa(unescape(encodeURIComponent(svgText)));
+                const dataUrl = 'data:image/svg+xml;base64,' + base64;
+
+                // Show image
+                const img = document.getElementById('preview-image');
+                img.onload = function() {
+                    document.getElementById('preview-container').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                };
+                img.onerror = function() {
+                    showError('Fehler beim Rendern der SVG');
+                };
+                img.src = dataUrl;
+
+            } catch (err) {
+                console.error('Error:', err);
+                showError('Fehler beim Laden: ' + err.message);
+            }
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        // Listen for color updates from parent window
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'updateColors') {
+                const newUrl = new URL(window.location.href);
+                if (event.data.primary) newUrl.searchParams.set('primary', event.data.primary);
+                if (event.data.accent) newUrl.searchParams.set('accent', event.data.accent);
+                if (event.data.circle) newUrl.searchParams.set('circle', event.data.circle);
+                window.location.href = newUrl.toString();
+            }
+        });
+
+        // Start loading
+        loadSvg();
+    </script>
+</body>
+</html>

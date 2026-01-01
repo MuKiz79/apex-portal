@@ -18,6 +18,17 @@
       "*.md",
       "*.sh"
     ],
+    "headers": [
+      {
+        "source": "/template-designer/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ],
     "rewrites": [
       {
         "source": "/template-designer",

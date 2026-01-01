@@ -7943,6 +7943,8 @@ export async function updateStrategyCallStatus(callId, status) {
 export async function loadAdminSettings() {
     // Load mentoring slots text
     await loadMentoringSlotsText();
+    // Load admin templates
+    await loadAdminTemplates();
 }
 
 export async function saveMentoringSlots() {
@@ -7962,6 +7964,148 @@ export async function saveMentoringSlots() {
     } catch (e) {
         logger.error('Error saving mentoring slots:', e);
         showToast('Fehler beim Speichern');
+    }
+}
+
+// ============================================
+// ADMIN TEMPLATE MANAGEMENT
+// ============================================
+
+// Load templates for admin panel
+export async function loadAdminTemplates() {
+    const container = document.getElementById('admin-templates-list');
+    if (!container) return;
+
+    try {
+        // 1. Load base templates from JSON file
+        const response = await fetch('/cv-templates/templates.json');
+        const data = await response.json();
+        const baseTemplates = data['young-professional'] || [];
+
+        // 2. Load status map from Firestore (only stores which templates are disabled)
+        const docRef = doc(db, 'settings', 'templateStatus');
+        const docSnap = await getDoc(docRef);
+        const disabledTemplates = docSnap.exists() ? (docSnap.data().disabled || []) : [];
+
+        console.log('Disabled templates from Firestore:', disabledTemplates);
+
+        // 3. Merge: templates are active unless explicitly in disabled list
+        const templates = baseTemplates.map(t => ({
+            ...t,
+            isActive: !disabledTemplates.includes(t.id)
+        }));
+
+        console.log('Merged templates:', templates.map(t => ({ id: t.id, isActive: t.isActive })));
+
+        renderAdminTemplates(container, templates);
+    } catch (error) {
+        logger.error('Error loading admin templates:', error);
+        container.innerHTML = '<div class="p-4 text-red-500 text-center">Fehler beim Laden der Templates</div>';
+    }
+}
+
+// Render templates in admin panel
+function renderAdminTemplates(container, templates) {
+    if (!templates || templates.length === 0) {
+        container.innerHTML = '<div class="p-4 text-gray-500 text-center">Keine Templates gefunden</div>';
+        return;
+    }
+
+    container.innerHTML = templates.map(t => `
+        <div class="flex items-center justify-between p-4 hover:bg-gray-50 transition">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-16 bg-gray-100 rounded overflow-hidden relative flex-shrink-0">
+                    <iframe
+                        src="${t.previewImage}"
+                        class="absolute inset-0 w-[300%] h-[300%] border-0 pointer-events-none origin-top-left"
+                        style="transform: scale(0.33);"
+                        loading="lazy"
+                    ></iframe>
+                </div>
+                <div>
+                    <p class="font-medium text-brand-dark">${t.name}</p>
+                    <p class="text-xs text-gray-500">${t.description || ''}</p>
+                    <p class="text-xs text-gray-400 mt-1">
+                        ${Object.keys(t.defaultColors || {}).length} Farbe(n) anpassbar
+                    </p>
+                </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox"
+                       class="sr-only peer"
+                       ${t.isActive !== false ? 'checked' : ''}
+                       onchange="app.toggleTemplateActive('${t.id}', this.checked)">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-gold/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-gold after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </label>
+        </div>
+    `).join('');
+}
+
+// Toggle template active status
+export async function toggleTemplateActive(templateId, isActive) {
+    console.log('toggleTemplateActive called:', { templateId, isActive });
+    try {
+        const docRef = doc(db, 'settings', 'templateStatus');
+        const docSnap = await getDoc(docRef);
+
+        // Get current disabled list
+        let disabledTemplates = docSnap.exists() ? (docSnap.data().disabled || []) : [];
+        console.log('Current disabled list:', disabledTemplates);
+
+        if (isActive) {
+            // Remove from disabled list (activate)
+            disabledTemplates = disabledTemplates.filter(id => id !== templateId);
+        } else {
+            // Add to disabled list (deactivate)
+            if (!disabledTemplates.includes(templateId)) {
+                disabledTemplates.push(templateId);
+            }
+        }
+
+        console.log('New disabled list:', disabledTemplates);
+
+        // Save to Firestore
+        await setDoc(docRef, {
+            disabled: disabledTemplates,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser?.email || 'admin'
+        });
+
+        console.log('Successfully saved to Firestore');
+        showToast(isActive ? 'Template aktiviert' : 'Template deaktiviert');
+
+    } catch (error) {
+        logger.error('Error toggling template:', error);
+        console.error('Full error:', error);
+        showToast('Fehler beim Speichern: ' + error.message);
+    }
+}
+
+// Load only active templates (for customer view)
+export async function loadActiveTemplates() {
+    try {
+        // 1. Load base templates from JSON
+        const response = await fetch('/cv-templates/templates.json');
+        const data = await response.json();
+        const baseTemplates = data['young-professional'] || [];
+
+        // 2. Load disabled list from Firestore
+        const docRef = doc(db, 'settings', 'templateStatus');
+        const docSnap = await getDoc(docRef);
+        const disabledTemplates = docSnap.exists() ? (docSnap.data().disabled || []) : [];
+
+        // 3. Return only active templates (not in disabled list)
+        return baseTemplates.filter(t => !disabledTemplates.includes(t.id));
+    } catch (error) {
+        logger.error('Error loading active templates:', error);
+        // Fallback: return all templates from JSON
+        try {
+            const response = await fetch('/cv-templates/templates.json');
+            const data = await response.json();
+            return data['young-professional'] || [];
+        } catch {
+            return [];
+        }
     }
 }
 
@@ -10693,6 +10837,7 @@ let smartUploadData = {
     // Template selection fields
     selectedTemplate: null,
     selectedTemplateName: '',
+    selectedPreviewImage: null,
     primaryColor: '#b76e22',
     accentColor: '#8fa3b4',
     circleColor: '#f4b4b7',
@@ -11189,12 +11334,8 @@ async function loadAvailableTemplates() {
     if (!templateGrid) return;
 
     try {
-        // Load templates from static JSON file
-        const response = await fetch('/cv-templates/templates.json');
-        const templatesData = await response.json();
-
-        // Get templates for this package type
-        const templates = templatesData[packageType] || templatesData['young-professional'] || [];
+        // Load only active templates from Firestore (or fallback to JSON)
+        const templates = await loadActiveTemplates();
 
         if (templates.length === 0) {
             templateGrid.innerHTML = `
@@ -11207,15 +11348,37 @@ async function loadAvailableTemplates() {
         }
 
         // Render template cards
-        templateGrid.innerHTML = templates.map(template => `
-            <div class="template-card cursor-pointer rounded-xl border-2 border-gray-200 overflow-hidden hover:border-brand-gold hover:shadow-lg transition-all ${smartUploadData.selectedTemplate === template.id ? 'border-brand-gold ring-2 ring-brand-gold/30' : ''}"
-                 onclick="app.selectTemplate('${template.id}', '${template.name}', '${template.previewImage}', '${template.defaultColors?.primary || '#b76e22'}', '${template.defaultColors?.accent || '#8fa3b4'}', '${template.defaultColors?.circle || '#f4b4b7'}')">
-                <div class="aspect-[3/4] bg-gray-100 relative">
-                    <img src="${template.previewImage}" alt="${template.name}"
+        templateGrid.innerHTML = templates.map(template => {
+            // Check if this is an SVG-based template (uses preview.html)
+            const isSvgTemplate = template.previewImage?.includes('/template-designer/preview.html');
+            // Build iframe URL - append color params with & since template param already uses ?
+            const separator = template.previewImage?.includes('?') ? '&' : '?';
+            const previewContent = isSvgTemplate
+                ? `<iframe src="${template.previewImage}${separator}primary=${encodeURIComponent(template.defaultColors?.primary || '#b76e22')}&accent=${encodeURIComponent(template.defaultColors?.accent || '#8fa3b4')}&circle=${encodeURIComponent(template.defaultColors?.circle || '#f4b4b7')}"
+                         class="w-full h-full border-0 pointer-events-none"
+                         style="transform: scale(1); transform-origin: top left;"
+                         title="${template.name}"></iframe>`
+                : `<img src="${template.previewImage}" alt="${template.name}"
                          class="w-full h-full object-cover"
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 133%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%22133%22/><text x=%2250%22 y=%2266%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2212%22>Template</text></svg>'">
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 133%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%22133%22/><text x=%2250%22 y=%2266%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2212%22>Template</text></svg>'">`;
+
+            // Store template data for onclick as JSON (escape for HTML attribute)
+            const templateData = JSON.stringify({
+                id: template.id,
+                name: template.name,
+                previewImage: template.previewImage,
+                defaultColors: template.defaultColors || { primary: '#b76e22' },
+                colorLabels: template.colorLabels || {}
+            }).replace(/"/g, '&quot;');
+
+            return `
+            <div class="template-card cursor-pointer rounded-xl border-2 border-gray-200 overflow-hidden hover:border-brand-gold hover:shadow-lg transition-all ${smartUploadData.selectedTemplate === template.id ? 'border-brand-gold ring-2 ring-brand-gold/30' : ''}"
+                 onclick="app.selectTemplate(${templateData})"
+                 data-template-id="${template.id}">
+                <div class="aspect-[3/4] bg-gray-100 relative overflow-hidden">
+                    ${previewContent}
                     ${smartUploadData.selectedTemplate === template.id ? `
-                        <div class="absolute top-2 right-2 w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center">
+                        <div class="absolute top-2 right-2 w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center z-10">
                             <i class="fas fa-check text-white"></i>
                         </div>
                     ` : ''}
@@ -11225,7 +11388,7 @@ async function loadAvailableTemplates() {
                     <p class="text-xs text-gray-500 mt-1 truncate">${template.description || ''}</p>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
 
     } catch (error) {
         logger.error('Error loading templates:', error);
@@ -11250,15 +11413,20 @@ function getPackageDisplayName(packageType) {
 }
 
 // Select a template
-export function selectTemplate(templateId, templateName, previewImage, defaultPrimary, defaultAccent, defaultCircle) {
+export function selectTemplate(templateData) {
+    // templateData is now an object: { id, name, previewImage, defaultColors, colorLabels }
+    const { id: templateId, name: templateName, previewImage, defaultColors, colorLabels } = templateData;
+
     smartUploadData.selectedTemplate = templateId;
     smartUploadData.selectedTemplateName = templateName;
+    smartUploadData.selectedPreviewImage = previewImage; // Store preview image URL
+    smartUploadData.templateColors = defaultColors; // Store available colors for this template
 
     // Set default colors if not already customized
     if (!smartUploadData.colorsCustomized) {
-        smartUploadData.primaryColor = defaultPrimary || '#b76e22';
-        smartUploadData.accentColor = defaultAccent || '#8fa3b4';
-        smartUploadData.circleColor = defaultCircle || '#f4b4b7';
+        smartUploadData.primaryColor = defaultColors?.primary || '#b76e22';
+        smartUploadData.accentColor = defaultColors?.accent || '';
+        smartUploadData.circleColor = defaultColors?.circle || '';
         document.getElementById('cv-q-primary-color').value = smartUploadData.primaryColor;
         document.getElementById('cv-q-accent-color').value = smartUploadData.accentColor;
         document.getElementById('cv-q-circle-color').value = smartUploadData.circleColor;
@@ -11271,14 +11439,14 @@ export function selectTemplate(templateId, templateName, previewImage, defaultPr
         if (checkmark) checkmark.remove();
     });
 
-    // Find and highlight selected card
-    const selectedCard = document.querySelector(`.template-card[onclick*="'${templateId}'"]`);
+    // Find and highlight selected card by data attribute
+    const selectedCard = document.querySelector(`.template-card[data-template-id="${templateId}"]`);
     if (selectedCard) {
         selectedCard.classList.add('border-brand-gold', 'ring-2', 'ring-brand-gold/30');
         const imgContainer = selectedCard.querySelector('.aspect-\\[3\\/4\\]');
         if (imgContainer && !imgContainer.querySelector('.fa-check')) {
             const checkmark = document.createElement('div');
-            checkmark.className = 'absolute top-2 right-2 w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center';
+            checkmark.className = 'absolute top-2 right-2 w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center z-10';
             checkmark.innerHTML = '<i class="fas fa-check text-white"></i>';
             imgContainer.appendChild(checkmark);
         }
@@ -11292,8 +11460,10 @@ export function selectTemplate(templateId, templateName, previewImage, defaultPr
         previewContainer.classList.remove('hidden');
         if (previewName) previewName.textContent = templateName;
 
-        // Update pdfme preview via iframe
-        updatePdfmePreviewColors();
+        // Update preview with correct template and build dynamic color pickers
+        if (typeof window.setPreviewTemplate === 'function') {
+            window.setPreviewTemplate(templateId, defaultColors, colorLabels);
+        }
     }
 
     // Update next button state
@@ -11330,11 +11500,71 @@ export function updateTemplateColors() {
     updatePdfmePreviewColors();
 }
 
+// Check if template uses SVG-based preview (live color customization)
+function isSvgBasedTemplate() {
+    return smartUploadData.selectedPreviewImage?.includes('/template-designer/preview.html');
+}
+
+// Update template preview - handles both SVG and PNG templates
+function updateTemplatePreview() {
+    const previewDiv = document.getElementById('cv-q-template-preview');
+    if (!previewDiv) return;
+
+    if (isSvgBasedTemplate()) {
+        // SVG-based template: Use iframe with color params
+        const encodedPrimary = encodeURIComponent(smartUploadData.primaryColor);
+        const encodedAccent = encodeURIComponent(smartUploadData.accentColor);
+        const encodedCircle = encodeURIComponent(smartUploadData.circleColor);
+        const iframeSrc = `/template-designer/preview.html?primary=${encodedPrimary}&accent=${encodedAccent}&circle=${encodedCircle}`;
+
+        previewDiv.innerHTML = `
+            <iframe
+                id="cv-q-preview-iframe"
+                src="${iframeSrc}"
+                class="border-0 rounded-lg shadow-lg"
+                style="width: 400px; height: 566px; max-width: 100%;"
+                title="CV Template Vorschau"
+            ></iframe>
+        `;
+    } else {
+        // PNG-based template: Show static image with color swatches
+        previewDiv.innerHTML = `
+            <div class="flex flex-col items-center gap-4">
+                <img src="${smartUploadData.selectedPreviewImage}"
+                     alt="${smartUploadData.selectedTemplateName}"
+                     class="max-w-full rounded-lg shadow-lg"
+                     style="max-height: 400px;"
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 133%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%22133%22/><text x=%2250%22 y=%2266%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2212%22>Vorschau</text></svg>'">
+                <div class="flex gap-3 items-center text-sm text-gray-600">
+                    <span>Ihre Farben:</span>
+                    <div class="flex gap-2">
+                        <div class="w-6 h-6 rounded border border-gray-300" style="background: ${smartUploadData.primaryColor}" title="Hauptfarbe"></div>
+                        <div class="w-6 h-6 rounded border border-gray-300" style="background: ${smartUploadData.accentColor}" title="Akzentfarbe"></div>
+                        <div class="w-6 h-6 rounded border border-gray-300" style="background: ${smartUploadData.circleColor}" title="Dekorkreis"></div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 text-center">Die gewählten Farben werden bei der Erstellung angewendet</p>
+            </div>
+        `;
+    }
+}
+
 // Update pdfme preview with current colors via URL params (reload iframe)
 function updatePdfmePreviewColors() {
-    const iframe = document.getElementById('cv-q-preview-iframe');
-    if (!iframe) return;
+    if (!isSvgBasedTemplate()) {
+        // For non-SVG templates, just update color swatches
+        updateTemplatePreview();
+        return;
+    }
 
+    const iframe = document.getElementById('cv-q-preview-iframe');
+    if (!iframe) {
+        // iframe doesn't exist yet, create it
+        updateTemplatePreview();
+        return;
+    }
+
+    // Just update the src, don't recreate the iframe
     const encodedPrimary = encodeURIComponent(smartUploadData.primaryColor);
     const encodedAccent = encodeURIComponent(smartUploadData.accentColor);
     const encodedCircle = encodeURIComponent(smartUploadData.circleColor);

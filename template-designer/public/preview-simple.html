@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Template Preview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #e5e5e5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        #preview-container {
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #preview-image {
+            width: 595px;
+            height: auto;
+            display: block;
+        }
+        #color-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            font-size: 12px;
+            align-items: center;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.1);
+            margin-right: 6px;
+        }
+        .color-item {
+            display: flex;
+            align-items: center;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #error {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fee;
+            padding: 20px;
+            border-radius: 8px;
+            color: #c00;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Lade Vorschau...</div>
+    <div id="error"></div>
+    <div id="preview-container" style="display: none;">
+        <img id="preview-image" alt="CV Vorschau">
+    </div>
+    <div id="color-indicator">
+        <div class="color-item">
+            <div class="color-box" id="primary-box"></div>
+            <span>Primary</span>
+        </div>
+        <div class="color-item">
+            <div class="color-box" id="accent-box"></div>
+            <span>Accent</span>
+        </div>
+    </div>
+
+    <script>
+        // Original colors in the SVG
+        const ORIGINAL_PRIMARY = '#b76e22';
+        const ORIGINAL_ACCENT = '#8fa3b4';
+
+        // Get colors from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const primaryColor = urlParams.get('primary') || ORIGINAL_PRIMARY;
+        const accentColor = urlParams.get('accent') || ORIGINAL_ACCENT;
+
+        // Update color indicators
+        document.getElementById('primary-box').style.background = primaryColor;
+        document.getElementById('accent-box').style.background = accentColor;
+
+        // Load and process SVG
+        async function loadSvg() {
+            try {
+                const response = await fetch('/template-designer/template-kreativ.svg?t=' + Date.now());
+                if (!response.ok) throw new Error('SVG nicht gefunden');
+
+                let svgText = await response.text();
+
+                // Replace colors (escape # for regex)
+                const primaryRegex = new RegExp(ORIGINAL_PRIMARY.replace('#', '\\#'), 'gi');
+                const accentRegex = new RegExp(ORIGINAL_ACCENT.replace('#', '\\#'), 'gi');
+
+                svgText = svgText.replace(primaryRegex, primaryColor);
+                svgText = svgText.replace(accentRegex, accentColor);
+
+                // Convert to data URL
+                const base64 = btoa(unescape(encodeURIComponent(svgText)));
+                const dataUrl = 'data:image/svg+xml;base64,' + base64;
+
+                // Show image
+                document.getElementById('preview-image').src = dataUrl;
+                document.getElementById('preview-container').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+
+            } catch (err) {
+                console.error('Error:', err);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = 'Fehler beim Laden: ' + err.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        loadSvg();
+    </script>
+</body>
+</html>

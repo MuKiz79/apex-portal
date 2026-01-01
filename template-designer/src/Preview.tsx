@@ -1,28 +1,55 @@
 import { useEffect, useState } from 'react';
 
-// Original colors in the SVG that can be replaced
-const ORIGINAL_COLORS = {
-  primary: '#b76e22',   // Bronze - Job title, section headers, bottom shapes
-  accent: '#8fa3b4',    // Blue-gray - Photo circle, contact icons
-  circle: '#f4b4b7'     // Pink - Large decorative circle
+// Template configurations with their original colors
+// Only include colors that should be replaceable by the customer
+const TEMPLATE_CONFIGS: Record<string, {
+  file: string;
+  colors: { primary: string; accent?: string; circle?: string };
+}> = {
+  kreativ: {
+    file: '/template-designer/template-kreativ.svg',
+    colors: {
+      primary: '#b76e22',   // Bronze - Job title, section headers, bottom shapes
+      accent: '#8fa3b4',    // Blue-gray - Photo circle, contact icons
+      circle: '#f4b4b7'     // Pink - Large decorative circle
+    }
+  },
+  compact: {
+    file: '/template-designer/template-compact.svg',
+    colors: {
+      primary: '#374f59'    // Dark teal - Header bar (only this color is replaceable)
+      // Text color #242e32 stays fixed - NOT included here
+    }
+  }
 };
+
+// Default template
+const DEFAULT_TEMPLATE = 'kreativ';
 
 function Preview() {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(100); // Zoom in percent
 
-  // Get colors directly from URL params on every render
+  // Get template and colors from URL params
   const urlParams = new URLSearchParams(window.location.search);
-  const primaryColor = urlParams.get('primary') || ORIGINAL_COLORS.primary;
-  const accentColor = urlParams.get('accent') || ORIGINAL_COLORS.accent;
-  const circleColor = urlParams.get('circle') || ORIGINAL_COLORS.circle;
+  const templateId = urlParams.get('template') || DEFAULT_TEMPLATE;
+  const templateConfig = TEMPLATE_CONFIGS[templateId] || TEMPLATE_CONFIGS[DEFAULT_TEMPLATE];
+  const isFullscreen = urlParams.get('fullscreen') === 'true'; // Show zoom controls only in fullscreen mode
 
-  // Load SVG on mount
+  // Get colors from URL params - only if the template supports that color
+  const primaryColor = urlParams.get('primary') || templateConfig.colors.primary;
+  const accentColor = templateConfig.colors.accent ? (urlParams.get('accent') || templateConfig.colors.accent) : null;
+  const circleColor = templateConfig.colors.circle ? (urlParams.get('circle') || templateConfig.colors.circle) : null;
+
+  // Load SVG on mount or when template changes
   useEffect(() => {
     const loadSvg = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
-        const response = await fetch('/template-designer/template-kreativ.svg');
+        const response = await fetch(templateConfig.file + '?t=' + Date.now());
         if (!response.ok) throw new Error('SVG nicht gefunden');
         const text = await response.text();
         setSvgContent(text);
@@ -34,9 +61,9 @@ function Preview() {
       }
     };
     loadSvg();
-  }, []);
+  }, [templateConfig.file]);
 
-  // Replace colors in SVG
+  // Replace colors in SVG - only replace colors that are defined for this template
   const getColoredSvg = () => {
     if (!svgContent) return '';
 
@@ -45,14 +72,18 @@ function Preview() {
     // Escape special regex characters in color strings
     const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    // Replace primary color (case-insensitive)
-    colored = colored.replace(new RegExp(escapeRegex(ORIGINAL_COLORS.primary), 'gi'), primaryColor);
+    // Replace primary color (always present)
+    colored = colored.replace(new RegExp(escapeRegex(templateConfig.colors.primary), 'gi'), primaryColor);
 
-    // Replace accent color (case-insensitive)
-    colored = colored.replace(new RegExp(escapeRegex(ORIGINAL_COLORS.accent), 'gi'), accentColor);
+    // Replace accent color only if template supports it
+    if (templateConfig.colors.accent && accentColor) {
+      colored = colored.replace(new RegExp(escapeRegex(templateConfig.colors.accent), 'gi'), accentColor);
+    }
 
-    // Replace circle color (case-insensitive)
-    colored = colored.replace(new RegExp(escapeRegex(ORIGINAL_COLORS.circle), 'gi'), circleColor);
+    // Replace circle color only if template supports it
+    if (templateConfig.colors.circle && circleColor) {
+      colored = colored.replace(new RegExp(escapeRegex(templateConfig.colors.circle), 'gi'), circleColor);
+    }
 
     return colored;
   };
@@ -62,108 +93,197 @@ function Preview() {
     ? `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(getColoredSvg())))}`
     : null;
 
-  return (
-    <div style={{
-      width: '100%',
-      height: '100vh',
-      overflow: 'auto',
-      background: '#e5e5e5',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '20px',
-      boxSizing: 'border-box'
-    }}>
-      {isLoading && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'white',
-          padding: '20px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-        }}>
-          Lade Vorschau...
-        </div>
-      )}
-      {error && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: '#fee',
-          padding: '20px',
-          borderRadius: '8px',
-          color: '#c00'
-        }}>
-          {error}
-        </div>
-      )}
-      {svgDataUrl && (
-        <div style={{
-          background: 'white',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-          borderRadius: '4px',
-          overflow: 'hidden'
-        }}>
+  const zoomIn = () => setZoom(z => Math.min(z + 25, 200));
+  const zoomOut = () => setZoom(z => Math.max(z - 25, 25));
+  const resetZoom = () => setZoom(100);
+
+  // Simple embedded view (for template cards and small previews)
+  if (!isFullscreen) {
+    return (
+      <div style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        background: 'white',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        padding: '0',
+        margin: '0'
+      }}>
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#666',
+            fontSize: '14px'
+          }}>
+            Lade Vorschau...
+          </div>
+        )}
+        {error && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#fee',
+            padding: '20px',
+            borderRadius: '8px',
+            color: '#c00'
+          }}>
+            {error}
+          </div>
+        )}
+        {svgDataUrl && (
           <img
             src={svgDataUrl}
             alt="CV Vorschau"
             style={{
-              width: '595px',
+              width: '100%',
               height: 'auto',
               display: 'block'
             }}
           />
-        </div>
-      )}
-      {/* Color indicator */}
+        )}
+      </div>
+    );
+  }
+
+  // Fullscreen view with zoom controls
+  return (
+    <div style={{
+      width: '100%',
+      minHeight: '100vh',
+      overflow: 'auto',
+      background: '#f5f5f5',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '0',
+      margin: '0',
+      boxSizing: 'border-box'
+    }}>
+      {/* Zoom Controls */}
       <div style={{
-        position: 'fixed',
-        bottom: '20px',
-        left: '20px',
-        display: 'flex',
-        gap: '12px',
+        position: 'sticky',
+        top: 0,
+        left: 0,
+        right: 0,
         background: 'white',
-        padding: '12px 16px',
-        borderRadius: '8px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
-        fontSize: '12px',
-        alignItems: 'center'
+        padding: '10px 20px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '10px',
+        borderBottom: '1px solid #e0e0e0',
+        zIndex: 100,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <button
+          onClick={zoomOut}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '6px',
+            border: '1px solid #ddd',
+            background: 'white',
+            cursor: 'pointer',
+            fontSize: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          title="Verkleinern"
+        >
+          −
+        </button>
+        <button
+          onClick={resetZoom}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '6px',
+            border: '1px solid #ddd',
+            background: 'white',
+            cursor: 'pointer',
+            fontSize: '14px',
+            minWidth: '80px'
+          }}
+          title="Zurücksetzen"
+        >
+          {zoom}%
+        </button>
+        <button
+          onClick={zoomIn}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '6px',
+            border: '1px solid #ddd',
+            background: 'white',
+            cursor: 'pointer',
+            fontSize: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          title="Vergrößern"
+        >
+          +
+        </button>
+      </div>
+
+      {/* Content */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        padding: '20px',
+        width: '100%'
+      }}>
+        {isLoading && (
           <div style={{
-            width: '20px',
-            height: '20px',
-            background: primaryColor,
-            borderRadius: '4px',
-            border: '1px solid rgba(0,0,0,0.1)'
-          }}></div>
-          <span>Primary</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#666',
+            fontSize: '14px'
+          }}>
+            Lade Vorschau...
+          </div>
+        )}
+        {error && (
           <div style={{
-            width: '20px',
-            height: '20px',
-            background: accentColor,
-            borderRadius: '4px',
-            border: '1px solid rgba(0,0,0,0.1)'
-          }}></div>
-          <span>Accent</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{
-            width: '20px',
-            height: '20px',
-            background: circleColor,
-            borderRadius: '4px',
-            border: '1px solid rgba(0,0,0,0.1)'
-          }}></div>
-          <span>Circle</span>
-        </div>
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#fee',
+            padding: '20px',
+            borderRadius: '8px',
+            color: '#c00'
+          }}>
+            {error}
+          </div>
+        )}
+        {svgDataUrl && (
+          <img
+            src={svgDataUrl}
+            alt="CV Vorschau"
+            style={{
+              width: `${zoom}%`,
+              maxWidth: `${zoom * 6}px`,
+              height: 'auto',
+              display: 'block',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              background: 'white'
+            }}
+          />
+        )}
       </div>
     </div>
   );

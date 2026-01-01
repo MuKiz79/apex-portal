@@ -3482,10 +3482,21 @@
                         </div>
                     </div>
 
-                    <!-- Future Settings Placeholder -->
-                    <div class="bg-white rounded-xl border border-dashed border-gray-200 p-6 text-center">
-                        <i class="fas fa-plus-circle text-gray-300 text-2xl mb-2"></i>
-                        <p class="text-sm text-gray-400">Weitere Einstellungen werden bei Bedarf hinzugefügt</p>
+                    <!-- CV Templates Verwaltung -->
+                    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div class="p-4 border-b border-gray-100 bg-gray-50">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-file-alt text-brand-gold"></i>
+                                <h3 class="font-bold text-brand-dark">CV Templates</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Wähle welche Templates für Kunden im Fragebogen verfügbar sind</p>
+                        </div>
+                        <div id="admin-templates-list" class="divide-y divide-gray-100">
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-spinner fa-spin text-xl mb-2"></i>
+                                <p class="text-sm">Lade Templates...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3846,85 +3857,192 @@
                                 </div>
                             </div>
 
-                            <!-- Color Customization -->
+                            <!-- Color Customization - dynamically populated based on template -->
                             <div id="cv-q-color-customization" class="bg-gray-50 rounded-xl p-5 mb-6">
                                 <h3 class="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                                     <i class="fas fa-palette text-brand-gold"></i>
                                     Farben anpassen
                                 </h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                    <!-- Primary Color -->
-                                    <div>
-                                        <label class="block text-sm text-gray-600 mb-2">Hauptfarbe</label>
-                                        <div class="flex flex-col gap-2">
-                                            <input type="color" id="cv-q-primary-color" value="#b76e22"
-                                                   class="w-12 h-12 rounded-lg border-2 border-gray-200 cursor-pointer"
-                                                   onchange="app.updateTemplateColors()">
-                                            <div class="flex gap-2 flex-wrap">
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#b76e22')" class="w-7 h-7 rounded-full bg-[#b76e22] border-2 border-white shadow hover:scale-110 transition" title="Bronze"></button>
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#1a3a5c')" class="w-7 h-7 rounded-full bg-[#1a3a5c] border-2 border-white shadow hover:scale-110 transition" title="Navy"></button>
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#2d2d2d')" class="w-7 h-7 rounded-full bg-[#2d2d2d] border-2 border-white shadow hover:scale-110 transition" title="Anthrazit"></button>
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#1e4d3a')" class="w-7 h-7 rounded-full bg-[#1e4d3a] border-2 border-white shadow hover:scale-110 transition" title="Forest"></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Accent Color -->
-                                    <div>
-                                        <label class="block text-sm text-gray-600 mb-2">Akzentfarbe</label>
-                                        <div class="flex flex-col gap-2">
-                                            <input type="color" id="cv-q-accent-color" value="#8fa3b4"
-                                                   class="w-12 h-12 rounded-lg border-2 border-gray-200 cursor-pointer"
-                                                   onchange="app.updateTemplateColors()">
-                                            <div class="flex gap-2 flex-wrap">
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#8fa3b4')" class="w-7 h-7 rounded-full bg-[#8fa3b4] border-2 border-white shadow hover:scale-110 transition" title="Blau-Grau"></button>
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#d4912a')" class="w-7 h-7 rounded-full bg-[#d4912a] border-2 border-white shadow hover:scale-110 transition" title="Gold"></button>
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#3d85c6')" class="w-7 h-7 rounded-full bg-[#3d85c6] border-2 border-white shadow hover:scale-110 transition" title="Blau"></button>
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#6aa84f')" class="w-7 h-7 rounded-full bg-[#6aa84f] border-2 border-white shadow hover:scale-110 transition" title="Grün"></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Circle Color -->
-                                    <div>
-                                        <label class="block text-sm text-gray-600 mb-2">Dekorkreis</label>
-                                        <div class="flex flex-col gap-2">
-                                            <input type="color" id="cv-q-circle-color" value="#f4b4b7"
-                                                   class="w-12 h-12 rounded-lg border-2 border-gray-200 cursor-pointer"
-                                                   onchange="app.updateTemplateColors()">
-                                            <div class="flex gap-2 flex-wrap">
-                                                <button type="button" onclick="app.setTemplateColor('circle', '#f4b4b7')" class="w-7 h-7 rounded-full bg-[#f4b4b7] border-2 border-white shadow hover:scale-110 transition" title="Rosa"></button>
-                                                <button type="button" onclick="app.setTemplateColor('circle', '#ffd700')" class="w-7 h-7 rounded-full bg-[#ffd700] border-2 border-white shadow hover:scale-110 transition" title="Gold"></button>
-                                                <button type="button" onclick="app.setTemplateColor('circle', '#b8d4e3')" class="w-7 h-7 rounded-full bg-[#b8d4e3] border-2 border-white shadow hover:scale-110 transition" title="Hellblau"></button>
-                                                <button type="button" onclick="app.setTemplateColor('circle', '#d4edda')" class="w-7 h-7 rounded-full bg-[#d4edda] border-2 border-white shadow hover:scale-110 transition" title="Mintgrün"></button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <!-- Dynamic color pickers container -->
+                                <div id="cv-q-color-pickers" class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                    <!-- Will be populated dynamically by JavaScript -->
                                 </div>
-                                <button type="button" onclick="app.resetTemplateColors()"
+                                <button type="button" id="cv-q-reset-colors-btn" onclick="resetTemplateColors();"
                                         class="mt-4 text-sm text-gray-500 hover:text-gray-700 transition flex items-center gap-1">
                                     <i class="fas fa-undo text-xs"></i>
                                     Standardfarben wiederherstellen
                                 </button>
                             </div>
+                            <!-- Hidden inputs for colors (always present for form submission) -->
+                            <input type="hidden" id="cv-q-primary-color" value="#b76e22">
+                            <input type="hidden" id="cv-q-accent-color" value="">
+                            <input type="hidden" id="cv-q-circle-color" value="">
 
-                            <!-- Template Preview with pdfme iframe -->
+                            <!-- Template Preview with iframe - like admin preview -->
                             <div id="cv-q-template-preview-container" class="border border-gray-200 rounded-xl p-4 bg-white hidden">
                                 <h3 class="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                                     <i class="fas fa-eye text-brand-gold"></i>
                                     Live-Vorschau mit Ihren Farben
+                                    <button type="button" onclick="openPreviewFullscreen()" class="ml-auto text-xs text-brand-gold hover:text-yellow-600 flex items-center gap-1">
+                                        <i class="fas fa-expand"></i>
+                                        Großansicht
+                                    </button>
                                 </h3>
-                                <div id="cv-q-template-preview" class="bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
-                                    <!-- pdfme Preview iframe -->
-                                    <iframe
-                                        id="cv-q-preview-iframe"
-                                        src="/template-designer/preview.html"
-                                        class="w-full border-0 rounded-lg shadow-lg"
-                                        style="height: 500px; max-width: 360px;"
-                                        title="CV Template Vorschau"
-                                    ></iframe>
+                                <div id="cv-q-template-preview" class="bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer" onclick="openPreviewFullscreen()">
+                                    <div style="width: 280px; height: 396px; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: white;">
+                                        <iframe
+                                            id="cv-q-preview-iframe"
+                                            src="about:blank"
+                                            class="border-0"
+                                            style="width: 595px; height: 842px; transform: scale(0.47); transform-origin: top left; pointer-events: none;"
+                                            title="CV Template Vorschau"
+                                        ></iframe>
+                                    </div>
                                 </div>
+                                <script>
+                                    // Set initial iframe src with cache buster
+                                    document.getElementById('cv-q-preview-iframe').src = '/template-designer/preview.html?primary=%23b76e22&accent=%238fa3b4&circle=%23f4b4b7&t=' + Date.now();
+
+                                    // Open preview in new fullscreen window
+                                    function openPreviewFullscreen() {
+                                        const primary = document.getElementById('cv-q-primary-color').value;
+                                        const accent = document.getElementById('cv-q-accent-color').value || primary;
+                                        const circle = document.getElementById('cv-q-circle-color').value || primary;
+                                        const templateId = window.selectedTemplateId || 'kreativ';
+
+                                        const url = '/template-designer/preview.html?template=' + templateId +
+                                                    '&primary=' + encodeURIComponent(primary) +
+                                                    '&accent=' + encodeURIComponent(accent) +
+                                                    '&circle=' + encodeURIComponent(circle) +
+                                                    '&fullscreen=true';
+
+                                        window.open(url, '_blank', 'width=800,height=1000,scrollbars=yes,resizable=yes');
+                                    }
+                                </script>
                                 <p id="cv-q-selected-template-name" class="text-center text-sm text-gray-600 mt-3 font-medium"></p>
-                                <p class="text-center text-xs text-gray-400 mt-1">Die Farben werden in Echtzeit auf das Template angewendet</p>
                             </div>
+
+                            <!-- Inline script for customer preview (same approach as admin) -->
+                            <script>
+                                // Store selected template data for preview updates
+                                window.selectedTemplateId = 'kreativ';
+                                window.selectedTemplateColors = null;
+                                window.selectedTemplateColorLabels = null;
+
+                                // Preset color palettes for quick selection
+                                const COLOR_PRESETS = {
+                                    primary: [
+                                        { color: '#b76e22', name: 'Bronze' },
+                                        { color: '#374f59', name: 'Teal' },
+                                        { color: '#1a3a5c', name: 'Navy' },
+                                        { color: '#2d2d2d', name: 'Anthrazit' },
+                                        { color: '#1e4d3a', name: 'Forest' }
+                                    ],
+                                    accent: [
+                                        { color: '#8fa3b4', name: 'Blau-Grau' },
+                                        { color: '#d4912a', name: 'Gold' },
+                                        { color: '#3d85c6', name: 'Blau' },
+                                        { color: '#6aa84f', name: 'Grün' }
+                                    ],
+                                    circle: [
+                                        { color: '#f4b4b7', name: 'Rosa' },
+                                        { color: '#ffd700', name: 'Gold' },
+                                        { color: '#b8d4e3', name: 'Hellblau' },
+                                        { color: '#d4edda', name: 'Mintgrün' }
+                                    ]
+                                };
+
+                                function updateCustomerPreview() {
+                                    const primary = document.getElementById('cv-q-primary-color').value;
+                                    const accent = document.getElementById('cv-q-accent-color').value || primary;
+                                    const circle = document.getElementById('cv-q-circle-color').value || primary;
+                                    const iframe = document.getElementById('cv-q-preview-iframe');
+
+                                    if (iframe) {
+                                        iframe.src = '/template-designer/preview.html?template=' + (window.selectedTemplateId || 'kreativ') + '&primary=' + encodeURIComponent(primary) + '&accent=' + encodeURIComponent(accent) + '&circle=' + encodeURIComponent(circle) + '&t=' + Date.now();
+                                    }
+                                }
+
+                                // Reset colors to template defaults
+                                function resetTemplateColors() {
+                                    if (window.selectedTemplateColors) {
+                                        const colors = window.selectedTemplateColors;
+                                        if (colors.primary) document.getElementById('cv-q-primary-color').value = colors.primary;
+                                        if (colors.accent) document.getElementById('cv-q-accent-color').value = colors.accent;
+                                        if (colors.circle) document.getElementById('cv-q-circle-color').value = colors.circle;
+
+                                        // Update visible color pickers
+                                        const primaryPicker = document.getElementById('cv-q-primary-color-visible');
+                                        const accentPicker = document.getElementById('cv-q-accent-color-visible');
+                                        const circlePicker = document.getElementById('cv-q-circle-color-visible');
+                                        if (primaryPicker && colors.primary) primaryPicker.value = colors.primary;
+                                        if (accentPicker && colors.accent) accentPicker.value = colors.accent;
+                                        if (circlePicker && colors.circle) circlePicker.value = colors.circle;
+
+                                        updateCustomerPreview();
+                                    }
+                                }
+
+                                // Build dynamic color picker UI based on template's available colors
+                                function buildColorPickers(defaultColors, colorLabels) {
+                                    const container = document.getElementById('cv-q-color-pickers');
+                                    if (!container) return;
+
+                                    container.innerHTML = '';
+
+                                    // Store for reset function
+                                    window.selectedTemplateColors = defaultColors;
+                                    window.selectedTemplateColorLabels = colorLabels;
+
+                                    const colorKeys = Object.keys(defaultColors || {});
+
+                                    // Adjust grid based on number of colors
+                                    if (colorKeys.length === 1) {
+                                        container.className = 'grid grid-cols-1 gap-6 max-w-xs';
+                                    } else if (colorKeys.length === 2) {
+                                        container.className = 'grid grid-cols-1 sm:grid-cols-2 gap-6';
+                                    } else {
+                                        container.className = 'grid grid-cols-1 sm:grid-cols-3 gap-6';
+                                    }
+
+                                    colorKeys.forEach(key => {
+                                        const label = (colorLabels && colorLabels[key]) || key;
+                                        const defaultValue = defaultColors[key];
+                                        const presets = COLOR_PRESETS[key] || COLOR_PRESETS.primary;
+
+                                        // Set hidden input value
+                                        const hiddenInput = document.getElementById('cv-q-' + key + '-color');
+                                        if (hiddenInput) hiddenInput.value = defaultValue;
+
+                                        const div = document.createElement('div');
+                                        div.innerHTML = `
+                                            <label class="block text-sm text-gray-600 mb-2">${label}</label>
+                                            <div class="flex flex-col gap-2">
+                                                <input type="color" id="cv-q-${key}-color-visible" value="${defaultValue}"
+                                                       class="w-12 h-12 rounded-lg border-2 border-gray-200 cursor-pointer"
+                                                       onchange="document.getElementById('cv-q-${key}-color').value=this.value; updateCustomerPreview();">
+                                                <div class="flex gap-2 flex-wrap">
+                                                    ${presets.map(p => `
+                                                        <button type="button"
+                                                            onclick="document.getElementById('cv-q-${key}-color').value='${p.color}'; document.getElementById('cv-q-${key}-color-visible').value='${p.color}'; updateCustomerPreview();"
+                                                            class="w-7 h-7 rounded-full border-2 border-white shadow hover:scale-110 transition"
+                                                            style="background-color: ${p.color}"
+                                                            title="${p.name}"></button>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        `;
+                                        container.appendChild(div);
+                                    });
+                                }
+
+                                // Called when template is selected to update the preview template
+                                function setPreviewTemplate(templateId, defaultColors, colorLabels) {
+                                    window.selectedTemplateId = templateId;
+                                    buildColorPickers(defaultColors, colorLabels);
+                                    updateCustomerPreview();
+                                }
+                            </script>
                         </div>
 
                         <!-- Smart Step 4: Confirmation -->
@@ -4823,7 +4941,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20251229e';
-        import * as App from './js/app.js?v=20251230f';
+        import * as App from './js/app.js?v=20260101a';
 
         // Make functions globally accessible
         window.app = {
@@ -4982,6 +5100,7 @@
             loadAdminSettings: () => App.loadAdminSettings(),
             saveMentoringSlots: () => App.saveMentoringSlots(),
             loadMentoringSlotsText: () => App.loadMentoringSlotsText(),
+            toggleTemplateActive: (templateId, isActive) => App.toggleTemplateActive(templateId, isActive),
             loadAdminCoaches: () => App.loadAdminCoaches(),
             toggleCoachVisibility: (coachId, visible) => App.toggleCoachVisibility(coachId, visible),
             loadAdminDocuments: () => App.loadAdminDocuments(),
@@ -5027,7 +5146,7 @@
             submitSmartQuestionnaire: () => App.submitSmartQuestionnaire(),
             updateSmartNextButton: () => App.updateSmartNextButton(),
             // Template selection
-            selectTemplate: (id, name, preview, primary, accent) => App.selectTemplate(id, name, preview, primary, accent),
+            selectTemplate: (id, name, preview, primary, accent, circle) => App.selectTemplate(id, name, preview, primary, accent, circle),
             setTemplateColor: (type, color) => App.setTemplateColor(type, color),
             updateTemplateColors: () => App.updateTemplateColors(),
             resetTemplateColors: () => App.resetTemplateColors(),
