@@ -8327,8 +8327,8 @@ function renderCvGeneratorStep1() {
                     <div class="relative border-2 ${cvGeneratorState.template === t.id ? 'border-brand-gold ring-2 ring-brand-gold/20' : 'border-gray-200'}
                                 rounded-xl overflow-hidden transition-all hover:border-brand-gold hover:shadow-lg">
                         <!-- Preview -->
-                        <div class="aspect-[210/297] bg-gray-50 relative overflow-hidden cv-preview-box">
-                            <div class="cv-preview-scaled" style="position: absolute; top: 0; left: 0; width: 210px; height: 297px; transform-origin: top left;">
+                        <div class="aspect-[210/297] bg-gray-50 relative overflow-hidden">
+                            <div style="position: absolute; top: 0; left: 0; width: 210px; height: 297px; transform-origin: top left; transform: scale(0.76);">
                                 ${t.preview}
                             </div>
                             <!-- Hover overlay -->
