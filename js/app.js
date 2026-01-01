@@ -11309,39 +11309,14 @@ export function updateTemplateColors() {
     updatePdfmePreviewColors();
 }
 
-// Track if preview iframe is ready
-let previewIframeReady = false;
-let pendingColorUpdate = null;
-
-// Listen for preview ready message
-window.addEventListener('message', (event) => {
-    if (event.data.type === 'previewReady') {
-        previewIframeReady = true;
-        // Send any pending color update
-        if (pendingColorUpdate) {
-            updatePdfmePreviewColors();
-            pendingColorUpdate = null;
-        }
-    }
-});
-
-// Update pdfme preview with current colors via postMessage
+// Update pdfme preview with current colors via URL params (reload iframe)
 function updatePdfmePreviewColors() {
     const iframe = document.getElementById('cv-q-preview-iframe');
-    if (!iframe || !iframe.contentWindow) return;
+    if (!iframe) return;
 
-    const message = {
-        type: 'updateColors',
-        primaryColor: smartUploadData.primaryColor,
-        accentColor: smartUploadData.accentColor
-    };
-
-    if (previewIframeReady) {
-        iframe.contentWindow.postMessage(message, '*');
-    } else {
-        // Queue the update until iframe is ready
-        pendingColorUpdate = message;
-    }
+    const encodedPrimary = encodeURIComponent(smartUploadData.primaryColor);
+    const encodedAccent = encodeURIComponent(smartUploadData.accentColor);
+    iframe.src = `/template-designer/preview.html?primary=${encodedPrimary}&accent=${encodedAccent}`;
 }
 
 // Reset colors to template defaults
@@ -11363,21 +11338,7 @@ export function resetTemplateColors() {
 
 // ========== ADMIN TEMPLATE PREVIEW ==========
 
-// Track admin preview iframe ready state
-let adminPreviewIframeReady = false;
-
-// Listen for admin preview ready message
-window.addEventListener('message', (event) => {
-    if (event.data.type === 'previewReady') {
-        // Check if it's from the admin iframe
-        const adminIframe = document.getElementById('admin-preview-iframe');
-        if (adminIframe && event.source === adminIframe.contentWindow) {
-            adminPreviewIframeReady = true;
-        }
-    }
-});
-
-// Update admin preview colors
+// Update admin preview colors - reload iframe with URL params
 export function updateAdminPreviewColors() {
     const primaryColor = document.getElementById('admin-primary-color')?.value || '#1a3a5c';
     const accentColor = document.getElementById('admin-accent-color')?.value || '#d4912a';
@@ -11388,14 +11349,12 @@ export function updateAdminPreviewColors() {
     if (primaryText) primaryText.value = primaryColor;
     if (accentText) accentText.value = accentColor;
 
-    // Send to iframe
+    // Reload iframe with new colors as URL params
     const iframe = document.getElementById('admin-preview-iframe');
-    if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({
-            type: 'updateColors',
-            primaryColor: primaryColor,
-            accentColor: accentColor
-        }, '*');
+    if (iframe) {
+        const encodedPrimary = encodeURIComponent(primaryColor);
+        const encodedAccent = encodeURIComponent(accentColor);
+        iframe.src = `/template-designer/preview.html?primary=${encodedPrimary}&accent=${encodedAccent}`;
     }
 }
 
