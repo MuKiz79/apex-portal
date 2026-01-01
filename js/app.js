@@ -2041,28 +2041,40 @@ function renderCvProjectSection(order) {
                 </div>
             </div>
 
-            ${cvStatus === 'questionnaire_sent' && order.cvProjectId ? `
-                <!-- Questionnaire CTA -->
+            ${(cvStatus === 'new' || cvStatus === 'questionnaire_sent') && order.cvProjectId ? `
+                <!-- Questionnaire CTA - Ausfüllen möglich -->
                 <a href="?questionnaire=${order.cvProjectId}"
                    class="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-center font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                     <i class="fas fa-edit mr-2"></i>Fragebogen ausfüllen
                 </a>
             ` : ''}
 
-            ${(cvStatus === 'data_received' || cvStatus === 'ready' || cvStatus === 'delivered') && questionnaire ? `
-                <!-- Show Questionnaire Summary -->
+            ${(cvStatus === 'data_received' || cvStatus === 'generating' || cvStatus === 'ready' || cvStatus === 'delivered') ? `
+                <!-- Fragebogen bereits ausgefüllt - Read-Only Ansicht -->
                 <div class="bg-white rounded-lg p-3 border border-indigo-100">
-                    <button onclick="app.toggleCvQuestionnaireView('${order.id}')"
-                            class="w-full flex items-center justify-between text-left">
-                        <span class="text-xs font-semibold text-gray-700">
-                            <i class="fas fa-list-alt text-indigo-500 mr-1"></i>Ihre eingegebenen Daten
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-green-700">
+                            <i class="fas fa-check-circle mr-1"></i>Fragebogen ausgefüllt
                         </span>
-                        <i class="fas fa-chevron-down text-gray-400 transition-transform" id="cv-q-toggle-${order.id}"></i>
-                    </button>
-
-                    <div id="cv-questionnaire-view-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-100 space-y-3 text-xs">
-                        ${renderQuestionnaireDataForCustomer(questionnaire)}
+                        <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                            <i class="fas fa-lock mr-1"></i>Nur Ansicht
+                        </span>
                     </div>
+                    ${questionnaire ? `
+                        <button onclick="app.toggleCvQuestionnaireView('${order.id}')"
+                                class="w-full flex items-center justify-between text-left pt-2 border-t border-gray-100">
+                            <span class="text-xs text-gray-600">
+                                <i class="fas fa-list-alt text-indigo-500 mr-1"></i>Eingegebene Daten anzeigen
+                            </span>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" id="cv-q-toggle-${order.id}"></i>
+                        </button>
+
+                        <div id="cv-questionnaire-view-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-100 space-y-3 text-xs">
+                            ${renderQuestionnaireDataForCustomer(questionnaire)}
+                        </div>
+                    ` : `
+                        <p class="text-xs text-gray-500 italic">Daten werden verarbeitet...</p>
+                    `}
                 </div>
             ` : ''}
 
@@ -10097,11 +10109,13 @@ export async function initCvQuestionnaire() {
         const data = projectDoc.data();
 
         // ========== VALIDIERUNG: Status prüfen ==========
-        if (data.status === 'delivered' || data.status === 'ready') {
-            showToast('ℹ️ Dieser Fragebogen wurde bereits ausgefüllt');
-            // Weiterleiten zur Startseite nach 2 Sekunden
+        // Fragebogen ist nicht mehr bearbeitbar nach Absenden (data_received, generating, ready, delivered)
+        const completedStatuses = ['data_received', 'generating', 'ready', 'delivered'];
+        if (completedStatuses.includes(data.status)) {
+            showToast('ℹ️ Dieser Fragebogen wurde bereits ausgefüllt und kann nicht mehr bearbeitet werden.');
+            // Weiterleiten zum Dashboard nach 2 Sekunden
             setTimeout(() => {
-                window.location.href = window.location.origin;
+                window.location.href = window.location.origin + '?view=dashboard';
             }, 2000);
             return false;
         }
