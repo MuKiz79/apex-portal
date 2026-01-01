@@ -134,14 +134,20 @@ service cloud.firestore {
 
     // CV Projects Collection - Admin kann alles, Kunden können eigene lesen/schreiben (Fragebogen)
     match /cvProjects/{projectId} {
-      // Lesen: Admin kann alle lesen, User kann eigene lesen
-      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      // Lesen: Admin kann alle lesen, User kann eigene lesen (per userId ODER customerEmail)
+      allow read: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.customerEmail == request.auth.token.email
+        )
+      );
       // Erstellen: Nur Admin oder System (Cloud Function)
       allow create: if isAdmin();
       // Update: Admin kann alles, User kann nur Fragebogen-bezogene Felder ändern
+      // User wird identifiziert per userId ODER customerEmail
       allow update: if isAdmin() || (
         isSignedIn() &&
-        resource.data.userId == request.auth.uid &&
+        (resource.data.userId == request.auth.uid || resource.data.customerEmail == request.auth.token.email) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['questionnaire', 'documents', 'updatedAt', 'status'])
       );
       allow delete: if isAdmin();
