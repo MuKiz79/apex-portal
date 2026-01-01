@@ -2136,6 +2136,7 @@ function renderQuestionnaireDataForCustomer(questionnaire, documents, templateSe
 
     // Template Selection
     if (templateSelection) {
+        const colors = templateSelection.customization || {};
         html += `
             <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded p-2 border border-amber-200">
                 <p class="font-semibold text-gray-700 mb-2"><i class="fas fa-palette text-amber-500 mr-1"></i>Gewähltes Design</p>
@@ -2148,12 +2149,16 @@ function renderQuestionnaireDataForCustomer(questionnaire, documents, templateSe
                     <span class="text-gray-500">Farben:</span>
                     <div class="flex items-center gap-2">
                         <span class="inline-flex items-center gap-1">
-                            <span class="w-5 h-5 rounded border border-gray-300 shadow-sm" style="background-color: ${templateSelection.customization?.primaryColor || '#1a3a5c'}"></span>
+                            <span class="w-5 h-5 rounded border border-gray-300 shadow-sm" style="background-color: ${colors.primaryColor || '#b76e22'}"></span>
                             <span class="text-gray-500 text-[10px]">Haupt</span>
                         </span>
                         <span class="inline-flex items-center gap-1">
-                            <span class="w-5 h-5 rounded border border-gray-300 shadow-sm" style="background-color: ${templateSelection.customization?.accentColor || '#d4912a'}"></span>
+                            <span class="w-5 h-5 rounded border border-gray-300 shadow-sm" style="background-color: ${colors.accentColor || '#8fa3b4'}"></span>
                             <span class="text-gray-500 text-[10px]">Akzent</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1">
+                            <span class="w-5 h-5 rounded border border-gray-300 shadow-sm" style="background-color: ${colors.circleColor || '#f4b4b7'}"></span>
+                            <span class="text-gray-500 text-[10px]">Kreis</span>
                         </span>
                     </div>
                 </div>
@@ -8568,6 +8573,7 @@ function renderAdminQuestionnaireData(questionnaire, documents, templateSelectio
 
     // Template Selection (show at top for admin)
     if (templateSelection) {
+        const colors = templateSelection.customization || {};
         html += `
             <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-3 border border-amber-300">
                 <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -8580,22 +8586,29 @@ function renderAdminQuestionnaireData(questionnaire, documents, templateSelectio
                     </div>
                     <div>
                         <p class="text-xs text-gray-400 mb-1">Farbschema:</p>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <span class="inline-flex items-center gap-1">
-                                <span class="w-6 h-6 rounded border-2 border-gray-300 shadow" style="background-color: ${templateSelection.customization?.primaryColor || '#1a3a5c'}"></span>
+                                <span class="w-6 h-6 rounded border-2 border-gray-300 shadow" style="background-color: ${colors.primaryColor || '#b76e22'}"></span>
                                 <span class="text-xs text-gray-500">Haupt</span>
                             </span>
                             <span class="inline-flex items-center gap-1">
-                                <span class="w-6 h-6 rounded border-2 border-gray-300 shadow" style="background-color: ${templateSelection.customization?.accentColor || '#d4912a'}"></span>
+                                <span class="w-6 h-6 rounded border-2 border-gray-300 shadow" style="background-color: ${colors.accentColor || '#8fa3b4'}"></span>
                                 <span class="text-xs text-gray-500">Akzent</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <span class="w-6 h-6 rounded border-2 border-gray-300 shadow" style="background-color: ${colors.circleColor || '#f4b4b7'}"></span>
+                                <span class="text-xs text-gray-500">Kreis</span>
                             </span>
                         </div>
                     </div>
                 </div>
-                ${templateSelection.customization ? `
-                    <div class="mt-2 pt-2 border-t border-amber-200 text-xs text-gray-500">
-                        <span class="font-mono">Primary: ${templateSelection.customization.primaryColor}</span> |
-                        <span class="font-mono">Accent: ${templateSelection.customization.accentColor}</span>
+                ${colors.primaryColor || colors.accentColor || colors.circleColor ? `
+                    <div class="mt-2 pt-2 border-t border-amber-200 text-xs text-gray-500 font-mono">
+                        <div class="grid grid-cols-3 gap-2">
+                            <span>Primary: ${colors.primaryColor || '-'}</span>
+                            <span>Accent: ${colors.accentColor || '-'}</span>
+                            <span>Circle: ${colors.circleColor || '-'}</span>
+                        </div>
                     </div>
                 ` : ''}
             </div>
@@ -10680,8 +10693,10 @@ let smartUploadData = {
     // Template selection fields
     selectedTemplate: null,
     selectedTemplateName: '',
-    primaryColor: '#1a3a5c',
-    accentColor: '#d4912a'
+    primaryColor: '#b76e22',
+    accentColor: '#8fa3b4',
+    circleColor: '#f4b4b7',
+    colorsCustomized: false
 };
 
 // Current cv project data (loaded from Firestore)
@@ -11194,7 +11209,7 @@ async function loadAvailableTemplates() {
         // Render template cards
         templateGrid.innerHTML = templates.map(template => `
             <div class="template-card cursor-pointer rounded-xl border-2 border-gray-200 overflow-hidden hover:border-brand-gold hover:shadow-lg transition-all ${smartUploadData.selectedTemplate === template.id ? 'border-brand-gold ring-2 ring-brand-gold/30' : ''}"
-                 onclick="app.selectTemplate('${template.id}', '${template.name}', '${template.previewImage}', '${template.defaultColors?.primary || '#1a3a5c'}', '${template.defaultColors?.accent || '#d4912a'}')">
+                 onclick="app.selectTemplate('${template.id}', '${template.name}', '${template.previewImage}', '${template.defaultColors?.primary || '#b76e22'}', '${template.defaultColors?.accent || '#8fa3b4'}', '${template.defaultColors?.circle || '#f4b4b7'}')">
                 <div class="aspect-[3/4] bg-gray-100 relative">
                     <img src="${template.previewImage}" alt="${template.name}"
                          class="w-full h-full object-cover"
@@ -11235,16 +11250,18 @@ function getPackageDisplayName(packageType) {
 }
 
 // Select a template
-export function selectTemplate(templateId, templateName, previewImage, defaultPrimary, defaultAccent) {
+export function selectTemplate(templateId, templateName, previewImage, defaultPrimary, defaultAccent, defaultCircle) {
     smartUploadData.selectedTemplate = templateId;
     smartUploadData.selectedTemplateName = templateName;
 
     // Set default colors if not already customized
     if (!smartUploadData.colorsCustomized) {
-        smartUploadData.primaryColor = defaultPrimary;
-        smartUploadData.accentColor = defaultAccent;
-        document.getElementById('cv-q-primary-color').value = defaultPrimary;
-        document.getElementById('cv-q-accent-color').value = defaultAccent;
+        smartUploadData.primaryColor = defaultPrimary || '#b76e22';
+        smartUploadData.accentColor = defaultAccent || '#8fa3b4';
+        smartUploadData.circleColor = defaultCircle || '#f4b4b7';
+        document.getElementById('cv-q-primary-color').value = smartUploadData.primaryColor;
+        document.getElementById('cv-q-accent-color').value = smartUploadData.accentColor;
+        document.getElementById('cv-q-circle-color').value = smartUploadData.circleColor;
     }
 
     // Update template cards to show selection
@@ -11290,9 +11307,12 @@ export function setTemplateColor(type, color) {
     if (type === 'primary') {
         smartUploadData.primaryColor = color;
         document.getElementById('cv-q-primary-color').value = color;
-    } else {
+    } else if (type === 'accent') {
         smartUploadData.accentColor = color;
         document.getElementById('cv-q-accent-color').value = color;
+    } else if (type === 'circle') {
+        smartUploadData.circleColor = color;
+        document.getElementById('cv-q-circle-color').value = color;
     }
 
     // Update pdfme preview via iframe
@@ -11302,8 +11322,9 @@ export function setTemplateColor(type, color) {
 // Update colors from color picker
 export function updateTemplateColors() {
     smartUploadData.colorsCustomized = true;
-    smartUploadData.primaryColor = document.getElementById('cv-q-primary-color')?.value || '#1a3a5c';
-    smartUploadData.accentColor = document.getElementById('cv-q-accent-color')?.value || '#d4912a';
+    smartUploadData.primaryColor = document.getElementById('cv-q-primary-color')?.value || '#b76e22';
+    smartUploadData.accentColor = document.getElementById('cv-q-accent-color')?.value || '#8fa3b4';
+    smartUploadData.circleColor = document.getElementById('cv-q-circle-color')?.value || '#f4b4b7';
 
     // Update pdfme preview via iframe
     updatePdfmePreviewColors();
@@ -11316,19 +11337,22 @@ function updatePdfmePreviewColors() {
 
     const encodedPrimary = encodeURIComponent(smartUploadData.primaryColor);
     const encodedAccent = encodeURIComponent(smartUploadData.accentColor);
-    iframe.src = `/template-designer/preview.html?primary=${encodedPrimary}&accent=${encodedAccent}`;
+    const encodedCircle = encodeURIComponent(smartUploadData.circleColor);
+    iframe.src = `/template-designer/preview.html?primary=${encodedPrimary}&accent=${encodedAccent}&circle=${encodedCircle}`;
 }
 
 // Reset colors to template defaults
 export function resetTemplateColors() {
     smartUploadData.colorsCustomized = false;
 
-    // Reset to default colors
-    smartUploadData.primaryColor = '#1a3a5c';
-    smartUploadData.accentColor = '#d4912a';
+    // Reset to default colors (Kreativ template)
+    smartUploadData.primaryColor = '#b76e22';
+    smartUploadData.accentColor = '#8fa3b4';
+    smartUploadData.circleColor = '#f4b4b7';
 
-    document.getElementById('cv-q-primary-color').value = '#1a3a5c';
-    document.getElementById('cv-q-accent-color').value = '#d4912a';
+    document.getElementById('cv-q-primary-color').value = '#b76e22';
+    document.getElementById('cv-q-accent-color').value = '#8fa3b4';
+    document.getElementById('cv-q-circle-color').value = '#f4b4b7';
 
     // Update pdfme preview via iframe
     updatePdfmePreviewColors();
@@ -11340,8 +11364,12 @@ export function resetTemplateColors() {
 
 // Update admin preview colors - reload iframe with URL params
 export function updateAdminPreviewColors() {
+    console.log('updateAdminPreviewColors called');
+
     const primaryColor = document.getElementById('admin-primary-color')?.value || '#1a3a5c';
     const accentColor = document.getElementById('admin-accent-color')?.value || '#d4912a';
+
+    console.log('Colors:', primaryColor, accentColor);
 
     // Update text inputs
     const primaryText = document.getElementById('admin-primary-color-text');
@@ -11351,10 +11379,14 @@ export function updateAdminPreviewColors() {
 
     // Reload iframe with new colors as URL params
     const iframe = document.getElementById('admin-preview-iframe');
+    console.log('iframe element:', iframe);
+
     if (iframe) {
         const encodedPrimary = encodeURIComponent(primaryColor);
         const encodedAccent = encodeURIComponent(accentColor);
-        iframe.src = `/template-designer/preview.html?primary=${encodedPrimary}&accent=${encodedAccent}`;
+        const newSrc = `/template-designer/preview.html?primary=${encodedPrimary}&accent=${encodedAccent}`;
+        console.log('Setting iframe src to:', newSrc);
+        iframe.src = newSrc;
     }
 }
 
@@ -11430,7 +11462,8 @@ export async function submitSmartQuestionnaire() {
                 selectedAt: serverTimestamp(),
                 customization: {
                     primaryColor: smartUploadData.primaryColor,
-                    accentColor: smartUploadData.accentColor
+                    accentColor: smartUploadData.accentColor,
+                    circleColor: smartUploadData.circleColor
                 }
             };
         }

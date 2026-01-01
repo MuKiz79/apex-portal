@@ -5,6 +5,8 @@ import { BLANK_PDF } from '@pdfme/common';
 import { text, image, line, rectangle } from '@pdfme/schemas';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { jsPDF } from 'jspdf';
+import 'svg2pdf.js';
 import './App.css';
 import { getExecutiveCoverTemplate } from './templates/executiveCover';
 import { getSchwarzBeigeModernTemplate } from './templates/schwarzBeigeModern';
@@ -215,6 +217,13 @@ interface SavedTemplate {
   updatedAt: Date;
 }
 
+// SVG Template color configuration
+const SVG_COLORS = {
+  primary: '#b76e22',   // Bronze - Job title, section headers, bottom shapes
+  accent: '#8fa3b4',    // Blue-gray - Photo circle, contact icons
+  circle: '#f4b4b7'     // Pink - Large decorative circle
+};
+
 function App() {
   const designerRef = useRef<HTMLDivElement>(null);
   const designerInstance = useRef<Designer | null>(null);
@@ -222,6 +231,282 @@ function App() {
   const [currentTemplateName, setCurrentTemplateName] = useState('Neues Template');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  // SVG Preview state
+  const [svgPreviewUrl, setSvgPreviewUrl] = useState<string | null>(null);
+  const [primaryColor, setPrimaryColor] = useState(SVG_COLORS.primary);
+  const [accentColor, setAccentColor] = useState(SVG_COLORS.accent);
+  const [circleColor, setCircleColor] = useState(SVG_COLORS.circle);
+  const [svgLoading, setSvgLoading] = useState(false);
+  const [showSvgPreview, setShowSvgPreview] = useState(false);
+
+  // Load and process SVG with color replacement
+  const loadSvgPreview = async () => {
+    setSvgLoading(true);
+    try {
+      const response = await fetch('/template-designer/template-kreativ.svg?t=' + Date.now());
+      if (!response.ok) throw new Error('SVG nicht gefunden');
+
+      let svgText = await response.text();
+
+      // Replace colors
+      const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      svgText = svgText.replace(new RegExp(escapeRegex(SVG_COLORS.primary), 'gi'), primaryColor);
+      svgText = svgText.replace(new RegExp(escapeRegex(SVG_COLORS.accent), 'gi'), accentColor);
+      svgText = svgText.replace(new RegExp(escapeRegex(SVG_COLORS.circle), 'gi'), circleColor);
+
+      // Convert to data URL
+      const base64 = btoa(unescape(encodeURIComponent(svgText)));
+      setSvgPreviewUrl('data:image/svg+xml;base64,' + base64);
+    } catch (error) {
+      console.error('Error loading SVG:', error);
+      showMessage('Fehler beim Laden der SVG-Vorschau', 'error');
+    } finally {
+      setSvgLoading(false);
+    }
+  };
+
+  // Load SVG when colors change or preview is shown
+  useEffect(() => {
+    if (showSvgPreview) {
+      loadSvgPreview();
+    }
+  }, [showSvgPreview, primaryColor, accentColor, circleColor]);
+
+  // Reset SVG colors to defaults
+  const resetSvgColors = () => {
+    setPrimaryColor(SVG_COLORS.primary);
+    setAccentColor(SVG_COLORS.accent);
+    setCircleColor(SVG_COLORS.circle);
+  };
+
+  // Create pdfme template from SVG with custom colors
+  const createTemplateFromSvg = async () => {
+    if (!designerInstance.current) return;
+
+    setSvgLoading(true);
+    showMessage('Konvertiere SVG zu Template...', 'success');
+
+    try {
+      // 1. Load SVG and replace colors
+      const response = await fetch('/template-designer/template-kreativ.svg?t=' + Date.now());
+      if (!response.ok) throw new Error('SVG nicht gefunden');
+
+      let svgText = await response.text();
+
+      // Replace colors
+      const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      svgText = svgText.replace(new RegExp(escapeRegex(SVG_COLORS.primary), 'gi'), primaryColor);
+      svgText = svgText.replace(new RegExp(escapeRegex(SVG_COLORS.accent), 'gi'), accentColor);
+      svgText = svgText.replace(new RegExp(escapeRegex(SVG_COLORS.circle), 'gi'), circleColor);
+
+      // 2. Parse SVG as DOM element
+      const parser = new DOMParser();
+      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgElement = svgDoc.documentElement;
+
+      // Get SVG dimensions
+      const svgWidth = parseFloat(svgElement.getAttribute('width') || '595');
+      const svgHeight = parseFloat(svgElement.getAttribute('height') || '842');
+
+      // 3. Create PDF (A4)
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // 4. Convert SVG to PDF
+      await pdf.svg(svgElement, {
+        x: 0,
+        y: 0,
+        width: 210,
+        height: (svgHeight / svgWidth) * 210 // Maintain aspect ratio
+      });
+
+      // 5. Get PDF as Base64
+      const pdfBase64 = pdf.output('datauristring');
+
+      // 6. Create template with predefined schemas for "Kreativ" template
+      const template: Template = {
+        basePdf: pdfBase64,
+        schemas: [[
+          // Name area (top right)
+          {
+            name: 'vorname',
+            type: 'text',
+            position: { x: 75, y: 32 },
+            width: 120,
+            height: 15,
+            fontSize: 32,
+            fontColor: '#000000'
+          },
+          {
+            name: 'nachname',
+            type: 'text',
+            position: { x: 75, y: 50 },
+            width: 120,
+            height: 15,
+            fontSize: 32,
+            fontColor: '#000000'
+          },
+          {
+            name: 'jobTitle',
+            type: 'text',
+            position: { x: 75, y: 68 },
+            width: 120,
+            height: 10,
+            fontSize: 14,
+            fontColor: primaryColor
+          },
+          // Contact section (bottom left)
+          {
+            name: 'email',
+            type: 'text',
+            position: { x: 25, y: 235 },
+            width: 55,
+            height: 6,
+            fontSize: 9,
+            fontColor: '#333333'
+          },
+          {
+            name: 'telefon',
+            type: 'text',
+            position: { x: 25, y: 243 },
+            width: 55,
+            height: 6,
+            fontSize: 9,
+            fontColor: '#333333'
+          },
+          {
+            name: 'adresse',
+            type: 'text',
+            position: { x: 25, y: 251 },
+            width: 55,
+            height: 6,
+            fontSize: 9,
+            fontColor: '#333333'
+          },
+          // Profile section
+          {
+            name: 'profilTitel',
+            type: 'text',
+            position: { x: 85, y: 95 },
+            width: 110,
+            height: 8,
+            fontSize: 12,
+            fontColor: primaryColor
+          },
+          {
+            name: 'profilText',
+            type: 'text',
+            position: { x: 85, y: 105 },
+            width: 110,
+            height: 35,
+            fontSize: 9,
+            fontColor: '#333333'
+          },
+          // Experience section
+          {
+            name: 'erfahrungTitel',
+            type: 'text',
+            position: { x: 85, y: 145 },
+            width: 110,
+            height: 8,
+            fontSize: 12,
+            fontColor: primaryColor
+          },
+          {
+            name: 'erfahrung1',
+            type: 'text',
+            position: { x: 85, y: 155 },
+            width: 110,
+            height: 30,
+            fontSize: 9,
+            fontColor: '#333333'
+          },
+          {
+            name: 'erfahrung2',
+            type: 'text',
+            position: { x: 85, y: 190 },
+            width: 110,
+            height: 30,
+            fontSize: 9,
+            fontColor: '#333333'
+          },
+          // Left sidebar - Education
+          {
+            name: 'bildungTitel',
+            type: 'text',
+            position: { x: 15, y: 95 },
+            width: 50,
+            height: 8,
+            fontSize: 10,
+            fontColor: primaryColor
+          },
+          {
+            name: 'bildung',
+            type: 'text',
+            position: { x: 15, y: 105 },
+            width: 50,
+            height: 30,
+            fontSize: 8,
+            fontColor: '#333333'
+          },
+          // Left sidebar - Skills
+          {
+            name: 'skillsTitel',
+            type: 'text',
+            position: { x: 15, y: 140 },
+            width: 50,
+            height: 8,
+            fontSize: 10,
+            fontColor: primaryColor
+          },
+          {
+            name: 'skills',
+            type: 'text',
+            position: { x: 15, y: 150 },
+            width: 50,
+            height: 35,
+            fontSize: 8,
+            fontColor: '#333333'
+          },
+          // Left sidebar - Languages
+          {
+            name: 'sprachenTitel',
+            type: 'text',
+            position: { x: 15, y: 190 },
+            width: 50,
+            height: 8,
+            fontSize: 10,
+            fontColor: primaryColor
+          },
+          {
+            name: 'sprachen',
+            type: 'text',
+            position: { x: 15, y: 200 },
+            width: 50,
+            height: 25,
+            fontSize: 8,
+            fontColor: '#333333'
+          }
+        ]]
+      };
+
+      // 7. Load template into designer
+      designerInstance.current.updateTemplate(template);
+      setCurrentTemplateName('Kreativ Template');
+      setShowSvgPreview(false);
+      showMessage('Template erfolgreich erstellt! Felder können jetzt bearbeitet werden.', 'success');
+
+    } catch (error) {
+      console.error('Error creating template from SVG:', error);
+      showMessage('Fehler beim Erstellen des Templates: ' + (error as Error).message, 'error');
+    } finally {
+      setSvgLoading(false);
+    }
+  };
 
   // Load saved templates from Firestore
   const loadTemplatesFromFirestore = async () => {
@@ -392,6 +677,35 @@ function App() {
     event.target.value = '';
   };
 
+  // Load PDF as base template
+  const loadBasePdf = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !designerInstance.current) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const base64 = e.target?.result as string;
+        const currentTemplate = designerInstance.current?.getTemplate();
+
+        // Create new template with the PDF as base
+        const newTemplate: Template = {
+          basePdf: base64,
+          schemas: currentTemplate?.schemas || [[]]
+        };
+
+        designerInstance.current?.updateTemplate(newTemplate);
+        setCurrentTemplateName(file.name.replace('.pdf', ''));
+        showMessage('PDF als Basis geladen! Jetzt Felder hinzufügen.', 'success');
+      } catch (error) {
+        console.error('Error loading PDF:', error);
+        showMessage('Fehler beim Laden der PDF', 'error');
+      }
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  };
+
   return (
     <div className="app">
       {/* Header */}
@@ -417,6 +731,10 @@ function App() {
             Import JSON
             <input type="file" accept=".json" onChange={importTemplate} hidden />
           </label>
+          <label className="btn btn-primary" style={{ backgroundColor: '#059669' }}>
+            📄 PDF hochladen
+            <input type="file" accept=".pdf" onChange={loadBasePdf} hidden />
+          </label>
           <button onClick={resetTemplate} className="btn btn-danger">
             Zurücksetzen
           </button>
@@ -434,6 +752,77 @@ function App() {
       <div className="main-content">
         {/* Sidebar with saved templates */}
         <aside className="sidebar">
+          {/* SVG Preview Section */}
+          <h3>
+            <button
+              onClick={() => setShowSvgPreview(!showSvgPreview)}
+              className="btn btn-template"
+              style={{ width: '100%', marginBottom: '10px' }}
+            >
+              🎨 SVG-Vorschau {showSvgPreview ? '▼' : '▶'}
+            </button>
+          </h3>
+
+          {showSvgPreview && (
+            <div className="svg-preview-section">
+              {/* Color Pickers */}
+              <div className="color-picker-group">
+                <label>
+                  <span>Primary (Bronze)</span>
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>Accent (Blau-Grau)</span>
+                  <input
+                    type="color"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>Circle (Rosa)</span>
+                  <input
+                    type="color"
+                    value={circleColor}
+                    onChange={(e) => setCircleColor(e.target.value)}
+                  />
+                </label>
+                <button onClick={resetSvgColors} className="btn btn-small">
+                  Farben zurücksetzen
+                </button>
+              </div>
+
+              {/* Create Template Button */}
+              <button
+                onClick={createTemplateFromSvg}
+                className="btn btn-primary"
+                disabled={svgLoading}
+                style={{ width: '100%', marginBottom: '15px' }}
+              >
+                {svgLoading ? 'Konvertiere...' : '✨ Als Template laden'}
+              </button>
+
+              {/* SVG Preview */}
+              <div className="svg-preview-container">
+                {svgLoading ? (
+                  <div className="svg-loading">Lade Vorschau...</div>
+                ) : svgPreviewUrl ? (
+                  <img
+                    src={svgPreviewUrl}
+                    alt="Template Vorschau"
+                    className="svg-preview-image"
+                  />
+                ) : (
+                  <div className="svg-loading">Klicken Sie auf eine Farbe</div>
+                )}
+              </div>
+            </div>
+          )}
+
           <h3>Basis-Templates</h3>
           <div className="base-templates">
             <button onClick={loadSchwarzBeigeModern} className="btn btn-template">

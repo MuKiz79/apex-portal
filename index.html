@@ -1693,22 +1693,33 @@
                                             <div>
                                                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Hauptfarbe (Primary)</label>
                                                 <div class="flex gap-2">
-                                                    <input type="color" id="admin-primary-color" value="#1a3a5c"
-                                                           onchange="app.updateAdminPreviewColors()"
+                                                    <input type="color" id="admin-primary-color" value="#b76e22"
+                                                           oninput="updateAdminPreview()"
                                                            class="w-12 h-10 rounded cursor-pointer border border-gray-300">
-                                                    <input type="text" id="admin-primary-color-text" value="#1a3a5c"
-                                                           onchange="document.getElementById('admin-primary-color').value = this.value; app.updateAdminPreviewColors()"
+                                                    <input type="text" id="admin-primary-color-text" value="#b76e22"
+                                                           oninput="updateAdminPreviewFromText('primary')"
                                                            class="flex-1 p-2 border border-gray-200 rounded-lg font-mono text-sm">
                                                 </div>
                                             </div>
                                             <div>
                                                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Akzentfarbe (Accent)</label>
                                                 <div class="flex gap-2">
-                                                    <input type="color" id="admin-accent-color" value="#d4912a"
-                                                           onchange="app.updateAdminPreviewColors()"
+                                                    <input type="color" id="admin-accent-color" value="#8fa3b4"
+                                                           oninput="updateAdminPreview()"
                                                            class="w-12 h-10 rounded cursor-pointer border border-gray-300">
-                                                    <input type="text" id="admin-accent-color-text" value="#d4912a"
-                                                           onchange="document.getElementById('admin-accent-color').value = this.value; app.updateAdminPreviewColors()"
+                                                    <input type="text" id="admin-accent-color-text" value="#8fa3b4"
+                                                           oninput="updateAdminPreviewFromText('accent')"
+                                                           class="flex-1 p-2 border border-gray-200 rounded-lg font-mono text-sm">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Dekorative Kreise</label>
+                                                <div class="flex gap-2">
+                                                    <input type="color" id="admin-circle-color" value="#f4b4b7"
+                                                           oninput="updateAdminPreview()"
+                                                           class="w-12 h-10 rounded cursor-pointer border border-gray-300">
+                                                    <input type="text" id="admin-circle-color-text" value="#f4b4b7"
+                                                           oninput="updateAdminPreviewFromText('circle')"
                                                            class="flex-1 p-2 border border-gray-200 rounded-lg font-mono text-sm">
                                                 </div>
                                             </div>
@@ -1717,51 +1728,150 @@
                                             <div>
                                                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Farb-Presets</label>
                                                 <div class="grid grid-cols-4 gap-2">
-                                                    <button onclick="app.setAdminPreviewPreset('#1a3a5c', '#d4912a')" class="p-2 rounded border hover:border-brand-gold transition" title="Classic Navy">
+                                                    <button onclick="setAdminPreset('#b76e22', '#8fa3b4', '#f4b4b7')" class="p-2 rounded border hover:border-brand-gold transition" title="Original">
+                                                        <div class="flex gap-1">
+                                                            <div class="w-4 h-4 rounded" style="background: #b76e22"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #8fa3b4"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #f4b4b7"></div>
+                                                        </div>
+                                                    </button>
+                                                    <button onclick="setAdminPreset('#1a3a5c', '#d4912a', '#b8d4e3')" class="p-2 rounded border hover:border-brand-gold transition" title="Navy Gold">
                                                         <div class="flex gap-1">
                                                             <div class="w-4 h-4 rounded" style="background: #1a3a5c"></div>
                                                             <div class="w-4 h-4 rounded" style="background: #d4912a"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #b8d4e3"></div>
                                                         </div>
                                                     </button>
-                                                    <button onclick="app.setAdminPreviewPreset('#2d2d2d', '#f5f0e8')" class="p-2 rounded border hover:border-brand-gold transition" title="Schwarz Beige">
+                                                    <button onclick="setAdminPreset('#2d5a4e', '#c9a959', '#c8e6c9')" class="p-2 rounded border hover:border-brand-gold transition" title="Teal Gold">
                                                         <div class="flex gap-1">
-                                                            <div class="w-4 h-4 rounded" style="background: #2d2d2d"></div>
-                                                            <div class="w-4 h-4 rounded" style="background: #f5f0e8"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #2d5a4e"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #c9a959"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #c8e6c9"></div>
                                                         </div>
                                                     </button>
-                                                    <button onclick="app.setAdminPreviewPreset('#1e5631', '#f0c808')" class="p-2 rounded border hover:border-brand-gold transition" title="Green Yellow">
-                                                        <div class="flex gap-1">
-                                                            <div class="w-4 h-4 rounded" style="background: #1e5631"></div>
-                                                            <div class="w-4 h-4 rounded" style="background: #f0c808"></div>
-                                                        </div>
-                                                    </button>
-                                                    <button onclick="app.setAdminPreviewPreset('#4a1942', '#e8c547')" class="p-2 rounded border hover:border-brand-gold transition" title="Purple Gold">
+                                                    <button onclick="setAdminPreset('#4a1942', '#e8c547', '#e1bee7')" class="p-2 rounded border hover:border-brand-gold transition" title="Purple Gold">
                                                         <div class="flex gap-1">
                                                             <div class="w-4 h-4 rounded" style="background: #4a1942"></div>
                                                             <div class="w-4 h-4 rounded" style="background: #e8c547"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #e1bee7"></div>
                                                         </div>
                                                     </button>
                                                 </div>
                                             </div>
 
-                                            <button onclick="app.setAdminPreviewPreset('#1a3a5c', '#d4912a')" class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                                            <button onclick="resetAdminPreviewColors()" class="text-sm text-gray-500 hover:text-brand-gold flex items-center gap-1">
                                                 <i class="fas fa-undo text-xs"></i>
                                                 Standardfarben
                                             </button>
                                         </div>
 
-                                        <!-- Preview iframe -->
-                                        <div class="bg-gray-100 rounded-lg p-2">
+                                        <!-- Preview iframe - scaled to show full A4 page -->
+                                        <div class="bg-gray-100 rounded-lg p-4 cursor-pointer hover:bg-gray-200 transition-colors" onclick="openPreviewFullscreen()">
+                                            <div class="flex justify-center">
+                                                <div style="width: 280px; height: 396px; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: white;">
+                                                    <iframe
+                                                        id="admin-preview-iframe"
+                                                        src="/template-designer/cv-template.html?primary=%23b76e22&accent=%238fa3b4&circle=%23f4b4b7"
+                                                        class="border-0"
+                                                        style="width: 595px; height: 842px; transform: scale(0.47); transform-origin: top left; pointer-events: none;"
+                                                        title="Admin Template Vorschau"
+                                                    ></iframe>
+                                                </div>
+                                            </div>
+                                            <div class="text-center mt-3 text-sm text-gray-500">
+                                                <i class="fas fa-search-plus mr-1"></i> Klicken zum Vergrößern
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Fullscreen Preview Modal -->
+                                <div id="preview-fullscreen-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4" onclick="closePreviewFullscreen(event)">
+                                    <div class="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden" onclick="event.stopPropagation()">
+                                        <div class="flex items-center justify-between p-4 border-b bg-gray-50">
+                                            <h3 class="font-semibold text-gray-800">Template Vorschau</h3>
+                                            <button onclick="closePreviewFullscreen()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                                        </div>
+                                        <div class="p-4 bg-gray-100 overflow-auto" style="max-height: calc(95vh - 60px);">
                                             <iframe
-                                                id="admin-preview-iframe"
-                                                src="/template-designer/preview.html"
-                                                class="w-full border-0 rounded shadow"
-                                                style="height: 400px;"
-                                                title="Admin Template Vorschau"
+                                                id="admin-preview-iframe-fullscreen"
+                                                class="w-full border-0 rounded shadow mx-auto block"
+                                                style="height: 842px; max-width: 595px;"
+                                                title="Admin Template Vorschau Vollbild"
                                             ></iframe>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Inline script for admin preview (works independently of module system) -->
+                                <script>
+                                    function updateAdminPreview() {
+                                        const primary = document.getElementById('admin-primary-color').value;
+                                        const accent = document.getElementById('admin-accent-color').value;
+                                        const iframe = document.getElementById('admin-preview-iframe');
+
+                                        // Update text inputs
+                                        document.getElementById('admin-primary-color-text').value = primary;
+                                        document.getElementById('admin-accent-color-text').value = accent;
+
+                                        // Reload iframe with new colors
+                                        if (iframe) {
+                                            const circle = document.getElementById('admin-circle-color')?.value || '#f4b4b7';
+                                            iframe.src = '/template-designer/cv-template.html?primary=' + encodeURIComponent(primary) + '&accent=' + encodeURIComponent(accent) + '&circle=' + encodeURIComponent(circle) + '&t=' + Date.now();
+                                        }
+                                    }
+
+                                    function setAdminPreset(primary, accent, circle) {
+                                        document.getElementById('admin-primary-color').value = primary;
+                                        document.getElementById('admin-accent-color').value = accent;
+                                        document.getElementById('admin-primary-color-text').value = primary;
+                                        document.getElementById('admin-accent-color-text').value = accent;
+                                        if (circle) {
+                                            document.getElementById('admin-circle-color').value = circle;
+                                            document.getElementById('admin-circle-color-text').value = circle;
+                                        }
+                                        updateAdminPreview();
+                                    }
+
+                                    function resetAdminPreviewColors() {
+                                        setAdminPreset('#b76e22', '#8fa3b4', '#f4b4b7');
+                                    }
+
+                                    function updateAdminPreviewFromText(type) {
+                                        const textInput = document.getElementById('admin-' + type + '-color-text');
+                                        const colorInput = document.getElementById('admin-' + type + '-color');
+                                        if (textInput && colorInput && /^#[0-9A-Fa-f]{6}$/.test(textInput.value)) {
+                                            colorInput.value = textInput.value;
+                                            updateAdminPreview();
+                                        }
+                                    }
+
+                                    function openPreviewFullscreen() {
+                                        const modal = document.getElementById('preview-fullscreen-modal');
+                                        const fullscreenIframe = document.getElementById('admin-preview-iframe-fullscreen');
+                                        const smallIframe = document.getElementById('admin-preview-iframe');
+
+                                        // Copy current src to fullscreen iframe
+                                        fullscreenIframe.src = smallIframe.src;
+
+                                        modal.classList.remove('hidden');
+                                        modal.classList.add('flex');
+                                        document.body.style.overflow = 'hidden';
+                                    }
+
+                                    function closePreviewFullscreen(event) {
+                                        if (event && event.target !== event.currentTarget) return;
+                                        const modal = document.getElementById('preview-fullscreen-modal');
+                                        modal.classList.add('hidden');
+                                        modal.classList.remove('flex');
+                                        document.body.style.overflow = '';
+                                    }
+
+                                    // Close on Escape key
+                                    document.addEventListener('keydown', function(e) {
+                                        if (e.key === 'Escape') closePreviewFullscreen();
+                                    });
+                                </script>
 
                                 <hr class="border-gray-200">
 
@@ -3742,34 +3852,49 @@
                                     <i class="fas fa-palette text-brand-gold"></i>
                                     Farben anpassen
                                 </h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                     <!-- Primary Color -->
                                     <div>
                                         <label class="block text-sm text-gray-600 mb-2">Hauptfarbe</label>
-                                        <div class="flex items-center gap-3">
-                                            <input type="color" id="cv-q-primary-color" value="#1a3a5c"
+                                        <div class="flex flex-col gap-2">
+                                            <input type="color" id="cv-q-primary-color" value="#b76e22"
                                                    class="w-12 h-12 rounded-lg border-2 border-gray-200 cursor-pointer"
                                                    onchange="app.updateTemplateColors()">
-                                            <div class="flex gap-2">
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#1a3a5c')" class="w-8 h-8 rounded-full bg-[#1a3a5c] border-2 border-white shadow hover:scale-110 transition" title="Navy"></button>
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#2d2d2d')" class="w-8 h-8 rounded-full bg-[#2d2d2d] border-2 border-white shadow hover:scale-110 transition" title="Anthrazit"></button>
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#1e4d3a')" class="w-8 h-8 rounded-full bg-[#1e4d3a] border-2 border-white shadow hover:scale-110 transition" title="Forest"></button>
-                                                <button type="button" onclick="app.setTemplateColor('primary', '#5c2d1a')" class="w-8 h-8 rounded-full bg-[#5c2d1a] border-2 border-white shadow hover:scale-110 transition" title="Mahagoni"></button>
+                                            <div class="flex gap-2 flex-wrap">
+                                                <button type="button" onclick="app.setTemplateColor('primary', '#b76e22')" class="w-7 h-7 rounded-full bg-[#b76e22] border-2 border-white shadow hover:scale-110 transition" title="Bronze"></button>
+                                                <button type="button" onclick="app.setTemplateColor('primary', '#1a3a5c')" class="w-7 h-7 rounded-full bg-[#1a3a5c] border-2 border-white shadow hover:scale-110 transition" title="Navy"></button>
+                                                <button type="button" onclick="app.setTemplateColor('primary', '#2d2d2d')" class="w-7 h-7 rounded-full bg-[#2d2d2d] border-2 border-white shadow hover:scale-110 transition" title="Anthrazit"></button>
+                                                <button type="button" onclick="app.setTemplateColor('primary', '#1e4d3a')" class="w-7 h-7 rounded-full bg-[#1e4d3a] border-2 border-white shadow hover:scale-110 transition" title="Forest"></button>
                                             </div>
                                         </div>
                                     </div>
                                     <!-- Accent Color -->
                                     <div>
                                         <label class="block text-sm text-gray-600 mb-2">Akzentfarbe</label>
-                                        <div class="flex items-center gap-3">
-                                            <input type="color" id="cv-q-accent-color" value="#d4912a"
+                                        <div class="flex flex-col gap-2">
+                                            <input type="color" id="cv-q-accent-color" value="#8fa3b4"
                                                    class="w-12 h-12 rounded-lg border-2 border-gray-200 cursor-pointer"
                                                    onchange="app.updateTemplateColors()">
-                                            <div class="flex gap-2">
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#d4912a')" class="w-8 h-8 rounded-full bg-[#d4912a] border-2 border-white shadow hover:scale-110 transition" title="Gold"></button>
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#c9a227')" class="w-8 h-8 rounded-full bg-[#c9a227] border-2 border-white shadow hover:scale-110 transition" title="Messing"></button>
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#3d85c6')" class="w-8 h-8 rounded-full bg-[#3d85c6] border-2 border-white shadow hover:scale-110 transition" title="Blau"></button>
-                                                <button type="button" onclick="app.setTemplateColor('accent', '#6aa84f')" class="w-8 h-8 rounded-full bg-[#6aa84f] border-2 border-white shadow hover:scale-110 transition" title="Grün"></button>
+                                            <div class="flex gap-2 flex-wrap">
+                                                <button type="button" onclick="app.setTemplateColor('accent', '#8fa3b4')" class="w-7 h-7 rounded-full bg-[#8fa3b4] border-2 border-white shadow hover:scale-110 transition" title="Blau-Grau"></button>
+                                                <button type="button" onclick="app.setTemplateColor('accent', '#d4912a')" class="w-7 h-7 rounded-full bg-[#d4912a] border-2 border-white shadow hover:scale-110 transition" title="Gold"></button>
+                                                <button type="button" onclick="app.setTemplateColor('accent', '#3d85c6')" class="w-7 h-7 rounded-full bg-[#3d85c6] border-2 border-white shadow hover:scale-110 transition" title="Blau"></button>
+                                                <button type="button" onclick="app.setTemplateColor('accent', '#6aa84f')" class="w-7 h-7 rounded-full bg-[#6aa84f] border-2 border-white shadow hover:scale-110 transition" title="Grün"></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Circle Color -->
+                                    <div>
+                                        <label class="block text-sm text-gray-600 mb-2">Dekorkreis</label>
+                                        <div class="flex flex-col gap-2">
+                                            <input type="color" id="cv-q-circle-color" value="#f4b4b7"
+                                                   class="w-12 h-12 rounded-lg border-2 border-gray-200 cursor-pointer"
+                                                   onchange="app.updateTemplateColors()">
+                                            <div class="flex gap-2 flex-wrap">
+                                                <button type="button" onclick="app.setTemplateColor('circle', '#f4b4b7')" class="w-7 h-7 rounded-full bg-[#f4b4b7] border-2 border-white shadow hover:scale-110 transition" title="Rosa"></button>
+                                                <button type="button" onclick="app.setTemplateColor('circle', '#ffd700')" class="w-7 h-7 rounded-full bg-[#ffd700] border-2 border-white shadow hover:scale-110 transition" title="Gold"></button>
+                                                <button type="button" onclick="app.setTemplateColor('circle', '#b8d4e3')" class="w-7 h-7 rounded-full bg-[#b8d4e3] border-2 border-white shadow hover:scale-110 transition" title="Hellblau"></button>
+                                                <button type="button" onclick="app.setTemplateColor('circle', '#d4edda')" class="w-7 h-7 rounded-full bg-[#d4edda] border-2 border-white shadow hover:scale-110 transition" title="Mintgrün"></button>
                                             </div>
                                         </div>
                                     </div>

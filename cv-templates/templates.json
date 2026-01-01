@@ -1,17 +1,37 @@
 {
   "young-professional": [
     {
+      "id": "kreativ",
+      "name": "Kreativ Design",
+      "description": "Modernes kreatives Design mit dekorativen Elementen und Fotokreis",
+      "previewImage": "/template-designer/preview.html",
+      "svgFile": "/template-designer/template-kreativ.svg",
+      "defaultColors": {
+        "primary": "#b76e22",
+        "accent": "#8fa3b4",
+        "circle": "#f4b4b7"
+      },
+      "colorLabels": {
+        "primary": "Hauptfarbe (Überschriften, Formen)",
+        "accent": "Akzentfarbe (Icons, Fotokreis)",
+        "circle": "Dekorkreis (großer Kreis oben links)"
+      },
+      "sortOrder": 1,
+      "isActive": true
+    },
+    {
       "id": "yp-template-1",
       "name": "Modern Klassisch",
-      "description": "Modernes kreatives Design mit Foto-Header und zweispaltiger Struktur",
+      "description": "Klassisches Design mit Foto-Header und zweispaltiger Struktur",
       "previewImage": "/cv-templates/young-professional/template1-preview.png",
       "pdfFile": "/cv-templates/young-professional/template1.pdf",
       "schemaFile": "/cv-templates/young-professional/template1-schema.json",
       "defaultColors": {
         "primary": "#1a3a5c",
-        "accent": "#d4912a"
+        "accent": "#d4912a",
+        "circle": "#f4b4b7"
       },
-      "sortOrder": 1,
+      "sortOrder": 2,
       "isActive": true
     }
   ],
