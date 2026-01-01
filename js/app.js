@@ -11204,15 +11204,16 @@ export function selectTemplate(templateId, templateName, previewImage, defaultPr
         }
     }
 
-    // Show preview
+    // Show SVG preview
     const previewContainer = document.getElementById('cv-q-template-preview-container');
-    const previewImg = document.getElementById('cv-q-template-preview-img');
     const previewName = document.getElementById('cv-q-selected-template-name');
 
-    if (previewContainer && previewImg) {
+    if (previewContainer) {
         previewContainer.classList.remove('hidden');
-        previewImg.src = previewImage;
         if (previewName) previewName.textContent = templateName;
+
+        // Update SVG colors
+        updateSvgPreviewColors();
     }
 
     // Update next button state
@@ -11230,6 +11231,9 @@ export function setTemplateColor(type, color) {
         smartUploadData.accentColor = color;
         document.getElementById('cv-q-accent-color').value = color;
     }
+
+    // Update SVG preview
+    updateSvgPreviewColors();
 }
 
 // Update colors from color picker
@@ -11237,6 +11241,29 @@ export function updateTemplateColors() {
     smartUploadData.colorsCustomized = true;
     smartUploadData.primaryColor = document.getElementById('cv-q-primary-color')?.value || '#1a3a5c';
     smartUploadData.accentColor = document.getElementById('cv-q-accent-color')?.value || '#d4912a';
+
+    // Update SVG preview
+    updateSvgPreviewColors();
+}
+
+// Update SVG preview with current colors
+function updateSvgPreviewColors() {
+    const primary = smartUploadData.primaryColor;
+    const accent = smartUploadData.accentColor;
+
+    // Primary color elements (header, main titles)
+    document.getElementById('svg-header-bg')?.setAttribute('fill', primary);
+    document.getElementById('svg-main-title1')?.setAttribute('fill', primary);
+    document.getElementById('svg-main-title2')?.setAttribute('fill', primary);
+
+    // Accent color elements (contact bar, sidebar titles, dates)
+    document.getElementById('svg-contact-bar')?.setAttribute('fill', accent);
+    document.getElementById('svg-sidebar-title1')?.setAttribute('fill', accent);
+    document.getElementById('svg-sidebar-title2')?.setAttribute('fill', accent);
+    document.getElementById('svg-sidebar-title3')?.setAttribute('fill', accent);
+    document.getElementById('svg-job1-date')?.setAttribute('fill', accent);
+    document.getElementById('svg-job2-date')?.setAttribute('fill', accent);
+    document.getElementById('svg-edu-date')?.setAttribute('fill', accent);
 }
 
 // Reset colors to template defaults
@@ -11249,6 +11276,9 @@ export function resetTemplateColors() {
 
     document.getElementById('cv-q-primary-color').value = '#1a3a5c';
     document.getElementById('cv-q-accent-color').value = '#d4912a';
+
+    // Update SVG preview
+    updateSvgPreviewColors();
 
     showToast('Farben zurückgesetzt');
 }
