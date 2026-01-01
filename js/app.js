@@ -8405,6 +8405,43 @@ export async function resendCvQuestionnaire(orderId) {
 }
 
 // Send CV questionnaire directly from admin orders view
+// Extract package type from order item title
+function extractPackageType(orderItems) {
+    if (!orderItems || orderItems.length === 0) return 'young-professional';
+
+    // Find CV package in order items
+    const cvItem = orderItems.find(item => {
+        const title = (item.title || '').toLowerCase();
+        return title.includes('cv') || title.includes('lebenslauf') || title.includes('quick-check');
+    });
+
+    if (!cvItem) return 'young-professional';
+
+    const title = cvItem.title.toLowerCase();
+
+    if (title.includes('executive') || title.includes('c-suite') || title.includes('c-level')) {
+        return 'executive';
+    } else if (title.includes('senior')) {
+        return 'senior-professional';
+    } else if (title.includes('quick-check') || title.includes('quickcheck')) {
+        return 'quick-check';
+    } else {
+        return 'young-professional';
+    }
+}
+
+// Get CV item title from order
+function getCvItemTitle(orderItems) {
+    if (!orderItems || orderItems.length === 0) return 'CV';
+
+    const cvItem = orderItems.find(item => {
+        const title = (item.title || '').toLowerCase();
+        return title.includes('cv') || title.includes('lebenslauf') || title.includes('quick-check');
+    });
+
+    return cvItem?.title || 'CV';
+}
+
 export async function sendCvQuestionnaireFromOrder(orderId, customerEmail, customerName) {
     if (!orderId) {
         showToast('Fehler: Keine Bestell-ID');
@@ -8424,6 +8461,10 @@ export async function sendCvQuestionnaireFromOrder(orderId, customerEmail, custo
         const email = customerEmail || order.customerEmail;
         const name = customerName || order.customerName || 'Kunde';
 
+        // Extract package type and item title from order
+        const packageType = extractPackageType(order.items);
+        const orderItemTitle = getCvItemTitle(order.items);
+
         showToast('Erstelle CV-Projekt...');
 
         // Create cvProject document
@@ -8432,6 +8473,8 @@ export async function sendCvQuestionnaireFromOrder(orderId, customerEmail, custo
             userId: userId,
             customerEmail: email,
             customerName: name,
+            packageType: packageType,
+            orderItemTitle: orderItemTitle,
             status: 'questionnaire_sent',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
@@ -10570,8 +10613,16 @@ let smartUploadData = {
     targetRole: '',
     linkedin: '',
     links: '',
-    notes: ''
+    notes: '',
+    // Template selection fields
+    selectedTemplate: null,
+    selectedTemplateName: '',
+    primaryColor: '#1a3a5c',
+    accentColor: '#d4912a'
 };
+
+// Current cv project data (loaded from Firestore)
+let currentCvProjectData = null;
 let experienceCounter = 0;
 let educationCounter = 0;
 let languageCounter = 0;
@@ -10605,6 +10656,9 @@ export async function initCvQuestionnaire() {
         }
 
         const data = projectDoc.data();
+
+        // Store project data for template loading
+        currentCvProjectData = data;
 
         // ========== VALIDIERUNG: Status prüfen ==========
         // Fragebogen ist nicht mehr bearbeitbar nach Absenden (data_received, generating, ready, delivered)
@@ -10833,6 +10887,9 @@ export function updateSmartNextButton() {
         const email = document.getElementById('cv-q-smart-email')?.value?.trim();
         const targetRole = document.getElementById('cv-q-smart-target-role')?.value?.trim();
         nextBtn.disabled = !name || !email || !targetRole;
+    } else if (smartQuestionnaireStep === 3) {
+        // Step 3: Need template selected
+        nextBtn.disabled = !smartUploadData.selectedTemplate;
     }
 }
 
@@ -10844,8 +10901,8 @@ function updateSmartQuestionnaireUI() {
     // Show current step
     document.getElementById(`cv-q-smart-step-${smartQuestionnaireStep}`)?.classList.remove('hidden');
 
-    // Update progress indicators
-    for (let i = 1; i <= 3; i++) {
+    // Update progress indicators (now 4 steps)
+    for (let i = 1; i <= 4; i++) {
         const indicator = document.getElementById(`smart-step-${i}-indicator`);
         const line = document.getElementById(`smart-step-line-${i - 1}`);
 
@@ -10880,7 +10937,13 @@ function updateSmartQuestionnaireUI() {
         backBtn.onclick = () => smartQuestionnaireBack();
     }
 
+    // Step 3: Load templates when entering template selection
     if (smartQuestionnaireStep === 3) {
+        loadAvailableTemplates();
+    }
+
+    // Step 4: Show submit button and fill summary
+    if (smartQuestionnaireStep === 4) {
         nextBtn?.classList.add('hidden');
         submitBtn?.classList.remove('hidden');
 
@@ -10914,6 +10977,15 @@ export function smartQuestionnaireNext() {
             showToast('Bitte füllen Sie alle Pflichtfelder aus');
             return;
         }
+    } else if (smartQuestionnaireStep === 3) {
+        // Validate template selection
+        if (!smartUploadData.selectedTemplate) {
+            showToast('Bitte wählen Sie ein Template aus');
+            return;
+        }
+        // Save color customization
+        smartUploadData.primaryColor = document.getElementById('cv-q-primary-color')?.value || '#1a3a5c';
+        smartUploadData.accentColor = document.getElementById('cv-q-accent-color')?.value || '#d4912a';
     }
 
     smartQuestionnaireStep++;
@@ -11002,7 +11074,183 @@ function fillSmartSummary() {
         `;
     }
 
+    // Template selection summary
+    if (smartUploadData.selectedTemplate) {
+        html += `
+            <div class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                <i class="fas fa-file-alt text-brand-gold"></i>
+                <span><strong>Template:</strong> ${smartUploadData.selectedTemplateName || smartUploadData.selectedTemplate}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-palette text-brand-gold"></i>
+                <span><strong>Farben:</strong>
+                    <span class="inline-block w-4 h-4 rounded" style="background-color: ${smartUploadData.primaryColor}; vertical-align: middle;"></span>
+                    <span class="inline-block w-4 h-4 rounded ml-1" style="background-color: ${smartUploadData.accentColor}; vertical-align: middle;"></span>
+                </span>
+            </div>
+        `;
+    }
+
     summaryContent.innerHTML = html;
+}
+
+// ========== TEMPLATE SELECTION FUNCTIONS ==========
+
+// Load available templates based on package type
+async function loadAvailableTemplates() {
+    const packageType = currentCvProjectData?.packageType || 'young-professional';
+    const orderItemTitle = currentCvProjectData?.orderItemTitle || '';
+
+    // Update package info display
+    const packageNameEl = document.getElementById('cv-q-template-package-name');
+    if (packageNameEl) {
+        packageNameEl.textContent = orderItemTitle || getPackageDisplayName(packageType);
+    }
+
+    const templateGrid = document.getElementById('cv-q-template-grid');
+    if (!templateGrid) return;
+
+    try {
+        // Load templates from static JSON file
+        const response = await fetch('/cv-templates/templates.json');
+        const templatesData = await response.json();
+
+        // Get templates for this package type
+        const templates = templatesData[packageType] || templatesData['young-professional'] || [];
+
+        if (templates.length === 0) {
+            templateGrid.innerHTML = `
+                <div class="col-span-full text-center py-8 text-gray-500">
+                    <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                    <p>Keine Templates für dieses Paket verfügbar.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Render template cards
+        templateGrid.innerHTML = templates.map(template => `
+            <div class="template-card cursor-pointer rounded-xl border-2 border-gray-200 overflow-hidden hover:border-brand-gold hover:shadow-lg transition-all ${smartUploadData.selectedTemplate === template.id ? 'border-brand-gold ring-2 ring-brand-gold/30' : ''}"
+                 onclick="app.selectTemplate('${template.id}', '${template.name}', '${template.previewImage}', '${template.defaultColors?.primary || '#1a3a5c'}', '${template.defaultColors?.accent || '#d4912a'}')">
+                <div class="aspect-[3/4] bg-gray-100 relative">
+                    <img src="${template.previewImage}" alt="${template.name}"
+                         class="w-full h-full object-cover"
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 133%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%22133%22/><text x=%2250%22 y=%2266%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2212%22>Template</text></svg>'">
+                    ${smartUploadData.selectedTemplate === template.id ? `
+                        <div class="absolute top-2 right-2 w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-white"></i>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="p-3 bg-white">
+                    <p class="font-medium text-sm text-gray-800 truncate">${template.name}</p>
+                    <p class="text-xs text-gray-500 mt-1 truncate">${template.description || ''}</p>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        logger.error('Error loading templates:', error);
+        templateGrid.innerHTML = `
+            <div class="col-span-full text-center py-8 text-red-500">
+                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                <p>Fehler beim Laden der Templates.</p>
+            </div>
+        `;
+    }
+}
+
+// Get display name for package type
+function getPackageDisplayName(packageType) {
+    const names = {
+        'young-professional': 'Young Professional CV',
+        'senior-professional': 'Senior Professional CV',
+        'executive': 'Executive CV',
+        'quick-check': 'Quick Check'
+    };
+    return names[packageType] || packageType;
+}
+
+// Select a template
+export function selectTemplate(templateId, templateName, previewImage, defaultPrimary, defaultAccent) {
+    smartUploadData.selectedTemplate = templateId;
+    smartUploadData.selectedTemplateName = templateName;
+
+    // Set default colors if not already customized
+    if (!smartUploadData.colorsCustomized) {
+        smartUploadData.primaryColor = defaultPrimary;
+        smartUploadData.accentColor = defaultAccent;
+        document.getElementById('cv-q-primary-color').value = defaultPrimary;
+        document.getElementById('cv-q-accent-color').value = defaultAccent;
+    }
+
+    // Update template cards to show selection
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('border-brand-gold', 'ring-2', 'ring-brand-gold/30');
+        const checkmark = card.querySelector('.fa-check')?.parentElement;
+        if (checkmark) checkmark.remove();
+    });
+
+    // Find and highlight selected card
+    const selectedCard = document.querySelector(`.template-card[onclick*="'${templateId}'"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('border-brand-gold', 'ring-2', 'ring-brand-gold/30');
+        const imgContainer = selectedCard.querySelector('.aspect-\\[3\\/4\\]');
+        if (imgContainer && !imgContainer.querySelector('.fa-check')) {
+            const checkmark = document.createElement('div');
+            checkmark.className = 'absolute top-2 right-2 w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center';
+            checkmark.innerHTML = '<i class="fas fa-check text-white"></i>';
+            imgContainer.appendChild(checkmark);
+        }
+    }
+
+    // Show preview
+    const previewContainer = document.getElementById('cv-q-template-preview-container');
+    const previewImg = document.getElementById('cv-q-template-preview-img');
+    const previewName = document.getElementById('cv-q-selected-template-name');
+
+    if (previewContainer && previewImg) {
+        previewContainer.classList.remove('hidden');
+        previewImg.src = previewImage;
+        if (previewName) previewName.textContent = templateName;
+    }
+
+    // Update next button state
+    updateSmartNextButton();
+}
+
+// Set template color preset
+export function setTemplateColor(type, color) {
+    smartUploadData.colorsCustomized = true;
+
+    if (type === 'primary') {
+        smartUploadData.primaryColor = color;
+        document.getElementById('cv-q-primary-color').value = color;
+    } else {
+        smartUploadData.accentColor = color;
+        document.getElementById('cv-q-accent-color').value = color;
+    }
+}
+
+// Update colors from color picker
+export function updateTemplateColors() {
+    smartUploadData.colorsCustomized = true;
+    smartUploadData.primaryColor = document.getElementById('cv-q-primary-color')?.value || '#1a3a5c';
+    smartUploadData.accentColor = document.getElementById('cv-q-accent-color')?.value || '#d4912a';
+}
+
+// Reset colors to template defaults
+export function resetTemplateColors() {
+    smartUploadData.colorsCustomized = false;
+
+    // Reset to default colors
+    smartUploadData.primaryColor = '#1a3a5c';
+    smartUploadData.accentColor = '#d4912a';
+
+    document.getElementById('cv-q-primary-color').value = '#1a3a5c';
+    document.getElementById('cv-q-accent-color').value = '#d4912a';
+
+    showToast('Farben zurückgesetzt');
 }
 
 // Submit smart questionnaire
@@ -11057,6 +11305,19 @@ export async function submitSmartQuestionnaire() {
                 filename: smartUploadData.otherFiles[i]?.name,
                 uploadedAt: new Date().toISOString()
             }));
+        }
+
+        // Add template selection
+        if (smartUploadData.selectedTemplate) {
+            updateData.templateSelection = {
+                templateId: smartUploadData.selectedTemplate,
+                templateName: smartUploadData.selectedTemplateName,
+                selectedAt: serverTimestamp(),
+                customization: {
+                    primaryColor: smartUploadData.primaryColor,
+                    accentColor: smartUploadData.accentColor
+                }
+            };
         }
 
         // Update Firestore

@@ -1,12 +1,66 @@
-[
-  {
-    "id": "lebenslauf-template-1",
-    "name": "Lebenslauf Template 1",
-    "category": "Creative",
-    "description": "Modernes kreatives Design mit Foto-Header und zweispaltiger Struktur",
-    "tags": ["Kreativ", "Modern", "Foto", "PDF"],
-    "previewImage": "/cv-templates/template1-preview.png",
-    "pdfFile": "/cv-templates/template1.pdf",
-    "schemaFile": "/cv-templates/template1-schema.json"
-  }
-]
+{
+  "young-professional": [
+    {
+      "id": "yp-template-1",
+      "name": "Modern Klassisch",
+      "description": "Modernes kreatives Design mit Foto-Header und zweispaltiger Struktur",
+      "previewImage": "/cv-templates/young-professional/template1-preview.png",
+      "pdfFile": "/cv-templates/young-professional/template1.pdf",
+      "schemaFile": "/cv-templates/young-professional/template1-schema.json",
+      "defaultColors": {
+        "primary": "#1a3a5c",
+        "accent": "#d4912a"
+      },
+      "sortOrder": 1,
+      "isActive": true
+    }
+  ],
+  "senior-professional": [
+    {
+      "id": "sp-template-1",
+      "name": "Executive Klassisch",
+      "description": "Professionelles Design für erfahrene Fachkräfte",
+      "previewImage": "/cv-templates/senior-professional/template1-preview.png",
+      "pdfFile": "/cv-templates/senior-professional/template1.pdf",
+      "schemaFile": "/cv-templates/senior-professional/template1-schema.json",
+      "defaultColors": {
+        "primary": "#1a3a5c",
+        "accent": "#d4912a"
+      },
+      "sortOrder": 1,
+      "isActive": true
+    }
+  ],
+  "executive": [
+    {
+      "id": "exec-template-1",
+      "name": "C-Level Premium",
+      "description": "Premium Design für C-Suite und Führungskräfte",
+      "previewImage": "/cv-templates/executive/template1-preview.png",
+      "pdfFile": "/cv-templates/executive/template1.pdf",
+      "schemaFile": "/cv-templates/executive/template1-schema.json",
+      "defaultColors": {
+        "primary": "#1a3a5c",
+        "accent": "#d4912a"
+      },
+      "sortOrder": 1,
+      "isActive": true
+    }
+  ],
+  "quick-check": [
+    {
+      "id": "qc-template-1",
+      "name": "Quick Check Standard",
+      "description": "Schnelles, übersichtliches Design",
+      "previewImage": "/cv-templates/young-professional/template1-preview.png",
+      "pdfFile": "/cv-templates/young-professional/template1.pdf",
+      "schemaFile": "/cv-templates/young-professional/template1-schema.json",
+      "defaultColors": {
+        "primary": "#1a3a5c",
+        "accent": "#d4912a"
+      },
+      "sortOrder": 1,
+      "isActive": true
+    }
+  ]
+}
