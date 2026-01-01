@@ -593,3 +593,28 @@
         .dark-section-text-subtle {
             color: rgba(255, 255, 255, 0.55);
         }
+
+        /* ========== CV TEMPLATE PREVIEW SCALING ========== */
+
+        /* Container for CV template previews */
+        .cv-preview-container {
+            container-type: inline-size;
+        }
+
+        /* Scale the preview content to fit the container */
+        .cv-preview-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 210px;
+            height: 297px;
+            transform-origin: top left;
+            transform: scale(calc(100cqi / 210));
+        }
+
+        /* Fallback for browsers without container queries */
+        @supports not (container-type: inline-size) {
+            .cv-preview-content {
+                transform: scale(0.5);
+            }
+        }
