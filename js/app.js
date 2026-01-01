@@ -7929,31 +7929,31 @@ const canvaTemplates = [
         description: 'Elegantes Design mit dunklem Header und Beige-Akzenten',
         tags: ['Executive', 'Senior', 'Klassisch', 'Canva'],
         preview: `
-            <div class="absolute inset-0 flex flex-col">
-                <div class="bg-[#3d3d3d] text-white p-2 flex gap-2" style="height: 30%;">
-                    <div class="w-8 bg-gray-600 flex-shrink-0"></div>
+            <div class="absolute inset-0 flex flex-col text-[4px]">
+                <div class="bg-[#3d3d3d] text-white p-1 flex gap-1" style="height: 30%;">
+                    <div class="w-[25%] bg-gray-600 flex-shrink-0"></div>
                     <div class="flex-1 flex flex-col justify-center">
-                        <div class="h-2 bg-white rounded w-3/4 mb-1"></div>
-                        <div class="h-1.5 bg-white/60 rounded w-1/2"></div>
+                        <div class="h-[3px] bg-white rounded w-3/4 mb-[2px]"></div>
+                        <div class="h-[2px] bg-white/60 rounded w-1/2"></div>
                     </div>
                 </div>
                 <div class="flex-1 flex">
-                    <div class="w-1/3 bg-[#f5f0e8] p-2">
-                        <div class="h-1 bg-[#3d3d3d] rounded w-full mb-1"></div>
-                        <div class="space-y-0.5 mb-2">
-                            <div class="h-0.5 bg-gray-400 rounded"></div>
-                            <div class="h-0.5 bg-gray-400 rounded w-4/5"></div>
+                    <div class="w-1/3 bg-[#f5f0e8] p-1">
+                        <div class="h-[2px] bg-[#3d3d3d] rounded w-full mb-[2px]"></div>
+                        <div class="space-y-[1px] mb-1">
+                            <div class="h-[1px] bg-gray-400 rounded"></div>
+                            <div class="h-[1px] bg-gray-400 rounded w-4/5"></div>
                         </div>
-                        <div class="h-1 bg-[#3d3d3d] rounded w-2/3 mb-1"></div>
-                        <div class="space-y-0.5">
-                            <div class="h-0.5 bg-gray-400 rounded"></div>
+                        <div class="h-[2px] bg-[#3d3d3d] rounded w-2/3 mb-[2px]"></div>
+                        <div class="space-y-[1px]">
+                            <div class="h-[1px] bg-gray-400 rounded"></div>
                         </div>
                     </div>
-                    <div class="w-2/3 bg-white p-2">
-                        <div class="h-1 bg-[#3d3d3d] rounded w-1/2 mb-1"></div>
-                        <div class="space-y-0.5">
-                            <div class="h-0.5 bg-gray-300 rounded"></div>
-                            <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                    <div class="w-2/3 bg-white p-1">
+                        <div class="h-[2px] bg-[#3d3d3d] rounded w-1/2 mb-[2px]"></div>
+                        <div class="space-y-[1px]">
+                            <div class="h-[1px] bg-gray-300 rounded"></div>
+                            <div class="h-[1px] bg-gray-300 rounded w-5/6"></div>
                         </div>
                     </div>
                 </div>
@@ -7969,28 +7969,28 @@ const canvaTemplates = [
         description: 'Kreatives Design mit Teal und Gelb-Akzenten',
         tags: ['Young Professional', 'Kreativ', 'Modern', 'Canva'],
         preview: `
-            <div class="absolute inset-0 flex flex-col bg-white">
-                <div class="h-1 bg-[#f5c842]"></div>
-                <div class="p-2 flex gap-2">
-                    <div class="w-8 h-10 rounded bg-gray-300 flex-shrink-0"></div>
+            <div class="absolute inset-0 flex flex-col bg-white text-[4px]">
+                <div class="h-[2px] bg-[#f5c842]"></div>
+                <div class="p-1 flex gap-1">
+                    <div class="w-[20%] aspect-[3/4] rounded bg-gray-300 flex-shrink-0"></div>
                     <div class="flex-1">
-                        <div class="h-2 bg-[#f5c842] rounded w-3/4 mb-1"></div>
-                        <div class="h-1 bg-[#2d8a8a] rounded w-1/2"></div>
+                        <div class="h-[3px] bg-[#f5c842] rounded w-3/4 mb-[2px]"></div>
+                        <div class="h-[2px] bg-[#2d8a8a] rounded w-1/2"></div>
                     </div>
                 </div>
-                <div class="flex-1 px-2 flex gap-2">
+                <div class="flex-1 px-1 flex gap-1">
                     <div class="w-2/5">
-                        <div class="h-1 bg-[#f5c842] rounded w-2/3 mb-1"></div>
-                        <div class="space-y-0.5">
-                            <div class="h-0.5 bg-[#2d8a8a]/60 rounded"></div>
-                            <div class="h-0.5 bg-[#2d8a8a]/60 rounded w-4/5"></div>
+                        <div class="h-[2px] bg-[#f5c842] rounded w-2/3 mb-[2px]"></div>
+                        <div class="space-y-[1px]">
+                            <div class="h-[1px] bg-[#2d8a8a]/60 rounded"></div>
+                            <div class="h-[1px] bg-[#2d8a8a]/60 rounded w-4/5"></div>
                         </div>
                     </div>
                     <div class="w-3/5">
-                        <div class="h-1 bg-[#f5c842] rounded w-1/2 mb-1"></div>
-                        <div class="space-y-0.5">
-                            <div class="h-0.5 bg-gray-300 rounded"></div>
-                            <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                        <div class="h-[2px] bg-[#f5c842] rounded w-1/2 mb-[2px]"></div>
+                        <div class="space-y-[1px]">
+                            <div class="h-[1px] bg-gray-300 rounded"></div>
+                            <div class="h-[1px] bg-gray-300 rounded w-5/6"></div>
                         </div>
                     </div>
                 </div>
@@ -8006,27 +8006,27 @@ const canvaTemplates = [
         description: 'Zeitloses Design mit Navy-Seitenleiste',
         tags: ['C-Suite', 'Führungskraft', 'Klassisch'],
         preview: `
-            <div class="absolute inset-0 flex">
-                <div class="w-1/3 bg-[#1e3a5f] text-white p-2">
-                    <div class="w-8 h-8 rounded-full bg-gray-300 mx-auto mb-2"></div>
-                    <div class="h-1.5 bg-white/80 rounded mb-1"></div>
-                    <div class="h-1 bg-white/40 rounded w-3/4 mx-auto mb-3"></div>
-                    <div class="h-1 bg-[#c9a227] rounded w-full mb-1"></div>
-                    <div class="space-y-0.5">
-                        <div class="h-0.5 bg-white/30 rounded"></div>
-                        <div class="h-0.5 bg-white/30 rounded w-4/5"></div>
+            <div class="absolute inset-0 flex text-[4px]">
+                <div class="w-1/3 bg-[#1e3a5f] text-white p-1">
+                    <div class="w-[50%] aspect-square rounded-full bg-gray-300 mx-auto mb-1"></div>
+                    <div class="h-[2px] bg-white/80 rounded mb-[2px]"></div>
+                    <div class="h-[2px] bg-white/40 rounded w-3/4 mx-auto mb-2"></div>
+                    <div class="h-[2px] bg-[#c9a227] rounded w-full mb-[2px]"></div>
+                    <div class="space-y-[1px]">
+                        <div class="h-[1px] bg-white/30 rounded"></div>
+                        <div class="h-[1px] bg-white/30 rounded w-4/5"></div>
                     </div>
                 </div>
-                <div class="w-2/3 bg-white p-2">
-                    <div class="h-1.5 bg-[#1e3a5f] rounded w-1/2 mb-2"></div>
-                    <div class="space-y-0.5 mb-2">
-                        <div class="h-0.5 bg-gray-300 rounded"></div>
-                        <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                <div class="w-2/3 bg-white p-1">
+                    <div class="h-[2px] bg-[#1e3a5f] rounded w-1/2 mb-1"></div>
+                    <div class="space-y-[1px] mb-1">
+                        <div class="h-[1px] bg-gray-300 rounded"></div>
+                        <div class="h-[1px] bg-gray-300 rounded w-5/6"></div>
                     </div>
-                    <div class="h-1 bg-[#c9a227] rounded w-1/3 mb-1"></div>
-                    <div class="space-y-0.5">
-                        <div class="h-0.5 bg-gray-200 rounded"></div>
-                        <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                    <div class="h-[2px] bg-[#c9a227] rounded w-1/3 mb-[2px]"></div>
+                    <div class="space-y-[1px]">
+                        <div class="h-[1px] bg-gray-200 rounded"></div>
+                        <div class="h-[1px] bg-gray-200 rounded w-4/5"></div>
                     </div>
                 </div>
             </div>
@@ -8041,27 +8041,27 @@ const canvaTemplates = [
         description: 'Sauberes, minimalistisches Design',
         tags: ['Modern', 'Tech', 'Startup'],
         preview: `
-            <div class="absolute inset-0 flex flex-col bg-white p-3">
-                <div class="text-center mb-3">
-                    <div class="h-2 bg-black rounded w-1/2 mx-auto mb-1"></div>
-                    <div class="h-1 bg-gray-400 rounded w-1/3 mx-auto"></div>
+            <div class="absolute inset-0 flex flex-col bg-white p-1 text-[4px]">
+                <div class="text-center mb-1">
+                    <div class="h-[3px] bg-black rounded w-1/2 mx-auto mb-[2px]"></div>
+                    <div class="h-[2px] bg-gray-400 rounded w-1/3 mx-auto"></div>
                 </div>
-                <div class="border-t border-b border-gray-200 py-1 mb-2">
-                    <div class="flex justify-center gap-2">
-                        <div class="h-0.5 bg-gray-300 rounded w-8"></div>
-                        <div class="h-0.5 bg-gray-300 rounded w-8"></div>
-                        <div class="h-0.5 bg-gray-300 rounded w-8"></div>
+                <div class="border-t border-b border-gray-200 py-[2px] mb-1">
+                    <div class="flex justify-center gap-1">
+                        <div class="h-[1px] bg-gray-300 rounded w-[15%]"></div>
+                        <div class="h-[1px] bg-gray-300 rounded w-[15%]"></div>
+                        <div class="h-[1px] bg-gray-300 rounded w-[15%]"></div>
                     </div>
                 </div>
-                <div class="h-1 bg-black rounded w-1/4 mb-1"></div>
-                <div class="space-y-0.5 mb-2">
-                    <div class="h-0.5 bg-gray-200 rounded"></div>
-                    <div class="h-0.5 bg-gray-200 rounded w-5/6"></div>
+                <div class="h-[2px] bg-black rounded w-1/4 mb-[2px]"></div>
+                <div class="space-y-[1px] mb-1">
+                    <div class="h-[1px] bg-gray-200 rounded"></div>
+                    <div class="h-[1px] bg-gray-200 rounded w-5/6"></div>
                 </div>
-                <div class="h-1 bg-black rounded w-1/4 mb-1"></div>
-                <div class="space-y-0.5">
-                    <div class="h-0.5 bg-gray-200 rounded"></div>
-                    <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                <div class="h-[2px] bg-black rounded w-1/4 mb-[2px]"></div>
+                <div class="space-y-[1px]">
+                    <div class="h-[1px] bg-gray-200 rounded"></div>
+                    <div class="h-[1px] bg-gray-200 rounded w-4/5"></div>
                 </div>
             </div>
         `
@@ -8075,25 +8075,25 @@ const canvaTemplates = [
         description: 'Auffälliges Design für Kreative',
         tags: ['Design', 'Marketing', 'Kreativ'],
         preview: `
-            <div class="absolute inset-0 flex flex-col bg-[#f1faee]">
-                <div class="bg-[#e63946] p-2 mb-2">
-                    <div class="h-2 bg-white rounded w-1/2 mb-1"></div>
-                    <div class="h-1 bg-white/70 rounded w-1/3"></div>
+            <div class="absolute inset-0 flex flex-col bg-[#f1faee] text-[4px]">
+                <div class="bg-[#e63946] p-1 mb-1">
+                    <div class="h-[3px] bg-white rounded w-1/2 mb-[2px]"></div>
+                    <div class="h-[2px] bg-white/70 rounded w-1/3"></div>
                 </div>
-                <div class="px-2 flex gap-2">
+                <div class="px-1 flex gap-1">
                     <div class="w-1/2">
-                        <div class="h-1 bg-[#1d3557] rounded w-2/3 mb-1"></div>
-                        <div class="space-y-0.5">
-                            <div class="h-0.5 bg-gray-400 rounded"></div>
-                            <div class="h-0.5 bg-gray-400 rounded w-4/5"></div>
+                        <div class="h-[2px] bg-[#1d3557] rounded w-2/3 mb-[2px]"></div>
+                        <div class="space-y-[1px]">
+                            <div class="h-[1px] bg-gray-400 rounded"></div>
+                            <div class="h-[1px] bg-gray-400 rounded w-4/5"></div>
                         </div>
                     </div>
                     <div class="w-1/2">
-                        <div class="h-1 bg-[#e63946] rounded w-2/3 mb-1"></div>
-                        <div class="flex gap-0.5 flex-wrap">
-                            <div class="h-2 w-4 bg-[#1d3557]/20 rounded"></div>
-                            <div class="h-2 w-5 bg-[#1d3557]/20 rounded"></div>
-                            <div class="h-2 w-3 bg-[#1d3557]/20 rounded"></div>
+                        <div class="h-[2px] bg-[#e63946] rounded w-2/3 mb-[2px]"></div>
+                        <div class="flex gap-[2px] flex-wrap">
+                            <div class="h-[4px] w-[10%] bg-[#1d3557]/20 rounded"></div>
+                            <div class="h-[4px] w-[12%] bg-[#1d3557]/20 rounded"></div>
+                            <div class="h-[4px] w-[8%] bg-[#1d3557]/20 rounded"></div>
                         </div>
                     </div>
                 </div>
@@ -8109,23 +8109,23 @@ const canvaTemplates = [
         description: 'Professionell für Konzernumfeld',
         tags: ['Konzern', 'Finance', 'Consulting'],
         preview: `
-            <div class="absolute inset-0 flex flex-col bg-white">
-                <div class="bg-[#2c3e50] p-2">
-                    <div class="h-2 bg-white rounded w-2/3 mb-1"></div>
-                    <div class="h-0.5 bg-[#3498db] rounded w-1/2"></div>
+            <div class="absolute inset-0 flex flex-col bg-white text-[4px]">
+                <div class="bg-[#2c3e50] p-1">
+                    <div class="h-[3px] bg-white rounded w-2/3 mb-[2px]"></div>
+                    <div class="h-[1px] bg-[#3498db] rounded w-1/2"></div>
                 </div>
-                <div class="p-2">
-                    <div class="flex gap-2 mb-2 text-[4px] text-gray-400">
-                        <span>✉ email</span>
-                        <span>📱 phone</span>
-                        <span>📍 location</span>
+                <div class="p-1">
+                    <div class="flex gap-1 mb-1 text-gray-400">
+                        <span>✉</span>
+                        <span>📱</span>
+                        <span>📍</span>
                     </div>
-                    <div class="h-1 bg-[#2c3e50] rounded w-1/3 mb-1"></div>
-                    <div class="h-0.5 bg-[#3498db] rounded w-full mb-2"></div>
-                    <div class="space-y-0.5">
-                        <div class="h-0.5 bg-gray-200 rounded"></div>
-                        <div class="h-0.5 bg-gray-200 rounded w-5/6"></div>
-                        <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                    <div class="h-[2px] bg-[#2c3e50] rounded w-1/3 mb-[2px]"></div>
+                    <div class="h-[1px] bg-[#3498db] rounded w-full mb-1"></div>
+                    <div class="space-y-[1px]">
+                        <div class="h-[1px] bg-gray-200 rounded"></div>
+                        <div class="h-[1px] bg-gray-200 rounded w-5/6"></div>
+                        <div class="h-[1px] bg-gray-200 rounded w-4/5"></div>
                     </div>
                 </div>
             </div>
@@ -8140,27 +8140,27 @@ const canvaTemplates = [
         description: 'Premium-Design für Top-Manager',
         tags: ['CEO', 'Vorstand', 'Executive'],
         preview: `
-            <div class="absolute inset-0 flex">
-                <div class="w-1/3 bg-[#1a1a2e] text-white p-2">
-                    <div class="w-8 h-8 rounded-full bg-[#c9b99a] mx-auto mb-2"></div>
-                    <div class="h-0.5 bg-[#c9b99a] rounded mb-2"></div>
-                    <div class="space-y-1">
-                        <div class="h-0.5 bg-white/40 rounded"></div>
-                        <div class="h-0.5 bg-white/40 rounded w-4/5"></div>
+            <div class="absolute inset-0 flex text-[4px]">
+                <div class="w-1/3 bg-[#1a1a2e] text-white p-1">
+                    <div class="w-[50%] aspect-square rounded-full bg-[#c9b99a] mx-auto mb-1"></div>
+                    <div class="h-[1px] bg-[#c9b99a] rounded mb-1"></div>
+                    <div class="space-y-[1px]">
+                        <div class="h-[1px] bg-white/40 rounded"></div>
+                        <div class="h-[1px] bg-white/40 rounded w-4/5"></div>
                     </div>
-                    <div class="mt-2 h-0.5 bg-[#c9b99a] rounded mb-1"></div>
-                    <div class="flex gap-0.5 flex-wrap">
-                        <div class="h-1.5 w-3 bg-white/20 rounded"></div>
-                        <div class="h-1.5 w-4 bg-white/20 rounded"></div>
+                    <div class="mt-1 h-[1px] bg-[#c9b99a] rounded mb-[2px]"></div>
+                    <div class="flex gap-[2px] flex-wrap">
+                        <div class="h-[3px] w-[20%] bg-white/20 rounded"></div>
+                        <div class="h-[3px] w-[25%] bg-white/20 rounded"></div>
                     </div>
                 </div>
-                <div class="w-2/3 bg-[#f8f6f3] p-2">
-                    <div class="h-2 bg-[#1a1a2e] rounded w-2/3 mb-1"></div>
-                    <div class="h-0.5 bg-[#c9b99a] rounded w-1/2 mb-2"></div>
-                    <div class="h-1 bg-[#1a1a2e] rounded w-1/3 mb-1"></div>
-                    <div class="space-y-0.5">
-                        <div class="h-0.5 bg-gray-300 rounded"></div>
-                        <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                <div class="w-2/3 bg-[#f8f6f3] p-1">
+                    <div class="h-[3px] bg-[#1a1a2e] rounded w-2/3 mb-[2px]"></div>
+                    <div class="h-[1px] bg-[#c9b99a] rounded w-1/2 mb-1"></div>
+                    <div class="h-[2px] bg-[#1a1a2e] rounded w-1/3 mb-[2px]"></div>
+                    <div class="space-y-[1px]">
+                        <div class="h-[1px] bg-gray-300 rounded"></div>
+                        <div class="h-[1px] bg-gray-300 rounded w-5/6"></div>
                     </div>
                 </div>
             </div>
@@ -8175,28 +8175,28 @@ const canvaTemplates = [
         description: 'Modern für Tech-Industrie',
         tags: ['IT', 'Software', 'Developer'],
         preview: `
-            <div class="absolute inset-0 flex flex-col bg-[#f8fafc]">
-                <div class="p-2">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#818cf8]"></div>
+            <div class="absolute inset-0 flex flex-col bg-[#f8fafc] text-[4px]">
+                <div class="p-1">
+                    <div class="flex items-center gap-1 mb-1">
+                        <div class="w-[15%] aspect-square rounded bg-gradient-to-br from-[#6366f1] to-[#818cf8]"></div>
                         <div>
-                            <div class="h-1.5 bg-[#1e293b] rounded w-12 mb-0.5"></div>
-                            <div class="h-0.5 bg-[#6366f1] rounded w-8"></div>
+                            <div class="h-[2px] bg-[#1e293b] rounded w-8 mb-[1px]"></div>
+                            <div class="h-[1px] bg-[#6366f1] rounded w-6"></div>
                         </div>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex gap-1">
                         <div class="w-1/2">
-                            <div class="h-1 bg-[#6366f1] rounded w-2/3 mb-1"></div>
-                            <div class="space-y-0.5">
-                                <div class="h-0.5 bg-gray-300 rounded"></div>
-                                <div class="h-0.5 bg-gray-300 rounded w-4/5"></div>
+                            <div class="h-[2px] bg-[#6366f1] rounded w-2/3 mb-[2px]"></div>
+                            <div class="space-y-[1px]">
+                                <div class="h-[1px] bg-gray-300 rounded"></div>
+                                <div class="h-[1px] bg-gray-300 rounded w-4/5"></div>
                             </div>
                         </div>
                         <div class="w-1/2">
-                            <div class="h-1 bg-[#818cf8] rounded w-2/3 mb-1"></div>
-                            <div class="flex gap-0.5 flex-wrap">
-                                <div class="h-1.5 px-1 bg-[#6366f1]/20 rounded text-[4px]">React</div>
-                                <div class="h-1.5 px-1 bg-[#6366f1]/20 rounded text-[4px]">Node</div>
+                            <div class="h-[2px] bg-[#818cf8] rounded w-2/3 mb-[2px]"></div>
+                            <div class="flex gap-[2px] flex-wrap">
+                                <div class="h-[3px] px-[2px] bg-[#6366f1]/20 rounded">React</div>
+                                <div class="h-[3px] px-[2px] bg-[#6366f1]/20 rounded">Node</div>
                             </div>
                         </div>
                     </div>
@@ -8213,19 +8213,19 @@ const canvaTemplates = [
         description: 'Elegantes Weinrot für Führungskräfte',
         tags: ['Luxury', 'Fashion', 'Hospitality'],
         preview: `
-            <div class="absolute inset-0 flex flex-col bg-[#faf7f5]">
-                <div class="border-b-2 border-[#722f37] p-2 text-center">
-                    <div class="h-2 bg-[#722f37] rounded w-1/2 mx-auto mb-1"></div>
-                    <div class="h-0.5 bg-[#d4a574] rounded w-1/3 mx-auto"></div>
+            <div class="absolute inset-0 flex flex-col bg-[#faf7f5] text-[4px]">
+                <div class="border-b border-[#722f37] p-1 text-center">
+                    <div class="h-[3px] bg-[#722f37] rounded w-1/2 mx-auto mb-[2px]"></div>
+                    <div class="h-[1px] bg-[#d4a574] rounded w-1/3 mx-auto"></div>
                 </div>
-                <div class="p-2">
-                    <div class="flex justify-center gap-2 mb-2 text-[4px] text-[#722f37]">
+                <div class="p-1">
+                    <div class="flex justify-center gap-1 mb-1 text-[#722f37]">
                         <span>✉</span><span>📱</span><span>🔗</span>
                     </div>
-                    <div class="h-1 bg-[#722f37] rounded w-1/4 mb-1"></div>
-                    <div class="border-l-2 border-[#d4a574] pl-1 space-y-0.5">
-                        <div class="h-0.5 bg-gray-300 rounded"></div>
-                        <div class="h-0.5 bg-gray-300 rounded w-5/6"></div>
+                    <div class="h-[2px] bg-[#722f37] rounded w-1/4 mb-[2px]"></div>
+                    <div class="border-l border-[#d4a574] pl-[2px] space-y-[1px]">
+                        <div class="h-[1px] bg-gray-300 rounded"></div>
+                        <div class="h-[1px] bg-gray-300 rounded w-5/6"></div>
                     </div>
                 </div>
             </div>
@@ -8240,27 +8240,27 @@ const canvaTemplates = [
         description: 'Swiss Design - Klarheit & Präzision',
         tags: ['Design', 'Architecture', 'Engineering'],
         preview: `
-            <div class="absolute inset-0 flex flex-col bg-white p-2">
-                <div class="flex gap-2 flex-1">
+            <div class="absolute inset-0 flex flex-col bg-white p-1 text-[4px]">
+                <div class="flex gap-1 flex-1">
                     <div class="w-1/3">
-                        <div class="h-2 bg-[#333333] rounded mb-1"></div>
-                        <div class="h-0.5 bg-[#e74c3c] rounded w-2/3 mb-2"></div>
-                        <div class="space-y-1">
-                            <div class="h-0.5 bg-gray-200 rounded"></div>
-                            <div class="h-0.5 bg-gray-200 rounded"></div>
-                            <div class="h-0.5 bg-gray-200 rounded"></div>
+                        <div class="h-[3px] bg-[#333333] rounded mb-[2px]"></div>
+                        <div class="h-[1px] bg-[#e74c3c] rounded w-2/3 mb-1"></div>
+                        <div class="space-y-[1px]">
+                            <div class="h-[1px] bg-gray-200 rounded"></div>
+                            <div class="h-[1px] bg-gray-200 rounded"></div>
+                            <div class="h-[1px] bg-gray-200 rounded"></div>
                         </div>
                     </div>
-                    <div class="w-2/3 border-l border-gray-200 pl-2">
-                        <div class="h-1 bg-[#333333] rounded w-1/2 mb-1"></div>
-                        <div class="space-y-0.5 mb-2">
-                            <div class="h-0.5 bg-gray-200 rounded"></div>
-                            <div class="h-0.5 bg-gray-200 rounded w-5/6"></div>
+                    <div class="w-2/3 border-l border-gray-200 pl-1">
+                        <div class="h-[2px] bg-[#333333] rounded w-1/2 mb-[2px]"></div>
+                        <div class="space-y-[1px] mb-1">
+                            <div class="h-[1px] bg-gray-200 rounded"></div>
+                            <div class="h-[1px] bg-gray-200 rounded w-5/6"></div>
                         </div>
-                        <div class="h-1 bg-[#e74c3c] rounded w-1/2 mb-1"></div>
-                        <div class="space-y-0.5">
-                            <div class="h-0.5 bg-gray-200 rounded"></div>
-                            <div class="h-0.5 bg-gray-200 rounded w-4/5"></div>
+                        <div class="h-[2px] bg-[#e74c3c] rounded w-1/2 mb-[2px]"></div>
+                        <div class="space-y-[1px]">
+                            <div class="h-[1px] bg-gray-200 rounded"></div>
+                            <div class="h-[1px] bg-gray-200 rounded w-4/5"></div>
                         </div>
                     </div>
                 </div>
@@ -8295,7 +8295,7 @@ function renderCvGeneratorStep1() {
                     <div class="relative border-2 ${cvGeneratorState.template === t.id ? 'border-brand-gold ring-2 ring-brand-gold/20' : 'border-gray-200'}
                                 rounded-xl overflow-hidden transition-all hover:border-brand-gold hover:shadow-lg">
                         <!-- Preview -->
-                        <div class="aspect-[210/297] bg-gray-50 relative">
+                        <div class="aspect-[210/297] bg-gray-50 relative overflow-hidden">
                             ${t.preview}
                             <!-- Hover overlay -->
                             <div class="absolute inset-0 bg-brand-gold/90 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
