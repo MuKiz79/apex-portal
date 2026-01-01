@@ -2084,7 +2084,7 @@ function renderCvProjectSection(order) {
                         </button>
 
                         <div id="cv-questionnaire-view-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-100 space-y-3 text-xs">
-                            ${renderQuestionnaireDataForCustomer(questionnaire, cvProject?.documents)}
+                            ${renderQuestionnaireDataForCustomer(questionnaire, cvProject?.documents, cvProject?.templateSelection)}
                         </div>
                     ` : `
                         <p class="text-xs text-gray-500 italic">Daten werden verarbeitet...</p>
@@ -2129,10 +2129,37 @@ export function toggleCvQuestionnaireView(orderId) {
 }
 
 // Render questionnaire data summary for customer
-function renderQuestionnaireDataForCustomer(questionnaire, documents) {
-    if (!questionnaire && !documents) return '<p class="text-gray-400 italic">Keine Daten vorhanden</p>';
+function renderQuestionnaireDataForCustomer(questionnaire, documents, templateSelection) {
+    if (!questionnaire && !documents && !templateSelection) return '<p class="text-gray-400 italic">Keine Daten vorhanden</p>';
 
     let html = '';
+
+    // Template Selection
+    if (templateSelection) {
+        html += `
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded p-2 border border-amber-200">
+                <p class="font-semibold text-gray-700 mb-2"><i class="fas fa-palette text-amber-500 mr-1"></i>Gewähltes Design</p>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-600"><strong>Template:</strong> ${sanitizeHTML(templateSelection.templateName || templateSelection.templateId)}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 mt-2">
+                    <span class="text-gray-500">Farben:</span>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1">
+                            <span class="w-5 h-5 rounded border border-gray-300 shadow-sm" style="background-color: ${templateSelection.customization?.primaryColor || '#1a3a5c'}"></span>
+                            <span class="text-gray-500 text-[10px]">Haupt</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1">
+                            <span class="w-5 h-5 rounded border border-gray-300 shadow-sm" style="background-color: ${templateSelection.customization?.accentColor || '#d4912a'}"></span>
+                            <span class="text-gray-500 text-[10px]">Akzent</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     // Personal Info
     if (questionnaire?.personal) {
@@ -6860,7 +6887,7 @@ function renderAdminOrders(orders) {
                                                 <i class="fas fa-chevron-down text-green-500 transition-transform" id="admin-cv-q-toggle-${order.id}"></i>
                                             </button>
                                             <div id="admin-cv-questionnaire-view-${order.id}" class="hidden mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200 max-h-96 overflow-y-auto">
-                                                ${renderAdminQuestionnaireData(order.questionnaire, order.cvProject?.documents)}
+                                                ${renderAdminQuestionnaireData(order.questionnaire, order.cvProject?.documents, order.cvProject?.templateSelection)}
                                             </div>
                                         </div>
                                     ` : `
@@ -8534,10 +8561,46 @@ export function toggleAdminQuestionnaireView(orderId) {
 }
 
 // Render questionnaire data for admin view (more detailed than customer view)
-function renderAdminQuestionnaireData(questionnaire, documents) {
-    if (!questionnaire && !documents) return '<p class="text-gray-400 italic text-sm">Keine Daten vorhanden</p>';
+function renderAdminQuestionnaireData(questionnaire, documents, templateSelection) {
+    if (!questionnaire && !documents && !templateSelection) return '<p class="text-gray-400 italic text-sm">Keine Daten vorhanden</p>';
 
     let html = '<div class="space-y-4 text-sm">';
+
+    // Template Selection (show at top for admin)
+    if (templateSelection) {
+        html += `
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-3 border border-amber-300">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-palette text-amber-500"></i>Gewähltes Template & Farben
+                </p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="text-xs text-gray-400">Template:</p>
+                        <p class="font-semibold text-gray-800">${sanitizeHTML(templateSelection.templateName || templateSelection.templateId)}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Farbschema:</p>
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex items-center gap-1">
+                                <span class="w-6 h-6 rounded border-2 border-gray-300 shadow" style="background-color: ${templateSelection.customization?.primaryColor || '#1a3a5c'}"></span>
+                                <span class="text-xs text-gray-500">Haupt</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <span class="w-6 h-6 rounded border-2 border-gray-300 shadow" style="background-color: ${templateSelection.customization?.accentColor || '#d4912a'}"></span>
+                                <span class="text-xs text-gray-500">Akzent</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                ${templateSelection.customization ? `
+                    <div class="mt-2 pt-2 border-t border-amber-200 text-xs text-gray-500">
+                        <span class="font-mono">Primary: ${templateSelection.customization.primaryColor}</span> |
+                        <span class="font-mono">Accent: ${templateSelection.customization.accentColor}</span>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
 
     // Personal Info
     if (questionnaire?.personal) {
