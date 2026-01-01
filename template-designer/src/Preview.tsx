@@ -349,16 +349,24 @@ const sampleInputs = {
 };
 
 function Preview() {
-  const [primaryColor, setPrimaryColor] = useState('#1a3a5c');
-  const [accentColor, setAccentColor] = useState('#d4912a');
+  // Get initial colors from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialPrimary = urlParams.get('primary') || '#1a3a5c';
+  const initialAccent = urlParams.get('accent') || '#d4912a';
+
+  const [primaryColor, setPrimaryColor] = useState(initialPrimary);
+  const [accentColor, setAccentColor] = useState(initialAccent);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   // Generate and render PDF
   const renderPreview = async (primary: string, accent: string) => {
     try {
       setIsLoading(true);
       setError(null);
+
+      console.log('Generating PDF with colors:', primary, accent);
 
       const template = getTemplate(primary, accent);
 
@@ -368,17 +376,18 @@ function Preview() {
         plugins: { text, rectangle }
       });
 
-      // Convert PDF to image using pdf.js or display as object
-      const blob = new Blob([pdf.buffer], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
-      // Update iframe or object element
-      const pdfContainer = document.getElementById('pdf-preview');
-      if (pdfContainer) {
-        pdfContainer.setAttribute('data', url);
+      // Revoke old URL if exists
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
       }
 
+      // Convert PDF to blob URL
+      const blob = new Blob([pdf.buffer], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+
       setIsLoading(false);
+      console.log('PDF generated successfully');
     } catch (err) {
       console.error('Error generating preview:', err);
       setError('Fehler beim Generieren der Vorschau');
@@ -386,12 +395,7 @@ function Preview() {
     }
   };
 
-  // Initial render
-  useEffect(() => {
-    renderPreview(primaryColor, accentColor);
-  }, []);
-
-  // Update when colors change
+  // Initial render and when colors change
   useEffect(() => {
     renderPreview(primaryColor, accentColor);
   }, [primaryColor, accentColor]);
@@ -402,9 +406,11 @@ function Preview() {
       console.log('Preview received message:', event.data);
       if (event.data.type === 'updateColors') {
         if (event.data.primaryColor) {
+          console.log('Setting primary color:', event.data.primaryColor);
           setPrimaryColor(event.data.primaryColor);
         }
         if (event.data.accentColor) {
+          console.log('Setting accent color:', event.data.accentColor);
           setAccentColor(event.data.accentColor);
         }
       }
@@ -413,8 +419,10 @@ function Preview() {
     window.addEventListener('message', handleMessage);
 
     // Notify parent that preview is ready
-    console.log('Preview sending ready message');
-    window.parent.postMessage({ type: 'previewReady' }, '*');
+    console.log('Preview iframe ready, sending message to parent');
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'previewReady' }, '*');
+    }
 
     return () => {
       window.removeEventListener('message', handleMessage);
@@ -460,17 +468,18 @@ function Preview() {
           {error}
         </div>
       )}
-      <object
-        id="pdf-preview"
-        type="application/pdf"
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none'
-        }}
-      >
-        <p>PDF Vorschau wird geladen...</p>
-      </object>
+      {pdfUrl && (
+        <iframe
+          key={pdfUrl}
+          src={pdfUrl}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none'
+          }}
+          title="PDF Preview"
+        />
+      )}
       {/* Color indicator */}
       <div style={{
         position: 'absolute',
