@@ -11361,6 +11361,54 @@ export function resetTemplateColors() {
     showToast('Farben zurückgesetzt');
 }
 
+// ========== ADMIN TEMPLATE PREVIEW ==========
+
+// Track admin preview iframe ready state
+let adminPreviewIframeReady = false;
+
+// Listen for admin preview ready message
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'previewReady') {
+        // Check if it's from the admin iframe
+        const adminIframe = document.getElementById('admin-preview-iframe');
+        if (adminIframe && event.source === adminIframe.contentWindow) {
+            adminPreviewIframeReady = true;
+        }
+    }
+});
+
+// Update admin preview colors
+export function updateAdminPreviewColors() {
+    const primaryColor = document.getElementById('admin-primary-color')?.value || '#1a3a5c';
+    const accentColor = document.getElementById('admin-accent-color')?.value || '#d4912a';
+
+    // Update text inputs
+    const primaryText = document.getElementById('admin-primary-color-text');
+    const accentText = document.getElementById('admin-accent-color-text');
+    if (primaryText) primaryText.value = primaryColor;
+    if (accentText) accentText.value = accentColor;
+
+    // Send to iframe
+    const iframe = document.getElementById('admin-preview-iframe');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+            type: 'updateColors',
+            primaryColor: primaryColor,
+            accentColor: accentColor
+        }, '*');
+    }
+}
+
+// Set admin preview preset colors
+export function setAdminPreviewPreset(primary, accent) {
+    document.getElementById('admin-primary-color').value = primary;
+    document.getElementById('admin-accent-color').value = accent;
+    document.getElementById('admin-primary-color-text').value = primary;
+    document.getElementById('admin-accent-color-text').value = accent;
+
+    updateAdminPreviewColors();
+}
+
 // Submit smart questionnaire
 export async function submitSmartQuestionnaire() {
     if (!cvQuestionnaireProjectId) {

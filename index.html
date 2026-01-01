@@ -1679,7 +1679,93 @@
                                     Admin-Bereich
                                 </h2>
                             </div>
-                            <div class="p-6 space-y-4">
+                            <div class="p-6 space-y-6">
+                                <!-- Template Preview Test -->
+                                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                                    <h3 class="font-bold text-brand-dark mb-4 flex items-center gap-2">
+                                        <i class="fas fa-palette text-brand-gold"></i>
+                                        Template-Vorschau testen
+                                    </h3>
+
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <!-- Color Controls -->
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Hauptfarbe (Primary)</label>
+                                                <div class="flex gap-2">
+                                                    <input type="color" id="admin-primary-color" value="#1a3a5c"
+                                                           onchange="app.updateAdminPreviewColors()"
+                                                           class="w-12 h-10 rounded cursor-pointer border border-gray-300">
+                                                    <input type="text" id="admin-primary-color-text" value="#1a3a5c"
+                                                           onchange="document.getElementById('admin-primary-color').value = this.value; app.updateAdminPreviewColors()"
+                                                           class="flex-1 p-2 border border-gray-200 rounded-lg font-mono text-sm">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Akzentfarbe (Accent)</label>
+                                                <div class="flex gap-2">
+                                                    <input type="color" id="admin-accent-color" value="#d4912a"
+                                                           onchange="app.updateAdminPreviewColors()"
+                                                           class="w-12 h-10 rounded cursor-pointer border border-gray-300">
+                                                    <input type="text" id="admin-accent-color-text" value="#d4912a"
+                                                           onchange="document.getElementById('admin-accent-color').value = this.value; app.updateAdminPreviewColors()"
+                                                           class="flex-1 p-2 border border-gray-200 rounded-lg font-mono text-sm">
+                                                </div>
+                                            </div>
+
+                                            <!-- Color Presets -->
+                                            <div>
+                                                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Farb-Presets</label>
+                                                <div class="grid grid-cols-4 gap-2">
+                                                    <button onclick="app.setAdminPreviewPreset('#1a3a5c', '#d4912a')" class="p-2 rounded border hover:border-brand-gold transition" title="Classic Navy">
+                                                        <div class="flex gap-1">
+                                                            <div class="w-4 h-4 rounded" style="background: #1a3a5c"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #d4912a"></div>
+                                                        </div>
+                                                    </button>
+                                                    <button onclick="app.setAdminPreviewPreset('#2d2d2d', '#f5f0e8')" class="p-2 rounded border hover:border-brand-gold transition" title="Schwarz Beige">
+                                                        <div class="flex gap-1">
+                                                            <div class="w-4 h-4 rounded" style="background: #2d2d2d"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #f5f0e8"></div>
+                                                        </div>
+                                                    </button>
+                                                    <button onclick="app.setAdminPreviewPreset('#1e5631', '#f0c808')" class="p-2 rounded border hover:border-brand-gold transition" title="Green Yellow">
+                                                        <div class="flex gap-1">
+                                                            <div class="w-4 h-4 rounded" style="background: #1e5631"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #f0c808"></div>
+                                                        </div>
+                                                    </button>
+                                                    <button onclick="app.setAdminPreviewPreset('#4a1942', '#e8c547')" class="p-2 rounded border hover:border-brand-gold transition" title="Purple Gold">
+                                                        <div class="flex gap-1">
+                                                            <div class="w-4 h-4 rounded" style="background: #4a1942"></div>
+                                                            <div class="w-4 h-4 rounded" style="background: #e8c547"></div>
+                                                        </div>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <button onclick="app.setAdminPreviewPreset('#1a3a5c', '#d4912a')" class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                                                <i class="fas fa-undo text-xs"></i>
+                                                Standardfarben
+                                            </button>
+                                        </div>
+
+                                        <!-- Preview iframe -->
+                                        <div class="bg-gray-100 rounded-lg p-2">
+                                            <iframe
+                                                id="admin-preview-iframe"
+                                                src="/template-designer/preview.html"
+                                                class="w-full border-0 rounded shadow"
+                                                style="height: 400px;"
+                                                title="Admin Template Vorschau"
+                                            ></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="border-gray-200">
+
+                                <!-- About Image Settings -->
                                 <div>
                                     <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">"Über uns" Bild-URL</label>
                                     <input type="url" id="about-image-url" placeholder="https://example.com/image.jpg" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold outline-none">
