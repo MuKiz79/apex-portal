@@ -3695,82 +3695,24 @@
                                 </button>
                             </div>
 
-                            <!-- Template Preview with SVG -->
+                            <!-- Template Preview with pdfme iframe -->
                             <div id="cv-q-template-preview-container" class="border border-gray-200 rounded-xl p-4 bg-white hidden">
                                 <h3 class="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                                     <i class="fas fa-eye text-brand-gold"></i>
                                     Live-Vorschau mit Ihren Farben
                                 </h3>
-                                <div id="cv-q-template-preview" class="bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center p-4">
-                                    <!-- SVG CV Preview -->
-                                    <svg id="cv-q-svg-preview" viewBox="0 0 210 297" class="w-full max-w-xs shadow-lg rounded" style="background: white;">
-                                        <!-- Header Background (Primary Color) -->
-                                        <rect id="svg-header-bg" x="0" y="0" width="210" height="70" fill="#1a3a5c"/>
-
-                                        <!-- Photo placeholder -->
-                                        <rect x="15" y="15" width="40" height="50" rx="2" fill="#ffffff" opacity="0.2"/>
-                                        <circle cx="35" cy="32" r="12" fill="#ffffff" opacity="0.3"/>
-                                        <rect x="23" y="48" width="24" height="12" rx="1" fill="#ffffff" opacity="0.3"/>
-
-                                        <!-- Name placeholder -->
-                                        <rect x="70" y="25" width="120" height="12" rx="2" fill="#ffffff" opacity="0.9"/>
-                                        <rect x="70" y="42" width="80" height="8" rx="1" fill="#ffffff" opacity="0.6"/>
-
-                                        <!-- Contact bar (Accent Color) -->
-                                        <rect id="svg-contact-bar" x="0" y="70" width="210" height="12" fill="#d4912a"/>
-                                        <rect x="15" y="73" width="40" height="6" rx="1" fill="#ffffff" opacity="0.8"/>
-                                        <rect x="65" y="73" width="50" height="6" rx="1" fill="#ffffff" opacity="0.8"/>
-                                        <rect x="125" y="73" width="60" height="6" rx="1" fill="#ffffff" opacity="0.8"/>
-
-                                        <!-- Left sidebar -->
-                                        <rect x="0" y="82" width="60" height="215" fill="#f5f5f5"/>
-
-                                        <!-- Sidebar section titles (Accent Color) -->
-                                        <rect id="svg-sidebar-title1" x="8" y="95" width="44" height="6" rx="1" fill="#d4912a"/>
-                                        <rect x="8" y="105" width="40" height="4" rx="1" fill="#666666"/>
-                                        <rect x="8" y="112" width="35" height="4" rx="1" fill="#999999"/>
-                                        <rect x="8" y="119" width="38" height="4" rx="1" fill="#999999"/>
-
-                                        <rect id="svg-sidebar-title2" x="8" y="140" width="35" height="6" rx="1" fill="#d4912a"/>
-                                        <rect x="8" y="150" width="42" height="4" rx="1" fill="#666666"/>
-                                        <rect x="8" y="157" width="30" height="4" rx="1" fill="#999999"/>
-
-                                        <rect id="svg-sidebar-title3" x="8" y="178" width="40" height="6" rx="1" fill="#d4912a"/>
-                                        <rect x="8" y="188" width="36" height="4" rx="1" fill="#666666"/>
-                                        <rect x="8" y="195" width="28" height="4" rx="1" fill="#999999"/>
-                                        <rect x="8" y="205" width="32" height="4" rx="1" fill="#666666"/>
-                                        <rect x="8" y="212" width="24" height="4" rx="1" fill="#999999"/>
-
-                                        <!-- Main content area -->
-                                        <!-- Experience section title (Primary Color) -->
-                                        <rect id="svg-main-title1" x="70" y="95" width="80" height="8" rx="1" fill="#1a3a5c"/>
-
-                                        <!-- Job 1 -->
-                                        <rect id="svg-job1-date" x="70" y="110" width="50" height="5" rx="1" fill="#d4912a"/>
-                                        <rect x="70" y="118" width="100" height="5" rx="1" fill="#333333"/>
-                                        <rect x="70" y="126" width="70" height="4" rx="1" fill="#666666"/>
-                                        <rect x="70" y="133" width="120" height="3" rx="1" fill="#999999"/>
-                                        <rect x="70" y="139" width="110" height="3" rx="1" fill="#999999"/>
-
-                                        <!-- Job 2 -->
-                                        <rect id="svg-job2-date" x="70" y="155" width="50" height="5" rx="1" fill="#d4912a"/>
-                                        <rect x="70" y="163" width="90" height="5" rx="1" fill="#333333"/>
-                                        <rect x="70" y="171" width="65" height="4" rx="1" fill="#666666"/>
-                                        <rect x="70" y="178" width="115" height="3" rx="1" fill="#999999"/>
-                                        <rect x="70" y="184" width="105" height="3" rx="1" fill="#999999"/>
-
-                                        <!-- Education section title (Primary Color) -->
-                                        <rect id="svg-main-title2" x="70" y="205" width="60" height="8" rx="1" fill="#1a3a5c"/>
-
-                                        <!-- Education entry -->
-                                        <rect id="svg-edu-date" x="70" y="220" width="45" height="5" rx="1" fill="#d4912a"/>
-                                        <rect x="70" y="228" width="95" height="5" rx="1" fill="#333333"/>
-                                        <rect x="70" y="236" width="80" height="4" rx="1" fill="#666666"/>
-                                        <rect x="70" y="243" width="100" height="3" rx="1" fill="#999999"/>
-                                    </svg>
+                                <div id="cv-q-template-preview" class="bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
+                                    <!-- pdfme Preview iframe -->
+                                    <iframe
+                                        id="cv-q-preview-iframe"
+                                        src="/template-designer/preview.html"
+                                        class="w-full border-0 rounded-lg shadow-lg"
+                                        style="height: 500px; max-width: 360px;"
+                                        title="CV Template Vorschau"
+                                    ></iframe>
                                 </div>
                                 <p id="cv-q-selected-template-name" class="text-center text-sm text-gray-600 mt-3 font-medium"></p>
-                                <p class="text-center text-xs text-gray-400 mt-1">Die Farben werden auf Ihr gewähltes Template angewendet</p>
+                                <p class="text-center text-xs text-gray-400 mt-1">Die Farben werden in Echtzeit auf das Template angewendet</p>
                             </div>
                         </div>
 

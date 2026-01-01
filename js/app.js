@@ -11267,7 +11267,7 @@ export function selectTemplate(templateId, templateName, previewImage, defaultPr
         }
     }
 
-    // Show SVG preview
+    // Show preview container
     const previewContainer = document.getElementById('cv-q-template-preview-container');
     const previewName = document.getElementById('cv-q-selected-template-name');
 
@@ -11275,8 +11275,8 @@ export function selectTemplate(templateId, templateName, previewImage, defaultPr
         previewContainer.classList.remove('hidden');
         if (previewName) previewName.textContent = templateName;
 
-        // Update SVG colors
-        updateSvgPreviewColors();
+        // Update pdfme preview via iframe
+        updatePdfmePreviewColors();
     }
 
     // Update next button state
@@ -11295,8 +11295,8 @@ export function setTemplateColor(type, color) {
         document.getElementById('cv-q-accent-color').value = color;
     }
 
-    // Update SVG preview
-    updateSvgPreviewColors();
+    // Update pdfme preview via iframe
+    updatePdfmePreviewColors();
 }
 
 // Update colors from color picker
@@ -11305,28 +11305,43 @@ export function updateTemplateColors() {
     smartUploadData.primaryColor = document.getElementById('cv-q-primary-color')?.value || '#1a3a5c';
     smartUploadData.accentColor = document.getElementById('cv-q-accent-color')?.value || '#d4912a';
 
-    // Update SVG preview
-    updateSvgPreviewColors();
+    // Update pdfme preview via iframe
+    updatePdfmePreviewColors();
 }
 
-// Update SVG preview with current colors
-function updateSvgPreviewColors() {
-    const primary = smartUploadData.primaryColor;
-    const accent = smartUploadData.accentColor;
+// Track if preview iframe is ready
+let previewIframeReady = false;
+let pendingColorUpdate = null;
 
-    // Primary color elements (header, main titles)
-    document.getElementById('svg-header-bg')?.setAttribute('fill', primary);
-    document.getElementById('svg-main-title1')?.setAttribute('fill', primary);
-    document.getElementById('svg-main-title2')?.setAttribute('fill', primary);
+// Listen for preview ready message
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'previewReady') {
+        previewIframeReady = true;
+        // Send any pending color update
+        if (pendingColorUpdate) {
+            updatePdfmePreviewColors();
+            pendingColorUpdate = null;
+        }
+    }
+});
 
-    // Accent color elements (contact bar, sidebar titles, dates)
-    document.getElementById('svg-contact-bar')?.setAttribute('fill', accent);
-    document.getElementById('svg-sidebar-title1')?.setAttribute('fill', accent);
-    document.getElementById('svg-sidebar-title2')?.setAttribute('fill', accent);
-    document.getElementById('svg-sidebar-title3')?.setAttribute('fill', accent);
-    document.getElementById('svg-job1-date')?.setAttribute('fill', accent);
-    document.getElementById('svg-job2-date')?.setAttribute('fill', accent);
-    document.getElementById('svg-edu-date')?.setAttribute('fill', accent);
+// Update pdfme preview with current colors via postMessage
+function updatePdfmePreviewColors() {
+    const iframe = document.getElementById('cv-q-preview-iframe');
+    if (!iframe || !iframe.contentWindow) return;
+
+    const message = {
+        type: 'updateColors',
+        primaryColor: smartUploadData.primaryColor,
+        accentColor: smartUploadData.accentColor
+    };
+
+    if (previewIframeReady) {
+        iframe.contentWindow.postMessage(message, '*');
+    } else {
+        // Queue the update until iframe is ready
+        pendingColorUpdate = message;
+    }
 }
 
 // Reset colors to template defaults
@@ -11340,8 +11355,8 @@ export function resetTemplateColors() {
     document.getElementById('cv-q-primary-color').value = '#1a3a5c';
     document.getElementById('cv-q-accent-color').value = '#d4912a';
 
-    // Update SVG preview
-    updateSvgPreviewColors();
+    // Update pdfme preview via iframe
+    updatePdfmePreviewColors();
 
     showToast('Farben zurückgesetzt');
 }
