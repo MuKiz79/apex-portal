@@ -2074,7 +2074,7 @@ function renderCvProjectSection(order) {
                             <i class="fas fa-lock mr-1"></i>Nur Ansicht
                         </span>
                     </div>
-                    ${questionnaire ? `
+                    ${questionnaire || cvProject?.documents ? `
                         <button onclick="app.toggleCvQuestionnaireView('${order.id}')"
                                 class="w-full flex items-center justify-between text-left pt-2 border-t border-gray-100">
                             <span class="text-xs text-gray-600">
@@ -2084,7 +2084,7 @@ function renderCvProjectSection(order) {
                         </button>
 
                         <div id="cv-questionnaire-view-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-100 space-y-3 text-xs">
-                            ${renderQuestionnaireDataForCustomer(questionnaire)}
+                            ${renderQuestionnaireDataForCustomer(questionnaire, cvProject?.documents)}
                         </div>
                     ` : `
                         <p class="text-xs text-gray-500 italic">Daten werden verarbeitet...</p>
@@ -2129,13 +2129,13 @@ export function toggleCvQuestionnaireView(orderId) {
 }
 
 // Render questionnaire data summary for customer
-function renderQuestionnaireDataForCustomer(questionnaire) {
-    if (!questionnaire) return '<p class="text-gray-400 italic">Keine Daten vorhanden</p>';
+function renderQuestionnaireDataForCustomer(questionnaire, documents) {
+    if (!questionnaire && !documents) return '<p class="text-gray-400 italic">Keine Daten vorhanden</p>';
 
     let html = '';
 
     // Personal Info
-    if (questionnaire.personal) {
+    if (questionnaire?.personal) {
         const p = questionnaire.personal;
         html += `
             <div class="bg-gray-50 rounded p-2">
@@ -2146,6 +2146,7 @@ function renderQuestionnaireDataForCustomer(questionnaire) {
                     ${p.phone ? `<p><span class="text-gray-400">Telefon:</span> ${sanitizeHTML(p.phone)}</p>` : ''}
                     ${p.location ? `<p><span class="text-gray-400">Ort:</span> ${sanitizeHTML(p.location)}</p>` : ''}
                     ${p.targetRole ? `<p class="col-span-2"><span class="text-gray-400">Zielposition:</span> ${sanitizeHTML(p.targetRole)}</p>` : ''}
+                    ${p.linkedin ? `<p class="col-span-2"><span class="text-gray-400">LinkedIn:</span> <a href="${sanitizeHTML(p.linkedin)}" target="_blank" class="text-indigo-600 underline">${sanitizeHTML(p.linkedin)}</a></p>` : ''}
                 </div>
             </div>
         `;
@@ -2200,7 +2201,7 @@ function renderQuestionnaireDataForCustomer(questionnaire) {
     }
 
     // Languages
-    if (questionnaire.skills?.languages?.length > 0) {
+    if (questionnaire?.skills?.languages?.length > 0) {
         html += `
             <div class="bg-gray-50 rounded p-2">
                 <p class="font-semibold text-gray-700 mb-1"><i class="fas fa-globe text-indigo-400 mr-1"></i>Sprachen</p>
@@ -2211,6 +2212,81 @@ function renderQuestionnaireDataForCustomer(questionnaire) {
                 </div>
             </div>
         `;
+    }
+
+    // Additional notes
+    if (questionnaire?.additional?.notes) {
+        html += `
+            <div class="bg-gray-50 rounded p-2">
+                <p class="font-semibold text-gray-700 mb-1"><i class="fas fa-sticky-note text-indigo-400 mr-1"></i>Zusätzliche Hinweise</p>
+                <p class="text-gray-600 whitespace-pre-line">${sanitizeHTML(questionnaire.additional.notes)}</p>
+            </div>
+        `;
+    }
+
+    // Uploaded Documents
+    if (documents) {
+        let docsHtml = '';
+
+        // Existing CV
+        if (documents.existingCv?.url) {
+            docsHtml += `
+                <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-file-pdf text-red-500"></i>
+                        <span class="text-gray-700">${sanitizeHTML(documents.existingCv.filename || 'Bestehender Lebenslauf')}</span>
+                    </div>
+                    <a href="${documents.existingCv.url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-xs">
+                        <i class="fas fa-external-link-alt mr-1"></i>Ansehen
+                    </a>
+                </div>
+            `;
+        }
+
+        // Target Job / Stellenanzeige
+        if (documents.targetJob?.url) {
+            docsHtml += `
+                <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-briefcase text-blue-500"></i>
+                        <span class="text-gray-700">${sanitizeHTML(documents.targetJob.filename || 'Stellenanzeige')}</span>
+                    </div>
+                    <a href="${documents.targetJob.url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-xs">
+                        <i class="fas fa-external-link-alt mr-1"></i>Ansehen
+                    </a>
+                </div>
+            `;
+        }
+
+        // Other Documents
+        if (documents.otherDocuments?.length > 0) {
+            documents.otherDocuments.forEach((doc, idx) => {
+                if (doc.url) {
+                    docsHtml += `
+                        <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-file text-gray-500"></i>
+                                <span class="text-gray-700">${sanitizeHTML(doc.filename || `Dokument ${idx + 1}`)}</span>
+                            </div>
+                            <a href="${doc.url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-xs">
+                                <i class="fas fa-external-link-alt mr-1"></i>Ansehen
+                            </a>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        if (docsHtml) {
+            html += `
+                <div class="bg-gray-50 rounded p-2">
+                    <p class="font-semibold text-gray-700 mb-2"><i class="fas fa-folder-open text-indigo-400 mr-1"></i>Hochgeladene Dokumente</p>
+                    <div class="space-y-2">
+                        ${docsHtml}
+                    </div>
+                </div>
+            `;
+        }
     }
 
     return html || '<p class="text-gray-400 italic">Keine Daten vorhanden</p>';
@@ -6784,7 +6860,7 @@ function renderAdminOrders(orders) {
                                                 <i class="fas fa-chevron-down text-green-500 transition-transform" id="admin-cv-q-toggle-${order.id}"></i>
                                             </button>
                                             <div id="admin-cv-questionnaire-view-${order.id}" class="hidden mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200 max-h-96 overflow-y-auto">
-                                                ${renderAdminQuestionnaireData(order.questionnaire)}
+                                                ${renderAdminQuestionnaireData(order.questionnaire, order.cvProject?.documents)}
                                             </div>
                                         </div>
                                     ` : `
@@ -8415,13 +8491,13 @@ export function toggleAdminQuestionnaireView(orderId) {
 }
 
 // Render questionnaire data for admin view (more detailed than customer view)
-function renderAdminQuestionnaireData(questionnaire) {
-    if (!questionnaire) return '<p class="text-gray-400 italic text-sm">Keine Daten vorhanden</p>';
+function renderAdminQuestionnaireData(questionnaire, documents) {
+    if (!questionnaire && !documents) return '<p class="text-gray-400 italic text-sm">Keine Daten vorhanden</p>';
 
     let html = '<div class="space-y-4 text-sm">';
 
     // Personal Info
-    if (questionnaire.personal) {
+    if (questionnaire?.personal) {
         const p = questionnaire.personal;
         html += `
             <div class="bg-white rounded-lg p-3 border border-gray-200">
@@ -8443,7 +8519,7 @@ function renderAdminQuestionnaireData(questionnaire) {
     }
 
     // Summary
-    if (questionnaire.summary) {
+    if (questionnaire?.summary) {
         html += `
             <div class="bg-white rounded-lg p-3 border border-gray-200">
                 <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -8498,7 +8574,7 @@ function renderAdminQuestionnaireData(questionnaire) {
     }
 
     // Skills
-    if (questionnaire.skills) {
+    if (questionnaire?.skills) {
         const skills = questionnaire.skills;
         html += `
             <div class="bg-white rounded-lg p-3 border border-gray-200">
@@ -8536,7 +8612,7 @@ function renderAdminQuestionnaireData(questionnaire) {
     }
 
     // Certificates
-    if (questionnaire.certificates?.length > 0) {
+    if (questionnaire?.certificates?.length > 0) {
         html += `
             <div class="bg-white rounded-lg p-3 border border-gray-200">
                 <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -8549,6 +8625,100 @@ function renderAdminQuestionnaireData(questionnaire) {
                 </div>
             </div>
         `;
+    }
+
+    // Additional Notes
+    if (questionnaire?.additional?.notes) {
+        html += `
+            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                <p class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-sticky-note text-indigo-500"></i>Zusätzliche Hinweise
+                </p>
+                <p class="text-gray-600 whitespace-pre-line">${sanitizeHTML(questionnaire.additional.notes)}</p>
+            </div>
+        `;
+    }
+
+    // Uploaded Documents
+    if (documents) {
+        let docsHtml = '';
+
+        // Existing CV
+        if (documents.existingCv?.url) {
+            docsHtml += `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-pdf text-red-500"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-800">${sanitizeHTML(documents.existingCv.filename || 'Bestehender Lebenslauf')}</p>
+                            <p class="text-xs text-gray-400">Original CV des Kunden</p>
+                        </div>
+                    </div>
+                    <a href="${documents.existingCv.url}" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                        <i class="fas fa-download mr-1"></i>Herunterladen
+                    </a>
+                </div>
+            `;
+        }
+
+        // Target Job / Stellenanzeige
+        if (documents.targetJob?.url) {
+            docsHtml += `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-briefcase text-blue-500"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-800">${sanitizeHTML(documents.targetJob.filename || 'Stellenanzeige')}</p>
+                            <p class="text-xs text-gray-400">Ziel-Stellenanzeige</p>
+                        </div>
+                    </div>
+                    <a href="${documents.targetJob.url}" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                        <i class="fas fa-download mr-1"></i>Herunterladen
+                    </a>
+                </div>
+            `;
+        }
+
+        // Other Documents
+        if (documents.otherDocuments?.length > 0) {
+            documents.otherDocuments.forEach((doc, idx) => {
+                if (doc.url) {
+                    docsHtml += `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-file text-gray-500"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-800">${sanitizeHTML(doc.filename || `Dokument ${idx + 1}`)}</p>
+                                    <p class="text-xs text-gray-400">Zusätzliches Dokument</p>
+                                </div>
+                            </div>
+                            <a href="${doc.url}" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                                <i class="fas fa-download mr-1"></i>Herunterladen
+                            </a>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        if (docsHtml) {
+            html += `
+                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                    <p class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-indigo-500"></i>Hochgeladene Dokumente
+                    </p>
+                    <div class="space-y-2">
+                        ${docsHtml}
+                    </div>
+                </div>
+            `;
+        }
     }
 
     html += '</div>';
