@@ -1522,6 +1522,9 @@ export async function loadUserOrders(state) {
         // Update Dashboard Stats
         updateDashboardStats(ordersWithCvData);
 
+        // Update Sidebar basierend auf Bestellungen
+        renderDashboardSidebar(ordersWithCvData);
+
     } catch (e) {
         logger.error('Failed to load orders:', e);
         // Show empty state instead of infinite loader
@@ -1562,32 +1565,185 @@ async function loadUserOrdersWithRetry(state, retries = 3) {
 }
 
 function updateDashboardStats(orders) {
-    // Update order count in stats
-    const orderCountEl = document.getElementById('stat-orders');
-    if (orderCountEl) {
-        orderCountEl.textContent = orders.length;
+    // Berechne Kategorien
+    const activeOrders = orders.filter(o => !isOrderCompleted(o));
+    const completedOrders = orders.filter(o => isOrderCompleted(o));
+    const actionOrders = orders.filter(o => orderNeedsAction(o));
+
+    // Update aktive Bestellungen
+    const activeEl = document.getElementById('stat-active');
+    if (activeEl) {
+        activeEl.textContent = activeOrders.length;
     }
 
-    // Count documents (CV packages)
-    const docCountEl = document.getElementById('stat-documents');
-    if (docCountEl) {
-        const docCount = orders.filter(o => o.items?.some(i =>
-            i.title?.toLowerCase().includes('cv') ||
-            i.title?.toLowerCase().includes('lebenslauf') ||
-            i.title?.toLowerCase().includes('professional')
-        )).length;
-        docCountEl.textContent = docCount;
+    // Update Bestellungen mit Handlungsbedarf
+    const actionEl = document.getElementById('stat-action');
+    if (actionEl) {
+        actionEl.textContent = actionOrders.length;
+        // Pulsieren wenn Aktion nötig
+        if (actionOrders.length > 0) {
+            actionEl.classList.add('animate-pulse');
+        } else {
+            actionEl.classList.remove('animate-pulse');
+        }
     }
 
-    // Count sessions (mentoring/coaching)
-    const sessionCountEl = document.getElementById('stat-sessions');
-    if (sessionCountEl) {
-        const sessionCount = orders.filter(o => o.items?.some(i =>
-            i.title?.toLowerCase().includes('mentoring') ||
-            i.title?.toLowerCase().includes('session') ||
-            i.title?.toLowerCase().includes('coaching')
-        )).length;
-        sessionCountEl.textContent = sessionCount;
+    // Update abgeschlossene Bestellungen
+    const completedEl = document.getElementById('stat-completed');
+    if (completedEl) {
+        completedEl.textContent = completedOrders.length;
+    }
+
+    // Update Benachrichtigungs-Badge im Tab
+    const notifBadge = document.getElementById('orders-notification-badge');
+    if (notifBadge) {
+        if (actionOrders.length > 0) {
+            notifBadge.textContent = actionOrders.length;
+            notifBadge.classList.remove('hidden');
+        } else {
+            notifBadge.classList.add('hidden');
+        }
+    }
+}
+
+// Dynamische Sidebar basierend auf Bestellstatus
+function renderDashboardSidebar(orders) {
+    const sidebar = document.getElementById('dashboard-sidebar');
+    if (!sidebar) return;
+
+    // Analysiere Bestellungen
+    const hasActiveCvOrder = orders.some(o => isCvOrder(o) && !isOrderCompleted(o));
+    const hasActiveMentoring = orders.some(o => hasCoachSession(o) && !isOrderCompleted(o));
+    const ordersNeedingAction = orders.filter(o => orderNeedsAction(o));
+    const pendingAppointments = orders.filter(o => o.appointmentProposals?.length > 0 && o.appointmentStatus === 'pending');
+
+    sidebar.innerHTML = `
+        <!-- Handlungsbedarf - nur wenn vorhanden -->
+        ${ordersNeedingAction.length > 0 ? `
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-300 p-4 shadow-sm">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-bell text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-amber-800 text-sm">Handlungsbedarf</h3>
+                        <p class="text-xs text-amber-600">${ordersNeedingAction.length} Aufgabe${ordersNeedingAction.length > 1 ? 'n' : ''} offen</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    ${ordersNeedingAction.slice(0, 3).map(order => `
+                        <button onclick="app.scrollToOrder('${order.id}')"
+                                class="w-full text-left bg-white rounded-lg p-2 border border-amber-200 hover:border-amber-400 transition text-xs">
+                            <div class="flex items-center gap-2">
+                                <i class="fas ${getActionIcon(order)} text-amber-500"></i>
+                                <span class="text-gray-700 truncate flex-1">${getActionText(order)}</span>
+                                <i class="fas fa-chevron-right text-gray-300"></i>
+                            </div>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        <!-- Schnellzugriff -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 class="font-bold text-brand-dark mb-3 text-sm uppercase tracking-wider">Schnellzugriff</h3>
+            <div class="space-y-2">
+                ${!hasActiveCvOrder ? `
+                    <button onclick="app.navigateToSection('home', 'cv-packages')" class="w-full btn-primary justify-start text-sm py-2">
+                        <i class="fas fa-file-alt"></i>
+                        CV-Paket buchen
+                    </button>
+                ` : `
+                    <div class="bg-green-50 rounded-lg p-2 border border-green-200 text-xs text-green-700">
+                        <i class="fas fa-check-circle mr-1"></i>CV-Bestellung aktiv
+                    </div>
+                `}
+                ${!hasActiveMentoring ? `
+                    <button onclick="app.navigateToSection('home', 'coaches')" class="w-full btn-secondary justify-start text-sm py-2">
+                        <i class="fas fa-user-tie"></i>
+                        Mentoring buchen
+                    </button>
+                ` : `
+                    <div class="bg-green-50 rounded-lg p-2 border border-green-200 text-xs text-green-700">
+                        <i class="fas fa-check-circle mr-1"></i>Mentoring aktiv
+                    </div>
+                `}
+            </div>
+        </div>
+
+        <!-- Concierge Service -->
+        <div class="bg-brand-dark text-white rounded-xl shadow-lg p-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-brand-gold/20 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-headset text-brand-gold"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm">Concierge Service</h3>
+                    <p class="text-xs text-gray-400">Persönliche Betreuung</p>
+                </div>
+            </div>
+            <p class="text-xs text-gray-300 mb-3">Ihr persönlicher Ansprechpartner für alle Fragen.</p>
+            <a href="mailto:concierge@karriaro.de" class="block w-full text-center bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 rounded-lg transition">
+                <i class="fas fa-envelope mr-2"></i>Nachricht senden
+            </a>
+        </div>
+
+        <!-- Hilfe -->
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-4 text-center">
+            <i class="fas fa-question-circle text-2xl text-gray-400 mb-2"></i>
+            <h3 class="font-bold text-gray-700 text-sm mb-1">Hilfe benötigt?</h3>
+            <button onclick="app.scrollToSection('faq')" class="text-brand-gold text-xs font-bold hover:underline">
+                FAQ ansehen <i class="fas fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    `;
+}
+
+// Prüft ob eine Bestellung Handlungsbedarf hat
+function orderNeedsAction(order) {
+    // Fragebogen ausfüllen
+    if (isCvOrder(order) && order.workflow?.currentStep === 1) return true;
+    // Terminvorschläge beantworten
+    if (order.appointmentProposals?.length > 0 && order.appointmentStatus === 'pending') return true;
+    // Termin auswählen (Mentor zugewiesen aber kein Termin)
+    if (hasCoachSession(order) && order.assignedCoachId && !order.appointment?.datetime) return true;
+    return false;
+}
+
+// Icon für Handlungsbedarf
+function getActionIcon(order) {
+    if (isCvOrder(order) && order.workflow?.currentStep === 1) return 'fa-clipboard-list';
+    if (order.appointmentProposals?.length > 0) return 'fa-calendar-alt';
+    if (order.assignedCoachId && !order.appointment?.datetime) return 'fa-calendar-check';
+    return 'fa-exclamation-circle';
+}
+
+// Text für Handlungsbedarf
+function getActionText(order) {
+    if (isCvOrder(order) && order.workflow?.currentStep === 1) return 'Fragebogen ausfüllen';
+    if (order.appointmentProposals?.length > 0) return 'Terminvorschlag beantworten';
+    if (order.assignedCoachId && !order.appointment?.datetime) return 'Termin auswählen';
+    return 'Aktion erforderlich';
+}
+
+// Scroll zu einer bestimmten Bestellung
+export function scrollToOrder(orderId) {
+    const orderElement = document.getElementById(`order-${orderId}`);
+    if (orderElement) {
+        // Expandieren falls geschlossen
+        if (orderElement.classList.contains('hidden')) {
+            orderElement.classList.remove('hidden');
+            const icon = document.getElementById(`order-${orderId}-icon`);
+            if (icon) icon.classList.add('rotate-180');
+        }
+        // Scrollen
+        orderElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight-Effekt
+        orderElement.classList.add('ring-2', 'ring-brand-gold', 'ring-offset-2');
+        setTimeout(() => {
+            orderElement.classList.remove('ring-2', 'ring-brand-gold', 'ring-offset-2');
+        }, 2000);
     }
 }
 
@@ -1623,6 +1779,17 @@ export function renderOrders(orders) {
     // Separate active and completed orders
     const activeOrders = orders.filter(o => !isOrderCompleted(o));
     const completedOrders = orders.filter(o => isOrderCompleted(o));
+
+    // Sort active orders: those needing action first
+    activeOrders.sort((a, b) => {
+        const aNeeds = orderNeedsAction(a) ? 0 : 1;
+        const bNeeds = orderNeedsAction(b) ? 0 : 1;
+        if (aNeeds !== bNeeds) return aNeeds - bNeeds;
+        // Then by date (newest first)
+        const aDate = a.date?.seconds || 0;
+        const bDate = b.date?.seconds || 0;
+        return bDate - aDate;
+    });
 
     // Render tabs and orders
     container.innerHTML = `
@@ -2143,6 +2310,41 @@ function getNextStepDescription(currentStep) {
     return descriptions[currentStep] || '';
 }
 
+// Geschätzte Fertigstellung berechnen
+function calculateEstimatedCompletion(order, currentStep) {
+    // Wenn CV bereits fertig, keine Anzeige
+    if (currentStep >= 4 || order.cvStatus === 'delivered' || order.cvStatus === 'ready') {
+        return null;
+    }
+
+    // Prüfen ob Express-Option
+    const isExpress = order.items?.some(item =>
+        item.title?.toLowerCase().includes('express') ||
+        item.options?.some(opt => opt.toLowerCase().includes('express'))
+    ) || order.isExpress;
+
+    // Basistage je nach Paket
+    const baseDays = isExpress ? 5 : 10;
+
+    // Verbleibende Tage basierend auf aktuellem Schritt
+    // Schritt 1: 100% der Zeit, Schritt 2: 70%, Schritt 3: 30%
+    const stepMultiplier = {
+        1: 1.0,    // Fragebogen noch nicht ausgefüllt
+        2: 0.7,    // Daten erhalten, CV wird erstellt
+        3: 0.3     // Feedback/Finalisierung
+    };
+
+    const remainingDays = Math.ceil(baseDays * (stepMultiplier[currentStep] || 0.5));
+
+    if (remainingDays <= 0) return null;
+
+    // Formatieren
+    if (remainingDays === 1) {
+        return '~1 Tag verbleibend';
+    }
+    return `~${remainingDays} Tage verbleibend`;
+}
+
 // Render Workflow Steps für das Dashboard
 function renderWorkflowSteps(order) {
     if (!order.workflow || !order.workflow.steps) return '';
@@ -2164,6 +2366,9 @@ function renderWorkflowSteps(order) {
     const totalSteps = steps.length;
     const progressPercent = Math.round((completedSteps / totalSteps) * 100);
 
+    // Geschätzte Fertigstellung berechnen
+    const estimatedCompletion = calculateEstimatedCompletion(order, currentStep);
+
     return `
         <div class="bg-gradient-to-r from-brand-gold/10 to-amber-50 rounded-xl p-4 mb-3 border border-brand-gold/30">
             <!-- Header mit Fortschritt -->
@@ -2179,6 +2384,7 @@ function renderWorkflowSteps(order) {
                 </div>
                 <div class="text-right">
                     <span class="text-lg font-bold text-brand-gold">${progressPercent}%</span>
+                    ${estimatedCompletion ? `<p class="text-xs text-gray-500">${estimatedCompletion}</p>` : ''}
                 </div>
             </div>
 

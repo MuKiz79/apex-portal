@@ -1434,18 +1434,18 @@
                     <!-- Quick Stats -->
                     <div class="flex gap-6">
                         <div class="text-center">
-                            <div id="stat-orders" class="text-3xl font-serif text-white">0</div>
-                            <div class="text-xs text-gray-400 uppercase tracking-wider">Bestellungen</div>
+                            <div id="stat-active" class="text-3xl font-serif text-brand-gold">0</div>
+                            <div class="text-xs text-gray-400 uppercase tracking-wider">Aktiv</div>
                         </div>
                         <div class="w-px bg-white/10"></div>
                         <div class="text-center">
-                            <div id="stat-documents" class="text-3xl font-serif text-white">0</div>
-                            <div class="text-xs text-gray-400 uppercase tracking-wider">Dokumente</div>
+                            <div id="stat-action" class="text-3xl font-serif text-amber-400">0</div>
+                            <div class="text-xs text-gray-400 uppercase tracking-wider">Aktion</div>
                         </div>
                         <div class="w-px bg-white/10"></div>
                         <div class="text-center">
-                            <div id="stat-sessions" class="text-3xl font-serif text-white">0</div>
-                            <div class="text-xs text-gray-400 uppercase tracking-wider">Sessions</div>
+                            <div id="stat-completed" class="text-3xl font-serif text-green-400">0</div>
+                            <div class="text-xs text-gray-400 uppercase tracking-wider">Fertig</div>
                         </div>
                     </div>
 
@@ -1458,9 +1458,10 @@
 
                 <!-- Tab Navigation -->
                 <div class="mt-8 flex border-b border-white/20">
-                    <button onclick="app.switchDashboardTab('orders')" class="dashboard-tab active flex items-center gap-2 px-4 py-3 text-sm font-medium text-white border-b-2 border-brand-gold whitespace-nowrap" data-tab="orders">
+                    <button onclick="app.switchDashboardTab('orders')" class="dashboard-tab active flex items-center gap-2 px-4 py-3 text-sm font-medium text-white border-b-2 border-brand-gold whitespace-nowrap relative" data-tab="orders">
                         <i class="fas fa-shopping-bag" aria-hidden="true"></i>
                         <span>Bestellungen</span>
+                        <span id="orders-notification-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-bounce">!</span>
                     </button>
                     <button onclick="app.switchDashboardTab('documents')" class="dashboard-tab flex items-center gap-2 px-4 py-3 text-sm font-medium text-white/70 hover:text-white/80 border-b-2 border-transparent whitespace-nowrap" data-tab="documents">
                         <i class="fas fa-folder" aria-hidden="true"></i>
@@ -2077,75 +2078,13 @@
                 </div>
 
                 <!-- ========== SIDEBAR ========== -->
-                <div class="space-y-6">
-
-                    <!-- Quick Actions Card -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase tracking-wider">Schnellzugriff</h3>
-                        <div class="space-y-3">
-                            <button onclick="app.navigateToSection('home', 'cv-packages')" class="w-full btn-primary justify-start">
-                                <i class="fas fa-file-alt" aria-hidden="true"></i>
-                                CV-Paket buchen
-                            </button>
-                            <button onclick="app.navigateToSection('home', 'coaches')" class="w-full btn-secondary justify-start">
-                                <i class="fas fa-user-tie" aria-hidden="true"></i>
-                                Mentoring buchen
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Support Card -->
-                    <div class="bg-brand-dark text-white rounded-xl shadow-lg p-6">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 bg-brand-gold/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-headset text-brand-gold" aria-hidden="true"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold">Concierge Service</h3>
-                                <p class="text-xs text-gray-400">Persönliche Betreuung</p>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-300 mb-4">Ihr persönlicher Ansprechpartner für alle Fragen rund um Ihre Bestellungen.</p>
-                        <a href="mailto:concierge@karriaro.de" class="block w-full text-center bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-3 rounded-lg transition">
-                            <i class="fas fa-envelope mr-2" aria-hidden="true"></i>
-                            Nachricht senden
-                        </a>
-                    </div>
-
-                    <!-- Benefits Card -->
-                    <div class="bg-gradient-to-br from-brand-gold/10 to-white rounded-xl border border-brand-gold/30 p-6">
-                        <h3 class="font-bold text-brand-dark mb-4 flex items-center gap-2">
-                            <i class="fas fa-crown text-brand-gold" aria-hidden="true"></i>
-                            Ihre Vorteile
-                        </h3>
-                        <ul class="space-y-3 text-sm">
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle text-brand-gold" aria-hidden="true"></i>
-                                <span class="text-gray-700">Prioritäts-Support</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle text-brand-gold" aria-hidden="true"></i>
-                                <span class="text-gray-700">Secure Document Storage</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle text-brand-gold" aria-hidden="true"></i>
-                                <span class="text-gray-700">Exklusive Insights</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle text-brand-gold" aria-hidden="true"></i>
-                                <span class="text-gray-700">Terminverwaltung</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- Need Help Card -->
-                    <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 text-center">
-                        <i class="fas fa-question-circle text-3xl text-gray-400 mb-3" aria-hidden="true"></i>
-                        <h3 class="font-bold text-gray-700 mb-2">Hilfe benötigt?</h3>
-                        <p class="text-xs text-gray-600 mb-4">Schauen Sie in unsere FAQ oder kontaktieren Sie uns.</p>
-                        <button onclick="app.scrollToSection('faq')" class="text-brand-gold text-xs font-bold hover:underline">
-                            FAQ ansehen <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
-                        </button>
+                <!-- Dynamische Sidebar - wird per JS basierend auf Bestellstatus gerendert -->
+                <div id="dashboard-sidebar" class="space-y-6">
+                    <!-- Placeholder während Laden -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                        <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div class="h-10 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-10 bg-gray-200 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -5088,6 +5027,7 @@
             loadUserOrders: () => App.loadUserOrders(window.app.state),
             toggleOrderDetails: (orderId) => App.toggleOrderDetails(orderId),
             switchOrderTab: (tab) => App.switchOrderTab(tab),
+            scrollToOrder: (orderId) => App.scrollToOrder(orderId),
             openQuestionnaire: (orderId, cvProjectId) => App.openQuestionnaire(orderId, cvProjectId),
             joinMeeting: (orderId) => App.joinMeeting(orderId),
             closeMeetingModal: () => App.closeMeetingModal(),
