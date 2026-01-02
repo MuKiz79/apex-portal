@@ -72,7 +72,7 @@ Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuel
 ```bash
 # IMMER diese Reihenfolge:
 1. git add . && git commit -m "..." && git push
-2. rm -rf dist && mkdir -p dist && cp index.html dist/ && cp -r js dist/ && cp -r css dist/ && cp manifest.json dist/ && cp sw.js dist/ && cp -r icons dist/ && cp -r images dist/ && cp -r cv-templates dist/ && cp -r template-designer dist/
+2. rm -rf dist && mkdir -p dist && cp index.html dist/ && cp -r js dist/ && cp -r css dist/ && cp manifest.json dist/ && cp sw.js dist/ && cp -r icons dist/ && cp -r images dist/ && cp -r cv-templates dist/ && mkdir -p dist/template-designer && cp -r template-designer/dist/* dist/template-designer/
 3. firebase deploy --only hosting
 ```
 
