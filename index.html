@@ -10,7 +10,7 @@
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a1a2e">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Karriaro">
 
@@ -3194,16 +3194,46 @@
                             <option value="confirmed">Bestätigt</option>
                             <option value="completed">Abgeschlossen</option>
                         </select>
+                        <button onclick="app.deleteAllTestOrders()"
+                                class="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition">
+                            <i class="fas fa-trash-alt"></i>
+                            <span class="hidden md:inline">Testbestellungen löschen</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Orders List -->
-                <div id="admin-orders-list" class="space-y-3">
+                <!-- Order Tabs -->
+                <div class="bg-white rounded-xl border border-gray-100 overflow-hidden mb-4">
+                    <div class="flex border-b border-gray-100">
+                        <button id="admin-tab-active" onclick="app.switchAdminOrderTab('active')"
+                                class="flex-1 py-3 px-4 text-sm font-semibold text-brand-dark border-b-2 border-brand-gold bg-brand-gold/5 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-clock"></i>
+                            Offen
+                            <span id="admin-active-count" class="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button id="admin-tab-completed" onclick="app.switchAdminOrderTab('completed')"
+                                class="flex-1 py-3 px-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-brand-dark transition flex items-center justify-center gap-2">
+                            <i class="fas fa-check-circle"></i>
+                            Abgeschlossen
+                            <span id="admin-completed-count" class="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Orders List -->
+                <div id="admin-active-orders-list" class="space-y-3">
                     <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
                         <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
                         <p>Lade Bestellungen...</p>
                     </div>
                 </div>
+
+                <!-- Completed Orders List (hidden by default) -->
+                <div id="admin-completed-orders-list" class="space-y-3 hidden">
+                </div>
+
+                <!-- Legacy container for compatibility -->
+                <div id="admin-orders-list" class="hidden"></div>
             </div>
 
             <!-- Users & Cookies Tab Content -->
@@ -5029,6 +5059,13 @@
             switchOrderTab: (tab) => App.switchOrderTab(tab),
             scrollToOrder: (orderId) => App.scrollToOrder(orderId),
             openQuestionnaire: (orderId, cvProjectId) => App.openQuestionnaire(orderId, cvProjectId),
+            // CV Feedback & Approval
+            submitCvFeedback: (orderId) => App.submitCvFeedback(orderId),
+            approveCvDraft: (orderId) => App.approveCvDraft(orderId),
+            // Quick-Check Upload
+            handleQuickCheckUpload: (orderId, input) => App.handleQuickCheckUpload(orderId, input),
+            // Admin: Quick-Check Gutachten Upload
+            uploadQuickCheckGutachten: (orderId, userId, file, email, name) => App.uploadQuickCheckGutachten(orderId, userId, file, email, name),
             joinMeeting: (orderId) => App.joinMeeting(orderId),
             closeMeetingModal: () => App.closeMeetingModal(),
             toggleFullscreen: () => App.toggleFullscreen(),
@@ -5095,6 +5132,7 @@
             isAdmin: () => App.isAdmin(window.app.state.user?.email),
             loadAllOrders: () => App.loadAllOrders(),
             filterAdminOrders: () => App.filterAdminOrders(),
+            deleteAllTestOrders: () => App.deleteAllTestOrders(),
             updateOrderStatus: (orderId, status) => App.updateOrderStatus(orderId, status),
             toggleOrderExpand: (orderId) => App.toggleOrderExpand(orderId),
             toggleOrderDocs: (orderId) => App.toggleOrderDocs(orderId),

@@ -77,6 +77,19 @@ service firebase.storage {
       allow read: if isAdmin() || isSignedIn();
     }
 
+    // ========== QUICK-CHECK UPLOADS ==========
+    // Signed-in users can upload their CV for Quick-Check
+    // orderId is used as folder name
+
+    match /quick-check/{orderId}/{allPaths=**} {
+      // Signed-in users can upload documents (max 10MB)
+      allow write: if isSignedIn()
+                   && request.resource.size < 10 * 1024 * 1024
+                   && isDocument();
+      // Admin and signed-in users can read
+      allow read: if isAdmin() || isSignedIn();
+    }
+
     // ========== PUBLIC SETTINGS ==========
 
     match /settings/{fileName} {

@@ -1492,15 +1492,21 @@ export async function loadUserOrders(state) {
         const ordersWithCvData = orders.map(order => {
             const cvProject = cvProjectsMap[order.id];
             if (cvProject) {
-                const cvStatus = cvProject.status || 'new';
+                // Order cvStatus has priority if set to 'delivered' or 'ready'
+                const orderCvStatus = order.cvStatus;
+                const projectStatus = cvProject.status || 'new';
+                const finalCvStatus = (orderCvStatus === 'delivered' || orderCvStatus === 'ready')
+                    ? orderCvStatus
+                    : projectStatus;
+
                 // Bestimme Workflow basierend auf cvStatus (synchronisiert)
-                const workflow = getWorkflowForCvStatus(cvStatus, order.workflow);
+                const workflow = getWorkflowForCvStatus(finalCvStatus, order.workflow);
 
                 return {
                     ...order,
                     cvProject: cvProject,
                     cvProjectId: cvProject.id,
-                    cvStatus: cvStatus,
+                    cvStatus: finalCvStatus,
                     questionnaire: cvProject.questionnaire || order.questionnaire || null,
                     workflow: workflow,
                     nextStep: workflow?.currentStep === 1 ? 'questionnaire' : null,
@@ -1702,8 +1708,15 @@ function renderDashboardSidebar(orders) {
 
 // Prüft ob eine Bestellung Handlungsbedarf hat
 function orderNeedsAction(order) {
-    // Fragebogen ausfüllen
-    if (isCvOrder(order) && order.workflow?.currentStep === 1) return true;
+    // Abgeschlossene Orders brauchen keine Aktion
+    if (isOrderCompleted(order)) return false;
+
+    // Fragebogen ausfüllen (nur für normale CV-Orders, nicht Quick-Check)
+    if (isCvOrder(order) && !isQuickCheck(order) && order.workflow?.currentStep === 1) return true;
+
+    // Quick-Check: Dokument hochladen wenn noch nicht geschehen
+    if (isQuickCheck(order) && !order.quickCheckDocument) return true;
+
     // Terminvorschläge beantworten
     if (order.appointmentProposals?.length > 0 && order.appointmentStatus === 'pending') return true;
     // Termin auswählen (Mentor zugewiesen aber kein Termin)
@@ -1713,7 +1726,8 @@ function orderNeedsAction(order) {
 
 // Icon für Handlungsbedarf
 function getActionIcon(order) {
-    if (isCvOrder(order) && order.workflow?.currentStep === 1) return 'fa-clipboard-list';
+    if (isQuickCheck(order) && !order.quickCheckDocument) return 'fa-upload';
+    if (isCvOrder(order) && !isQuickCheck(order) && order.workflow?.currentStep === 1) return 'fa-clipboard-list';
     if (order.appointmentProposals?.length > 0) return 'fa-calendar-alt';
     if (order.assignedCoachId && !order.appointment?.datetime) return 'fa-calendar-check';
     return 'fa-exclamation-circle';
@@ -1721,7 +1735,8 @@ function getActionIcon(order) {
 
 // Text für Handlungsbedarf
 function getActionText(order) {
-    if (isCvOrder(order) && order.workflow?.currentStep === 1) return 'Fragebogen ausfüllen';
+    if (isQuickCheck(order) && !order.quickCheckDocument) return 'CV hochladen';
+    if (isCvOrder(order) && !isQuickCheck(order) && order.workflow?.currentStep === 1) return 'Fragebogen ausfüllen';
     if (order.appointmentProposals?.length > 0) return 'Terminvorschlag beantworten';
     if (order.assignedCoachId && !order.appointment?.datetime) return 'Termin auswählen';
     return 'Aktion erforderlich';
@@ -1852,6 +1867,11 @@ export function renderOrders(orders) {
 function isOrderCompleted(order) {
     const cvStatus = order.cvStatus || 'new';
     const orderStatus = order.status || 'confirmed';
+
+    // Quick-Check: completed when gutachten delivered
+    if (isQuickCheck(order)) {
+        return cvStatus === 'gutachten_delivered' || orderStatus === 'completed' || order.quickCheckGutachtenUrl;
+    }
 
     // CV orders: completed when delivered
     if (isCvOrder(order)) {
@@ -2470,15 +2490,92 @@ function renderWorkflowSteps(order) {
                     </p>
                 </div>
             ` : ''}
+
+            ${currentStep === 2 ? `
+                <!-- Status-Meldung für Schritt 2 -->
+                <div class="mt-4 bg-white/70 rounded-lg p-3 border border-brand-gold/20">
+                    <p class="text-xs text-gray-600 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-brand-gold mt-0.5"></i>
+                        <span>Wir arbeiten an Ihrem CV. Sie erhalten eine E-Mail, sobald der Entwurf zur Überprüfung bereit ist.</span>
+                    </p>
+                </div>
+            ` : ''}
+
+            ${currentStep === 3 && order.cvDraftUrl ? `
+                <!-- Review & Feedback Sektion -->
+                <div class="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-eye text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-brand-dark text-sm">CV-Entwurf bereit!</h4>
+                            <p class="text-xs text-gray-500">Bitte überprüfen und Feedback geben</p>
+                        </div>
+                    </div>
+
+                    <!-- Download Button -->
+                    <a href="${order.cvDraftUrl}" target="_blank"
+                       class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 mb-3">
+                        <i class="fas fa-file-pdf"></i>
+                        CV-Entwurf ansehen
+                        <i class="fas fa-external-link-alt text-xs"></i>
+                    </a>
+
+                    <!-- Feedback Formular -->
+                    <div class="bg-white rounded-lg p-3 border border-blue-100">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-comment-dots mr-1"></i>
+                            Ihr Feedback & Änderungswünsche
+                        </label>
+                        <textarea id="cv-feedback-${order.id}"
+                                  rows="3"
+                                  placeholder="z.B. Bitte das Foto größer machen, Schriftart ändern, weitere Projekte hinzufügen..."
+                                  class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="app.submitCvFeedback('${order.id}')"
+                                    class="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-dark font-bold py-2 px-4 rounded-lg transition text-sm">
+                                <i class="fas fa-paper-plane mr-1"></i>
+                                Feedback senden
+                            </button>
+                            <button onclick="app.approveCvDraft('${order.id}')"
+                                    class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                                <i class="fas fa-check mr-1"></i>
+                                CV freigeben
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ` : currentStep === 3 && !order.cvDraftUrl ? `
+                <!-- Warten auf CV-Entwurf -->
+                <div class="mt-4 bg-white/70 rounded-lg p-3 border border-brand-gold/20">
+                    <p class="text-xs text-gray-600 flex items-start gap-2">
+                        <i class="fas fa-hourglass-half text-brand-gold mt-0.5 animate-pulse"></i>
+                        <span>Der CV-Entwurf wird finalisiert. Sie erhalten eine E-Mail, sobald er zur Überprüfung bereit ist.</span>
+                    </p>
+                </div>
+            ` : ''}
         </div>
     `;
 }
 
 // Render Mentoring Workflow (3 Schritte: Coach → Termin → Session)
+// Mit 3er-Paket Session-Tracking
 function renderMentoringWorkflow(order) {
     if (!hasCoachSession(order)) return '';
 
-    // Bestimme aktuellen Schritt basierend auf Order-Status
+    // Prüfe ob es ein 3er-Paket ist
+    const packageInfo = isMentoringPackage(order);
+    const totalSessions = packageInfo.totalSessions;
+    const completedSessions = order.completedSessions || 0;
+    const currentSessionNumber = completedSessions + 1;
+
+    // Für 3er-Paket: Zeige Session-Tracker
+    if (packageInfo.isPackage && totalSessions > 1) {
+        return renderMultiSessionWorkflow(order, totalSessions, completedSessions, currentSessionNumber);
+    }
+
+    // Standard Single-Session Workflow
     let currentStep = 1;
     let steps = [];
 
@@ -2636,6 +2733,142 @@ function getMentoringStatusMessage(order, currentStep, hasCoach, hasProposals, h
     return 'Wir weisen Ihnen einen passenden Coach zu. Sie werden per E-Mail benachrichtigt.';
 }
 
+// Render Multi-Session Workflow für 3er-Paket
+function renderMultiSessionWorkflow(order, totalSessions, completedSessions, currentSessionNumber) {
+    const hasCoach = !!order.assignedCoachId;
+    const hasProposals = order.appointmentProposals?.length > 0;
+    const hasConfirmedAppointment = order.appointment?.confirmed;
+    const appointmentPassed = hasConfirmedAppointment && new Date(order.appointment.datetime) < new Date();
+
+    // Session-Historie aus Order laden
+    const sessionHistory = order.sessionHistory || [];
+
+    // Berechne Gesamt-Fortschritt (über alle Sessions)
+    const overallProgress = Math.round((completedSessions / totalSessions) * 100);
+
+    // Aktueller Status für diese Session
+    let sessionStatus = 'pending';
+    let sessionStatusText = 'Coach wird zugewiesen';
+
+    if (completedSessions >= totalSessions) {
+        sessionStatus = 'completed';
+        sessionStatusText = 'Alle Sessions abgeschlossen';
+    } else if (appointmentPassed) {
+        sessionStatus = 'just_completed';
+        sessionStatusText = 'Session abgeschlossen';
+    } else if (hasConfirmedAppointment) {
+        sessionStatus = 'scheduled';
+        sessionStatusText = 'Termin bestätigt';
+    } else if (hasProposals) {
+        sessionStatus = 'awaiting_selection';
+        sessionStatusText = 'Termin auswählen';
+    } else if (hasCoach) {
+        sessionStatus = 'awaiting_proposals';
+        sessionStatusText = 'Warten auf Terminvorschläge';
+    }
+
+    return `
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-3 border border-indigo-200">
+            <!-- Header mit Paket-Info -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-layer-group text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-brand-dark text-sm">3er Mentoring-Paket</h4>
+                        <p class="text-xs text-gray-500">${completedSessions} von ${totalSessions} Sessions abgeschlossen</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-lg font-bold text-indigo-600">${overallProgress}%</span>
+                </div>
+            </div>
+
+            <!-- Session-Kreise -->
+            <div class="flex justify-center gap-4 mb-4">
+                ${Array.from({ length: totalSessions }, (_, i) => {
+                    const sessionNum = i + 1;
+                    const isCompleted = sessionNum <= completedSessions;
+                    const isCurrent = sessionNum === currentSessionNumber && completedSessions < totalSessions;
+                    const historyEntry = sessionHistory[i];
+
+                    let circleClasses = '';
+                    let iconContent = '';
+
+                    if (isCompleted) {
+                        circleClasses = 'bg-green-500 text-white shadow-md';
+                        iconContent = '<i class="fas fa-check text-sm"></i>';
+                    } else if (isCurrent) {
+                        circleClasses = 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg ring-4 ring-indigo-200';
+                        iconContent = `<span class="font-bold">${sessionNum}</span>`;
+                    } else {
+                        circleClasses = 'bg-gray-200 text-gray-400';
+                        iconContent = `<span class="font-medium">${sessionNum}</span>`;
+                    }
+
+                    return `
+                        <div class="flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full ${circleClasses} flex items-center justify-center transition-all">
+                                ${iconContent}
+                            </div>
+                            <span class="text-xs mt-1 ${isCompleted ? 'text-green-600' : isCurrent ? 'text-indigo-600 font-medium' : 'text-gray-400'}">
+                                Session ${sessionNum}
+                            </span>
+                            ${historyEntry?.date ? `<span class="text-[10px] text-gray-400">${new Date(historyEntry.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</span>` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- Aktueller Session-Status (wenn nicht alle abgeschlossen) -->
+            ${completedSessions < totalSessions ? `
+                <div class="bg-white rounded-lg p-3 border border-indigo-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-brand-dark">Session ${currentSessionNumber}</span>
+                        <span class="text-xs px-2 py-1 rounded-full ${
+                            sessionStatus === 'scheduled' ? 'bg-green-100 text-green-700' :
+                            sessionStatus === 'awaiting_selection' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-600'
+                        }">${sessionStatusText}</span>
+                    </div>
+
+                    ${hasConfirmedAppointment && !appointmentPassed ? `
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="fas fa-calendar-check text-green-500"></i>
+                            <span>${new Date(order.appointment.datetime).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} Uhr</span>
+                        </div>
+                    ` : hasProposals ? `
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-info-circle text-yellow-500 mr-1"></i>
+                            Bitte wählen Sie einen Termin aus den Vorschlägen.
+                        </p>
+                    ` : hasCoach ? `
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-user-tie text-indigo-500 mr-1"></i>
+                            Coach zugewiesen. Terminvorschläge folgen per E-Mail.
+                        </p>
+                    ` : `
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-hourglass-half text-gray-400 mr-1"></i>
+                            Coach wird zugewiesen...
+                        </p>
+                    `}
+                </div>
+            ` : `
+                <!-- Alle Sessions abgeschlossen -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200 text-center">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fas fa-trophy text-white text-lg"></i>
+                    </div>
+                    <p class="font-bold text-green-700">Alle Sessions abgeschlossen!</p>
+                    <p class="text-xs text-green-600 mt-1">Vielen Dank für Ihre Teilnahme am 3er-Paket.</p>
+                </div>
+            `}
+        </div>
+    `;
+}
+
 // Prüft ob es ein Quick-Check ist
 function isQuickCheck(order) {
     return order.items?.some(item =>
@@ -2644,41 +2877,40 @@ function isQuickCheck(order) {
     );
 }
 
-// Quick-Check Workflow (2 Schritte: Upload → Feedback-Call)
+// Alias für Admin-Bereich
+function isQuickCheckOrder(order) {
+    return isQuickCheck(order);
+}
+
+// Quick-Check Workflow (2 Schritte: Upload → Schriftliches Gutachten)
+// WICHTIG: Quick-Check = schriftliches Gutachten in 2-3 Werktagen, KEIN Video-Call!
 function renderQuickCheckWorkflow(order) {
     if (!isQuickCheck(order)) return '';
 
     // Bestimme Status
     const hasUploadedDocs = order.cvStatus === 'data_received' || order.questionnaireSubmittedAt;
-    const hasAppointment = order.appointment?.confirmed;
-    const appointmentPassed = hasAppointment && new Date(order.appointment.datetime) < new Date();
+    const hasGutachten = order.quickCheckGutachtenUrl || order.cvStatus === 'gutachten_delivered';
 
     let currentStep = 1;
     let steps = [];
 
-    if (appointmentPassed) {
+    if (hasGutachten) {
         currentStep = 2;
         steps = [
             { step: 1, name: 'Dokumente hochgeladen', status: 'completed', icon: 'file-upload' },
-            { step: 2, name: 'Feedback-Call abgeschlossen', status: 'completed', icon: 'video' }
-        ];
-    } else if (hasAppointment) {
-        currentStep = 2;
-        steps = [
-            { step: 1, name: 'Dokumente hochgeladen', status: 'completed', icon: 'file-upload' },
-            { step: 2, name: 'Feedback-Call', status: 'pending', icon: 'video' }
+            { step: 2, name: 'Gutachten erhalten', status: 'completed', icon: 'file-alt' }
         ];
     } else if (hasUploadedDocs) {
         currentStep = 2;
         steps = [
             { step: 1, name: 'Dokumente hochgeladen', status: 'completed', icon: 'file-upload' },
-            { step: 2, name: 'Feedback-Call vereinbaren', status: 'pending', icon: 'calendar-alt' }
+            { step: 2, name: 'Gutachten wird erstellt', status: 'pending', icon: 'pen-fancy' }
         ];
     } else {
         currentStep = 1;
         steps = [
             { step: 1, name: 'Dokumente hochladen', status: 'pending', icon: 'file-upload' },
-            { step: 2, name: 'Feedback-Call', status: 'waiting', icon: 'video' }
+            { step: 2, name: 'Schriftliches Gutachten', status: 'waiting', icon: 'file-alt' }
         ];
     }
 
@@ -2750,30 +2982,73 @@ function renderQuickCheckWorkflow(order) {
                 }).join('')}
             </div>
 
+            <!-- Upload-Bereich (wenn noch keine Dokumente hochgeladen) -->
+            ${!hasUploadedDocs ? `
+                <div class="mt-4 bg-white rounded-lg p-4 border-2 border-dashed border-purple-300">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-cloud-upload-alt text-purple-500 text-xl"></i>
+                        </div>
+                        <p class="text-sm font-medium text-brand-dark mb-1">Lebenslauf hochladen</p>
+                        <p class="text-xs text-gray-500 mb-3">PDF oder Word-Dokument (max. 10MB)</p>
+                        <label class="cursor-pointer">
+                            <input type="file"
+                                   accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                   onchange="app.handleQuickCheckUpload('${order.id}', this)"
+                                   class="hidden">
+                            <span class="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition cursor-pointer">
+                                <i class="fas fa-file-upload"></i>
+                                Datei auswählen
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            ` : ''}
+
             <!-- Status-Meldung -->
             <div class="mt-4 bg-white/70 rounded-lg p-3 border border-purple-100">
                 <p class="text-xs text-gray-600 flex items-start gap-2">
                     <i class="fas fa-info-circle text-purple-500 mt-0.5"></i>
-                    <span>${getQuickCheckStatusMessage(order, hasUploadedDocs, hasAppointment, appointmentPassed)}</span>
+                    <span>${getQuickCheckStatusMessage(order, hasUploadedDocs, hasGutachten, isExpress)}</span>
                 </p>
             </div>
+
+            <!-- Gutachten Download (wenn verfügbar) -->
+            ${hasGutachten && order.quickCheckGutachtenUrl ? `
+                <div class="mt-3">
+                    <a href="${order.quickCheckGutachtenUrl}" target="_blank"
+                       class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2">
+                        <i class="fas fa-file-download"></i>
+                        Gutachten herunterladen
+                        <i class="fas fa-external-link-alt text-xs"></i>
+                    </a>
+                </div>
+            ` : ''}
+
+            <!-- Upgrade-Hinweis -->
+            ${!hasGutachten ? `
+                <div class="mt-3 bg-gradient-to-r from-brand-gold/10 to-amber-50 rounded-lg p-3 border border-brand-gold/30">
+                    <p class="text-xs text-brand-dark flex items-start gap-2">
+                        <i class="fas fa-lightbulb text-brand-gold mt-0.5"></i>
+                        <span><strong>Tipp:</strong> Bei einem Upgrade auf ein CV-Paket werden die €99 vollständig angerechnet!</span>
+                    </p>
+                </div>
+            ` : ''}
         </div>
     `;
 }
 
 // Status-Meldung für Quick-Check
-function getQuickCheckStatusMessage(order, hasUploadedDocs, hasAppointment, appointmentPassed) {
-    if (appointmentPassed) {
-        return 'Ihr Quick-Check ist abgeschlossen. Vielen Dank!';
-    }
-    if (hasAppointment) {
-        const appointmentDate = new Date(order.appointment.datetime);
-        return `Ihr Feedback-Call ist am ${appointmentDate.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })} um ${appointmentDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr.`;
+function getQuickCheckStatusMessage(order, hasUploadedDocs, hasGutachten, isExpress = false) {
+    const lieferzeit = isExpress ? 'innerhalb von 24 Stunden' : 'in 2-3 Werktagen';
+
+    if (hasGutachten) {
+        return 'Ihr schriftliches Gutachten ist fertig! Sie können es hier herunterladen oder finden es in Ihrer E-Mail.';
     }
     if (hasUploadedDocs) {
-        return 'Dokumente erhalten! Wir analysieren Ihren Lebenslauf und senden Ihnen Terminvorschläge für den Feedback-Call.';
+        return `Dokumente erhalten! Wir erstellen Ihr detailliertes schriftliches Gutachten. Sie erhalten es per E-Mail und können es hier im Dashboard herunterladen (${lieferzeit}).`;
     }
-    return 'Laden Sie Ihren aktuellen Lebenslauf hoch, damit wir ihn analysieren können.';
+    return `Laden Sie Ihren aktuellen Lebenslauf hoch. Sie erhalten ein detailliertes schriftliches Gutachten per E-Mail und hier im Dashboard (${lieferzeit}).`;
 }
 
 // Fragebogen öffnen
@@ -3051,7 +3326,12 @@ function renderCvDownloadSection(order) {
 
     // Nur anzeigen wenn CV fertig ist
     if (cvStatus !== 'ready' && cvStatus !== 'delivered') return '';
-    if (!cvProject?.generatedCv?.url) return '';
+
+    // Check for download URL - either from cvProject or from order (admin upload)
+    const downloadUrl = cvProject?.generatedCv?.url || order.deliveredDocumentUrl;
+    const documentName = cvProject?.generatedCv?.format || order.deliveredDocumentName || 'PDF';
+
+    if (!downloadUrl) return '';
 
     return `
         <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 mb-3 border border-green-200">
@@ -3064,12 +3344,12 @@ function renderCvDownloadSection(order) {
                     <p class="text-xs text-green-600">Sie können ihn jetzt herunterladen</p>
                 </div>
             </div>
-            <a href="${cvProject.generatedCv.url}"
+            <a href="${downloadUrl}"
                target="_blank"
                download
                class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg">
                 <i class="fas fa-download"></i>
-                CV herunterladen (${cvProject.generatedCv.format || 'PDF'})
+                CV herunterladen (${documentName})
             </a>
         </div>
     `;
@@ -3727,6 +4007,31 @@ export function hasCoachSession(order) {
     return order.items && order.items.some(item =>
         item.title && sessionKeywords.some(keyword => item.title.includes(keyword))
     );
+}
+
+// Erkennt 3er-Mentoring-Paket
+export function isMentoringPackage(order) {
+    if (!order.items) return { isPackage: false, totalSessions: 1 };
+
+    // 3er-Paket erkennen
+    const has3erPaket = order.items.some(item =>
+        item.title && (item.title.includes('3er') || item.title.includes('3x') || item.title.includes('Paket'))
+    );
+
+    if (has3erPaket) {
+        return { isPackage: true, totalSessions: 3 };
+    }
+
+    // Komplettpaket erkennen (hat auch Session)
+    const hasKomplettpaket = order.items.some(item =>
+        item.title && item.title.includes('Komplettpaket')
+    );
+
+    if (hasKomplettpaket) {
+        return { isPackage: true, totalSessions: 1, isKomplettpaket: true };
+    }
+
+    return { isPackage: false, totalSessions: 1 };
 }
 
 export function getOrderStatusText(status) {
@@ -7582,11 +7887,18 @@ export async function loadAllOrders() {
         allAdminOrders = allAdminOrders.map(order => {
             const cvProject = cvProjectsMap[order.id];
             if (cvProject) {
+                // Order cvStatus has priority if set to 'delivered' or 'ready'
+                const orderCvStatus = order.cvStatus;
+                const projectStatus = cvProject.status || 'new';
+                const finalCvStatus = (orderCvStatus === 'delivered' || orderCvStatus === 'ready')
+                    ? orderCvStatus
+                    : projectStatus;
+
                 return {
                     ...order,
                     cvProject: cvProject,
                     cvProjectId: cvProject.id,
-                    cvStatus: cvProject.status || 'new',
+                    cvStatus: finalCvStatus,
                     questionnaire: cvProject.questionnaire || null
                 };
             }
@@ -7772,337 +8084,620 @@ export function filterAdminOrders() {
     renderAdminOrders(filtered);
 }
 
-function renderAdminOrders(orders) {
-    const container = document.getElementById('admin-orders-list');
-    if (!container) return;
+// Check if order is completed (for admin)
+function isAdminOrderCompleted(order) {
+    const cvStatus = order.cvStatus || 'new';
+    const orderStatus = order.status || 'confirmed';
 
-    if (orders.length === 0) {
-        container.innerHTML = `
-            <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
-                <i class="fas fa-inbox text-4xl mb-4"></i>
-                <p>Keine Bestellungen gefunden</p>
-            </div>
-        `;
-        return;
+    // Quick-Check: completed when gutachten delivered
+    if (isQuickCheckOrder(order)) {
+        return cvStatus === 'gutachten_delivered' || orderStatus === 'completed' || order.quickCheckGutachtenUrl;
     }
 
-    container.innerHTML = orders.map(order => {
-        const date = order.date?.seconds
-            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            : 'Unbekannt';
-        const time = order.date?.seconds
-            ? new Date(order.date.seconds * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-            : '';
+    // CV orders: completed when delivered
+    if (isCvOrder(order)) {
+        return cvStatus === 'delivered' || cvStatus === 'ready';
+    }
 
-        const statusConfig = {
-            processing: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'fa-clock', label: 'In Bearbeitung' },
-            confirmed: { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'fa-check', label: 'Bestätigt' },
-            completed: { bg: 'bg-green-100', text: 'text-green-800', icon: 'fa-check-double', label: 'Abgeschlossen' },
-            cancelled: { bg: 'bg-red-100', text: 'text-red-800', icon: 'fa-times', label: 'Storniert' }
-        };
-        const status = statusConfig[order.status] || statusConfig.processing;
+    // Mentoring: completed when appointment passed or status is completed
+    if (hasCoachSession(order)) {
+        if (orderStatus === 'completed') return true;
+        if (order.appointment?.datetime) {
+            const appointmentDate = new Date(order.appointment.datetime);
+            return appointmentDate < new Date();
+        }
+    }
+
+    return orderStatus === 'completed';
+}
+
+// Switch between admin order tabs
+export function switchAdminOrderTab(tab) {
+    const activeTab = document.getElementById('admin-tab-active');
+    const completedTab = document.getElementById('admin-tab-completed');
+    const activeList = document.getElementById('admin-active-orders-list');
+    const completedList = document.getElementById('admin-completed-orders-list');
+
+    if (tab === 'active') {
+        activeTab.className = 'flex-1 py-3 px-4 text-sm font-semibold text-brand-dark border-b-2 border-brand-gold bg-brand-gold/5 transition flex items-center justify-center gap-2';
+        completedTab.className = 'flex-1 py-3 px-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-brand-dark transition flex items-center justify-center gap-2';
+        activeList.classList.remove('hidden');
+        completedList.classList.add('hidden');
+    } else {
+        completedTab.className = 'flex-1 py-3 px-4 text-sm font-semibold text-brand-dark border-b-2 border-brand-gold bg-brand-gold/5 transition flex items-center justify-center gap-2';
+        activeTab.className = 'flex-1 py-3 px-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-brand-dark transition flex items-center justify-center gap-2';
+        completedList.classList.remove('hidden');
+        activeList.classList.add('hidden');
+    }
+}
+
+function renderAdminOrders(orders) {
+    const activeContainer = document.getElementById('admin-active-orders-list');
+    const completedContainer = document.getElementById('admin-completed-orders-list');
+    const activeCountEl = document.getElementById('admin-active-count');
+    const completedCountEl = document.getElementById('admin-completed-count');
+
+    // Split orders into active and completed
+    const activeOrders = orders.filter(o => !isAdminOrderCompleted(o));
+    const completedOrders = orders.filter(o => isAdminOrderCompleted(o));
+
+    // Update counts
+    if (activeCountEl) activeCountEl.textContent = activeOrders.length;
+    if (completedCountEl) completedCountEl.textContent = completedOrders.length;
+
+    // Render active orders
+    if (activeContainer) {
+        if (activeOrders.length === 0) {
+            activeContainer.innerHTML = `
+                <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
+                    <i class="fas fa-check-circle text-4xl mb-4 text-green-400"></i>
+                    <p>Keine offenen Bestellungen</p>
+                </div>
+            `;
+        } else {
+            activeContainer.innerHTML = activeOrders.map(order => renderSingleAdminOrder(order)).join('');
+        }
+    }
+
+    // Render completed orders
+    if (completedContainer) {
+        if (completedOrders.length === 0) {
+            completedContainer.innerHTML = `
+                <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
+                    <i class="fas fa-inbox text-4xl mb-4"></i>
+                    <p>Keine abgeschlossenen Bestellungen</p>
+                </div>
+            `;
+        } else {
+            completedContainer.innerHTML = completedOrders.map(order => renderSingleAdminOrder(order)).join('');
+        }
+    }
+
+    // Also update legacy container for compatibility
+    const legacyContainer = document.getElementById('admin-orders-list');
+    if (legacyContainer) {
+        legacyContainer.innerHTML = orders.map(order => renderSingleAdminOrder(order)).join('');
+    }
+}
+
+function renderSingleAdminOrder(order) {
+        const date = order.date?.seconds
+            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
+            : 'Unbekannt';
 
         // Determine what type of order this is
         const isSession = hasCoachSession(order);
         const isCvOrderType = isCvOrder(order);
-        const hasAppointment = order.appointment?.confirmed;
-        const hasPendingProposals = order.appointmentProposals && !order.appointment?.confirmed && order.appointmentStatus !== 'declined';
-        const needsAttention = isSession && !order.assignedCoachId;
+        const isQuickCheckType = isQuickCheckOrder(order);
 
-        // First item title shortened
+        // Get current step and admin action needed
+        const adminAction = getAdminActionNeeded(order, isSession, isCvOrderType, isQuickCheckType);
+
+        // First item title
         const mainItem = order.items?.[0]?.title || 'Produkt';
-        const itemCount = order.items?.length || 0;
 
         return `
-            <div class="bg-white rounded-xl border ${needsAttention ? 'border-orange-300 ring-2 ring-orange-100' : 'border-gray-100'} overflow-hidden hover:shadow-md transition" data-order-id="${order.id}">
-                <!-- Compact Header - Always Visible -->
+            <div class="bg-white rounded-xl border ${adminAction.needed ? 'border-orange-300 ring-2 ring-orange-100' : 'border-gray-100'} overflow-hidden hover:shadow-md transition" data-order-id="${order.id}">
+                <!-- Order Header -->
                 <div class="p-4 cursor-pointer" onclick="app.toggleOrderExpand('${order.id}')">
                     <div class="flex items-center gap-4">
-                        <!-- Status Indicator -->
+                        <!-- Customer Avatar -->
                         <div class="flex-shrink-0">
-                            <div class="w-10 h-10 ${status.bg} rounded-lg flex items-center justify-center">
-                                <i class="fas ${status.icon} ${status.text}"></i>
+                            <div class="w-12 h-12 bg-gradient-to-br from-brand-gold to-amber-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                ${(order.customerName || 'U').charAt(0).toUpperCase()}
                             </div>
                         </div>
 
                         <!-- Main Info -->
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-brand-dark truncate">${sanitizeHTML(order.customerName || 'Unbekannt')}</span>
+                                <span class="font-bold text-brand-dark">${sanitizeHTML(order.customerName || 'Unbekannt')}</span>
                                 <span class="text-xs font-mono text-gray-400">#${order.id.substring(0, 6).toUpperCase()}</span>
                             </div>
-                            <div class="flex items-center gap-3 text-xs text-gray-500">
-                                <span><i class="fas fa-box mr-1"></i>${sanitizeHTML(mainItem.substring(0, 25))}${mainItem.length > 25 ? '...' : ''}${itemCount > 1 ? ` +${itemCount - 1}` : ''}</span>
-                                <span><i class="fas fa-calendar mr-1"></i>${date}</span>
-                            </div>
+                            <p class="text-sm text-gray-600 truncate">${sanitizeHTML(mainItem)}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">${date}</p>
                         </div>
 
-                        <!-- Quick Info Badges -->
-                        <div class="flex items-center gap-2 flex-shrink-0">
-                            ${isSession ? `
-                                ${order.assignedCoachId ? `
-                                    <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full flex items-center gap-1">
-                                        <i class="fas fa-user-tie"></i>
-                                        <span class="hidden sm:inline">${sanitizeHTML((order.assignedCoachName || 'Mentor').split(' ')[0])}</span>
-                                    </span>
-                                ` : `
-                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full flex items-center gap-1 animate-pulse">
-                                        <i class="fas fa-exclamation"></i>
-                                        <span class="hidden sm:inline">Mentor fehlt</span>
-                                    </span>
-                                `}
-                            ` : ''}
-                            ${hasAppointment ? `
-                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
-                                    <i class="fas fa-calendar-check"></i>
-                                    <span class="hidden sm:inline">Termin</span>
-                                </span>
-                            ` : hasPendingProposals ? `
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full flex items-center gap-1">
+                        <!-- Action Badge -->
+                        <div class="flex-shrink-0">
+                            ${adminAction.needed ? `
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full animate-pulse">
+                                    <i class="fas fa-hand-point-right"></i>
+                                    <span class="text-xs font-bold">Du bist dran</span>
+                                </div>
+                            ` : order.status === 'completed' ? `
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-full">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span class="text-xs font-medium">Erledigt</span>
+                                </div>
+                            ` : `
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full">
                                     <i class="fas fa-hourglass-half"></i>
-                                    <span class="hidden sm:inline">Wartet</span>
-                                </span>
-                            ` : ''}
+                                    <span class="text-xs font-medium">Wartet auf Kunde</span>
+                                </div>
+                            `}
                         </div>
 
                         <!-- Price & Expand -->
                         <div class="flex items-center gap-3 flex-shrink-0">
-                            <span class="font-bold text-brand-dark">€${(order.total || 0).toLocaleString('de-DE')}</span>
+                            <span class="font-bold text-brand-dark text-lg">€${(order.total || 0).toLocaleString('de-DE')}</span>
                             <i id="expand-icon-${order.id}" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
                         </div>
                     </div>
                 </div>
 
-                <!-- Expandable Content -->
+                <!-- Expandable Workflow Content -->
                 <div id="order-details-${order.id}" class="hidden border-t border-gray-100">
-                    <div class="p-4 bg-gray-50 space-y-4">
-                        <!-- Customer & Order Info -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-white rounded-lg p-3 border border-gray-100">
-                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Kunde</p>
-                                <p class="font-medium text-brand-dark">${sanitizeHTML(order.customerName || 'Unbekannt')}</p>
-                                <p class="text-sm text-gray-500">${sanitizeHTML(order.customerEmail || 'Keine Email')}</p>
-                                <p class="text-xs text-gray-400 mt-1">${date} um ${time}</p>
-                            </div>
-                            <div class="bg-white rounded-lg p-3 border border-gray-100">
-                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Produkte</p>
-                                ${order.items?.map(item => `
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-700">${sanitizeHTML(item.title)}</span>
-                                        <span class="font-medium">€${item.price}</span>
-                                    </div>
-                                `).join('') || '<p class="text-gray-400 text-sm">Keine Produkte</p>'}
+                    <div class="p-4 bg-gray-50">
+                        <!-- Kunde Info -->
+                        <div class="mb-4 p-3 bg-white rounded-lg border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">${sanitizeHTML(order.customerEmail || 'Keine Email')}</p>
+                                    <p class="text-xs text-gray-400 mt-1">${order.items?.map(i => sanitizeHTML(i.title)).join(', ')}</p>
+                                </div>
+                                <span class="font-serif text-xl text-brand-dark">€${(order.total || 0).toFixed(2)}</span>
                             </div>
                         </div>
 
-                        <!-- Status & Actions Row -->
-                        <div class="flex flex-wrap items-center gap-3 bg-white rounded-lg p-3 border border-gray-100">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-500">Status:</span>
-                                <select onchange="app.updateOrderStatus('${order.id}', this.value)"
-                                        class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-brand-gold ${status.bg} ${status.text}">
-                                    <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>In Bearbeitung</option>
-                                    <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Bestätigt</option>
-                                    <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
-                                    <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Storniert</option>
-                                </select>
-                            </div>
-                            <div class="flex-1"></div>
-                            <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
-                                    class="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition">
-                                <i class="fas fa-calendar-plus"></i>
-                                <span>Termin</span>
-                            </button>
-                            <label class="flex items-center gap-2 px-3 py-1.5 bg-brand-gold text-brand-dark text-xs font-medium rounded-lg hover:bg-yellow-500 transition cursor-pointer">
-                                <i class="fas fa-upload"></i>
-                                <span>Dokument</span>
-                                <input type="file" class="hidden" accept=".pdf,.doc,.docx"
-                                       onchange="app.uploadDocumentToUser('${order.userId}', '${order.id}', this.files[0], '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')">
-                            </label>
-                        </div>
-
-                        <!-- Mentor Section (only for sessions) -->
-                        ${isSession ? `
-                            <div class="bg-white rounded-lg p-3 border ${order.assignedCoachId ? 'border-indigo-200' : 'border-orange-200'}">
-                                <div class="flex items-center justify-between mb-3">
-                                    <p class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                        <i class="fas fa-user-tie ${order.assignedCoachId ? 'text-indigo-500' : 'text-orange-500'}"></i>
-                                        Mentor-Zuweisung
-                                    </p>
-                                    ${!order.assignedCoachId ? `
-                                        <span class="text-xs text-orange-600 font-medium animate-pulse">Aktion erforderlich</span>
-                                    ` : ''}
-                                </div>
-                                ${order.assignedCoachId ? `
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-user text-indigo-600"></i>
-                                            </div>
-                                            <div>
-                                                <p class="font-medium text-brand-dark">${sanitizeHTML(order.assignedCoachName || 'Mentor')}</p>
-                                                <p class="text-xs text-green-600"><i class="fas fa-check mr-1"></i>Zugewiesen</p>
-                                            </div>
-                                        </div>
-                                        <button onclick="app.showAssignCoachModal('${order.id}')"
-                                                class="text-sm text-indigo-600 hover:text-indigo-800 underline">
-                                            Ändern
-                                        </button>
-                                    </div>
-                                ` : `
-                                    <button onclick="app.showAssignCoachModal('${order.id}')"
-                                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
-                                        <i class="fas fa-user-plus"></i>
-                                        Mentor zuweisen
-                                    </button>
-                                `}
-                            </div>
-                        ` : ''}
-
-                        <!-- CV Questionnaire Section (only for CV orders) -->
-                        ${isCvOrderType ? `
-                            <div class="bg-white rounded-lg p-3 border ${order.cvProjectId ? 'border-indigo-200' : 'border-amber-200'}">
-                                <div class="flex items-center justify-between mb-3">
-                                    <p class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                        <i class="fas fa-file-alt ${order.cvProjectId ? 'text-indigo-500' : 'text-amber-500'}"></i>
-                                        CV-Fragebogen
-                                    </p>
-                                    ${!order.cvProjectId ? `
-                                        <span class="text-xs text-amber-600 font-medium">Noch nicht gesendet</span>
-                                    ` : `
-                                        <span class="text-xs ${order.cvStatus === 'data_received' || order.cvStatus === 'ready' || order.cvStatus === 'delivered' ? 'text-green-600 bg-green-50' : 'text-indigo-600 bg-indigo-50'} px-2 py-0.5 rounded font-medium">
-                                            ${order.cvStatus === 'data_received' ? 'Daten erhalten' :
-                                              order.cvStatus === 'generating' ? 'In Erstellung' :
-                                              order.cvStatus === 'ready' ? 'CV fertig' :
-                                              order.cvStatus === 'delivered' ? 'Zugestellt' : 'Wartet auf Kunde'}
-                                        </span>
-                                    `}
-                                </div>
-                                ${order.cvProjectId ? `
-                                    ${(order.cvStatus === 'data_received' || order.cvStatus === 'generating' || order.cvStatus === 'ready' || order.cvStatus === 'delivered') && order.questionnaire ? `
-                                        <!-- Ausgefüllter Fragebogen -->
-                                        <div class="mb-3">
-                                            <button onclick="app.toggleAdminQuestionnaireView('${order.id}')"
-                                                    class="w-full flex items-center justify-between text-left p-2 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition">
-                                                <span class="text-sm font-medium text-green-700">
-                                                    <i class="fas fa-check-circle mr-2"></i>Fragebogen ausgefüllt - Daten ansehen
-                                                </span>
-                                                <i class="fas fa-chevron-down text-green-500 transition-transform" id="admin-cv-q-toggle-${order.id}"></i>
-                                            </button>
-                                            <div id="admin-cv-questionnaire-view-${order.id}" class="hidden mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200 max-h-96 overflow-y-auto">
-                                                ${renderAdminQuestionnaireData(order.questionnaire, order.cvProject?.documents, order.cvProject?.templateSelection)}
-                                            </div>
-                                        </div>
-                                    ` : `
-                                        <!-- Fragebogen gesendet, warte auf Kunde -->
-                                        <div class="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
-                                            <div class="flex items-center gap-2">
-                                                <i class="fas fa-hourglass-half text-indigo-500 animate-pulse"></i>
-                                                <span class="text-sm text-indigo-700">Wartet auf Kundenantwort</span>
-                                            </div>
-                                            <a href="?questionnaire=${order.cvProjectId}" target="_blank"
-                                               class="text-xs text-indigo-600 hover:text-indigo-800 underline">
-                                                Link kopieren
-                                            </a>
-                                        </div>
-                                    `}
-                                ` : `
-                                    <button onclick="app.sendCvQuestionnaireFromOrder('${order.id}', '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')"
-                                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
-                                        <i class="fas fa-paper-plane"></i>
-                                        Fragebogen senden
-                                    </button>
-                                `}
-                            </div>
-                        ` : ''}
-
-                        <!-- Appointment Section -->
-                        ${order.appointmentProposals || order.appointment || order.appointmentStatus ? `
-                            <div class="bg-white rounded-lg p-3 border border-gray-100">
-                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <i class="fas fa-calendar-alt text-brand-gold"></i>
-                                    Terminplanung
-                                </p>
-                                ${order.appointmentStatus === 'confirmed' && order.appointment?.confirmed ? `
-                                    <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <i class="fas fa-check text-white"></i>
-                                        </div>
-                                        <div>
-                                            <p class="font-medium text-green-800">Termin bestätigt</p>
-                                            <p class="text-sm text-green-700">
-                                                ${new Date(order.appointment.datetime).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr
-                                            </p>
-                                        </div>
-                                    </div>
-                                ` : order.appointmentStatus === 'declined' ? `
-                                    <div class="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            <i class="fas fa-times-circle text-orange-500"></i>
-                                            <span class="font-medium text-orange-800">Termine abgelehnt</span>
-                                        </div>
-                                        ${order.appointmentDeclineReason ? `
-                                            <p class="text-sm text-gray-600 italic mb-2">"${sanitizeHTML(order.appointmentDeclineReason)}"</p>
-                                        ` : ''}
-                                        <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
-                                                class="text-sm text-orange-600 hover:text-orange-800 underline">
-                                            Neue Termine vorschlagen
-                                        </button>
-                                    </div>
-                                ` : order.appointmentProposals ? `
-                                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            <i class="fas fa-hourglass-half text-yellow-600 animate-pulse"></i>
-                                            <span class="font-medium text-yellow-800">Warte auf Kundenauswahl</span>
-                                        </div>
-                                        <div class="text-sm text-yellow-700 space-y-1">
-                                            ${order.appointmentProposals.slice(0, 3).map(prop => `
-                                                <p><i class="fas fa-calendar text-yellow-500 mr-2"></i>${new Date(prop).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr</p>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        ` : ''}
-
-                        <!-- Documents Section (Collapsed by Default) -->
-                        <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
-                            <button onclick="app.toggleOrderDocs('${order.id}')" class="w-full p-3 flex items-center justify-between text-left hover:bg-gray-50 transition">
-                                <span class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    <i class="fas fa-folder text-gray-400"></i>
-                                    Dokumente
-                                </span>
-                                <i id="docs-icon-${order.id}" class="fas fa-chevron-down text-gray-400 text-xs transition-transform"></i>
-                            </button>
-                            <div id="docs-content-${order.id}" class="hidden border-t border-gray-100 p-3">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <p class="text-xs text-blue-600 font-medium mb-2"><i class="fas fa-upload mr-1"></i>Vom Kunden</p>
-                                        <div id="doc-list-customer-${order.id}" class="space-y-1 text-sm">
-                                            <p class="text-gray-400 italic text-xs">Lade...</p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-green-600 font-medium mb-2"><i class="fas fa-paper-plane mr-1"></i>Von dir</p>
-                                        <div id="doc-list-admin-${order.id}" class="space-y-1 text-sm">
-                                            <p class="text-gray-400 italic text-xs">Lade...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Workflow Steps -->
+                        ${renderAdminWorkflowSteps(order, isSession, isCvOrderType, isQuickCheckType)}
                     </div>
                 </div>
             </div>
         `;
-    }).join('');
+}
 
-    // Load documents for each order
-    orders.forEach(order => {
-        if (order.userId) {
-            loadOrderDocuments(order.userId, order.id);
+// Bestimme welche Admin-Aktion erforderlich ist
+function getAdminActionNeeded(order, isSession, isCvOrder, isQuickCheck) {
+    // Mentoring: Coach zuweisen
+    if (isSession && !order.assignedCoachId) {
+        return { needed: true, action: 'assign_coach', label: 'Coach zuweisen' };
+    }
+
+    // Mentoring: Termine vorschlagen nach Ablehnung
+    if (isSession && order.appointmentStatus === 'declined') {
+        return { needed: true, action: 'new_proposals', label: 'Neue Termine vorschlagen' };
+    }
+
+    // CV Order: Fragebogen senden
+    if (isCvOrder && !isQuickCheck && !order.cvProjectId) {
+        return { needed: true, action: 'send_questionnaire', label: 'Fragebogen senden' };
+    }
+
+    // CV Order: CV erstellen (Daten erhalten)
+    if (isCvOrder && !isQuickCheck && order.cvStatus === 'data_received') {
+        return { needed: true, action: 'create_cv', label: 'CV erstellen' };
+    }
+
+    // Quick-Check: Gutachten hochladen (CV erhalten)
+    if (isQuickCheck && order.quickCheckDocument && !order.quickCheckGutachtenUrl) {
+        return { needed: true, action: 'upload_gutachten', label: 'Gutachten hochladen' };
+    }
+
+    return { needed: false };
+}
+
+// Render Admin Workflow Steps - wie beim Kunden, aber mit Admin-Aktionen
+function renderAdminWorkflowSteps(order, isSession, isCvOrderType, isQuickCheckType) {
+    if (isQuickCheckType) {
+        return renderAdminQuickCheckWorkflow(order);
+    }
+    if (isCvOrderType) {
+        return renderAdminCvWorkflow(order);
+    }
+    if (isSession) {
+        return renderAdminMentoringWorkflow(order);
+    }
+    return '<p class="text-gray-500 text-sm">Keine Workflow-Schritte verfügbar</p>';
+}
+
+// Admin Quick-Check Workflow
+function renderAdminQuickCheckWorkflow(order) {
+    const hasCustomerDoc = !!order.quickCheckDocument;
+    const hasGutachten = order.quickCheckGutachtenUrl || order.cvStatus === 'gutachten_delivered';
+    const isExpress = order.items?.some(i => i.title?.toLowerCase().includes('express'));
+
+    const steps = [
+        {
+            num: 1,
+            title: 'Kunde lädt CV hoch',
+            done: hasCustomerDoc,
+            current: !hasCustomerDoc,
+            waitingFor: 'customer',
+            icon: 'fa-upload'
+        },
+        {
+            num: 2,
+            title: 'Gutachten erstellen & hochladen',
+            done: hasGutachten,
+            current: hasCustomerDoc && !hasGutachten,
+            waitingFor: 'admin',
+            icon: 'fa-file-signature'
         }
-    });
+    ];
+
+    return `
+        <div class="space-y-3">
+            <!-- Workflow Steps -->
+            <div class="bg-white rounded-xl p-4 border border-gray-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fas fa-bolt text-purple-500"></i>
+                    <span class="font-bold text-brand-dark">Quick-Check ${isExpress ? '(Express - 24h)' : '(Standard - 2-3 Tage)'}</span>
+                </div>
+
+                <div class="space-y-3">
+                    ${steps.map(step => `
+                        <div class="flex items-center gap-3 ${step.done ? 'opacity-60' : ''}">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                step.done ? 'bg-green-500 text-white' :
+                                step.current ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white ring-4 ring-purple-100' :
+                                'bg-gray-200 text-gray-400'
+                            }">
+                                ${step.done ? '<i class="fas fa-check text-sm"></i>' : `<span class="text-sm font-bold">${step.num}</span>`}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-sm ${step.current ? 'text-brand-dark' : 'text-gray-600'}">${step.title}</p>
+                                ${step.current ? `
+                                    <p class="text-xs ${step.waitingFor === 'admin' ? 'text-orange-600 font-bold' : 'text-blue-600'}">
+                                        ${step.waitingFor === 'admin' ? '<i class="fas fa-hand-point-right mr-1"></i>Du bist dran!' : '<i class="fas fa-hourglass-half mr-1"></i>Warte auf Kunde'}
+                                    </p>
+                                ` : ''}
+                            </div>
+                            ${step.done && step.num === 1 && order.quickCheckDocument ? `
+                                <a href="${order.quickCheckDocument.url}" target="_blank" class="text-xs text-purple-600 hover:underline flex items-center gap-1">
+                                    <i class="fas fa-download"></i> CV ansehen
+                                </a>
+                            ` : ''}
+                            ${step.done && step.num === 2 && order.quickCheckGutachtenUrl ? `
+                                <a href="${order.quickCheckGutachtenUrl}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1">
+                                    <i class="fas fa-file-pdf"></i> Gutachten
+                                </a>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            ${hasCustomerDoc && !hasGutachten ? `
+                <div class="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-hand-point-right text-orange-500"></i>
+                        <span class="font-bold text-orange-700">Deine Aktion erforderlich</span>
+                    </div>
+                    <label class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-file-upload"></i>
+                        Gutachten hochladen & abschließen
+                        <input type="file" class="hidden" accept=".pdf,.doc,.docx"
+                               onchange="app.uploadQuickCheckGutachten('${order.id}', '${order.userId}', this.files[0], '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')">
+                    </label>
+                </div>
+            ` : hasGutachten ? `
+                <div class="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
+                    <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
+                    <p class="font-bold text-green-700">Abgeschlossen!</p>
+                    <p class="text-sm text-green-600">Gutachten wurde zugestellt.</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Admin CV Workflow
+function renderAdminCvWorkflow(order) {
+    const hasSentQuestionnaire = !!order.cvProjectId;
+    const hasReceivedData = order.cvStatus === 'data_received' || order.questionnaire;
+    const cvReady = order.cvStatus === 'ready' || order.cvStatus === 'delivered';
+
+    const steps = [
+        {
+            num: 1,
+            title: 'Fragebogen senden',
+            done: hasSentQuestionnaire,
+            current: !hasSentQuestionnaire,
+            waitingFor: 'admin',
+            icon: 'fa-paper-plane'
+        },
+        {
+            num: 2,
+            title: 'Kunde füllt Fragebogen aus',
+            done: hasReceivedData,
+            current: hasSentQuestionnaire && !hasReceivedData,
+            waitingFor: 'customer',
+            icon: 'fa-edit'
+        },
+        {
+            num: 3,
+            title: 'CV erstellen & liefern',
+            done: cvReady,
+            current: hasReceivedData && !cvReady,
+            waitingFor: 'admin',
+            icon: 'fa-file-alt'
+        }
+    ];
+
+    return `
+        <div class="space-y-3">
+            <!-- Workflow Steps -->
+            <div class="bg-white rounded-xl p-4 border border-gray-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fas fa-file-alt text-indigo-500"></i>
+                    <span class="font-bold text-brand-dark">CV-Erstellung</span>
+                </div>
+
+                <div class="space-y-3">
+                    ${steps.map(step => `
+                        <div class="flex items-center gap-3 ${step.done ? 'opacity-60' : ''}">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                step.done ? 'bg-green-500 text-white' :
+                                step.current ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white ring-4 ring-indigo-100' :
+                                'bg-gray-200 text-gray-400'
+                            }">
+                                ${step.done ? '<i class="fas fa-check text-sm"></i>' : `<span class="text-sm font-bold">${step.num}</span>`}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-sm ${step.current ? 'text-brand-dark' : 'text-gray-600'}">${step.title}</p>
+                                ${step.current ? `
+                                    <p class="text-xs ${step.waitingFor === 'admin' ? 'text-orange-600 font-bold' : 'text-blue-600'}">
+                                        ${step.waitingFor === 'admin' ? '<i class="fas fa-hand-point-right mr-1"></i>Du bist dran!' : '<i class="fas fa-hourglass-half mr-1"></i>Warte auf Kunde'}
+                                    </p>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            ${!hasSentQuestionnaire ? `
+                <div class="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-hand-point-right text-orange-500"></i>
+                        <span class="font-bold text-orange-700">Deine Aktion erforderlich</span>
+                    </div>
+                    <button onclick="app.sendCvQuestionnaireFromOrder('${order.id}', '${sanitizeHTML(order.customerEmail || '')}', '${sanitizeHTML(order.customerName || 'Kunde')}')"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i>
+                        Fragebogen an Kunde senden
+                    </button>
+                </div>
+            ` : hasReceivedData && !cvReady ? `
+                <div class="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-hand-point-right text-orange-500"></i>
+                        <span class="font-bold text-orange-700">Deine Aktion erforderlich</span>
+                    </div>
+                    <button onclick="app.toggleAdminQuestionnaireView('${order.id}')"
+                            class="w-full bg-white border-2 border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium mb-2 flex items-center justify-center gap-2">
+                        <i class="fas fa-eye"></i>
+                        Fragebogen-Daten ansehen
+                        <i class="fas fa-chevron-down text-indigo-400 transition-transform" id="admin-cv-q-toggle-${order.id}"></i>
+                    </button>
+                    <div id="admin-cv-questionnaire-view-${order.id}" class="hidden mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200 max-h-96 overflow-y-auto mb-3">
+                        ${order.questionnaire ? renderAdminQuestionnaireData(order.questionnaire, order.cvProject?.documents, order.cvProject?.templateSelection) : '<p class="text-gray-500">Keine Daten</p>'}
+                    </div>
+                    <label class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-upload"></i>
+                        CV hochladen & liefern
+                        <input type="file" class="hidden" accept=".pdf,.doc,.docx"
+                               data-user-id="${order.userId}"
+                               data-order-id="${order.id}"
+                               data-customer-email="${sanitizeHTML(order.customerEmail || '')}"
+                               data-customer-name="${sanitizeHTML(order.customerName || 'Kunde')}"
+                               onchange="app.uploadDocumentToUser(this.dataset.userId, this.dataset.orderId, this.files[0], this.dataset.customerEmail, this.dataset.customerName)">
+                    </label>
+                </div>
+            ` : cvReady ? `
+                <div class="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
+                    <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
+                    <p class="font-bold text-green-700">Abgeschlossen!</p>
+                    <p class="text-sm text-green-600">CV wurde an den Kunden geliefert.</p>
+                </div>
+            ` : hasSentQuestionnaire && !hasReceivedData ? `
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-hourglass-half text-blue-500 animate-pulse text-xl"></i>
+                        <div>
+                            <p class="font-medium text-blue-700">Warte auf Kundenantwort</p>
+                            <p class="text-xs text-blue-600">Fragebogen wurde gesendet</p>
+                        </div>
+                    </div>
+                    <a href="?questionnaire=${order.cvProjectId}" target="_blank" class="mt-2 inline-block text-xs text-blue-600 hover:underline">
+                        <i class="fas fa-external-link-alt mr-1"></i>Fragebogen-Link
+                    </a>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Admin Mentoring Workflow
+function renderAdminMentoringWorkflow(order) {
+    const hasCoach = !!order.assignedCoachId;
+    const hasProposals = order.appointmentProposals?.length > 0;
+    const isDeclined = order.appointmentStatus === 'declined';
+    const hasConfirmed = order.appointment?.confirmed;
+    const appointmentPassed = hasConfirmed && new Date(order.appointment.datetime) < new Date();
+
+    const steps = [
+        {
+            num: 1,
+            title: 'Coach zuweisen',
+            done: hasCoach,
+            current: !hasCoach,
+            waitingFor: 'admin',
+            icon: 'fa-user-plus'
+        },
+        {
+            num: 2,
+            title: 'Terminvorschläge senden',
+            done: hasProposals || hasConfirmed,
+            current: hasCoach && !hasProposals && !hasConfirmed && !isDeclined,
+            waitingFor: 'admin',
+            icon: 'fa-calendar-plus'
+        },
+        {
+            num: 3,
+            title: 'Kunde wählt Termin',
+            done: hasConfirmed,
+            current: hasProposals && !hasConfirmed && !isDeclined,
+            waitingFor: 'customer',
+            icon: 'fa-calendar-check'
+        },
+        {
+            num: 4,
+            title: 'Session durchführen',
+            done: appointmentPassed,
+            current: hasConfirmed && !appointmentPassed,
+            waitingFor: 'both',
+            icon: 'fa-video'
+        }
+    ];
+
+    // If declined, reset step 2 and 3
+    if (isDeclined) {
+        steps[1].done = false;
+        steps[1].current = true;
+        steps[2].done = false;
+        steps[2].current = false;
+    }
+
+    return `
+        <div class="space-y-3">
+            <!-- Workflow Steps -->
+            <div class="bg-white rounded-xl p-4 border border-gray-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fas fa-user-tie text-indigo-500"></i>
+                    <span class="font-bold text-brand-dark">Mentoring Session</span>
+                    ${hasCoach ? `<span class="text-xs text-gray-500 ml-auto">Coach: ${sanitizeHTML(order.assignedCoachName || 'Zugewiesen')}</span>` : ''}
+                </div>
+
+                <div class="space-y-3">
+                    ${steps.map(step => `
+                        <div class="flex items-center gap-3 ${step.done ? 'opacity-60' : ''}">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                step.done ? 'bg-green-500 text-white' :
+                                step.current ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white ring-4 ring-indigo-100' :
+                                'bg-gray-200 text-gray-400'
+                            }">
+                                ${step.done ? '<i class="fas fa-check text-sm"></i>' : `<span class="text-sm font-bold">${step.num}</span>`}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-sm ${step.current ? 'text-brand-dark' : 'text-gray-600'}">${step.title}</p>
+                                ${step.current ? `
+                                    <p class="text-xs ${step.waitingFor === 'admin' ? 'text-orange-600 font-bold' : step.waitingFor === 'customer' ? 'text-blue-600' : 'text-green-600'}">
+                                        ${step.waitingFor === 'admin' ? '<i class="fas fa-hand-point-right mr-1"></i>Du bist dran!' :
+                                          step.waitingFor === 'customer' ? '<i class="fas fa-hourglass-half mr-1"></i>Warte auf Kunde' :
+                                          '<i class="fas fa-clock mr-1"></i>Termin steht'}
+                                    </p>
+                                ` : ''}
+                            </div>
+                            ${step.done && step.num === 3 && order.appointment?.datetime ? `
+                                <span class="text-xs text-gray-500">${new Date(order.appointment.datetime).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Declined Warning -->
+            ${isDeclined ? `
+                <div class="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-exclamation-triangle text-orange-500"></i>
+                        <span class="font-bold text-orange-700">Termine abgelehnt</span>
+                    </div>
+                    ${order.appointmentDeclineReason ? `
+                        <p class="text-sm text-gray-600 italic mb-3">"${sanitizeHTML(order.appointmentDeclineReason)}"</p>
+                    ` : ''}
+                    <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
+                            class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-calendar-plus"></i>
+                        Neue Termine vorschlagen
+                    </button>
+                </div>
+            ` : ''}
+
+            <!-- Action Buttons -->
+            ${!hasCoach ? `
+                <div class="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-hand-point-right text-orange-500"></i>
+                        <span class="font-bold text-orange-700">Deine Aktion erforderlich</span>
+                    </div>
+                    <button onclick="app.showAssignCoachModal('${order.id}')"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-user-plus"></i>
+                        Coach zuweisen
+                    </button>
+                </div>
+            ` : hasCoach && !hasProposals && !hasConfirmed && !isDeclined ? `
+                <div class="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-hand-point-right text-orange-500"></i>
+                        <span class="font-bold text-orange-700">Deine Aktion erforderlich</span>
+                    </div>
+                    <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
+                            class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-calendar-plus"></i>
+                        Terminvorschläge senden
+                    </button>
+                </div>
+            ` : hasProposals && !hasConfirmed && !isDeclined ? `
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-hourglass-half text-blue-500 animate-pulse text-xl"></i>
+                        <div>
+                            <p class="font-medium text-blue-700">Warte auf Kundenauswahl</p>
+                            <p class="text-xs text-blue-600">${order.appointmentProposals.length} Termine vorgeschlagen</p>
+                        </div>
+                    </div>
+                </div>
+            ` : hasConfirmed && !appointmentPassed ? `
+                <div class="bg-green-50 rounded-xl p-4 border border-green-200">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-calendar-check text-green-500 text-xl"></i>
+                        <div>
+                            <p class="font-bold text-green-700">Termin bestätigt</p>
+                            <p class="text-sm text-green-600">${new Date(order.appointment.datetime).toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })} Uhr</p>
+                        </div>
+                    </div>
+                    ${isMeetingTimeNow(order.appointment.datetime) ? `
+                        <button onclick="app.joinMeeting('${order.id}')" class="mt-3 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+                            <i class="fas fa-video"></i>
+                            Meeting beitreten
+                        </button>
+                    ` : ''}
+                </div>
+            ` : appointmentPassed ? `
+                <div class="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
+                    <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
+                    <p class="font-bold text-green-700">Session abgeschlossen!</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
 }
 
 async function loadOrderDocuments(userId, orderId) {
@@ -8182,6 +8777,53 @@ async function loadOrderDocuments(userId, orderId) {
     }
 }
 
+// Delete all test orders (Admin only)
+export async function deleteAllTestOrders() {
+    // Confirmation dialog
+    const confirmMsg = `ACHTUNG: Alle Bestellungen werden unwiderruflich gelöscht!\n\nDies betrifft ${allAdminOrders.length} Bestellung(en).\n\nMöchten Sie fortfahren?`;
+
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    // Second confirmation for safety
+    const doubleConfirm = prompt('Zur Bestätigung bitte "LÖSCHEN" eingeben:');
+    if (doubleConfirm !== 'LÖSCHEN') {
+        showToast('Löschvorgang abgebrochen');
+        return;
+    }
+
+    try {
+        showToast('Lösche Bestellungen...');
+
+        let deletedCount = 0;
+        const errors = [];
+
+        for (const order of allAdminOrders) {
+            try {
+                await deleteDoc(doc(db, 'orders', order.id));
+                deletedCount++;
+            } catch (err) {
+                errors.push({ id: order.id, error: err.message });
+                logger.error(`Failed to delete order ${order.id}:`, err);
+            }
+        }
+
+        if (errors.length > 0) {
+            showToast(`${deletedCount} gelöscht, ${errors.length} Fehler`);
+        } else {
+            showToast(`${deletedCount} Bestellungen erfolgreich gelöscht`);
+        }
+
+        // Reload orders
+        await loadAllOrders();
+
+    } catch (error) {
+        logger.error('Error deleting test orders:', error);
+        showToast('Fehler beim Löschen der Bestellungen');
+    }
+}
+
 // Toggle order card expand/collapse
 export function toggleOrderExpand(orderId) {
     const details = document.getElementById(`order-details-${orderId}`);
@@ -8238,7 +8880,10 @@ export async function updateOrderStatus(orderId, newStatus) {
 }
 
 export async function uploadDocumentToUser(userId, orderId, file, customerEmail, customerName) {
+    console.log('[UPLOAD] Started:', { userId, orderId, fileName: file?.name, customerEmail, customerName });
+
     if (!file || !storage || !userId) {
+        console.error('[UPLOAD] Validation failed:', { hasFile: !!file, hasStorage: !!storage, userId });
         showToast('❌ Upload nicht möglich', 3000);
         return;
     }
@@ -8250,32 +8895,70 @@ export async function uploadDocumentToUser(userId, orderId, file, customerEmail,
         const fileName = `${timestamp}_${file.name}`;
         const storageRef = ref(storage, `delivered/${userId}/${fileName}`);
 
+        console.log('[UPLOAD] Uploading to storage:', `delivered/${userId}/${fileName}`);
         await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+        console.log('[UPLOAD] Storage upload success, URL:', downloadUrl);
+
+        // Update order status to delivered/completed
+        if (orderId && db) {
+            console.log('[UPLOAD] Updating Firestore order:', orderId);
+            try {
+                const orderRef = doc(db, 'orders', orderId);
+                await updateDoc(orderRef, {
+                    cvStatus: 'delivered',
+                    status: 'completed',
+                    deliveredDocumentUrl: downloadUrl,
+                    deliveredDocumentName: file.name,
+                    deliveredAt: serverTimestamp()
+                });
+                console.log('[UPLOAD] Firestore update SUCCESS');
+            } catch (firestoreErr) {
+                console.error('[UPLOAD] Firestore update FAILED:', firestoreErr);
+            }
+        } else {
+            console.warn('[UPLOAD] Cannot update order - orderId or db missing:', { orderId, hasDb: !!db });
+        }
 
         // Notify customer via email
         if (customerEmail) {
             try {
-                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyCustomerDocumentReady', {
+                const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyCustomerDocumentReady', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         customerEmail: customerEmail,
                         customerName: customerName || 'Kunde',
-                        documentName: file.name
+                        documentName: file.name,
+                        orderId: orderId
                     })
                 });
+                if (response.ok) {
+                    showToast('✅ Dokument hochgeladen & Kunde benachrichtigt!');
+                } else {
+                    logger.warn('Email notification failed with status:', response.status);
+                    showToast('✅ Dokument hochgeladen (E-Mail-Versand fehlgeschlagen)');
+                }
             } catch (emailErr) {
                 logger.warn('Failed to send customer notification:', emailErr);
+                showToast('✅ Dokument hochgeladen (E-Mail konnte nicht gesendet werden)');
             }
+        } else {
+            showToast('✅ Dokument erfolgreich hochgeladen');
         }
 
-        showToast('✅ Dokument erfolgreich hochgeladen');
-
-        // Reload documents for this order
-        loadOrderDocuments(userId, orderId);
+        // Force UI refresh by reloading all orders
+        console.log('[UPLOAD] Forcing complete UI refresh...');
+        // Clear the container and reload everything
+        const container = document.getElementById('admin-orders-container');
+        if (container) {
+            container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-brand-gold"></i></div>';
+        }
+        await loadAllOrders();
+        console.log('[UPLOAD] Admin orders reloaded and UI refreshed');
 
     } catch (e) {
-        logger.error('Upload failed:', e);
+        console.error('[UPLOAD] Upload failed:', e);
         showToast('❌ Upload fehlgeschlagen: ' + e.message, 3000);
     }
 }
@@ -9795,15 +10478,17 @@ export function toggleAdminQuestionnaireView(orderId) {
     const container = document.getElementById(`admin-cv-questionnaire-view-${orderId}`);
     const toggleIcon = document.getElementById(`admin-cv-q-toggle-${orderId}`);
 
-    if (container && toggleIcon) {
+    if (container) {
         const isHidden = container.classList.contains('hidden');
         if (isHidden) {
             container.classList.remove('hidden');
-            toggleIcon.classList.add('rotate-180');
+            if (toggleIcon) toggleIcon.classList.add('rotate-180');
         } else {
             container.classList.add('hidden');
-            toggleIcon.classList.remove('rotate-180');
+            if (toggleIcon) toggleIcon.classList.remove('rotate-180');
         }
+    } else {
+        logger.warn('toggleAdminQuestionnaireView: Container not found for orderId', orderId);
     }
 }
 
@@ -13402,6 +14087,248 @@ export async function submitCvQuestionnaire() {
     } catch (e) {
         logger.error('Error submitting questionnaire:', e);
         showToast('Fehler beim Senden. Bitte versuchen Sie es erneut.');
+    }
+}
+
+// ========== CV FEEDBACK & APPROVAL ==========
+
+// Submit CV Feedback - Kunde sendet Änderungswünsche
+export async function submitCvFeedback(orderId) {
+    const feedbackEl = document.getElementById(`cv-feedback-${orderId}`);
+    const feedback = feedbackEl?.value?.trim();
+
+    if (!feedback) {
+        showToast('Bitte geben Sie Ihr Feedback ein');
+        return;
+    }
+
+    try {
+        showToast('Feedback wird gesendet...');
+
+        // Feedback zur Order hinzufügen
+        const orderRef = doc(db, 'orders', orderId);
+        const orderSnap = await getDoc(orderRef);
+
+        if (!orderSnap.exists()) {
+            showToast('Bestellung nicht gefunden');
+            return;
+        }
+
+        const orderData = orderSnap.data();
+        const existingFeedback = orderData.cvFeedback || [];
+
+        // Neues Feedback hinzufügen
+        const newFeedback = {
+            text: feedback,
+            submittedAt: new Date().toISOString(),
+            submittedBy: auth.currentUser?.email || 'kunde'
+        };
+
+        // Update Order mit Feedback
+        await updateDoc(orderRef, {
+            cvFeedback: [...existingFeedback, newFeedback],
+            cvStatus: 'revision_requested',
+            cvFeedbackAt: serverTimestamp(),
+            // Workflow auf Schritt 2 zurücksetzen (CV wird überarbeitet)
+            workflow: {
+                currentStep: 2,
+                steps: [
+                    { step: 1, name: 'Fragebogen', status: 'completed', icon: 'clipboard-list' },
+                    { step: 2, name: 'CV-Erstellung', status: 'pending', icon: 'pen-fancy' },
+                    { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
+                    { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
+                ]
+            },
+            nextStep: 'cv_revision',
+            nextStepDescription: 'Wir überarbeiten Ihren CV basierend auf Ihrem Feedback'
+        });
+
+        // Textarea leeren
+        if (feedbackEl) feedbackEl.value = '';
+
+        showToast('Feedback erfolgreich gesendet! Wir überarbeiten Ihren CV.');
+
+        // Dashboard neu laden
+        if (state?.user) {
+            await loadUserOrders(state);
+        }
+
+    } catch (error) {
+        logger.error('Error submitting CV feedback:', error);
+        showToast('Fehler beim Senden des Feedbacks');
+    }
+}
+
+// Approve CV Draft - Kunde gibt CV frei
+export async function approveCvDraft(orderId) {
+    // Bestätigung anfordern
+    const confirmed = confirm('Möchten Sie den CV-Entwurf freigeben? Nach der Freigabe wird Ihr finaler CV erstellt.');
+
+    if (!confirmed) return;
+
+    try {
+        showToast('CV wird freigegeben...');
+
+        const orderRef = doc(db, 'orders', orderId);
+
+        // Update Order - CV ist genehmigt
+        await updateDoc(orderRef, {
+            cvStatus: 'approved',
+            cvApprovedAt: serverTimestamp(),
+            // Workflow auf Schritt 4 setzen (Fertigstellung)
+            workflow: {
+                currentStep: 4,
+                steps: [
+                    { step: 1, name: 'Fragebogen', status: 'completed', icon: 'clipboard-list' },
+                    { step: 2, name: 'CV-Erstellung', status: 'completed', icon: 'pen-fancy' },
+                    { step: 3, name: 'Review & Feedback', status: 'completed', icon: 'comments' },
+                    { step: 4, name: 'Fertigstellung', status: 'pending', icon: 'check-circle' }
+                ]
+            },
+            nextStep: 'finalization',
+            nextStepDescription: 'Wir erstellen Ihre finale CV-Version'
+        });
+
+        showToast('CV erfolgreich freigegeben! Ihre finale Version wird erstellt.');
+
+        // Dashboard neu laden
+        if (state?.user) {
+            await loadUserOrders(state);
+        }
+
+    } catch (error) {
+        logger.error('Error approving CV draft:', error);
+        showToast('Fehler bei der Freigabe');
+    }
+}
+
+// ========== QUICK-CHECK UPLOAD ==========
+
+// Handle Quick-Check CV Upload
+export async function handleQuickCheckUpload(orderId, input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+        showToast('Bitte laden Sie eine PDF- oder Word-Datei hoch');
+        input.value = '';
+        return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        showToast('Datei zu groß (max. 10MB)');
+        input.value = '';
+        return;
+    }
+
+    try {
+        showToast('Datei wird hochgeladen...');
+
+        // Upload to Firebase Storage
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `quick-check/${orderId}/${timestamp}_${safeName}`;
+        const storageRef = ref(storage, storagePath);
+
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+
+        // Update Order in Firestore
+        const orderRef = doc(db, 'orders', orderId);
+        await updateDoc(orderRef, {
+            cvStatus: 'data_received',
+            quickCheckDocument: {
+                url: downloadUrl,
+                filename: file.name,
+                uploadedAt: new Date().toISOString()
+            },
+            questionnaireSubmittedAt: serverTimestamp()
+        });
+
+        showToast('Lebenslauf erfolgreich hochgeladen!');
+
+        // Reload orders to update UI
+        if (window.app?.state?.user) {
+            await loadUserOrders(window.app.state);
+        }
+
+    } catch (error) {
+        logger.error('Error uploading Quick-Check document:', error);
+        showToast('Fehler beim Hochladen. Bitte versuchen Sie es erneut.');
+        input.value = '';
+    }
+}
+
+// Admin: Quick-Check Gutachten hochladen und Order abschließen
+export async function uploadQuickCheckGutachten(orderId, userId, file, customerEmail, customerName) {
+    if (!file) {
+        showToast('Bitte wählen Sie eine Datei aus');
+        return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+        showToast('Bitte laden Sie eine PDF- oder Word-Datei hoch');
+        return;
+    }
+
+    try {
+        showToast('Gutachten wird hochgeladen...');
+
+        // Upload to Firebase Storage (delivered folder for user access)
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `delivered/${userId}/quick-check-gutachten_${timestamp}_${safeName}`;
+        const storageRef = ref(storage, storagePath);
+
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+
+        // Update Order in Firestore
+        const orderRef = doc(db, 'orders', orderId);
+        await updateDoc(orderRef, {
+            quickCheckGutachtenUrl: downloadUrl,
+            cvStatus: 'gutachten_delivered',
+            status: 'completed',
+            completedAt: serverTimestamp()
+        });
+
+        showToast('Gutachten hochgeladen! Order als abgeschlossen markiert.');
+
+        // Send email notification to customer
+        try {
+            const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyCustomerDocumentReady', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerEmail: customerEmail,
+                    customerName: customerName,
+                    documentType: 'Quick-Check Gutachten',
+                    orderId: orderId
+                })
+            });
+
+            if (response.ok) {
+                showToast('E-Mail-Benachrichtigung an Kunden gesendet!');
+                logger.log(`Quick-Check Gutachten notification sent to ${customerEmail}`);
+            } else {
+                logger.warn('Failed to send email notification:', await response.text());
+            }
+        } catch (emailError) {
+            logger.error('Error sending email notification:', emailError);
+            // Don't fail the whole operation if email fails
+        }
+
+        // Reload admin orders
+        await loadAllOrders();
+
+    } catch (error) {
+        logger.error('Error uploading Quick-Check Gutachten:', error);
+        showToast('Fehler beim Hochladen des Gutachtens');
     }
 }
 

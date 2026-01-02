@@ -52,10 +52,14 @@ service cloud.firestore {
           'customerProposals', 'customerProposalNote', 'customerProposalSubmittedAt',
           'customerDocuments',  // Kunden können eigene Dokumente hochladen
           // Fragebogen-bezogene Felder (für Smart Questionnaire Submit)
-          'questionnaire', 'questionnaireSubmittedAt', 'cvStatus', 'nextStep', 'nextStepDescription', 'workflow'
+          'questionnaire', 'questionnaireSubmittedAt', 'cvStatus', 'nextStep', 'nextStepDescription', 'workflow',
+          // CV Feedback & Approval Felder
+          'cvFeedback', 'cvFeedbackAt', 'cvApprovedAt',
+          // Quick-Check Upload
+          'quickCheckDocument'
         ])
       );
-      allow delete: if false;
+      allow delete: if isAdmin();  // Nur Admin kann Orders löschen (für Testdaten)
     }
 
     // ========== APPOINTMENTS & AVAILABILITY ==========
