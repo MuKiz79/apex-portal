@@ -45,10 +45,6 @@
       {
         "source": "/template-designer/preview/",
         "destination": "/template-designer/preview.html"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
       }
     ]
   }

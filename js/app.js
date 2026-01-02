@@ -1249,6 +1249,8 @@ export function updateCartUI(state) {
 }
 
 export async function checkout(state, navigateTo) {
+    console.time('checkout-total');
+
     if(state.cart.length === 0) {
         showToast('⚠️ Ihr Warenkorb ist leer', 2000);
         return;
@@ -1257,7 +1259,9 @@ export async function checkout(state, navigateTo) {
     const total = state.cart.reduce((sum, item) => sum + item.price, 0);
 
     // Zeige Checkout-Modal mit Optionen (Registrieren/Login/Gast)
+    console.time('checkout-modal');
     const result = await showCheckoutConfirmationModal(state.cart, total, !!state.user);
+    console.timeEnd('checkout-modal');
 
     // User hat abgebrochen
     if (!result) return;
@@ -1313,6 +1317,7 @@ export async function checkout(state, navigateTo) {
         // Bei Registrierung: Nutze die gespeicherte userId vom registrierten User
         const userIdForOrder = state.user?.uid || result.userId || null;
 
+        console.time('checkout-api-call');
         const response = await fetch(functionUrl, {
             method: 'POST',
             headers: {
@@ -1332,10 +1337,14 @@ export async function checkout(state, navigateTo) {
         }
 
         const { url } = await response.json();
+        console.timeEnd('checkout-api-call');
 
         // Speichere Cart und Checkout-Typ temporär
         sessionStorage.setItem('pending_cart', JSON.stringify(state.cart));
         sessionStorage.setItem('checkout_type', checkoutType);
+
+        console.timeEnd('checkout-total');
+        console.log('🚀 Redirecting to Stripe:', url.substring(0, 50) + '...');
 
         // Leite zu Stripe Checkout weiter
         window.location.href = url;
@@ -1479,16 +1488,23 @@ export async function loadUserOrders(state) {
             cvProjectsMap[project.orderId] = project;
         });
 
-        // Merge orders with CV project data
+        // Merge orders with CV project data and sync workflow status
         const ordersWithCvData = orders.map(order => {
             const cvProject = cvProjectsMap[order.id];
             if (cvProject) {
+                const cvStatus = cvProject.status || 'new';
+                // Bestimme Workflow basierend auf cvStatus (synchronisiert)
+                const workflow = getWorkflowForCvStatus(cvStatus, order.workflow);
+
                 return {
                     ...order,
                     cvProject: cvProject,
                     cvProjectId: cvProject.id,
-                    cvStatus: cvProject.status || 'new',
-                    questionnaire: cvProject.questionnaire || null
+                    cvStatus: cvStatus,
+                    questionnaire: cvProject.questionnaire || order.questionnaire || null,
+                    workflow: workflow,
+                    nextStep: workflow?.currentStep === 1 ? 'questionnaire' : null,
+                    nextStepDescription: getNextStepDescription(workflow?.currentStep || 1)
                 };
             }
             return order;
@@ -1575,11 +1591,17 @@ function updateDashboardStats(orders) {
     }
 }
 
+// Store all orders for filtering
+let allOrdersCache = [];
+
 export function renderOrders(orders) {
     const container = document.getElementById('orders-list');
     const badge = document.getElementById('order-count-badge');
 
     if (!container) return;
+
+    // Cache orders for tab switching
+    allOrdersCache = orders;
 
     if (orders.length === 0) {
         container.innerHTML = `
@@ -1598,124 +1620,131 @@ export function renderOrders(orders) {
         return;
     }
 
-    container.innerHTML = orders.map((order, index) => {
-        const date = order.date?.seconds
-            ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            })
-            : 'Unbekannt';
-        const hasCoach = hasCoachSession(order);
-        const hasAppointment = order.appointment?.datetime;
-        const shortOrderId = 'KAR-' + (order.stripeSessionId?.slice(-8) || order.id.slice(-8)).toUpperCase();
-        const statusInfo = getOrderStatusInfo(order.status || 'confirmed');
-        const orderId = `order-${order.id}`;
-        // First order expanded by default
-        const isExpanded = index === 0;
+    // Separate active and completed orders
+    const activeOrders = orders.filter(o => !isOrderCompleted(o));
+    const completedOrders = orders.filter(o => isOrderCompleted(o));
 
-        return `
-            <div class="border-b border-gray-100 last:border-0">
-                <!-- Clickable Order Header -->
-                <button onclick="app.toggleOrderDetails('${orderId}')"
-                        class="w-full p-5 hover:bg-gray-50 transition flex justify-between items-center text-left group">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xs text-gray-400 font-mono">${shortOrderId}</span>
-                            <span class="status-badge ${statusInfo.class} text-[10px] px-2 py-0.5">
-                                ${statusInfo.text}
-                            </span>
-                        </div>
-                        <h4 class="font-bold text-brand-dark truncate">${order.items?.map(i => sanitizeHTML(i.title)).join(', ') || 'Bestellung'}</h4>
-                        <p class="text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt mr-1"></i>${date}</p>
+    // Render tabs and orders
+    container.innerHTML = `
+        <!-- Order Tabs -->
+        <div class="flex border-b border-gray-200 mb-0">
+            <button id="tab-active-orders" onclick="app.switchOrderTab('active')"
+                    class="flex-1 py-3 px-4 text-sm font-semibold text-brand-dark border-b-2 border-brand-gold bg-brand-gold/5 transition">
+                <i class="fas fa-spinner mr-2"></i>Aktiv
+                <span class="ml-1 bg-brand-gold text-white text-xs px-2 py-0.5 rounded-full">${activeOrders.length}</span>
+            </button>
+            <button id="tab-completed-orders" onclick="app.switchOrderTab('completed')"
+                    class="flex-1 py-3 px-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-brand-dark transition">
+                <i class="fas fa-check-circle mr-2"></i>Abgeschlossen
+                <span class="ml-1 bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">${completedOrders.length}</span>
+            </button>
+        </div>
+
+        <!-- Active Orders List -->
+        <div id="active-orders-list">
+            ${activeOrders.length === 0 ? `
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fas fa-check-circle text-3xl text-green-400 mb-3"></i>
+                    <p>Keine aktiven Bestellungen</p>
+                </div>
+            ` : activeOrders.map((order, index) => renderSingleOrder(order, index === 0)).join('')}
+        </div>
+
+        <!-- Completed Orders List (hidden by default) -->
+        <div id="completed-orders-list" class="hidden">
+            ${completedOrders.length === 0 ? `
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fas fa-folder-open text-3xl text-gray-300 mb-3"></i>
+                    <p>Keine abgeschlossenen Bestellungen</p>
+                </div>
+            ` : completedOrders.map((order, index) => renderSingleOrder(order, false)).join('')}
+        </div>
+    `;
+
+    if (badge) badge.textContent = orders.length.toString();
+}
+
+// Check if order is completed
+function isOrderCompleted(order) {
+    const cvStatus = order.cvStatus || 'new';
+    const orderStatus = order.status || 'confirmed';
+
+    // CV orders: completed when delivered
+    if (isCvOrder(order)) {
+        return cvStatus === 'delivered' || cvStatus === 'ready';
+    }
+
+    // Other orders: completed status
+    return orderStatus === 'completed';
+}
+
+// Switch between order tabs
+export function switchOrderTab(tab) {
+    const activeTab = document.getElementById('tab-active-orders');
+    const completedTab = document.getElementById('tab-completed-orders');
+    const activeList = document.getElementById('active-orders-list');
+    const completedList = document.getElementById('completed-orders-list');
+
+    if (tab === 'active') {
+        activeTab.className = 'flex-1 py-3 px-4 text-sm font-semibold text-brand-dark border-b-2 border-brand-gold bg-brand-gold/5 transition';
+        completedTab.className = 'flex-1 py-3 px-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-brand-dark transition';
+        activeList.classList.remove('hidden');
+        completedList.classList.add('hidden');
+    } else {
+        completedTab.className = 'flex-1 py-3 px-4 text-sm font-semibold text-brand-dark border-b-2 border-brand-gold bg-brand-gold/5 transition';
+        activeTab.className = 'flex-1 py-3 px-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-brand-dark transition';
+        completedList.classList.remove('hidden');
+        activeList.classList.add('hidden');
+    }
+}
+
+// Render a single order card
+function renderSingleOrder(order, isExpanded = false) {
+    const date = order.date?.seconds
+        ? new Date(order.date.seconds * 1000).toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        })
+        : 'Unbekannt';
+    const shortOrderId = 'KAR-' + (order.stripeSessionId?.slice(-8) || order.id.slice(-8)).toUpperCase();
+    const statusInfo = getOrderStatusInfo(order.status || 'confirmed');
+    const orderId = `order-${order.id}`;
+    const hasCoach = hasCoachSession(order);
+    const hasAppointment = order.appointment?.datetime;
+
+    return `
+        <div class="border-b border-gray-100 last:border-0">
+            <!-- Clickable Order Header -->
+            <button onclick="app.toggleOrderDetails('${orderId}')"
+                    class="w-full p-4 hover:bg-gray-50 transition flex justify-between items-center text-left group">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs text-gray-400 font-mono">${shortOrderId}</span>
+                        <span class="status-badge ${statusInfo.class} text-[10px] px-2 py-0.5">
+                            ${statusInfo.text}
+                        </span>
                     </div>
-                    <div class="flex items-center gap-4 flex-shrink-0 ml-4">
-                        <span class="font-serif text-xl text-brand-dark">€${(order.total || 0).toFixed(2)}</span>
-                        <i id="${orderId}-icon" class="fas fa-chevron-down text-gray-400 group-hover:text-brand-gold transition-all duration-300 ${isExpanded ? 'rotate-180' : ''}"></i>
-                    </div>
-                </button>
+                    <h4 class="font-bold text-brand-dark truncate text-sm">${order.items?.map(i => sanitizeHTML(i.title)).join(', ') || 'Bestellung'}</h4>
+                    <p class="text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt mr-1"></i>${date}</p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0 ml-4">
+                    <span class="font-serif text-lg text-brand-dark">€${(order.total || 0).toFixed(2)}</span>
+                    <i id="${orderId}-icon" class="fas fa-chevron-down text-gray-400 group-hover:text-brand-gold transition-all duration-300 ${isExpanded ? 'rotate-180' : ''}"></i>
+                </div>
+            </button>
 
-                <!-- Collapsible Order Details -->
-                <div id="${orderId}" class="overflow-hidden transition-all duration-300 ${isExpanded ? '' : 'hidden'}">
-                    <div class="px-5 pb-5">
-                        <!-- NÄCHSTE SCHRITTE - Prominent anzeigen wenn vorhanden -->
-                        ${order.workflow ? renderWorkflowSteps(order) : ''}
+            <!-- Collapsible Order Details -->
+            <div id="${orderId}" class="overflow-hidden transition-all duration-300 ${isExpanded ? '' : 'hidden'}">
+                <div class="px-4 pb-4">
+                    <!-- WORKFLOW - Nur für CV-Orders mit aktivem Workflow -->
+                    ${order.workflow && isCvOrder(order) ? renderWorkflowSteps(order) : ''}
 
-                        <!-- Status Timeline -->
-                        <div class="bg-gray-50 rounded-lg p-4 mb-3">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Bestellstatus</span>
-                                <span class="status-badge ${statusInfo.class}">
-                                    <i class="${statusInfo.icon}"></i>
-                                    ${statusInfo.text}
-                                </span>
-                            </div>
+                    <!-- CV Download Section (wenn fertig) -->
+                    ${renderCvDownloadSection(order)}
 
-                            <!-- Progress Steps -->
-                            <div class="flex items-center gap-1">
-                                ${renderOrderProgress(order.status || 'confirmed')}
-                            </div>
-
-                            <!-- Status Description -->
-                            <p class="text-xs text-gray-500 mt-3">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                ${statusInfo.description}
-                            </p>
-                        </div>
-
-                        <!-- Documents Section - Customer Upload & Received Documents -->
-                        <div class="bg-gray-50 rounded-lg p-4 mb-3">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    <i class="fas fa-folder-open mr-1"></i>Dokumente
-                                </span>
-                                <button onclick="app.toggleOrderDocuments('${order.id}')"
-                                        class="text-xs text-brand-gold hover:text-brand-dark transition">
-                                    <i class="fas fa-chevron-down" id="docs-toggle-${order.id}"></i>
-                                </button>
-                            </div>
-
-                            <div id="order-docs-${order.id}" class="space-y-4">
-                                <!-- Customer Upload Section -->
-                                <div class="bg-white rounded-lg p-3 border border-gray-200">
-                                    <p class="text-xs font-semibold text-gray-700 mb-2">
-                                        <i class="fas fa-upload text-blue-500 mr-1"></i>Ihre Dokumente hochladen
-                                    </p>
-                                    <div class="flex flex-col sm:flex-row gap-2">
-                                        <label class="flex-1 cursor-pointer">
-                                            <input type="file"
-                                                   onchange="app.uploadOrderDocument('${order.id}', this)"
-                                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                                   multiple
-                                                   class="hidden">
-                                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-brand-gold hover:bg-brand-gold/5 transition">
-                                                <i class="fas fa-cloud-upload-alt text-gray-400 text-lg mb-1"></i>
-                                                <p class="text-xs text-gray-500">Klicken oder Datei hierher ziehen</p>
-                                                <p class="text-[10px] text-gray-400 mt-1">PDF, Word, Bilder (max. 10MB)</p>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    <!-- Uploaded by Customer -->
-                                    <div id="customer-docs-${order.id}" class="mt-3 space-y-2">
-                                        ${renderCustomerDocuments(order)}
-                                    </div>
-                                </div>
-
-                                <!-- Received Documents from Karriaro -->
-                                <div class="bg-white rounded-lg p-3 border border-gray-200">
-                                    <p class="text-xs font-semibold text-gray-700 mb-2">
-                                        <i class="fas fa-download text-green-500 mr-1"></i>Von Karriaro erhalten
-                                    </p>
-                                    <div id="received-docs-${order.id}" class="space-y-2">
-                                        ${renderReceivedDocuments(order)}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CV Project Section (for CV orders) -->
-                        ${renderCvProjectSection(order)}
+                    <!-- Dokumente-Sektion - vereinfacht -->
+                    ${renderSimpleDocumentsSection(order)}
 
                         <!-- Professional Appointment Section - Mobile Optimized -->
                 ${order.appointment?.confirmed ? `
@@ -1880,9 +1909,43 @@ export function renderOrders(orders) {
                 </div>
             </div>
         `;
-    }).join('');
+}
 
-    if (badge) badge.textContent = orders.length.toString();
+// Einfache Dokumente-Sektion - nur bei Schritt 1 oder 4 anzeigen
+function renderSimpleDocumentsSection(order) {
+    // Bei CV-Orders Schritt 2/3: keine Dokumente-Sektion
+    if (isCvOrder(order)) {
+        const currentStep = order.workflow?.currentStep || 1;
+        if (currentStep === 2 || currentStep === 3) return '';
+    }
+
+    const customerDocs = order.customerDocuments || [];
+    const receivedDocs = order.deliveredDocuments || order.adminDocuments || [];
+    const totalDocs = customerDocs.length + receivedDocs.length;
+
+    return `
+        <div class="bg-gray-50 rounded-lg p-3 mb-3">
+            <button onclick="app.toggleOrderDocuments('${order.id}')"
+                    class="w-full flex items-center justify-between text-left">
+                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fas fa-folder-open"></i>Dokumente
+                    ${totalDocs > 0 ? '<span class="bg-brand-gold text-white text-[10px] px-1.5 py-0.5 rounded-full">' + totalDocs + '</span>' : ''}
+                </span>
+                <i class="fas fa-chevron-down text-gray-400 transition-transform" id="docs-toggle-${order.id}"></i>
+            </button>
+
+            <div id="order-docs-${order.id}" class="hidden mt-3 space-y-2">
+                <label class="cursor-pointer block">
+                    <input type="file" onchange="app.uploadOrderDocument('${order.id}', this)" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple class="hidden">
+                    <div class="border border-dashed border-gray-300 rounded p-2 text-center hover:border-brand-gold transition text-xs text-gray-500">
+                        <i class="fas fa-cloud-upload-alt mr-1"></i>Dokument hochladen
+                    </div>
+                </label>
+                ${customerDocs.length > 0 ? '<div class="text-xs text-gray-600"><strong>Ihre Dokumente:</strong> ' + customerDocs.length + ' Datei(en)</div>' : ''}
+                ${receivedDocs.length > 0 ? '<div class="text-xs text-green-600"><strong>Von Karriaro:</strong> ' + receivedDocs.length + ' Datei(en)</div>' : ''}
+            </div>
+        </div>
+    `;
 }
 
 // Toggle order details visibility
@@ -2022,6 +2085,64 @@ function isCvOrder(order) {
     );
 }
 
+// Workflow basierend auf cvStatus bestimmen (synchronisiert)
+function getWorkflowForCvStatus(cvStatus, existingWorkflow) {
+    // Wenn CV-Order, Workflow basierend auf cvStatus generieren
+    const statusToStep = {
+        'new': 1,
+        'questionnaire_sent': 1,
+        'data_received': 2,
+        'generating': 2,
+        'ready': 4,
+        'delivered': 4
+    };
+
+    const currentStep = statusToStep[cvStatus] || 1;
+
+    const steps = [
+        {
+            step: 1,
+            name: 'Fragebogen ausfüllen',
+            status: currentStep > 1 ? 'completed' : (currentStep === 1 ? 'pending' : 'waiting'),
+            icon: 'clipboard-list'
+        },
+        {
+            step: 2,
+            name: 'CV wird erstellt',
+            status: currentStep > 2 ? 'completed' : (currentStep === 2 ? 'pending' : 'waiting'),
+            icon: 'pen-fancy'
+        },
+        {
+            step: 3,
+            name: 'Review & Feedback',
+            status: currentStep > 3 ? 'completed' : (currentStep === 3 ? 'pending' : 'waiting'),
+            icon: 'comments'
+        },
+        {
+            step: 4,
+            name: 'Fertigstellung',
+            status: currentStep >= 4 ? 'completed' : 'waiting',
+            icon: 'check-circle'
+        }
+    ];
+
+    return {
+        currentStep: currentStep,
+        steps: steps
+    };
+}
+
+// Beschreibung für den nächsten Schritt
+function getNextStepDescription(currentStep) {
+    const descriptions = {
+        1: 'Bitte füllen Sie den Fragebogen aus, damit wir Ihren CV erstellen können.',
+        2: 'Ihre Daten wurden empfangen. Wir arbeiten an Ihrem CV.',
+        3: 'Ihr CV wird gerade finalisiert.',
+        4: 'Ihr CV ist fertig!'
+    };
+    return descriptions[currentStep] || '';
+}
+
 // Render Workflow Steps für das Dashboard
 function renderWorkflowSteps(order) {
     if (!order.workflow || !order.workflow.steps) return '';
@@ -2038,80 +2159,89 @@ function renderWorkflowSteps(order) {
         'video': 'fa-video'
     };
 
+    // Berechne Fortschritt
+    const completedSteps = steps.filter(s => s.status === 'completed').length;
+    const totalSteps = steps.length;
+    const progressPercent = Math.round((completedSteps / totalSteps) * 100);
+
     return `
-        <div class="bg-gradient-to-r from-brand-gold/10 to-amber-50 rounded-xl p-4 mb-4 border border-brand-gold/30">
-            <div class="flex items-center gap-2 mb-4">
-                <div class="w-8 h-8 bg-brand-gold/20 rounded-full flex items-center justify-center">
-                    <i class="fas fa-route text-brand-gold"></i>
+        <div class="bg-gradient-to-r from-brand-gold/10 to-amber-50 rounded-xl p-4 mb-3 border border-brand-gold/30">
+            <!-- Header mit Fortschritt -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-route text-brand-gold text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-brand-dark text-sm">Ihr Fortschritt</h4>
+                        <p class="text-xs text-gray-500">Schritt ${currentStep} von ${totalSteps}</p>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="font-bold text-brand-dark text-sm">Ihre nächsten Schritte</h4>
-                    <p class="text-xs text-gray-500">Wir begleiten Sie durch den gesamten Prozess</p>
+                <div class="text-right">
+                    <span class="text-lg font-bold text-brand-gold">${progressPercent}%</span>
                 </div>
             </div>
 
-            <div class="relative">
-                <!-- Verbindungslinie -->
-                <div class="absolute left-4 top-6 bottom-6 w-0.5 bg-gray-200"></div>
+            <!-- Fortschrittsbalken -->
+            <div class="w-full h-2 bg-gray-200 rounded-full mb-4 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-brand-gold to-amber-400 rounded-full transition-all duration-500"
+                     style="width: ${progressPercent}%"></div>
+            </div>
 
-                <div class="space-y-4">
-                    ${steps.map((step, idx) => {
-                        const isCompleted = step.status === 'completed';
-                        const isPending = step.status === 'pending';
-                        const isWaiting = step.status === 'waiting';
-                        const isCurrent = step.step === currentStep && isPending;
+            <!-- Schritte - kompakter -->
+            <div class="space-y-2">
+                ${steps.map((step, idx) => {
+                    const isCompleted = step.status === 'completed';
+                    const isPending = step.status === 'pending';
+                    const isWaiting = step.status === 'waiting';
+                    // Aktueller Schritt = pending UND entspricht currentStep
+                    const isCurrent = step.step === currentStep && (isPending || step.status === 'pending');
 
-                        const iconClass = iconMap[step.icon] || 'fa-circle';
+                    const iconClass = iconMap[step.icon] || 'fa-circle';
 
-                        let circleClasses = '';
-                        let textClasses = '';
-                        let iconColor = '';
+                    let circleClasses = '';
+                    let textClasses = '';
 
-                        if (isCompleted) {
-                            circleClasses = 'bg-green-500 text-white';
-                            textClasses = 'text-green-700 line-through';
-                            iconColor = 'text-white';
-                        } else if (isCurrent) {
-                            circleClasses = 'bg-brand-gold text-white animate-pulse';
-                            textClasses = 'text-brand-dark font-semibold';
-                            iconColor = 'text-white';
-                        } else if (isPending) {
-                            circleClasses = 'bg-brand-gold/80 text-white';
-                            textClasses = 'text-brand-dark';
-                            iconColor = 'text-white';
-                        } else {
-                            circleClasses = 'bg-gray-200 text-gray-400';
-                            textClasses = 'text-gray-400';
-                            iconColor = 'text-gray-400';
-                        }
+                    if (isCompleted) {
+                        circleClasses = 'bg-green-500 text-white';
+                        textClasses = 'text-green-700';
+                    } else if (isCurrent) {
+                        // Aktiver Schritt - Gold mit Animation
+                        circleClasses = 'bg-brand-gold text-white shadow-lg ring-2 ring-brand-gold/30';
+                        textClasses = 'text-brand-dark font-semibold';
+                    } else if (isWaiting) {
+                        circleClasses = 'bg-gray-100 text-gray-300';
+                        textClasses = 'text-gray-400';
+                    } else {
+                        circleClasses = 'bg-gray-200 text-gray-400';
+                        textClasses = 'text-gray-400';
+                    }
 
-                        return `
-                            <div class="flex items-start gap-3 relative">
-                                <div class="w-8 h-8 rounded-full ${circleClasses} flex items-center justify-center flex-shrink-0 z-10 shadow-sm">
-                                    ${isCompleted
-                                        ? '<i class="fas fa-check text-xs"></i>'
-                                        : `<i class="fas ${iconClass} text-xs ${iconColor}"></i>`
-                                    }
-                                </div>
-                                <div class="flex-1 pt-1">
-                                    <p class="text-sm ${textClasses}">${step.name}</p>
-                                    ${isCurrent ? `
-                                        <p class="text-xs text-brand-gold mt-0.5">
-                                            <i class="fas fa-arrow-right mr-1"></i>Aktueller Schritt
-                                        </p>
-                                    ` : ''}
-                                </div>
+                    return `
+                        <div class="flex items-center gap-2 ${isCurrent ? 'bg-gradient-to-r from-brand-gold/10 to-amber-50 rounded-lg p-2 border border-brand-gold/40' : 'py-1'}">
+                            <div class="w-6 h-6 rounded-full ${circleClasses} flex items-center justify-center flex-shrink-0 transition-all">
+                                ${isCompleted
+                                    ? '<i class="fas fa-check text-[10px]"></i>'
+                                    : `<i class="fas ${iconClass} text-[10px]"></i>`
+                                }
                             </div>
-                        `;
-                    }).join('')}
-                </div>
+                            <span class="text-sm ${textClasses} flex-1">${step.name}</span>
+                            ${isCurrent ? '<span class="text-[10px] bg-brand-gold text-white px-2 py-0.5 rounded-full font-medium">Aktuell</span>' : ''}
+                        </div>
+                    `;
+                }).join('')}
             </div>
 
-            ${order.nextStepDescription ? `
-                <div class="mt-4 p-3 bg-white rounded-lg border border-brand-gold/20">
-                    <p class="text-sm text-gray-700">
-                        <i class="fas fa-lightbulb text-brand-gold mr-2"></i>
-                        <strong>Nächster Schritt:</strong> ${order.nextStepDescription}
+            ${order.nextStep === 'questionnaire' ? `
+                <div class="mt-4">
+                    <button onclick="app.openQuestionnaire('${order.id}', '${order.cvProjectId || ''}')"
+                            class="w-full bg-brand-gold hover:bg-brand-gold/90 text-brand-dark font-bold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2 shadow-lg">
+                        <i class="fas fa-clipboard-list"></i>
+                        Fragebogen jetzt ausfüllen
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <p class="text-xs text-gray-500 text-center mt-2">
+                        Dauert ca. 15-20 Minuten
                     </p>
                 </div>
             ` : ''}
@@ -2119,7 +2249,306 @@ function renderWorkflowSteps(order) {
     `;
 }
 
-// Render CV project section for customer order
+// Fragebogen öffnen
+export async function openQuestionnaire(orderId, cvProjectId) {
+    // Speichere Order-ID und Projekt-ID für den Fragebogen
+    sessionStorage.setItem('questionnaire_orderId', orderId);
+    sessionStorage.setItem('questionnaire_projectId', cvProjectId || '');
+
+    // Setze URL mit Projekt-ID für die Fragebogen-Funktionen
+    if (cvProjectId) {
+        window.history.pushState({}, '', `#questionnaire?order=${orderId}&project=${cvProjectId}`);
+        // Initialisiere den Fragebogen mit der Projekt-ID
+        await initCvQuestionnaire(cvProjectId);
+    }
+
+    // Navigiere zur Fragebogen-View (mit Smart/Manuell Auswahl)
+    const allViews = document.querySelectorAll('[id^="view-"]');
+    allViews.forEach(v => v.classList.add('hidden'));
+
+    const questionnaireView = document.getElementById('view-cv-questionnaire');
+    if (questionnaireView) {
+        questionnaireView.classList.remove('hidden');
+        // Reset zur Mode-Auswahl
+        document.getElementById('cv-q-mode-selection')?.classList.remove('hidden');
+        document.getElementById('cv-q-smart-mode')?.classList.add('hidden');
+        document.getElementById('cv-q-manual-mode')?.classList.add('hidden');
+        window.scrollTo(0, 0);
+    }
+}
+
+// Fragebogen-View anzeigen
+async function showQuestionnaireView(orderId, cvProjectId) {
+    const contentArea = document.getElementById('dashboard-content') || document.querySelector('main');
+    if (!contentArea) return;
+
+    contentArea.innerHTML = `
+        <div class="max-w-3xl mx-auto p-6">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-brand-dark to-brand-dark/90 text-white p-6">
+                    <h1 class="text-2xl font-serif mb-2">CV-Fragebogen</h1>
+                    <p class="text-gray-300 text-sm">Erzählen Sie uns von Ihrer Karriere - wir erstellen Ihren perfekten CV</p>
+                </div>
+
+                <form id="questionnaire-form" class="p-6 space-y-6">
+                    <!-- Persönliche Daten -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                            <span class="w-6 h-6 bg-brand-gold text-brand-dark rounded-full flex items-center justify-center text-sm">1</span>
+                            Persönliche Daten
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Vorname *</label>
+                                <input type="text" name="firstName" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nachname *</label>
+                                <input type="text" name="lastName" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">E-Mail *</label>
+                                <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                                <input type="tel" name="phone" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                                <input type="text" name="address" placeholder="Straße, PLZ, Stadt" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aktuelle Position -->
+                    <div class="space-y-4 pt-4 border-t">
+                        <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                            <span class="w-6 h-6 bg-brand-gold text-brand-dark rounded-full flex items-center justify-center text-sm">2</span>
+                            Aktuelle/Letzte Position
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jobtitel *</label>
+                                <input type="text" name="currentJobTitle" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Unternehmen *</label>
+                                <input type="text" name="currentCompany" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Von</label>
+                                <input type="month" name="currentJobStart" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Bis (leer = aktuell)</label>
+                                <input type="month" name="currentJobEnd" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Hauptaufgaben & Erfolge *</label>
+                                <textarea name="currentJobDescription" rows="4" required placeholder="Beschreiben Sie Ihre wichtigsten Aufgaben und Erfolge..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frühere Positionen -->
+                    <div class="space-y-4 pt-4 border-t">
+                        <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                            <span class="w-6 h-6 bg-brand-gold text-brand-dark rounded-full flex items-center justify-center text-sm">3</span>
+                            Frühere Positionen
+                        </h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Weitere relevante Berufserfahrung</label>
+                            <textarea name="previousPositions" rows="6" placeholder="Position 1: Titel bei Firma (Jahr-Jahr)&#10;- Aufgabe/Erfolg&#10;- Aufgabe/Erfolg&#10;&#10;Position 2: ..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Ausbildung -->
+                    <div class="space-y-4 pt-4 border-t">
+                        <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                            <span class="w-6 h-6 bg-brand-gold text-brand-dark rounded-full flex items-center justify-center text-sm">4</span>
+                            Ausbildung
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Höchster Abschluss *</label>
+                                <input type="text" name="education" required placeholder="z.B. Master of Science" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Universität/Hochschule *</label>
+                                <input type="text" name="university" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fachrichtung</label>
+                                <input type="text" name="fieldOfStudy" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Abschlussjahr</label>
+                                <input type="number" name="graduationYear" min="1950" max="2030" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="space-y-4 pt-4 border-t">
+                        <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                            <span class="w-6 h-6 bg-brand-gold text-brand-dark rounded-full flex items-center justify-center text-sm">5</span>
+                            Kenntnisse & Fähigkeiten
+                        </h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fachliche Kenntnisse *</label>
+                            <textarea name="skills" rows="3" required placeholder="z.B. Projektmanagement, SAP, Python, Verhandlungsführung..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sprachkenntnisse</label>
+                            <textarea name="languages" rows="2" placeholder="z.B. Deutsch (Muttersprache), Englisch (fließend), Französisch (Grundkenntnisse)" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Ziele -->
+                    <div class="space-y-4 pt-4 border-t">
+                        <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                            <span class="w-6 h-6 bg-brand-gold text-brand-dark rounded-full flex items-center justify-center text-sm">6</span>
+                            Karriereziele
+                        </h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Welche Position streben Sie an?</label>
+                            <input type="text" name="targetPosition" placeholder="z.B. Head of Marketing, CFO, Senior Developer" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Was soll der CV besonders betonen?</label>
+                            <textarea name="emphasis" rows="3" placeholder="z.B. Führungserfahrung, internationale Projekte, Digitalisierung..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Zusätzliche Infos -->
+                    <div class="space-y-4 pt-4 border-t">
+                        <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                            <span class="w-6 h-6 bg-brand-gold text-brand-dark rounded-full flex items-center justify-center text-sm">7</span>
+                            Zusätzliche Informationen
+                        </h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Weitere Angaben, Wünsche oder Hinweise</label>
+                            <textarea name="additionalInfo" rows="4" placeholder="Zertifikate, Ehrenämter, besondere Hinweise für uns..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-gold focus:border-transparent"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields -->
+                    <input type="hidden" name="orderId" value="${orderId}">
+                    <input type="hidden" name="cvProjectId" value="${cvProjectId}">
+
+                    <!-- Submit -->
+                    <div class="pt-6 border-t">
+                        <button type="submit" class="w-full bg-brand-gold hover:bg-brand-gold/90 text-brand-dark font-bold py-4 px-6 rounded-lg transition flex items-center justify-center gap-2 text-lg">
+                            <i class="fas fa-paper-plane"></i>
+                            Fragebogen absenden
+                        </button>
+                        <p class="text-xs text-gray-500 text-center mt-3">
+                            Nach dem Absenden beginnen wir mit der Erstellung Ihres CVs
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    // Form Handler
+    document.getElementById('questionnaire-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await submitQuestionnaire(e.target, orderId, cvProjectId);
+    });
+}
+
+// Fragebogen absenden
+async function submitQuestionnaire(form, orderId, cvProjectId) {
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Wird gesendet...';
+
+    try {
+        // Speichere in Firestore
+        const { doc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js');
+        const { db } = await import('./core.js');
+
+        // Update Order mit Fragebogen-Daten
+        await updateDoc(doc(db, 'orders', orderId), {
+            questionnaire: data,
+            questionnaireSubmittedAt: serverTimestamp(),
+            cvStatus: 'data_received',
+            nextStep: 'cv_creation',
+            nextStepDescription: 'Ihr CV wird erstellt',
+            'workflow.currentStep': 2,
+            'workflow.steps': [
+                { step: 1, name: 'Fragebogen ausfüllen', status: 'completed', icon: 'clipboard-list' },
+                { step: 2, name: 'CV wird erstellt', status: 'pending', icon: 'pen-fancy' },
+                { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
+                { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
+            ]
+        });
+
+        // Update CV-Projekt wenn vorhanden
+        if (cvProjectId) {
+            await updateDoc(doc(db, 'cvProjects', cvProjectId), {
+                questionnaire: data,
+                status: 'data_received',
+                questionnaireSubmittedAt: serverTimestamp()
+            });
+        }
+
+        showToast('✅ Fragebogen erfolgreich gesendet!');
+
+        // Zurück zum Dashboard
+        setTimeout(() => {
+            window.location.hash = '#dashboard';
+            window.location.reload();
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error submitting questionnaire:', error);
+        showToast('❌ Fehler beim Senden. Bitte versuchen Sie es erneut.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Fragebogen absenden';
+    }
+}
+
+// Render nur CV Download-Sektion (wenn CV fertig ist)
+function renderCvDownloadSection(order) {
+    // Only show for CV orders when CV is ready
+    if (!isCvOrder(order)) return '';
+
+    const cvStatus = order.cvStatus || 'new';
+    const cvProject = order.cvProject;
+
+    // Nur anzeigen wenn CV fertig ist
+    if (cvStatus !== 'ready' && cvStatus !== 'delivered') return '';
+    if (!cvProject?.generatedCv?.url) return '';
+
+    return `
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 mb-3 border border-green-200">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check text-white"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-green-700">Ihr CV ist fertig!</p>
+                    <p class="text-xs text-green-600">Sie können ihn jetzt herunterladen</p>
+                </div>
+            </div>
+            <a href="${cvProject.generatedCv.url}"
+               target="_blank"
+               download
+               class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg">
+                <i class="fas fa-download"></i>
+                CV herunterladen (${cvProject.generatedCv.format || 'PDF'})
+            </a>
+        </div>
+    `;
+}
+
+// Render CV project section for customer order (LEGACY - kept for reference)
 function renderCvProjectSection(order) {
     // Only show for CV orders
     if (!isCvOrder(order)) return '';
@@ -10992,10 +11421,15 @@ let experienceCounter = 0;
 let educationCounter = 0;
 let languageCounter = 0;
 
-// Initialize CV Questionnaire from URL parameter
-export async function initCvQuestionnaire() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('questionnaire');
+// Initialize CV Questionnaire from URL parameter or direct call
+export async function initCvQuestionnaire(directProjectId = null) {
+    let projectId = directProjectId;
+
+    // Falls keine direkte ID übergeben wurde, aus URL lesen
+    if (!projectId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        projectId = urlParams.get('questionnaire');
+    }
 
     if (!projectId) return false;
 
@@ -11840,8 +12274,27 @@ export async function submitSmartQuestionnaire() {
             };
         }
 
-        // Update Firestore
+        // Update cvProjects Collection
         await updateDoc(doc(db, 'cvProjects', cvQuestionnaireProjectId), updateData);
+
+        // Auch die Order aktualisieren (für Dashboard-Workflow-Anzeige)
+        const orderId = sessionStorage.getItem('questionnaire_orderId');
+        if (orderId) {
+            await updateDoc(doc(db, 'orders', orderId), {
+                questionnaire: updateData.questionnaire,
+                questionnaireSubmittedAt: serverTimestamp(),
+                cvStatus: 'data_received',
+                nextStep: 'cv_creation',
+                nextStepDescription: 'Ihr CV wird erstellt',
+                'workflow.currentStep': 2,
+                'workflow.steps': [
+                    { step: 1, name: 'Fragebogen ausfüllen', status: 'completed', icon: 'clipboard-list' },
+                    { step: 2, name: 'CV wird erstellt', status: 'pending', icon: 'pen-fancy' },
+                    { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
+                    { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
+                ]
+            });
+        }
 
         // Show success
         showSmartSubmitSuccess();

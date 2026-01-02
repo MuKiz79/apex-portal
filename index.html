@@ -5087,6 +5087,8 @@
             // Dashboard functions
             loadUserOrders: () => App.loadUserOrders(window.app.state),
             toggleOrderDetails: (orderId) => App.toggleOrderDetails(orderId),
+            switchOrderTab: (tab) => App.switchOrderTab(tab),
+            openQuestionnaire: (orderId, cvProjectId) => App.openQuestionnaire(orderId, cvProjectId),
             joinMeeting: (orderId) => App.joinMeeting(orderId),
             closeMeetingModal: () => App.closeMeetingModal(),
             toggleFullscreen: () => App.toggleFullscreen(),
