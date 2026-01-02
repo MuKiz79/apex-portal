@@ -16,6 +16,7 @@ Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuel
 - Backend: Firebase (Auth, Firestore, Functions, Hosting, Storage)
 - Payments: Stripe
 - Video: Daily.co
+- Template Designer: React + pdfme (unter `/template-designer/`)
 
 ---
 
@@ -23,15 +24,17 @@ Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuel
 
 | Datei | Beschreibung | Zeilen |
 |-------|--------------|--------|
-| `index.html` | Haupt-HTML, alle Views, Modals | ~4.000 |
-| `js/app.js` | Hauptlogik, alle Funktionen | ~5.500 |
+| `index.html` | Haupt-HTML, alle Views, Modals | ~4.500 |
+| `js/app.js` | Hauptlogik, alle Funktionen | ~5.800 |
 | `js/core.js` | Firebase-Init, Navigation | ~500 |
 | `functions/index.js` | 11 Cloud Functions | ~1.200 |
-| `firestore.rules` | Datenbank-Sicherheit | ~125 |
+| `firestore.rules` | Datenbank-Sicherheit | ~165 |
+| `cv-templates/templates.json` | CV-Template Definitionen | ~150 |
+| `template-designer/` | React-App für Template-Bearbeitung | - |
 
 ---
 
-## Aktuelle Features (Stand: 31.12.2024)
+## Aktuelle Features (Stand: 02.01.2025)
 
 ### Implementiert
 - [x] CV-Pakete mit Konfigurator (Sprache, Express, Add-ons)
@@ -47,6 +50,16 @@ Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuel
 - [x] Dokumenten-Upload/Download
 - [x] **Coach-Bearbeitung im Admin** (Hinzufügen, Bearbeiten, Löschen, Sichtbarkeit)
 - [x] **Pagination** für Admin-Listen (Users, Strategy Calls)
+- [x] **CV Template System** (SVG-basiert mit Farbwahl)
+- [x] **Admin Template-Verwaltung** (Templates aktivieren/deaktivieren)
+- [x] **Template Designer** (React + pdfme für Template-Erstellung)
+
+### Landing Page
+- [x] Hero Section: "CV-Manufaktur | Executive Mentoring"
+- [x] Testimonials (3 Stück: CV-Paket, Mentoring, Komplettpaket)
+- [x] **"Wann brauche ich einen Mentor?"** Sektion mit 4 Use Cases
+- [x] CV-Pakete Grid (Young Professional, Senior Professional, Executive)
+- [x] Mentoring-Bereich mit Coach-Auswahl
 
 ### Pending / Bekannte Einschränkungen
 - Daily.co API Key muss noch gesetzt werden (`firebase functions:secrets:set DAILY_API_KEY`)
@@ -82,7 +95,9 @@ orders/          # Bestellungen + Termine
 coaches/         # Mentoren/Coaches
 articles/        # Blog-Artikel
 strategyCalls/   # Anfragen
-settings/        # System-Einstellungen
+settings/        # System-Einstellungen (inkl. templateStatus)
+cvTemplates/     # CV-Template Definitionen (für pdfme)
+cvProjects/      # Kunden CV-Projekte (Fragebogen, Dokumente)
 ```
 
 ---
@@ -102,6 +117,29 @@ settings/        # System-Einstellungen
 
 ## Letzte Änderungen
 
+### 02.01.2025
+- **Landing Page Optimierungen:**
+  - Hero Section: "CV-Manufaktur | Executive Mentoring - Ihre zwei Säulen zum Karriereerfolg"
+  - Testimonials komplett überarbeitet (Manufaktur-Fokus, Anti-KI-Messaging)
+  - Neuer Bereich "Wann brauche ich einen Mentor?" mit 4 Use Cases:
+    - Gehaltsverhandlung
+    - Jobwechsel planen
+    - Erste Führungsrolle
+    - Strategisches Sparring
+- **Admin Template-Verwaltung:**
+  - Toggle zum Aktivieren/Deaktivieren von Templates
+  - Persistierung in Firestore (`settings/templateStatus`)
+  - Nur aktivierte Templates werden Kunden angezeigt
+- **CV Template System:**
+  - SVG-basierte Templates (kreativ, compact)
+  - Farbwahl für Kunden
+  - Preview-Komponente mit Zoom-Funktion
+- **Template Designer** (React + pdfme):
+  - Separate React-App unter `/template-designer/`
+  - SVG zu PDF Konvertierung
+  - Farbpicker für Template-Anpassung
+  - Speicherung in Firestore
+
 ### 31.12.2024
 - **Pagination** für Admin-Listen implementiert (Users: 20/Seite, Strategy Calls: 15/Seite)
 - CLAUDE.md aktualisiert - Coach-Bearbeitung war bereits implementiert
@@ -118,6 +156,26 @@ settings/        # System-Einstellungen
 
 ---
 
+## CV Template System
+
+### Verfügbare Templates
+| ID | Name | Farben |
+|----|------|--------|
+| `kreativ` | Kreativ Design | primary, accent, circle |
+| `compact` | Compact Design | primary |
+
+### Template-Struktur
+- **SVG-Dateien:** `/template-designer/template-{id}.svg`
+- **Konfiguration:** `/cv-templates/templates.json`
+- **Admin-Toggle:** Speichert disabled-Liste in `settings/templateStatus`
+
+### Template Designer
+- **URL:** `/template-designer/` (nur für Admins)
+- **Tech:** React + pdfme + jsPDF
+- **Funktion:** SVG laden → Farben anpassen → Als PDF-Template speichern
+
+---
+
 ## Häufige Aufgaben
 
 ### Neuen Coach hinzufügen (via Admin-Panel)
@@ -125,6 +183,11 @@ settings/        # System-Einstellungen
 2. "Neuer Mentor" Button klicken
 3. Formular ausfüllen (Name, Email, Rolle, Erfahrung, Bio, Bild-URL, Expertise)
 4. Speichern
+
+### Template aktivieren/deaktivieren
+1. Als Admin einloggen → Admin-Bereich → Tab "Einstellungen"
+2. Bereich "CV Templates" finden
+3. Toggle für gewünschtes Template klicken
 
 ### Feature testen
 1. Login mit Test-Account
@@ -135,6 +198,14 @@ settings/        # System-Einstellungen
 ```bash
 firebase functions:log  # Logs prüfen
 firebase deploy --only hosting --debug  # Debug-Mode
+```
+
+### Template Designer deployen
+```bash
+cd template-designer
+npm run build
+cd ..
+# Dann normales Hosting-Deploy
 ```
 
 ---
