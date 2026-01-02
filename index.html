@@ -5318,21 +5318,24 @@
                         }
                     }
 
-                    // Lade Orders und Dokumente
+                    // Lade Orders und Dokumente PARALLEL für bessere Performance
                     const isPaymentSuccess = app.state.justPaid;
+                    const loadAllUserData = () => {
+                        // Alle drei parallel starten statt sequentiell
+                        Promise.all([
+                            app.loadUserOrders(),
+                            app.loadUserUploads(),
+                            app.loadDeliveredDocuments()
+                        ]).catch(err => console.error('Error loading user data:', err));
+                    };
+
                     // Bei Zahlung: warte kurz damit Webhook Zeit hat
                     if (isPaymentSuccess) {
-                        setTimeout(() => {
-                            app.loadUserOrders();
-                            app.loadUserUploads();
-                            app.loadDeliveredDocuments();
-                        }, 2000);
+                        setTimeout(loadAllUserData, 2000);
                         app.state.justPaid = false; // Reset flag
                     } else {
                         // Immer laden wenn User eingeloggt ist (für Dashboard-Bereitschaft)
-                        app.loadUserOrders();
-                        app.loadUserUploads();
-                        app.loadDeliveredDocuments();
+                        loadAllUserData();
                     }
                 } else {
                     app.state.user = null;
