@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120">
+  <!-- Hintergrund -->
+  <rect width="400" height="120" fill="#0B1120"/>
+
+  <!-- KARRIARO Text -->
+  <text x="200" y="55"
+        font-family="'Cinzel', 'Times New Roman', Georgia, serif"
+        font-size="42"
+        font-weight="400"
+        letter-spacing="8"
+        fill="#C6A87C"
+        text-anchor="middle">
+    KARRIARO
+  </text>
+
+  <!-- Goldener Strich -->
+  <line x1="120" y1="70" x2="280" y2="70" stroke="#C6A87C" stroke-width="1.5"/>
+
+  <!-- Subline -->
+  <text x="200" y="95"
+        font-family="'Lato', 'Helvetica Neue', Arial, sans-serif"
+        font-size="12"
+        font-weight="300"
+        letter-spacing="3"
+        fill="#C6A87C"
+        text-anchor="middle"
+        opacity="0.85">
+    CV-Manufaktur &amp; Executive Mentoring
+  </text>
+</svg>

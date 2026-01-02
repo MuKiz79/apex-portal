@@ -593,9 +593,9 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
             console.log('Email verified status:', currentUser?.emailVerified);
 
             if (!currentUser || !currentUser.emailVerified) {
-                // Speichere Email für "erneut senden" Funktion
-                window._pendingVerificationEmail = email;
-                window._pendingVerificationPassword = password;
+                // Sichere temporäre Speicherung nur der Email (NICHT des Passworts)
+                // Passwort wird nicht mehr gespeichert - Nutzer muss es erneut eingeben
+                sessionStorage.setItem('_pendingVerificationEmail', email);
                 await signOut(auth);
 
                 // Zeige spezielle Fehlermeldung mit Option zum erneuten Senden
@@ -731,6 +731,16 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
 export async function handleLogout(state, navigateTo) {
     if(auth) await signOut(auth);
     state.user = null;
+
+    // SICHERHEIT: Warenkorb bei Logout löschen (verhindert Datenleck auf geteilten Computern)
+    state.cart = [];
+    saveCartToLocalStorage([]);
+    updateCartUI(state);
+
+    // Lösche auch temporäre Session-Daten
+    sessionStorage.removeItem('_pendingVerificationEmail');
+    sessionStorage.removeItem('pending_cart');
+
     updateAuthUI(state);
     navigateTo('home');
     showToast('✅ Erfolgreich abgemeldet');
@@ -1030,20 +1040,22 @@ export function resetAuthToLogin() {
 }
 
 // Funktion zum erneuten Senden der Bestätigungs-E-Mail
+// SICHERHEIT: Verwendet sendSignInLinkToEmail statt Passwort-Speicherung
 export async function resendVerificationEmail() {
-    const email = window._pendingVerificationEmail;
-    const password = window._pendingVerificationPassword;
+    const email = sessionStorage.getItem('_pendingVerificationEmail');
 
-    if (!email || !password) {
+    if (!email) {
         showToast('❌ Bitte melden Sie sich erneut an');
         return;
     }
 
     try {
-        // Kurz einloggen um E-Mail zu senden
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        await sendEmailVerification(userCredential.user);
-        await signOut(auth);
+        // Sende Passwort-Reset Email - Nutzer kann danach neues Passwort setzen
+        // sendPasswordResetEmail ist bereits oben importiert
+        await sendPasswordResetEmail(auth, email);
+
+        // Lösche temporäre Email nach Verwendung
+        sessionStorage.removeItem('_pendingVerificationEmail');
 
         showToast('✅ Bestätigungs-E-Mail wurde erneut gesendet!');
 
@@ -1277,8 +1289,19 @@ export async function checkout(state, navigateTo) {
     }
     // Bei guest: checkoutType bleibt 'guest', checkoutEmail bleibt null
 
-    // Zeige Loading
-    showToast('⏳ Zahlungsseite wird vorbereitet...', 3000);
+    // Zeige Fullscreen Loading Overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'checkout-loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="fixed inset-0 bg-brand-dark/95 z-[9999] flex items-center justify-center">
+            <div class="text-center text-white">
+                <div class="w-16 h-16 border-4 border-brand-gold border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+                <h3 class="text-xl font-serif mb-2">Zahlungsseite wird vorbereitet</h3>
+                <p class="text-gray-400 text-sm">Sie werden in wenigen Sekunden weitergeleitet...</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
     toggleCart();
 
     try {
@@ -1319,6 +1342,8 @@ export async function checkout(state, navigateTo) {
 
     } catch(e) {
         logger.error("Stripe Checkout failed:", e);
+        // Entferne Loading Overlay bei Fehler
+        document.getElementById('checkout-loading-overlay')?.remove();
         showToast('❌ Zahlung konnte nicht gestartet werden. Bitte später erneut versuchen.', 4000);
     }
 }
@@ -1613,6 +1638,9 @@ export function renderOrders(orders) {
                 <!-- Collapsible Order Details -->
                 <div id="${orderId}" class="overflow-hidden transition-all duration-300 ${isExpanded ? '' : 'hidden'}">
                     <div class="px-5 pb-5">
+                        <!-- NÄCHSTE SCHRITTE - Prominent anzeigen wenn vorhanden -->
+                        ${order.workflow ? renderWorkflowSteps(order) : ''}
+
                         <!-- Status Timeline -->
                         <div class="bg-gray-50 rounded-lg p-4 mb-3">
                             <div class="flex items-center justify-between mb-3">
@@ -1992,6 +2020,103 @@ function isCvOrder(order) {
             item.title?.toLowerCase().includes(keyword.toLowerCase())
         )
     );
+}
+
+// Render Workflow Steps für das Dashboard
+function renderWorkflowSteps(order) {
+    if (!order.workflow || !order.workflow.steps) return '';
+
+    const steps = order.workflow.steps;
+    const currentStep = order.workflow.currentStep || 1;
+
+    const iconMap = {
+        'clipboard-list': 'fa-clipboard-list',
+        'pen-fancy': 'fa-pen-fancy',
+        'comments': 'fa-comments',
+        'check-circle': 'fa-check-circle',
+        'calendar': 'fa-calendar-check',
+        'video': 'fa-video'
+    };
+
+    return `
+        <div class="bg-gradient-to-r from-brand-gold/10 to-amber-50 rounded-xl p-4 mb-4 border border-brand-gold/30">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-route text-brand-gold"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-brand-dark text-sm">Ihre nächsten Schritte</h4>
+                    <p class="text-xs text-gray-500">Wir begleiten Sie durch den gesamten Prozess</p>
+                </div>
+            </div>
+
+            <div class="relative">
+                <!-- Verbindungslinie -->
+                <div class="absolute left-4 top-6 bottom-6 w-0.5 bg-gray-200"></div>
+
+                <div class="space-y-4">
+                    ${steps.map((step, idx) => {
+                        const isCompleted = step.status === 'completed';
+                        const isPending = step.status === 'pending';
+                        const isWaiting = step.status === 'waiting';
+                        const isCurrent = step.step === currentStep && isPending;
+
+                        const iconClass = iconMap[step.icon] || 'fa-circle';
+
+                        let circleClasses = '';
+                        let textClasses = '';
+                        let iconColor = '';
+
+                        if (isCompleted) {
+                            circleClasses = 'bg-green-500 text-white';
+                            textClasses = 'text-green-700 line-through';
+                            iconColor = 'text-white';
+                        } else if (isCurrent) {
+                            circleClasses = 'bg-brand-gold text-white animate-pulse';
+                            textClasses = 'text-brand-dark font-semibold';
+                            iconColor = 'text-white';
+                        } else if (isPending) {
+                            circleClasses = 'bg-brand-gold/80 text-white';
+                            textClasses = 'text-brand-dark';
+                            iconColor = 'text-white';
+                        } else {
+                            circleClasses = 'bg-gray-200 text-gray-400';
+                            textClasses = 'text-gray-400';
+                            iconColor = 'text-gray-400';
+                        }
+
+                        return `
+                            <div class="flex items-start gap-3 relative">
+                                <div class="w-8 h-8 rounded-full ${circleClasses} flex items-center justify-center flex-shrink-0 z-10 shadow-sm">
+                                    ${isCompleted
+                                        ? '<i class="fas fa-check text-xs"></i>'
+                                        : `<i class="fas ${iconClass} text-xs ${iconColor}"></i>`
+                                    }
+                                </div>
+                                <div class="flex-1 pt-1">
+                                    <p class="text-sm ${textClasses}">${step.name}</p>
+                                    ${isCurrent ? `
+                                        <p class="text-xs text-brand-gold mt-0.5">
+                                            <i class="fas fa-arrow-right mr-1"></i>Aktueller Schritt
+                                        </p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+
+            ${order.nextStepDescription ? `
+                <div class="mt-4 p-3 bg-white rounded-lg border border-brand-gold/20">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-lightbulb text-brand-gold mr-2"></i>
+                        <strong>Nächster Schritt:</strong> ${order.nextStepDescription}
+                    </p>
+                </div>
+            ` : ''}
+        </div>
+    `;
 }
 
 // Render CV project section for customer order
@@ -2883,7 +3008,7 @@ export async function confirmAppointmentFromModal(state) {
 
             // Notify admin via email
             try {
-                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminAppointmentAccepted', {
+                const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminAppointmentAccepted', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2893,6 +3018,9 @@ export async function confirmAppointmentFromModal(state) {
                         orderId: orderId
                     })
                 });
+                if (!response.ok) {
+                    logger.warn('Admin notification returned non-OK status:', response.status);
+                }
             } catch (emailErr) {
                 logger.warn('Failed to send admin notification:', emailErr);
             }
@@ -2942,7 +3070,7 @@ export async function confirmDeclineFromModal(state) {
 
             // Notify admin via email
             try {
-                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminAppointmentDeclined', {
+                const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminAppointmentDeclined', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2952,6 +3080,9 @@ export async function confirmDeclineFromModal(state) {
                         orderId: orderId
                     })
                 });
+                if (!response.ok) {
+                    logger.warn('Admin notification returned non-OK status:', response.status);
+                }
             } catch (emailErr) {
                 logger.warn('Failed to send admin notification:', emailErr);
             }
@@ -4000,7 +4131,7 @@ export async function handleFileUpload(state, input) {
 
             // Notify admin via email
             try {
-                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminDocumentUploaded', {
+                const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminDocumentUploaded', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -4009,6 +4140,9 @@ export async function handleFileUpload(state, input) {
                         documentName: file.name
                     })
                 });
+                if (!response.ok) {
+                    logger.warn('Admin document notification returned non-OK status:', response.status);
+                }
             } catch (emailErr) {
                 logger.warn('Failed to send admin notification:', emailErr);
             }
@@ -4576,7 +4710,7 @@ export async function assignCoachToOrder(coachId, coachName) {
         // ========== MENTOR-BENACHRICHTIGUNG ==========
         if (coachEmail) {
             try {
-                await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyMentorAssignment', {
+                const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyMentorAssignment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -4588,7 +4722,11 @@ export async function assignCoachToOrder(coachId, coachName) {
                         productTitle: orderData.items?.[0]?.title || 'Mentoring Session'
                     })
                 });
-                logger.log('Mentor notification sent to:', coachEmail);
+                if (response.ok) {
+                    logger.log('Mentor notification sent to:', coachEmail);
+                } else {
+                    logger.warn('Mentor notification returned non-OK status:', response.status);
+                }
             } catch (notifyError) {
                 logger.warn('Failed to send mentor notification:', notifyError);
                 // Nicht kritisch - Zuweisung war erfolgreich

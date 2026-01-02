@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4AF37"/>
+      <stop offset="50%" style="stop-color:#C6A87C"/>
+      <stop offset="100%" style="stop-color:#B8956E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: Drei aufsteigende Linien (Karrierestufen) -->
+  <g transform="translate(10, 15)">
+    <!-- Stufe 1 -->
+    <rect x="0" y="35" width="12" height="15" rx="2" fill="url(#goldGradient)" opacity="0.5"/>
+
+    <!-- Stufe 2 -->
+    <rect x="16" y="22" width="12" height="28" rx="2" fill="url(#goldGradient)" opacity="0.75"/>
+
+    <!-- Stufe 3 -->
+    <rect x="32" y="8" width="12" height="42" rx="2" fill="url(#goldGradient)"/>
+
+    <!-- Aufwärtspfeil -->
+    <path d="M50 5 L58 18 L54 18 L54 50 L62 50 L56 58 L50 50 L58 50 L58 18 L54 18 Z"
+          fill="none" stroke="url(#goldGradient)" stroke-width="1.5" opacity="0.6"/>
+  </g>
+
+  <!-- Text: KARRIARO -->
+  <text x="85" y="48"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="32"
+        font-weight="300"
+        letter-spacing="5"
+        fill="#0B1120">
+    KARRIARO
+  </text>
+
+  <!-- Subtile Akzentlinie -->
+  <line x1="85" y1="56" x2="285" y2="56" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.4"/>
+</svg>

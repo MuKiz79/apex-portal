@@ -20,33 +20,213 @@ const smtpPass = defineSecret('SMTP_PASS');
 const dailyApiKey = defineSecret('DAILY_API_KEY');
 const claudeApiKey = defineSecret('CLAUDE_API_KEY');
 
-// Set global options
+// Set global options (Standard für alle Functions)
 setGlobalOptions({
   region: 'us-central1',
-  maxInstances: 10
+  maxInstances: 10,
+  memory: '256MiB',
+  cpu: 1
 });
 
 admin.initializeApp();
 
-// CORS Headers
+// CORS Headers - Nur erlaubte Domains
+const ALLOWED_ORIGINS = [
+    'https://karriaro.de',
+    'https://www.karriaro.de',
+    'https://apex-executive.web.app',
+    'https://apex-executive.firebaseapp.com',
+    'http://localhost:5000',  // Für lokale Entwicklung
+    'http://localhost:3000'
+];
+
+function getCorsHeaders(req) {
+    const origin = req.headers.origin || '';
+    const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    return {
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true'
+    };
+}
+
+// Legacy corsHeaders für Abwärtskompatibilität (wird schrittweise ersetzt)
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://karriaro.de',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
 
+// ========== PRODUKTKATALOG - Single Source of Truth für Preise ==========
+const PRODUCT_CATALOG = {
+    // CV Pakete
+    'cv-quick-check': { title: 'CV Quick-Check', price: 99, category: 'cv' },
+    'young-professional': { title: 'Young Professional CV', price: 249, category: 'cv' },
+    'senior-professional': { title: 'Senior Professional CV', price: 490, category: 'cv' },
+    'executive-c-suite': { title: 'Executive C-Suite CV', price: 1290, category: 'cv' },
+
+    // Mentoring
+    'mentoring-single': { title: 'Single Mentoring Session', price: 350, category: 'mentoring' },
+    'mentoring-3pack': { title: '3 Mentoring Sessions', price: 950, category: 'mentoring' },
+    'mentoring-complete': { title: 'Komplett-Paket', price: 2450, category: 'mentoring' },
+
+    // Addons
+    'addon-express': { title: 'Express-Bearbeitung (48h)', price: 99, category: 'addon' },
+    'addon-english': { title: 'Englische Version', price: 149, category: 'addon' },
+    'addon-interview': { title: 'Interview-Coaching', price: 199, category: 'addon' },
+    'addon-zeugnis': { title: 'Arbeitszeugnis-Optimierung', price: 49, category: 'addon' },
+    'addon-website': { title: 'Executive Landing Page', price: 499, category: 'addon' },
+    'addon-linkedin': { title: 'LinkedIn-Profil Optimierung', price: 149, category: 'addon' }
+};
+
+// Preisvalidierung - prüft ob Preis zum Produkt passt
+function validateItemPrice(item) {
+    // Suche nach Produkt im Katalog (nach ID oder Titel)
+    let catalogProduct = null;
+    let matchedKey = null;
+
+    if (item.id && PRODUCT_CATALOG[item.id]) {
+        catalogProduct = PRODUCT_CATALOG[item.id];
+        matchedKey = item.id;
+    } else {
+        // Fallback: Suche nach Titel (für Abwärtskompatibilität)
+        const itemTitleLower = item.title?.toLowerCase() || '';
+
+        // Zuerst: Exakter Match
+        for (const [id, product] of Object.entries(PRODUCT_CATALOG)) {
+            if (product.title.toLowerCase() === itemTitleLower) {
+                catalogProduct = product;
+                matchedKey = id;
+                break;
+            }
+        }
+
+        // Dann: Titel beginnt mit Katalog-Titel (z.B. "Senior Professional CV (DE, Standard)" beginnt mit "Senior Professional CV")
+        if (!catalogProduct) {
+            for (const [id, product] of Object.entries(PRODUCT_CATALOG)) {
+                if (itemTitleLower.startsWith(product.title.toLowerCase())) {
+                    catalogProduct = product;
+                    matchedKey = id;
+                    break;
+                }
+            }
+        }
+
+        // Dann: Katalog-Titel ist im Item-Titel enthalten
+        if (!catalogProduct) {
+            for (const [id, product] of Object.entries(PRODUCT_CATALOG)) {
+                if (itemTitleLower.includes(product.title.toLowerCase())) {
+                    catalogProduct = product;
+                    matchedKey = id;
+                    break;
+                }
+            }
+        }
+
+        // Letzte Fallback: Prüfe auf Schlüsselwörter
+        if (!catalogProduct) {
+            const keywordMap = {
+                'quick-check': ['quick', 'check'],
+                'young-professional': ['young', 'professional'],
+                'senior-professional': ['senior', 'professional'],
+                'executive-c-suite': ['executive', 'c-suite', 'csuite'],
+                'mentoring-single': ['single', 'mentoring', 'session'],
+                'mentoring-3pack': ['3 mentoring', '3er', '3-pack', '3pack'],
+                'mentoring-complete': ['komplett', 'complete', '6 session'],
+                'addon-express': ['express', '48h', '48 stunden'],
+                'addon-english': ['english', 'englisch'],
+                'addon-interview': ['interview', 'coaching'],
+                'addon-zeugnis': ['zeugnis', 'arbeitszeugnis'],
+                'addon-website': ['landing', 'website', 'page'],
+                'addon-linkedin': ['linkedin']
+            };
+
+            for (const [id, keywords] of Object.entries(keywordMap)) {
+                if (keywords.some(kw => itemTitleLower.includes(kw))) {
+                    catalogProduct = PRODUCT_CATALOG[id];
+                    matchedKey = id;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!catalogProduct) {
+        console.warn('⚠️ Produkt nicht im Katalog gefunden:', item.title);
+        return { valid: false, reason: 'Produkt nicht gefunden', expectedPrice: null };
+    }
+
+    // Toleranz von 1 Cent für Rundungsfehler
+    const priceDiff = Math.abs(item.price - catalogProduct.price);
+    if (priceDiff > 0.01) {
+        console.error('❌ Preismanipulation erkannt!', {
+            product: item.title,
+            submittedPrice: item.price,
+            catalogPrice: catalogProduct.price
+        });
+        return {
+            valid: false,
+            reason: 'Preisabweichung',
+            expectedPrice: catalogProduct.price,
+            submittedPrice: item.price
+        };
+    }
+
+    return { valid: true, catalogProduct };
+}
+
+// Validiere alle Items und korrigiere Preise
+function validateAndCorrectPrices(items) {
+    const validatedItems = [];
+    const errors = [];
+
+    for (const item of items) {
+        const validation = validateItemPrice(item);
+
+        if (!validation.valid) {
+            errors.push({
+                item: item.title,
+                reason: validation.reason,
+                expected: validation.expectedPrice,
+                submitted: item.price
+            });
+
+            // Bei gefundenem Produkt: Korrigiere den Preis
+            if (validation.expectedPrice) {
+                validatedItems.push({
+                    ...item,
+                    price: validation.expectedPrice,
+                    priceWasCorrected: true
+                });
+            }
+        } else {
+            validatedItems.push({
+                ...item,
+                price: validation.catalogProduct.price // Immer Katalogpreis verwenden
+            });
+        }
+    }
+
+    return { validatedItems, errors, hasErrors: errors.length > 0 };
+}
+
 // ========== CREATE CHECKOUT SESSION ==========
+// minInstances: 1 hält diese kritische Function warm (verhindert Cold Starts)
+// Kosten: ca. $8-10/Monat, aber viel bessere User Experience
 exports.createCheckoutSession = onRequest({
     secrets: [stripeSecretKey],
-    invoker: 'public'
+    invoker: 'public',
+    minInstances: 1  // Immer 1 Instanz warm halten für schnellen Checkout
 }, async (req, res) => {
     // Handle CORS preflight
+    const headers = getCorsHeaders(req);
     if (req.method === 'OPTIONS') {
-        res.set(corsHeaders);
+        res.set(headers);
         return res.status(204).send('');
     }
 
-    res.set(corsHeaders);
+    res.set(headers);
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -59,25 +239,45 @@ exports.createCheckoutSession = onRequest({
             return res.status(400).json({ error: 'Invalid items' });
         }
 
+        // ========== SICHERHEIT: Preisvalidierung gegen Produktkatalog ==========
+        const { validatedItems, errors, hasErrors } = validateAndCorrectPrices(items);
+
+        if (hasErrors) {
+            console.warn('⚠️ Preisvalidierung Fehler:', errors);
+            // Wir loggen den Versuch, verwenden aber korrigierte Preise
+            // Bei unbekannten Produkten: Abbruch
+            const unknownProducts = errors.filter(e => e.reason === 'Produkt nicht gefunden');
+            if (unknownProducts.length > 0) {
+                return res.status(400).json({
+                    error: 'Ungültige Produkte in Bestellung',
+                    details: unknownProducts.map(p => p.item)
+                });
+            }
+        }
+
+        // Verwende validierte Items mit korrekten Preisen
+        const itemsToProcess = validatedItems;
+
         // Initialize Stripe with secret
         const stripe = require('stripe')(stripeSecretKey.value());
 
-        // Create line items
-        const lineItems = items.map(item => ({
+        // Create line items mit validierten Preisen
+        const lineItems = itemsToProcess.map(item => ({
             price_data: {
                 currency: 'eur',
                 product_data: {
                     name: item.title,
                     description: `Karriaro - ${item.title}`
                 },
-                unit_amount: Math.round(item.price * 100)
+                unit_amount: Math.round(item.price * 100) // Jetzt garantiert Katalogpreis
             },
             quantity: 1
         }));
 
         // ========== METADATA-LIMIT FIX: Stripe hat 500 Zeichen pro Feld ==========
         // Wir speichern nur die essentiellen Daten (id, title gekürzt, price)
-        const compactItems = items.map(item => ({
+        // WICHTIG: Verwende validierte Items mit korrekten Preisen
+        const compactItems = itemsToProcess.map(item => ({
             id: item.id || item.title?.substring(0, 20),
             t: item.title?.substring(0, 50), // Titel gekürzt
             p: item.price
@@ -86,12 +286,15 @@ exports.createCheckoutSession = onRequest({
         // Falls immer noch zu lang, nur IDs und Preise speichern
         let itemsMetadata = JSON.stringify(compactItems);
         if (itemsMetadata.length > 450) {
-            const minimalItems = items.map(item => ({
+            const minimalItems = itemsToProcess.map(item => ({
                 t: item.title?.substring(0, 30),
                 p: item.price
             }));
             itemsMetadata = JSON.stringify(minimalItems);
         }
+
+        // Berechne erwarteten Gesamtbetrag für Validierung im Webhook
+        const expectedTotal = itemsToProcess.reduce((sum, item) => sum + item.price, 0);
 
         // Create checkout session
         const session = await stripe.checkout.sessions.create({
@@ -105,7 +308,8 @@ exports.createCheckoutSession = onRequest({
             metadata: {
                 userId: userId || '',
                 items: itemsMetadata,
-                itemsFull: JSON.stringify(items).substring(0, 450), // Backup der vollen Daten (gekürzt)
+                itemsFull: JSON.stringify(itemsToProcess).substring(0, 450), // Validierte Items
+                expectedTotal: expectedTotal.toString(), // Für Webhook-Validierung
                 createAccount: !userId ? 'true' : 'false' // Flag für Account-Erstellung
             },
             billing_address_collection: 'required',
@@ -162,6 +366,21 @@ exports.stripeWebhook = onRequest({
         const session = event.data.object;
 
         try {
+            // ========== SICHERHEIT: Betragsvalidierung ==========
+            const expectedTotal = parseFloat(session.metadata.expectedTotal || '0');
+            const actualTotal = session.amount_total / 100; // Stripe gibt Cents zurück
+
+            if (expectedTotal > 0 && Math.abs(expectedTotal - actualTotal) > 0.01) {
+                console.error('🚨 SICHERHEITSWARNUNG: Betragsabweichung!', {
+                    sessionId: session.id,
+                    expectedTotal,
+                    actualTotal,
+                    difference: actualTotal - expectedTotal
+                });
+                // Wir erstellen die Order trotzdem, aber mit Warnung
+                // In Produktion könnte man hier die Order zur manuellen Prüfung markieren
+            }
+
             // ========== DUPLIKAT-CHECK: Verhindere doppelte Order-Erstellung bei Webhook-Retries ==========
             const existingOrderQuery = await admin.firestore().collection('orders')
                 .where('stripeSessionId', '==', session.id)
@@ -330,6 +549,55 @@ exports.stripeWebhook = onRequest({
                 // Wir werfen den Fehler nicht, da die Bestellung trotzdem gespeichert wurde
             }
 
+            // ========== AUTOMATISCHER FRAGEBOGEN-VERSAND FÜR CV-BESTELLUNGEN ==========
+            const isCvOrder = parsedItems.some(item => {
+                const titleLower = (item.title || '').toLowerCase();
+                return titleLower.includes('cv') ||
+                       titleLower.includes('professional') ||
+                       titleLower.includes('executive') ||
+                       titleLower.includes('quick-check');
+            });
+
+            if (isCvOrder && customerEmail) {
+                try {
+                    console.log('📝 CV-Bestellung erkannt - sende Fragebogen-Link...');
+
+                    // Erstelle CV-Projekt in Firestore
+                    const cvProjectRef = await admin.firestore().collection('cvProjects').add({
+                        orderId: orderRef.id,
+                        userId: userId,
+                        customerEmail: customerEmail,
+                        customerName: customerName,
+                        status: 'questionnaire_pending',
+                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                        items: parsedItems
+                    });
+
+                    // Update Order mit CV-Projekt-Referenz und nächsten Schritten
+                    await admin.firestore().collection('orders').doc(orderRef.id).update({
+                        cvProjectId: cvProjectRef.id,
+                        nextStep: 'questionnaire',
+                        nextStepDescription: 'Bitte füllen Sie den Fragebogen aus',
+                        workflow: {
+                            currentStep: 1,
+                            steps: [
+                                { step: 1, name: 'Fragebogen ausfüllen', status: 'pending', icon: 'clipboard-list' },
+                                { step: 2, name: 'CV wird erstellt', status: 'waiting', icon: 'pen-fancy' },
+                                { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
+                                { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
+                            ]
+                        }
+                    });
+
+                    // Sende Fragebogen-Email
+                    await sendQuestionnaireEmailInternal(customerEmail, customerName, orderRef.id, cvProjectRef.id);
+                    console.log('✅ Fragebogen-Email gesendet an:', customerEmail);
+
+                } catch (cvError) {
+                    console.error('❌ Fehler beim Erstellen des CV-Projekts:', cvError);
+                }
+            }
+
         } catch (error) {
             console.error('Error processing checkout.session.completed:', error);
         }
@@ -338,10 +606,129 @@ exports.stripeWebhook = onRequest({
     res.status(200).json({ received: true });
 });
 
+// ========== INTERNE FUNKTION: FRAGEBOGEN EMAIL SENDEN ==========
+async function sendQuestionnaireEmailInternal(customerEmail, customerName, orderId, cvProjectId) {
+    const host = smtpHost.value() || 'smtp.strato.de';
+    const user = smtpUser.value();
+    const pass = smtpPass.value();
+
+    const transporter = nodemailer.createTransport({
+        host: host,
+        port: 465,
+        secure: true,
+        auth: { user, pass }
+    });
+
+    const questionnaireUrl = `https://karriaro.de/#questionnaire?order=${orderId}&project=${cvProjectId}`;
+
+    await transporter.sendMail({
+        from: `"Karriaro" <${user || 'noreply@karriaro.de'}>`,
+        to: customerEmail,
+        subject: 'Nächster Schritt: Ihr persönlicher CV-Fragebogen - Karriaro',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: 'Georgia', serif; line-height: 1.8; color: #333; margin: 0; padding: 0; background: #f5f5f5; }
+                    .container { max-width: 600px; margin: 0 auto; }
+                    .header { background: #0B1120; color: #C6A87C; padding: 40px 30px; text-align: center; }
+                    .header h1 { margin: 0; font-size: 28px; font-weight: 400; letter-spacing: 4px; }
+                    .content { padding: 40px 30px; background: white; }
+                    .step-box { background: linear-gradient(135deg, #0B1120 0%, #1a2940 100%); color: white; padding: 30px; border-radius: 12px; margin: 25px 0; text-align: center; }
+                    .step-number { background: #C6A87C; color: #0B1120; width: 50px; height: 50px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-bottom: 15px; }
+                    .btn { display: inline-block; background: #C6A87C; color: #0B1120; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 20px 0; }
+                    .btn:hover { background: #b8a06e; }
+                    .timeline { margin: 30px 0; }
+                    .timeline-item { display: flex; align-items: flex-start; margin: 15px 0; }
+                    .timeline-icon { width: 40px; height: 40px; background: #e8e8e8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; color: #666; flex-shrink: 0; }
+                    .timeline-icon.active { background: #C6A87C; color: #0B1120; }
+                    .timeline-text h4 { margin: 0 0 5px 0; color: #0B1120; }
+                    .timeline-text p { margin: 0; color: #666; font-size: 14px; }
+                    .footer { background: #0B1120; color: #888; padding: 30px; text-align: center; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>KARRIARO</h1>
+                        <p style="margin: 10px 0 0; opacity: 0.8; font-size: 14px;">CV-Manufaktur & Executive Mentoring</p>
+                    </div>
+                    <div class="content">
+                        <h2 style="color: #0B1120; margin-top: 0;">Hallo ${customerName || 'lieber Kunde'},</h2>
+
+                        <p>vielen Dank für Ihre Bestellung! Wir freuen uns, Sie auf Ihrem Karriereweg begleiten zu dürfen.</p>
+
+                        <div class="step-box">
+                            <div class="step-number">1</div>
+                            <h3 style="margin: 0 0 10px; font-size: 20px;">Jetzt: Fragebogen ausfüllen</h3>
+                            <p style="margin: 0 0 20px; opacity: 0.9;">Damit wir Ihren CV perfekt gestalten können, benötigen wir einige Informationen von Ihnen.</p>
+                            <a href="${questionnaireUrl}" class="btn">Fragebogen starten →</a>
+                        </div>
+
+                        <h3 style="color: #0B1120;">So geht es weiter:</h3>
+
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-icon active">1</div>
+                                <div class="timeline-text">
+                                    <h4>Fragebogen ausfüllen</h4>
+                                    <p>Erzählen Sie uns von Ihrer Karriere (ca. 15-20 Min.)</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-icon">2</div>
+                                <div class="timeline-text">
+                                    <h4>CV wird erstellt</h4>
+                                    <p>Unsere Experten erstellen Ihren maßgeschneiderten CV</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-icon">3</div>
+                                <div class="timeline-text">
+                                    <h4>Review & Feedback</h4>
+                                    <p>Sie erhalten Ihren Entwurf zur Prüfung</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-icon">4</div>
+                                <div class="timeline-text">
+                                    <h4>Fertigstellung</h4>
+                                    <p>Nach Ihrer Freigabe erhalten Sie alle Dokumente</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p style="color: #666; font-size: 14px;">
+                            <strong>Tipp:</strong> Je detaillierter Ihre Angaben, desto besser können wir Ihren CV gestalten.
+                            Nehmen Sie sich Zeit für den Fragebogen – es lohnt sich!
+                        </p>
+
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+                        <p>Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.</p>
+                        <p>Mit besten Grüßen,<br><strong>Ihr Karriaro Team</strong></p>
+                    </div>
+                    <div class="footer">
+                        <p>Karriaro | CV-Manufaktur & Executive Mentoring</p>
+                        <p>Diese E-Mail wurde automatisch generiert.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    });
+}
+
 // ========== SEND ORDER CONFIRMATION EMAIL WITH PDF ==========
 async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
-    // Generiere PDF-Rechnung
-    const pdfBuffer = await generateInvoicePDF(orderData, orderId, sessionId);
+    // Generiere alle PDFs parallel
+    const [pdfBuffer, agbBuffer, datenschutzBuffer] = await Promise.all([
+        generateInvoicePDF(orderData, orderId, sessionId),
+        generateAGBPDF(),
+        generateDatenschutzPDF()
+    ]);
 
     // Konfiguriere SMTP-Transport
     const host = smtpHost.value() || 'smtp.gmail.com';
@@ -433,10 +820,15 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
                             </tbody>
                         </table>
 
-                        <p>Im Anhang finden Sie Ihre Rechnung als PDF.</p>
+                        <p>Im Anhang finden Sie:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px; color: #374151;">
+                            <li>Ihre Rechnung als PDF</li>
+                            <li>Unsere Allgemeinen Geschäftsbedingungen (AGB)</li>
+                            <li>Unsere Datenschutzerklärung</li>
+                        </ul>
 
                         <p style="text-align: center; margin-top: 30px;">
-                            <a href="https://mukiz79.github.io/apex-portal/" class="btn">Bestellung im Dashboard ansehen</a>
+                            <a href="https://karriaro.de/" class="btn">Bestellung im Dashboard ansehen</a>
                         </p>
 
                         <p style="margin-top: 30px;">Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.</p>
@@ -454,6 +846,16 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
             {
                 filename: `Rechnung_${shortOrderId}.pdf`,
                 content: pdfBuffer,
+                contentType: 'application/pdf'
+            },
+            {
+                filename: 'AGB_Karriaro.pdf',
+                content: agbBuffer,
+                contentType: 'application/pdf'
+            },
+            {
+                filename: 'Datenschutzerklaerung_Karriaro.pdf',
+                content: datenschutzBuffer,
                 contentType: 'application/pdf'
             }
         ]
@@ -583,6 +985,106 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         doc.fontSize(8).font('Helvetica').fillColor('#999999')
            .text('Karriaro | Premium Career Services', 50, footerY + 10, { align: 'center', width: 495 })
            .text('Diese Rechnung wurde maschinell erstellt und ist ohne Unterschrift gültig.', 50, footerY + 22, { align: 'center', width: 495 });
+
+        doc.end();
+    });
+}
+
+// ========== GENERATE AGB PDF ==========
+function generateAGBPDF() {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        const chunks = [];
+
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        // Header
+        doc.fontSize(24).font('Helvetica-Bold').fillColor('#0B1120')
+           .text('Allgemeine Geschäftsbedingungen (AGB)', 50, 50);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666')
+           .text('Karriaro GmbH - Stand: Januar 2025', 50, 80);
+        doc.moveTo(50, 95).lineTo(545, 95).strokeColor('#C6A87C').lineWidth(2).stroke();
+
+        let yPos = 115;
+        const sections = [
+            { title: '§ 1 Geltungsbereich', content: '(1) Diese Allgemeinen Geschäftsbedingungen gelten für alle Verträge zwischen Karriaro GmbH (nachfolgend "Anbieter") und dem Kunden über die auf der Website karriaro.de angebotenen Dienstleistungen.\n\n(2) Abweichende Bedingungen des Kunden werden nicht anerkannt, es sei denn, der Anbieter stimmt ihrer Geltung ausdrücklich schriftlich zu.' },
+            { title: '§ 2 Vertragsgegenstand', content: '(1) Der Anbieter erbringt Dienstleistungen im Bereich Karriereberatung, CV-Erstellung und Executive Coaching.\n\n(2) Der genaue Umfang der Leistungen ergibt sich aus der jeweiligen Produktbeschreibung zum Zeitpunkt der Bestellung.' },
+            { title: '§ 3 Vertragsschluss', content: '(1) Die Darstellung der Produkte auf der Website stellt kein rechtlich bindendes Angebot, sondern eine Aufforderung zur Bestellung dar.\n\n(2) Mit dem Absenden der Bestellung gibt der Kunde ein verbindliches Angebot ab. Der Vertrag kommt zustande, wenn der Anbieter die Bestellung durch eine Auftragsbestätigung per E-Mail annimmt.' },
+            { title: '§ 4 Preise und Zahlung', content: '(1) Alle Preise sind Endpreise und enthalten die gesetzliche Mehrwertsteuer.\n\n(2) Die Zahlung erfolgt über den Zahlungsdienstleister Stripe. Es werden folgende Zahlungsarten akzeptiert: Kreditkarte (Visa, Mastercard, American Express), SEPA-Lastschrift, Apple Pay, Google Pay.\n\n(3) Die Zahlung ist sofort bei Bestellung fällig.' },
+            { title: '§ 5 Leistungserbringung', content: '(1) Die Bearbeitung beginnt nach Zahlungseingang und Erhalt aller erforderlichen Unterlagen vom Kunden.\n\n(2) Die voraussichtliche Bearbeitungszeit ist in der Produktbeschreibung angegeben und beginnt mit dem Eingang vollständiger Unterlagen.\n\n(3) Der Kunde ist verpflichtet, alle für die Leistungserbringung erforderlichen Informationen und Unterlagen rechtzeitig und vollständig zur Verfügung zu stellen.' },
+            { title: '§ 6 Zufriedenheitsgarantie', content: '(1) Der Anbieter bietet eine Zufriedenheitsgarantie. Ist der Kunde mit dem Ergebnis nicht zufrieden, wird die Leistung kostenlos überarbeitet.\n\n(2) Die Überarbeitung ist innerhalb von 14 Tagen nach Lieferung schriftlich anzufordern.\n\n(3) Der Anspruch auf Überarbeitung besteht für maximal zwei Korrekturschleifen.' },
+            { title: '§ 7 Widerrufsrecht', content: '(1) Verbraucher haben ein 14-tägiges Widerrufsrecht gemäß den gesetzlichen Bestimmungen.\n\n(2) Das Widerrufsrecht erlischt vorzeitig, wenn der Anbieter mit der Ausführung der Dienstleistung begonnen hat, nachdem der Kunde ausdrücklich zugestimmt und bestätigt hat, dass er sein Widerrufsrecht verliert.\n\n(3) Der Widerruf ist zu richten an: kontakt@karriaro.de' },
+            { title: '§ 8 Vertraulichkeit', content: '(1) Der Anbieter verpflichtet sich, alle vom Kunden übermittelten Informationen und Unterlagen streng vertraulich zu behandeln.\n\n(2) Auf Wunsch wird eine gesonderte Vertraulichkeitsvereinbarung (NDA) abgeschlossen.' },
+            { title: '§ 9 Urheberrecht', content: '(1) Mit vollständiger Bezahlung gehen alle Nutzungsrechte an den erstellten Dokumenten auf den Kunden über.\n\n(2) Der Kunde darf die Unterlagen für eigene Bewerbungszwecke uneingeschränkt nutzen.' },
+            { title: '§ 10 Haftung', content: '(1) Der Anbieter haftet unbeschränkt für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit sowie für vorsätzlich oder grob fahrlässig verursachte Schäden.\n\n(2) Der Anbieter garantiert nicht den Erfolg von Bewerbungen. Die erstellten Unterlagen erhöhen die Chancen, können aber keine Zusage garantieren.' },
+            { title: '§ 11 Schlussbestimmungen', content: '(1) Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.\n\n(2) Gerichtsstand für alle Streitigkeiten ist Berlin, sofern der Kunde Kaufmann ist.\n\n(3) Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.' }
+        ];
+
+        sections.forEach((section, index) => {
+            if (yPos > 700) {
+                doc.addPage();
+                yPos = 50;
+            }
+            doc.fontSize(11).font('Helvetica-Bold').fillColor('#0B1120').text(section.title, 50, yPos);
+            yPos += 18;
+            doc.fontSize(9).font('Helvetica').fillColor('#333333').text(section.content, 50, yPos, { width: 495, lineGap: 3 });
+            yPos = doc.y + 15;
+        });
+
+        // Footer
+        doc.fontSize(8).fillColor('#999999')
+           .text('Karriaro GmbH | karriaro.de | kontakt@karriaro.de', 50, 780, { align: 'center', width: 495 });
+
+        doc.end();
+    });
+}
+
+// ========== GENERATE DATENSCHUTZ PDF ==========
+function generateDatenschutzPDF() {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        const chunks = [];
+
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        // Header
+        doc.fontSize(24).font('Helvetica-Bold').fillColor('#0B1120')
+           .text('Datenschutzerklärung', 50, 50);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666')
+           .text('Karriaro GmbH - Stand: Januar 2025', 50, 80);
+        doc.moveTo(50, 95).lineTo(545, 95).strokeColor('#C6A87C').lineWidth(2).stroke();
+
+        let yPos = 115;
+        const sections = [
+            { title: '1. Datenschutz auf einen Blick', content: 'Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.' },
+            { title: '2. Verantwortliche Stelle', content: 'Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nKarriaro GmbH\nMusterstraße 1\n10115 Berlin\nE-Mail: kontakt@karriaro.de' },
+            { title: '3. Datenerfassung auf dieser Website', content: 'Cookies: Unsere Website verwendet Cookies. Das sind kleine Textdateien, die Ihr Webbrowser auf Ihrem Endgerät speichert. Cookies helfen uns dabei, unser Angebot nutzerfreundlicher und sicherer zu machen.\n\nServer-Log-Dateien: Der Provider der Seiten erhebt und speichert automatisch Informationen in sogenannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt.' },
+            { title: '4. Registrierung und Kundenkonto', content: 'Bei der Registrierung für ein Kundenkonto erheben wir folgende Daten:\n• E-Mail-Adresse\n• Vor- und Nachname\n• Telefonnummer (optional)\n• Unternehmen (optional)\n\nDiese Daten werden zur Vertragsabwicklung und zur Kommunikation mit Ihnen verwendet. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.' },
+            { title: '5. Zahlungsabwicklung', content: 'Wir nutzen den Zahlungsdienstleister Stripe für die sichere Abwicklung von Zahlungen. Bei der Zahlung werden folgende Daten an Stripe übermittelt:\n• Name und E-Mail-Adresse\n• Zahlungsinformationen\n• Rechnungsadresse\n\nStripe ist zertifiziert nach PCI-DSS Level 1 und verarbeitet Ihre Zahlungsdaten nach höchsten Sicherheitsstandards.' },
+            { title: '6. Cloud-Dienste', content: 'Wir nutzen Google Firebase für die Speicherung von Nutzerdaten und hochgeladenen Dokumenten. Firebase ist ein Dienst der Google Ireland Limited. Die Datenverarbeitung erfolgt auf Servern in der EU.' },
+            { title: '7. Ihre Rechte', content: 'Sie haben jederzeit das Recht:\n• Auskunft über Ihre gespeicherten Daten zu erhalten (Art. 15 DSGVO)\n• Berichtigung unrichtiger Daten zu verlangen (Art. 16 DSGVO)\n• Löschung Ihrer Daten zu verlangen (Art. 17 DSGVO)\n• Einschränkung der Verarbeitung zu verlangen (Art. 18 DSGVO)\n• Datenübertragbarkeit zu verlangen (Art. 20 DSGVO)\n• Widerspruch gegen die Verarbeitung einzulegen (Art. 21 DSGVO)\n\nZur Ausübung Ihrer Rechte wenden Sie sich bitte an: kontakt@karriaro.de' },
+            { title: '8. Datensicherheit', content: 'Diese Website nutzt aus Sicherheitsgründen eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von "http://" auf "https://" wechselt und an dem Schloss-Symbol.' },
+            { title: '9. Aufbewahrungsfristen', content: 'Wir speichern Ihre Daten nur so lange, wie es für die Erfüllung des jeweiligen Zwecks erforderlich ist oder gesetzliche Aufbewahrungsfristen bestehen (z.B. 10 Jahre für Rechnungen gemäß Handels- und Steuerrecht).' }
+        ];
+
+        sections.forEach((section, index) => {
+            if (yPos > 700) {
+                doc.addPage();
+                yPos = 50;
+            }
+            doc.fontSize(11).font('Helvetica-Bold').fillColor('#0B1120').text(section.title, 50, yPos);
+            yPos += 18;
+            doc.fontSize(9).font('Helvetica').fillColor('#333333').text(section.content, 50, yPos, { width: 495, lineGap: 3 });
+            yPos = doc.y + 15;
+        });
+
+        // Footer
+        doc.fontSize(8).fillColor('#999999')
+           .text('Karriaro GmbH | karriaro.de | kontakt@karriaro.de', 50, 780, { align: 'center', width: 495 });
 
         doc.end();
     });

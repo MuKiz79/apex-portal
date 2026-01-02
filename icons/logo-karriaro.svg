@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4AF37"/>
+      <stop offset="50%" style="stop-color:#C6A87C"/>
+      <stop offset="100%" style="stop-color:#B8956E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: Stilisierter Aufwärtspfeil/Karriereleiter -->
+  <g transform="translate(10, 10)">
+    <!-- Äußerer Kreis -->
+    <circle cx="30" cy="30" r="28" fill="none" stroke="url(#goldGradient)" stroke-width="2"/>
+
+    <!-- Aufwärtspfeil - symbolisiert Karriereaufstieg -->
+    <path d="M30 15 L42 32 L35 32 L35 45 L25 45 L25 32 L18 32 Z"
+          fill="url(#goldGradient)"/>
+  </g>
+
+  <!-- Text: KARRIARO -->
+  <text x="80" y="48"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="32"
+        font-weight="300"
+        letter-spacing="4"
+        fill="#0B1120">
+    KARRIARO
+  </text>
+
+  <!-- Subtile Unterlinie -->
+  <line x1="80" y1="58" x2="280" y2="58" stroke="url(#goldGradient)" stroke-width="1"/>
+</svg>

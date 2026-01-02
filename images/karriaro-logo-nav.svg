@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50">
+  <!-- KARRIARO Text -->
+  <text x="90" y="28"
+        font-family="'Cinzel', 'Times New Roman', Georgia, serif"
+        font-size="22"
+        font-weight="400"
+        letter-spacing="4"
+        fill="#C6A87C"
+        text-anchor="middle">
+    KARRIARO
+  </text>
+
+  <!-- Goldener Strich -->
+  <line x1="35" y1="38" x2="145" y2="38" stroke="#C6A87C" stroke-width="0.8"/>
+</svg>
