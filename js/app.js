@@ -12492,13 +12492,15 @@ export async function submitSmartQuestionnaire() {
                 cvStatus: 'data_received',
                 nextStep: 'cv_creation',
                 nextStepDescription: 'Ihr CV wird erstellt',
-                'workflow.currentStep': 2,
-                'workflow.steps': [
-                    { step: 1, name: 'Fragebogen ausfüllen', status: 'completed', icon: 'clipboard-list' },
-                    { step: 2, name: 'CV wird erstellt', status: 'pending', icon: 'pen-fancy' },
-                    { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
-                    { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
-                ]
+                workflow: {
+                    currentStep: 2,
+                    steps: [
+                        { step: 1, name: 'Fragebogen ausfüllen', status: 'completed', icon: 'clipboard-list' },
+                        { step: 2, name: 'CV wird erstellt', status: 'pending', icon: 'pen-fancy' },
+                        { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
+                        { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
+                    ]
+                }
             });
         }
 
