@@ -1921,8 +1921,10 @@ function renderSingleOrder(order, isExpanded = false) {
             <!-- Collapsible Order Details -->
             <div id="${orderId}" class="overflow-hidden transition-all duration-300 ${isExpanded ? '' : 'hidden'}">
                 <div class="px-4 pb-4">
-                    <!-- WORKFLOW - Nur für CV-Orders mit aktivem Workflow -->
-                    ${order.workflow && isCvOrder(order) ? renderWorkflowSteps(order) : ''}
+                    <!-- WORKFLOW - basierend auf Produkttyp -->
+                    ${isQuickCheck(order) ? renderQuickCheckWorkflow(order) : ''}
+                    ${isCvOrder(order) && !isQuickCheck(order) && order.workflow ? renderWorkflowSteps(order) : ''}
+                    ${hasCoachSession(order) ? renderMentoringWorkflow(order) : ''}
 
                     <!-- CV Download Section (wenn fertig) -->
                     ${renderCvDownloadSection(order)}
@@ -2470,6 +2472,308 @@ function renderWorkflowSteps(order) {
             ` : ''}
         </div>
     `;
+}
+
+// Render Mentoring Workflow (3 Schritte: Coach → Termin → Session)
+function renderMentoringWorkflow(order) {
+    if (!hasCoachSession(order)) return '';
+
+    // Bestimme aktuellen Schritt basierend auf Order-Status
+    let currentStep = 1;
+    let steps = [];
+
+    const hasCoach = !!order.assignedCoachId;
+    const hasProposals = order.appointmentProposals?.length > 0;
+    const hasConfirmedAppointment = order.appointment?.confirmed;
+    const appointmentPassed = hasConfirmedAppointment && new Date(order.appointment.datetime) < new Date();
+
+    if (appointmentPassed) {
+        currentStep = 3;
+        steps = [
+            { step: 1, name: 'Coach zugewiesen', status: 'completed', icon: 'user-tie' },
+            { step: 2, name: 'Termin bestätigt', status: 'completed', icon: 'calendar-check' },
+            { step: 3, name: 'Session abgeschlossen', status: 'completed', icon: 'video' }
+        ];
+    } else if (hasConfirmedAppointment) {
+        currentStep = 3;
+        steps = [
+            { step: 1, name: 'Coach zugewiesen', status: 'completed', icon: 'user-tie' },
+            { step: 2, name: 'Termin bestätigt', status: 'completed', icon: 'calendar-check' },
+            { step: 3, name: 'Session durchführen', status: 'pending', icon: 'video' }
+        ];
+    } else if (hasProposals) {
+        currentStep = 2;
+        steps = [
+            { step: 1, name: 'Coach zugewiesen', status: 'completed', icon: 'user-tie' },
+            { step: 2, name: 'Termin wählen', status: 'pending', icon: 'calendar-alt' },
+            { step: 3, name: 'Session durchführen', status: 'waiting', icon: 'video' }
+        ];
+    } else if (hasCoach) {
+        currentStep = 2;
+        steps = [
+            { step: 1, name: 'Coach zugewiesen', status: 'completed', icon: 'user-tie' },
+            { step: 2, name: 'Terminvorschläge erhalten', status: 'pending', icon: 'calendar-alt' },
+            { step: 3, name: 'Session durchführen', status: 'waiting', icon: 'video' }
+        ];
+    } else {
+        currentStep = 1;
+        steps = [
+            { step: 1, name: 'Coach wird zugewiesen', status: 'pending', icon: 'user-tie' },
+            { step: 2, name: 'Termin vereinbaren', status: 'waiting', icon: 'calendar-alt' },
+            { step: 3, name: 'Session durchführen', status: 'waiting', icon: 'video' }
+        ];
+    }
+
+    const completedSteps = steps.filter(s => s.status === 'completed').length;
+    const totalSteps = steps.length;
+    const progressPercent = Math.round((completedSteps / totalSteps) * 100);
+
+    // Status-Meldung basierend auf aktuellem Schritt
+    const statusMessage = getMentoringStatusMessage(order, currentStep, hasCoach, hasProposals, hasConfirmedAppointment);
+
+    return `
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-3 border border-blue-200">
+            <!-- Header mit Fortschritt -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-tie text-blue-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-brand-dark text-sm">Mentoring-Fortschritt</h4>
+                        <p class="text-xs text-gray-500">Schritt ${currentStep} von ${totalSteps}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-lg font-bold text-blue-600">${progressPercent}%</span>
+                </div>
+            </div>
+
+            <!-- Fortschrittsbalken -->
+            <div class="w-full h-2 bg-gray-200 rounded-full mb-4 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
+                     style="width: ${progressPercent}%"></div>
+            </div>
+
+            <!-- Schritte -->
+            <div class="space-y-2">
+                ${steps.map((step) => {
+                    const isCompleted = step.status === 'completed';
+                    const isPending = step.status === 'pending';
+                    const isCurrent = step.step === currentStep && isPending;
+
+                    let circleClasses = '';
+                    let textClasses = '';
+
+                    if (isCompleted) {
+                        circleClasses = 'bg-green-500 text-white';
+                        textClasses = 'text-green-700';
+                    } else if (isCurrent) {
+                        circleClasses = 'bg-blue-500 text-white shadow-lg ring-2 ring-blue-300';
+                        textClasses = 'text-brand-dark font-semibold';
+                    } else {
+                        circleClasses = 'bg-gray-200 text-gray-400';
+                        textClasses = 'text-gray-400';
+                    }
+
+                    return `
+                        <div class="flex items-center gap-2 ${isCurrent ? 'bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg p-2 border border-blue-300' : 'py-1'}">
+                            <div class="w-6 h-6 rounded-full ${circleClasses} flex items-center justify-center flex-shrink-0 transition-all">
+                                ${isCompleted
+                                    ? '<i class="fas fa-check text-[10px]"></i>'
+                                    : `<i class="fas fa-${step.icon} text-[10px]"></i>`
+                                }
+                            </div>
+                            <span class="text-sm ${textClasses} flex-1">${step.name}</span>
+                            ${isCurrent ? '<span class="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-medium">Aktuell</span>' : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- Status-Meldung -->
+            ${statusMessage ? `
+                <div class="mt-4 bg-white/70 rounded-lg p-3 border border-blue-100">
+                    <p class="text-xs text-gray-600 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                        <span>${statusMessage}</span>
+                    </p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Status-Meldung für Mentoring
+function getMentoringStatusMessage(order, currentStep, hasCoach, hasProposals, hasConfirmedAppointment) {
+    if (hasConfirmedAppointment) {
+        const appointmentDate = new Date(order.appointment.datetime);
+        const now = new Date();
+        if (appointmentDate > now) {
+            const diffMs = appointmentDate - now;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffDays > 0) {
+                return `Ihre Session findet in ${diffDays} Tag${diffDays > 1 ? 'en' : ''} statt. Der Meeting-Button erscheint 15 Minuten vor dem Termin.`;
+            } else if (diffHours > 0) {
+                return `Ihre Session findet in ${diffHours} Stunde${diffHours > 1 ? 'n' : ''} statt. Der Meeting-Button erscheint 15 Minuten vor dem Termin.`;
+            } else {
+                return 'Ihre Session beginnt gleich! Der Meeting-Button sollte bereits sichtbar sein.';
+            }
+        }
+        return 'Session abgeschlossen. Vielen Dank für Ihre Teilnahme!';
+    }
+
+    if (hasProposals && order.appointmentStatus === 'pending') {
+        return 'Bitte wählen Sie einen der vorgeschlagenen Termine aus.';
+    }
+
+    if (hasCoach) {
+        return 'Ihr Coach wurde zugewiesen. Sie erhalten in Kürze Terminvorschläge per E-Mail.';
+    }
+
+    return 'Wir weisen Ihnen einen passenden Coach zu. Sie werden per E-Mail benachrichtigt.';
+}
+
+// Prüft ob es ein Quick-Check ist
+function isQuickCheck(order) {
+    return order.items?.some(item =>
+        item.title?.toLowerCase().includes('quick-check') ||
+        item.title?.toLowerCase().includes('quickcheck')
+    );
+}
+
+// Quick-Check Workflow (2 Schritte: Upload → Feedback-Call)
+function renderQuickCheckWorkflow(order) {
+    if (!isQuickCheck(order)) return '';
+
+    // Bestimme Status
+    const hasUploadedDocs = order.cvStatus === 'data_received' || order.questionnaireSubmittedAt;
+    const hasAppointment = order.appointment?.confirmed;
+    const appointmentPassed = hasAppointment && new Date(order.appointment.datetime) < new Date();
+
+    let currentStep = 1;
+    let steps = [];
+
+    if (appointmentPassed) {
+        currentStep = 2;
+        steps = [
+            { step: 1, name: 'Dokumente hochgeladen', status: 'completed', icon: 'file-upload' },
+            { step: 2, name: 'Feedback-Call abgeschlossen', status: 'completed', icon: 'video' }
+        ];
+    } else if (hasAppointment) {
+        currentStep = 2;
+        steps = [
+            { step: 1, name: 'Dokumente hochgeladen', status: 'completed', icon: 'file-upload' },
+            { step: 2, name: 'Feedback-Call', status: 'pending', icon: 'video' }
+        ];
+    } else if (hasUploadedDocs) {
+        currentStep = 2;
+        steps = [
+            { step: 1, name: 'Dokumente hochgeladen', status: 'completed', icon: 'file-upload' },
+            { step: 2, name: 'Feedback-Call vereinbaren', status: 'pending', icon: 'calendar-alt' }
+        ];
+    } else {
+        currentStep = 1;
+        steps = [
+            { step: 1, name: 'Dokumente hochladen', status: 'pending', icon: 'file-upload' },
+            { step: 2, name: 'Feedback-Call', status: 'waiting', icon: 'video' }
+        ];
+    }
+
+    const completedSteps = steps.filter(s => s.status === 'completed').length;
+    const totalSteps = steps.length;
+    const progressPercent = Math.round((completedSteps / totalSteps) * 100);
+
+    // Express-Hinweis
+    const isExpress = order.items?.some(item => item.title?.toLowerCase().includes('express'));
+
+    return `
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 mb-3 border border-purple-200">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-bolt text-purple-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-brand-dark text-sm">Quick-Check ${isExpress ? '(Express)' : ''}</h4>
+                        <p class="text-xs text-gray-500">Schritt ${currentStep} von ${totalSteps}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-lg font-bold text-purple-600">${progressPercent}%</span>
+                    ${isExpress ? '<p class="text-xs text-purple-500">24h Bearbeitung</p>' : ''}
+                </div>
+            </div>
+
+            <!-- Fortschrittsbalken -->
+            <div class="w-full h-2 bg-gray-200 rounded-full mb-4 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                     style="width: ${progressPercent}%"></div>
+            </div>
+
+            <!-- Schritte -->
+            <div class="space-y-2">
+                ${steps.map((step) => {
+                    const isCompleted = step.status === 'completed';
+                    const isPending = step.status === 'pending';
+                    const isCurrent = step.step === currentStep && isPending;
+
+                    let circleClasses = '';
+                    let textClasses = '';
+
+                    if (isCompleted) {
+                        circleClasses = 'bg-green-500 text-white';
+                        textClasses = 'text-green-700';
+                    } else if (isCurrent) {
+                        circleClasses = 'bg-purple-500 text-white shadow-lg ring-2 ring-purple-300';
+                        textClasses = 'text-brand-dark font-semibold';
+                    } else {
+                        circleClasses = 'bg-gray-200 text-gray-400';
+                        textClasses = 'text-gray-400';
+                    }
+
+                    return `
+                        <div class="flex items-center gap-2 ${isCurrent ? 'bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-2 border border-purple-300' : 'py-1'}">
+                            <div class="w-6 h-6 rounded-full ${circleClasses} flex items-center justify-center flex-shrink-0 transition-all">
+                                ${isCompleted
+                                    ? '<i class="fas fa-check text-[10px]"></i>'
+                                    : `<i class="fas fa-${step.icon} text-[10px]"></i>`
+                                }
+                            </div>
+                            <span class="text-sm ${textClasses} flex-1">${step.name}</span>
+                            ${isCurrent ? '<span class="text-[10px] bg-purple-500 text-white px-2 py-0.5 rounded-full font-medium">Aktuell</span>' : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- Status-Meldung -->
+            <div class="mt-4 bg-white/70 rounded-lg p-3 border border-purple-100">
+                <p class="text-xs text-gray-600 flex items-start gap-2">
+                    <i class="fas fa-info-circle text-purple-500 mt-0.5"></i>
+                    <span>${getQuickCheckStatusMessage(order, hasUploadedDocs, hasAppointment, appointmentPassed)}</span>
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+// Status-Meldung für Quick-Check
+function getQuickCheckStatusMessage(order, hasUploadedDocs, hasAppointment, appointmentPassed) {
+    if (appointmentPassed) {
+        return 'Ihr Quick-Check ist abgeschlossen. Vielen Dank!';
+    }
+    if (hasAppointment) {
+        const appointmentDate = new Date(order.appointment.datetime);
+        return `Ihr Feedback-Call ist am ${appointmentDate.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })} um ${appointmentDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr.`;
+    }
+    if (hasUploadedDocs) {
+        return 'Dokumente erhalten! Wir analysieren Ihren Lebenslauf und senden Ihnen Terminvorschläge für den Feedback-Call.';
+    }
+    return 'Laden Sie Ihren aktuellen Lebenslauf hoch, damit wir ihn analysieren können.';
 }
 
 // Fragebogen öffnen
