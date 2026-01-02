@@ -1412,21 +1412,34 @@ export async function loadUserOrders(state) {
     }
 
     try {
-        // Versuche zuerst mit userId
-        let ordersQuery = query(
+        // OPTIMIERUNG: Orders und CV Projects PARALLEL laden
+        const ordersQuery = query(
             collection(db, "orders"),
             where("userId", "==", state.user.uid)
         );
+        const cvProjectsQuery = query(
+            collection(db, "cvProjects"),
+            where("userId", "==", state.user.uid)
+        );
 
-        let snapshot = await getDocs(ordersQuery);
+        // Beide Queries parallel starten
+        const [ordersSnapshot, cvProjectsSnapshot] = await Promise.all([
+            getDocs(ordersQuery),
+            getDocs(cvProjectsQuery).catch(e => {
+                logger.warn('Could not load CV projects:', e);
+                return { forEach: () => {} }; // Empty fallback
+            })
+        ]);
+
+        let snapshot = ordersSnapshot;
 
         // Falls keine Bestellungen gefunden, versuche auch mit customerEmail
         if (snapshot.empty && state.user.email) {
-            ordersQuery = query(
+            const emailQuery = query(
                 collection(db, "orders"),
                 where("customerEmail", "==", state.user.email)
             );
-            snapshot = await getDocs(ordersQuery);
+            snapshot = await getDocs(emailQuery);
         }
 
         const orders = snapshot.docs.map(doc => ({
@@ -1434,21 +1447,12 @@ export async function loadUserOrders(state) {
             ...doc.data()
         }));
 
-        // Load CV projects for this user to merge with orders
+        // Build CV projects map from parallel loaded data
         let cvProjectsMap = {};
-        try {
-            const cvProjectsQuery = query(
-                collection(db, "cvProjects"),
-                where("userId", "==", state.user.uid)
-            );
-            const cvProjectsSnapshot = await getDocs(cvProjectsQuery);
-            cvProjectsSnapshot.forEach(docSnap => {
-                const project = { id: docSnap.id, ...docSnap.data() };
-                cvProjectsMap[project.orderId] = project;
-            });
-        } catch (e) {
-            logger.warn('Could not load CV projects:', e);
-        }
+        cvProjectsSnapshot.forEach(docSnap => {
+            const project = { id: docSnap.id, ...docSnap.data() };
+            cvProjectsMap[project.orderId] = project;
+        });
 
         // Merge orders with CV project data
         const ordersWithCvData = orders.map(order => {
