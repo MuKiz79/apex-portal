@@ -1630,7 +1630,7 @@ export function renderOrders(orders) {
         <div class="flex border-b border-gray-200 mb-0">
             <button id="tab-active-orders" onclick="app.switchOrderTab('active')"
                     class="flex-1 py-3 px-4 text-sm font-semibold text-brand-dark border-b-2 border-brand-gold bg-brand-gold/5 transition">
-                <i class="fas fa-spinner mr-2"></i>Aktiv
+                <i class="fas fa-hourglass-half mr-2"></i>Aktiv
                 <span class="ml-1 bg-brand-gold text-white text-xs px-2 py-0.5 rounded-full">${activeOrders.length}</span>
             </button>
             <button id="tab-completed-orders" onclick="app.switchOrderTab('completed')"
