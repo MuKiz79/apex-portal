@@ -1780,14 +1780,31 @@ export function renderOrders(orders) {
     const activeOrders = orders.filter(o => !isOrderCompleted(o));
     const completedOrders = orders.filter(o => isOrderCompleted(o));
 
-    // Sort active orders: those needing action first
+    // Sort active orders:
+    // 1. Upcoming appointments (within 24h) first
+    // 2. Then those needing customer action
+    // 3. Then by date (newest first)
+    const now = Date.now();
+    const in24h = now + 24 * 60 * 60 * 1000;
+
     activeOrders.sort((a, b) => {
+        // Check for upcoming appointments (within 24h)
+        const aAppointment = a.appointment?.datetime?.seconds ? a.appointment.datetime.seconds * 1000 : 0;
+        const bAppointment = b.appointment?.datetime?.seconds ? b.appointment.datetime.seconds * 1000 : 0;
+        const aUpcoming = aAppointment > now && aAppointment < in24h;
+        const bUpcoming = bAppointment > now && bAppointment < in24h;
+
+        if (aUpcoming && !bUpcoming) return -1;
+        if (!aUpcoming && bUpcoming) return 1;
+
+        // Then by action needed
         const aNeeds = orderNeedsAction(a) ? 0 : 1;
         const bNeeds = orderNeedsAction(b) ? 0 : 1;
         if (aNeeds !== bNeeds) return aNeeds - bNeeds;
+
         // Then by date (newest first)
-        const aDate = a.date?.seconds || 0;
-        const bDate = b.date?.seconds || 0;
+        const aDate = a.date?.seconds || a.date?.getTime?.() / 1000 || 0;
+        const bDate = b.date?.seconds || b.date?.getTime?.() / 1000 || 0;
         return bDate - aDate;
     });
 
@@ -12481,27 +12498,40 @@ export async function submitSmartQuestionnaire() {
         }
 
         // Update cvProjects Collection
+        console.log('[Smart Submit] Updating cvProjects:', cvQuestionnaireProjectId);
         await updateDoc(doc(db, 'cvProjects', cvQuestionnaireProjectId), updateData);
+        console.log('[Smart Submit] cvProjects updated successfully');
 
         // Auch die Order aktualisieren (für Dashboard-Workflow-Anzeige)
         const orderId = sessionStorage.getItem('questionnaire_orderId');
+        console.log('[Smart Submit] Order ID from session:', orderId);
+
         if (orderId) {
-            await updateDoc(doc(db, 'orders', orderId), {
-                questionnaire: updateData.questionnaire,
-                questionnaireSubmittedAt: serverTimestamp(),
-                cvStatus: 'data_received',
-                nextStep: 'cv_creation',
-                nextStepDescription: 'Ihr CV wird erstellt',
-                workflow: {
-                    currentStep: 2,
-                    steps: [
-                        { step: 1, name: 'Fragebogen ausfüllen', status: 'completed', icon: 'clipboard-list' },
-                        { step: 2, name: 'CV wird erstellt', status: 'pending', icon: 'pen-fancy' },
-                        { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
-                        { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
-                    ]
-                }
-            });
+            try {
+                console.log('[Smart Submit] Updating order with workflow...');
+                await updateDoc(doc(db, 'orders', orderId), {
+                    questionnaire: updateData.questionnaire,
+                    questionnaireSubmittedAt: serverTimestamp(),
+                    cvStatus: 'data_received',
+                    nextStep: 'cv_creation',
+                    nextStepDescription: 'Ihr CV wird erstellt',
+                    workflow: {
+                        currentStep: 2,
+                        steps: [
+                            { step: 1, name: 'Fragebogen ausfüllen', status: 'completed', icon: 'clipboard-list' },
+                            { step: 2, name: 'CV wird erstellt', status: 'pending', icon: 'pen-fancy' },
+                            { step: 3, name: 'Review & Feedback', status: 'waiting', icon: 'comments' },
+                            { step: 4, name: 'Fertigstellung', status: 'waiting', icon: 'check-circle' }
+                        ]
+                    }
+                });
+                console.log('[Smart Submit] Order updated successfully');
+            } catch (orderError) {
+                console.error('[Smart Submit] Error updating order:', orderError);
+                // Continue anyway - cvProject was updated
+            }
+        } else {
+            console.warn('[Smart Submit] No orderId found in session storage');
         }
 
         // Show success
@@ -12539,10 +12569,10 @@ function showSmartSubmitSuccess() {
                         <li>• Sie erhalten Ihren fertigen Lebenslauf per E-Mail</li>
                     </ul>
                 </div>
-                <a href="/" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition">
-                    <i class="fas fa-home"></i>
-                    Zur Startseite
-                </a>
+                <button onclick="app.navigateTo('dashboard'); app.loadUserOrders(app.state);" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-dark rounded-lg font-medium hover:bg-yellow-500 transition">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Zum Dashboard
+                </button>
             </div>
         </div>
     `;
