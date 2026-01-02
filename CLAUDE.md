@@ -1,4 +1,4 @@
-# APEX Executive - Claude Context File
+# Karriaro - Claude Context File
 
 Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuellen Projektstand und wichtige Informationen.
 
@@ -6,10 +6,10 @@ Diese Datei dient als Kontext für Claude Code Sessions. Sie enthält den aktuel
 
 ## Projekt-Schnellübersicht
 
-**Was ist APEX Executive?**
+**Was ist Karriaro?**
 - Premium CV-Erstellung und Executive Mentoring Plattform
 - Single Page Application (SPA) mit Firebase Backend
-- Domain: https://apex-executive.de
+- Domain: https://karriaro.de
 
 **Tech-Stack:**
 - Frontend: HTML, Tailwind CSS, Vanilla JS (ES6 Modules)
@@ -118,14 +118,16 @@ cvProjects/      # Kunden CV-Projekte (Fragebogen, Dokumente)
 ## Letzte Änderungen
 
 ### 02.01.2025
+- **Domain-Migration:** Von apex-executive.de zu karriaro.de
+  - Alle E-Mail-Adressen aktualisiert (@karriaro.de)
+  - Markenname: APEX Executive → Karriaro
+  - Order ID Prefix: APEX- → KAR-
+  - PWA-Name und Service Worker aktualisiert
+  - Rechtliche Texte (Impressum, Datenschutz, AGB) aktualisiert
 - **Landing Page Optimierungen:**
   - Hero Section: "CV-Manufaktur | Executive Mentoring - Ihre zwei Säulen zum Karriereerfolg"
   - Testimonials komplett überarbeitet (Manufaktur-Fokus, Anti-KI-Messaging)
-  - Neuer Bereich "Wann brauche ich einen Mentor?" mit 4 Use Cases:
-    - Gehaltsverhandlung
-    - Jobwechsel planen
-    - Erste Führungsrolle
-    - Strategisches Sparring
+  - Neuer Bereich "Wann brauche ich einen Mentor?" mit 4 Use Cases
 - **Admin Template-Verwaltung:**
   - Toggle zum Aktivieren/Deaktivieren von Templates
   - Persistierung in Firestore (`settings/templateStatus`)
@@ -216,3 +218,8 @@ cd ..
 - **Firebase Console:** https://console.firebase.google.com/project/apex-executive
 - **Stripe Dashboard:** https://dashboard.stripe.com
 - **Dokumentation:** DOKUMENTATION.md (im Projektverzeichnis)
+
+## Hinweis zur Migration
+
+**Firebase Project ID bleibt "apex-executive"** - kann nicht geändert werden.
+Cloud Functions URLs bleiben: `us-central1-apex-executive.cloudfunctions.net`

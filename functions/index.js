@@ -68,7 +68,7 @@ exports.createCheckoutSession = onRequest({
                 currency: 'eur',
                 product_data: {
                     name: item.title,
-                    description: `APEX Executive - ${item.title}`
+                    description: `Karriaro - ${item.title}`
                 },
                 unit_amount: Math.round(item.price * 100)
             },
@@ -175,7 +175,7 @@ exports.stripeWebhook = onRequest({
 
             let userId = session.client_reference_id;
             const customerEmail = session.customer_email;
-            const customerName = session.customer_details?.name || 'APEX User';
+            const customerName = session.customer_details?.name || 'Karriaro User';
             const createAccount = session.metadata.createAccount === 'true';
 
             // Automatische Account-Erstellung für neue Kunden
@@ -229,16 +229,16 @@ exports.stripeWebhook = onRequest({
                                 });
 
                                 await transporter.sendMail({
-                                    from: '"APEX Executive" <noreply@apex-executive.de>',
+                                    from: '"Karriaro" <noreply@karriaro.de>',
                                     to: customerEmail,
-                                    subject: 'Willkommen bei APEX Executive - Bitte Passwort festlegen',
+                                    subject: 'Willkommen bei Karriaro - Bitte Passwort festlegen',
                                     html: `
                                         <div style="font-family: 'Georgia', serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; padding: 40px; color: #fff;">
                                             <div style="text-align: center; margin-bottom: 30px;">
-                                                <h1 style="color: #C9B99A; font-size: 28px; margin: 0;">APEX Executive</h1>
+                                                <h1 style="color: #C9B99A; font-size: 28px; margin: 0;">Karriaro</h1>
                                             </div>
                                             <div style="background: white; padding: 30px; border-radius: 8px; color: #333;">
-                                                <h2 style="color: #1a1a2e; margin-top: 0;">Willkommen bei APEX Executive!</h2>
+                                                <h2 style="color: #1a1a2e; margin-top: 0;">Willkommen bei Karriaro!</h2>
                                                 <p>Vielen Dank für Ihre Bestellung. Wir haben automatisch ein Konto für Sie erstellt.</p>
                                                 <p>Bitte klicken Sie auf den folgenden Button, um Ihr Passwort festzulegen:</p>
                                                 <div style="text-align: center; margin: 30px 0;">
@@ -247,7 +247,7 @@ exports.stripeWebhook = onRequest({
                                                 <p style="color: #666; font-size: 14px;">Oder kopieren Sie diesen Link in Ihren Browser:<br><a href="${resetLink}" style="color: #1a1a2e;">${resetLink}</a></p>
                                                 <p>Sobald Ihr Passwort festgelegt ist, können Sie sich in Ihrem Dashboard einloggen und Ihre Bestellungen einsehen.</p>
                                                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                                                <p style="color: #666; font-size: 12px;">Bei Fragen stehen wir Ihnen gerne zur Verfügung: concierge@apex-executive.de</p>
+                                                <p style="color: #666; font-size: 12px;">Bei Fragen stehen wir Ihnen gerne zur Verfügung: concierge@karriaro.de</p>
                                             </div>
                                         </div>
                                     `
@@ -288,7 +288,7 @@ exports.stripeWebhook = onRequest({
                 try {
                     parsedItems = JSON.parse(session.metadata.itemsFull || '[]');
                 } catch (e) {
-                    parsedItems = [{ title: 'APEX Bestellung', price: session.amount_total / 100 }];
+                    parsedItems = [{ title: 'Karriaro Bestellung', price: session.amount_total / 100 }];
                 }
             }
 
@@ -370,12 +370,12 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
 
     console.log(`Email configured: host=${host}, user=${user ? user.substring(0, 5) + '***' : 'NOT SET'}`);
 
-    const shortOrderId = 'APEX-' + sessionId.slice(-8).toUpperCase();
+    const shortOrderId = 'KAR-' + sessionId.slice(-8).toUpperCase();
 
     const mailOptions = {
-        from: `"APEX Executive" <${smtpUser.value() || 'noreply@apex-executive.de'}>`,
+        from: `"Karriaro" <${smtpUser.value() || 'noreply@karriaro.de'}>`,
         to: orderData.customerEmail,
-        subject: `Bestellbestätigung ${shortOrderId} - APEX Executive`,
+        subject: `Bestellbestätigung ${shortOrderId} - Karriaro`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -400,7 +400,7 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>APEX EXECUTIVE</h1>
+                        <h1>KARRIARO</h1>
                     </div>
                     <div class="content">
                         <h2>Vielen Dank für Ihre Bestellung!</h2>
@@ -440,10 +440,10 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
                         </p>
 
                         <p style="margin-top: 30px;">Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.</p>
-                        <p>Mit besten Grüßen,<br><strong>Ihr APEX Executive Team</strong></p>
+                        <p>Mit besten Grüßen,<br><strong>Ihr Karriaro Team</strong></p>
                     </div>
                     <div class="footer">
-                        <p>APEX Executive | Premium Career Services</p>
+                        <p>Karriaro | Premium Career Services</p>
                         <p>Diese E-Mail wurde automatisch generiert.</p>
                     </div>
                 </div>
@@ -472,7 +472,7 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        const shortOrderId = 'APEX-' + sessionId.slice(-8).toUpperCase();
+        const shortOrderId = 'KAR-' + sessionId.slice(-8).toUpperCase();
         const invoiceDate = new Date().toLocaleDateString('de-DE', {
             day: '2-digit',
             month: '2-digit',
@@ -481,7 +481,7 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         const invoiceNumber = `RE-${new Date().getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
 
         // Header
-        doc.fontSize(24).font('Helvetica-Bold').text('APEX EXECUTIVE', 50, 50);
+        doc.fontSize(24).font('Helvetica-Bold').text('KARRIARO', 50, 50);
         doc.fontSize(10).font('Helvetica').fillColor('#666666')
            .text('Premium Career Services', 50, 80);
 
@@ -581,7 +581,7 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         doc.moveTo(50, footerY).lineTo(545, footerY).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
 
         doc.fontSize(8).font('Helvetica').fillColor('#999999')
-           .text('APEX Executive | Premium Career Services', 50, footerY + 10, { align: 'center', width: 495 })
+           .text('Karriaro | Premium Career Services', 50, footerY + 10, { align: 'center', width: 495 })
            .text('Diese Rechnung wurde maschinell erstellt und ist ohne Unterschrift gültig.', 50, footerY + 22, { align: 'center', width: 495 });
 
         doc.end();
@@ -654,8 +654,8 @@ exports.sendAppointmentProposalEmail = onRequest({
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">APEX</div>
-            <div class="logo-sub">Executive</div>
+            <div class="logo">KARRIARO</div>
+            <div class="logo-sub">Premium Career Services</div>
         </div>
 
         <div class="content">
@@ -669,7 +669,7 @@ exports.sendAppointmentProposalEmail = onRequest({
             </table>
 
             <p style="text-align: center;">
-                <a href="https://apex-executive.de/#dashboard" class="cta-button">
+                <a href="https://karriaro.de/#dashboard" class="cta-button">
                     Termin auswählen
                 </a>
             </p>
@@ -681,7 +681,7 @@ exports.sendAppointmentProposalEmail = onRequest({
         </div>
 
         <div class="footer">
-            <p>APEX Executive | Premium Career Services</p>
+            <p>Karriaro | Premium Career Services</p>
             <p>Diese E-Mail wurde automatisch gesendet.</p>
         </div>
     </div>
@@ -689,9 +689,9 @@ exports.sendAppointmentProposalEmail = onRequest({
 </html>`;
 
         await transporter.sendMail({
-            from: '"APEX Executive" <noreply@apex-executive.de>',
+            from: '"Karriaro" <noreply@karriaro.de>',
             to: customerEmail,
-            subject: 'Terminvorschläge für Ihr Coaching | APEX Executive',
+            subject: 'Terminvorschläge für Ihr Coaching | Karriaro',
             html: emailHtml
         });
 
@@ -743,8 +743,8 @@ exports.notifyAdminAppointmentAccepted = onRequest({
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
-        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
-        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">KARRIARO</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">PREMIUM CAREER SERVICES</div>
     </div>
     <div style="padding: 30px 0;">
         <h2 style="color: #22c55e; margin-bottom: 10px;">✅ Termin bestätigt!</h2>
@@ -755,7 +755,7 @@ exports.notifyAdminAppointmentAccepted = onRequest({
             <p style="margin: 5px 0;"><strong>Termin:</strong> ${dateStr} um ${timeStr} Uhr</p>
         </div>
         <p style="text-align: center;">
-            <a href="https://apex-executive.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+            <a href="https://karriaro.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
                 Zum Admin-Bereich
             </a>
         </p>
@@ -764,9 +764,9 @@ exports.notifyAdminAppointmentAccepted = onRequest({
 </html>`;
 
         await transporter.sendMail({
-            from: '"APEX Executive" <noreply@apex-executive.de>',
+            from: '"Karriaro" <noreply@karriaro.de>',
             to: ADMIN_EMAIL,
-            subject: `✅ Termin bestätigt von ${customerName} | APEX Executive`,
+            subject: `✅ Termin bestätigt von ${customerName} | Karriaro`,
             html: emailHtml
         });
 
@@ -810,8 +810,8 @@ exports.notifyAdminAppointmentDeclined = onRequest({
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
-        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
-        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">KARRIARO</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">PREMIUM CAREER SERVICES</div>
     </div>
     <div style="padding: 30px 0;">
         <h2 style="color: #f59e0b; margin-bottom: 10px;">⏳ Neue Terminvorschläge benötigt</h2>
@@ -823,7 +823,7 @@ exports.notifyAdminAppointmentDeclined = onRequest({
         </div>
         <p>Bitte senden Sie dem Kunden neue Terminvorschläge.</p>
         <p style="text-align: center;">
-            <a href="https://apex-executive.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+            <a href="https://karriaro.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
                 Neue Termine vorschlagen
             </a>
         </p>
@@ -832,9 +832,9 @@ exports.notifyAdminAppointmentDeclined = onRequest({
 </html>`;
 
         await transporter.sendMail({
-            from: '"APEX Executive" <noreply@apex-executive.de>',
+            from: '"Karriaro" <noreply@karriaro.de>',
             to: ADMIN_EMAIL,
-            subject: `⏳ Neue Terminvorschläge benötigt von ${customerName} | APEX Executive`,
+            subject: `⏳ Neue Terminvorschläge benötigt von ${customerName} | Karriaro`,
             html: emailHtml
         });
 
@@ -877,8 +877,8 @@ exports.notifyCustomerDocumentReady = onRequest({
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
-        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
-        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">KARRIARO</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">PREMIUM CAREER SERVICES</div>
     </div>
     <div style="padding: 30px 0;">
         <h2 style="color: #22c55e; margin-bottom: 10px;">📄 Neues Dokument für Sie!</h2>
@@ -889,23 +889,23 @@ exports.notifyCustomerDocumentReady = onRequest({
         </div>
         <p>Sie können das Dokument jetzt in Ihrem Dashboard unter "Ihre Ergebnisse" herunterladen.</p>
         <p style="text-align: center;">
-            <a href="https://apex-executive.de/#dashboard" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+            <a href="https://karriaro.de/#dashboard" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
                 Zum Dashboard
             </a>
         </p>
         <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
             Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.<br>
             Herzliche Grüße,<br>
-            <strong>Ihr APEX Executive Team</strong>
+            <strong>Ihr Karriaro Team</strong>
         </p>
     </div>
 </body>
 </html>`;
 
         await transporter.sendMail({
-            from: '"APEX Executive" <noreply@apex-executive.de>',
+            from: '"Karriaro" <noreply@karriaro.de>',
             to: customerEmail,
-            subject: '📄 Neues Dokument für Sie bereit | APEX Executive',
+            subject: '📄 Neues Dokument für Sie bereit | Karriaro',
             html: emailHtml
         });
 
@@ -949,8 +949,8 @@ exports.notifyAdminDocumentUploaded = onRequest({
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #C9B99A;">
-        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">APEX</div>
-        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">EXECUTIVE</div>
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a2e; letter-spacing: 3px;">KARRIARO</div>
+        <div style="font-size: 10px; color: #C9B99A; letter-spacing: 2px;">PREMIUM CAREER SERVICES</div>
     </div>
     <div style="padding: 30px 0;">
         <h2 style="color: #3b82f6; margin-bottom: 10px;">📤 Neues Dokument hochgeladen</h2>
@@ -961,7 +961,7 @@ exports.notifyAdminDocumentUploaded = onRequest({
             <p style="margin: 5px 0;"><strong>Dokument:</strong> ${documentName}</p>
         </div>
         <p style="text-align: center;">
-            <a href="https://apex-executive.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
+            <a href="https://karriaro.de/#admin" style="display: inline-block; background: #C9B99A; color: #1a1a2e; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px;">
                 Im Admin-Bereich ansehen
             </a>
         </p>
@@ -970,9 +970,9 @@ exports.notifyAdminDocumentUploaded = onRequest({
 </html>`;
 
         await transporter.sendMail({
-            from: '"APEX Executive" <noreply@apex-executive.de>',
+            from: '"Karriaro" <noreply@karriaro.de>',
             to: ADMIN_EMAIL,
-            subject: `📤 Neues Dokument von ${customerName} | APEX Executive`,
+            subject: `📤 Neues Dokument von ${customerName} | Karriaro`,
             html: emailHtml
         });
 
@@ -1084,7 +1084,7 @@ exports.notifyMentorAssignment = onRequest({
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Neue Session zugewiesen - APEX Executive</title>
+    <title>Neue Session zugewiesen - Karriaro</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4;">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
@@ -1095,7 +1095,7 @@ exports.notifyMentorAssignment = onRequest({
                     <tr>
                         <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 40px 30px;">
                             <h1 style="color: #C9B99A; font-size: 24px; margin: 0; font-family: Georgia, serif;">Neue Session zugewiesen</h1>
-                            <p style="color: #ffffff; font-size: 14px; margin: 10px 0 0;">APEX Executive Mentoring</p>
+                            <p style="color: #ffffff; font-size: 14px; margin: 10px 0 0;">Karriaro Mentoring</p>
                         </td>
                     </tr>
                     <!-- Content -->
@@ -1116,7 +1116,7 @@ exports.notifyMentorAssignment = onRequest({
                                 Bitte loggen Sie sich in Ihr Mentor-Dashboard ein, um Ihre Verfügbarkeit zu aktualisieren und die Terminplanung zu starten.
                             </p>
                             <div style="text-align: center; margin: 30px 0;">
-                                <a href="https://apex-executive.de/#dashboard" style="background: #C9B99A; color: #1a1a2e; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Zum Dashboard</a>
+                                <a href="https://karriaro.de/#dashboard" style="background: #C9B99A; color: #1a1a2e; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Zum Dashboard</a>
                             </div>
                         </td>
                     </tr>
@@ -1124,7 +1124,7 @@ exports.notifyMentorAssignment = onRequest({
                     <tr>
                         <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
                             <p style="color: #999999; font-size: 12px; margin: 0;">
-                                © ${new Date().getFullYear()} APEX Executive Career Services
+                                © ${new Date().getFullYear()} Karriaro Career Services
                             </p>
                         </td>
                     </tr>
@@ -1138,7 +1138,7 @@ exports.notifyMentorAssignment = onRequest({
 
         // Send email
         await transporter.sendMail({
-            from: `"APEX Executive" <${smtpUser.value()}>`,
+            from: `"Karriaro" <${smtpUser.value()}>`,
             to: coachEmail,
             subject: `Neue Mentoring-Session zugewiesen - ${customerName || 'Kunde'}`,
             html: emailHtml
@@ -1394,7 +1394,7 @@ exports.sendQuestionnaireEmail = onRequest({
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CV-Fragebogen - APEX Executive</title>
+    <title>CV-Fragebogen - Karriaro</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4;">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
@@ -1416,7 +1416,7 @@ exports.sendQuestionnaireEmail = onRequest({
                                 <tr>
                                     <td style="padding-top: 20px;">
                                         <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-family: Georgia, serif;">CV-Fragebogen</h1>
-                                        <p style="color: #C9B99A; font-size: 16px; margin: 10px 0 0;">APEX Executive Career Services</p>
+                                        <p style="color: #C9B99A; font-size: 16px; margin: 10px 0 0;">Karriaro Career Services</p>
                                     </td>
                                 </tr>
                             </table>
@@ -1431,7 +1431,7 @@ exports.sendQuestionnaireEmail = onRequest({
                             </p>
 
                             <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                                vielen Dank für Ihre Bestellung bei APEX Executive. Um Ihren optimierten Lebenslauf zu erstellen, benötigen wir einige Informationen von Ihnen.
+                                vielen Dank für Ihre Bestellung bei Karriaro. Um Ihren optimierten Lebenslauf zu erstellen, benötigen wir einige Informationen von Ihnen.
                             </p>
 
                             <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
@@ -1481,10 +1481,10 @@ exports.sendQuestionnaireEmail = onRequest({
                     <tr>
                         <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
                             <p style="color: #999999; font-size: 12px; margin: 0;">
-                                © ${new Date().getFullYear()} APEX Executive Career Services
+                                © ${new Date().getFullYear()} Karriaro Career Services
                             </p>
                             <p style="color: #666666; font-size: 11px; margin: 10px 0 0;">
-                                Diese E-Mail wurde automatisch generiert. Bei Fragen kontaktieren Sie uns unter kontakt@apex-executive.de
+                                Diese E-Mail wurde automatisch generiert. Bei Fragen kontaktieren Sie uns unter kontakt@karriaro.de
                             </p>
                         </td>
                     </tr>
@@ -1498,9 +1498,9 @@ exports.sendQuestionnaireEmail = onRequest({
 
         // Send email
         await transporter.sendMail({
-            from: `"APEX Executive" <${smtpUser.value()}>`,
+            from: `"Karriaro" <${smtpUser.value()}>`,
             to: customerEmail,
-            subject: 'Ihr CV-Fragebogen - APEX Executive',
+            subject: 'Ihr CV-Fragebogen - Karriaro',
             html: emailHtml
         });
 
@@ -1640,7 +1640,7 @@ exports.generateCvContent = onRequest({
         };
 
         // Build the enhanced prompt for Claude
-        const prompt = `Du bist ein Premium-CV-Experte bei APEX Executive, einem exklusiven Karriereservice für Führungskräfte. Du erstellst Lebensläufe auf dem Niveau professioneller CV-Writer, die €500-2000 pro CV berechnen.
+        const prompt = `Du bist ein Premium-CV-Experte bei Karriaro, einem exklusiven Karriereservice für Führungskräfte. Du erstellst Lebensläufe auf dem Niveau professioneller CV-Writer, die €500-2000 pro CV berechnen.
 
 DEINE AUFGABE:
 Erstelle einen perfekt optimierten, professionellen Lebenslauf${includeCover ? ' MIT ANSCHREIBEN' : ''}, der sofort beeindruckt.
@@ -2501,9 +2501,9 @@ async function generateWordDocument(cvData, templateStyle, generatedCvOptions) {
 
     // Create the document
     const doc = new Document({
-        creator: 'APEX Executive',
+        creator: 'Karriaro',
         title: `CV - ${personal.fullName || 'Lebenslauf'}`,
-        description: 'Professional CV generated by APEX Executive',
+        description: 'Professional CV generated by Karriaro',
         styles: {
             default: {
                 document: {
@@ -3550,7 +3550,7 @@ async function generateSchwarzBeigeModernTemplate(cvData, generatedCvOptions) {
 
     // Create document
     const doc = new Document({
-        creator: 'APEX Executive',
+        creator: 'Karriaro',
         title: `CV - ${personal.fullName || 'Lebenslauf'}`,
         description: 'Professional CV - Schwarz Beige Modern Template',
         sections: [{
@@ -3878,7 +3878,7 @@ async function generateGreenYellowModernTemplate(cvData, generatedCvOptions) {
 
     // Create document
     const doc = new Document({
-        creator: 'APEX Executive',
+        creator: 'Karriaro',
         title: `CV - ${personal.fullName || 'Lebenslauf'}`,
         description: 'Professional CV - Green Yellow Modern Template',
         sections: [{
@@ -3906,7 +3906,7 @@ async function generatePdfWithCustomTemplate(cvData, templateStyle, pdfFilePath)
     const summary = cvData.summary || '';
 
     // Load the base PDF from hosting URL
-    const baseUrl = 'https://apex-executive.web.app';
+    const baseUrl = 'https://karriaro.de';
     const pdfUrl = `${baseUrl}${pdfFilePath}`;
 
     console.log(`Loading PDF from: ${pdfUrl}`);

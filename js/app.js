@@ -1,4 +1,4 @@
-// APEX Executive - Application Module v2.1
+// Karriaro - Application Module v2.1
 // Contains: Auth, Cart, Dashboard, Coaches, Articles, Data, Password Reset
 
 // Features Module: Authentication, Cart, Dashboard
@@ -1583,7 +1583,7 @@ export function renderOrders(orders) {
             : 'Unbekannt';
         const hasCoach = hasCoachSession(order);
         const hasAppointment = order.appointment?.datetime;
-        const shortOrderId = 'APEX-' + (order.stripeSessionId?.slice(-8) || order.id.slice(-8)).toUpperCase();
+        const shortOrderId = 'KAR-' + (order.stripeSessionId?.slice(-8) || order.id.slice(-8)).toUpperCase();
         const statusInfo = getOrderStatusInfo(order.status || 'confirmed');
         const orderId = `order-${order.id}`;
         // First order expanded by default
@@ -1674,10 +1674,10 @@ export function renderOrders(orders) {
                                     </div>
                                 </div>
 
-                                <!-- Received Documents from APEX -->
+                                <!-- Received Documents from Karriaro -->
                                 <div class="bg-white rounded-lg p-3 border border-gray-200">
                                     <p class="text-xs font-semibold text-gray-700 mb-2">
-                                        <i class="fas fa-download text-green-500 mr-1"></i>Von APEX erhalten
+                                        <i class="fas fa-download text-green-500 mr-1"></i>Von Karriaro erhalten
                                     </p>
                                     <div id="received-docs-${order.id}" class="space-y-2">
                                         ${renderReceivedDocuments(order)}
@@ -1921,7 +1921,7 @@ function renderCustomerDocuments(order) {
     `).join('');
 }
 
-// Render documents received from APEX (admin-uploaded)
+// Render documents received from Karriaro (admin-uploaded)
 function renderReceivedDocuments(order) {
     const docs = order.deliveredDocuments || [];
 
@@ -2509,7 +2509,7 @@ function openMeetingModal(meetingUrl, roomName, orderId) {
                     <i class="fas fa-video text-brand-dark"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold">APEX Mentoring Session</h3>
+                    <h3 class="font-bold">Karriaro Mentoring Session</h3>
                     <p class="text-xs text-gray-400">Sichere Video-Verbindung</p>
                 </div>
             </div>
@@ -5366,7 +5366,7 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
 
 function showPaymentSuccessModal(sessionId, checkoutType = 'guest', navigateTo = null) {
     // Generiere kurze Bestellnummer aus Session ID
-    const shortOrderId = 'APEX-' + sessionId.slice(-8).toUpperCase();
+    const shortOrderId = 'KAR-' + sessionId.slice(-8).toUpperCase();
 
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4';
@@ -6579,7 +6579,7 @@ export function exportOrdersToCSV() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `APEX_Bestellungen_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `Karriaro_Bestellungen_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
 
@@ -6624,7 +6624,7 @@ export function exportUsersToCSV() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `APEX_Benutzer_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `Karriaro_Benutzer_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
 
@@ -10640,7 +10640,7 @@ async function exportCvDocument(orderId, format = 'docx') {
             // Download the file
             const link = document.createElement('a');
             link.href = result.downloadUrl;
-            link.download = `CV_${project.customerName?.replace(/\s+/g, '_') || 'APEX'}_${new Date().toISOString().split('T')[0]}.${format}`;
+            link.download = `CV_${project.customerName?.replace(/\s+/g, '_') || 'Karriaro'}_${new Date().toISOString().split('T')[0]}.${format}`;
             link.target = '_blank';
             document.body.appendChild(link);
             link.click();
@@ -10701,7 +10701,7 @@ export async function exportCvPdfClientSide(orderId) {
         // Configure html2pdf options
         const opt = {
             margin: 0,
-            filename: `CV_${project.customerName?.replace(/\s+/g, '_') || 'APEX'}_${new Date().toISOString().split('T')[0]}.pdf`,
+            filename: `CV_${project.customerName?.replace(/\s+/g, '_') || 'Karriaro'}_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,

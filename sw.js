@@ -1,6 +1,6 @@
-// APEX Executive Service Worker v2
-const CACHE_VERSION = 'v2';
-const CACHE_NAME = `apex-executive-${CACHE_VERSION}`;
+// Karriaro Service Worker v3
+const CACHE_VERSION = 'v3';
+const CACHE_NAME = `karriaro-${CACHE_VERSION}`;
 
 // Install - don't pre-cache, just activate immediately
 self.addEventListener('install', (event) => {
@@ -15,7 +15,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name.startsWith('apex-') && name !== CACHE_NAME)
+          .filter((name) => (name.startsWith('apex-') || name.startsWith('karriaro-')) && name !== CACHE_NAME)
           .map((name) => caches.delete(name))
       );
     }).then(() => self.clients.claim())

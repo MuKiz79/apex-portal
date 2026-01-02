@@ -1,8 +1,8 @@
-# APEX Executive - Technische Dokumentation
+# Karriaro - Technische Dokumentation
 
-**Version:** 1.0
-**Stand:** 30. Dezember 2024
-**Domain:** https://apex-executive.de
+**Version:** 1.1
+**Stand:** 02. Januar 2025
+**Domain:** https://karriaro.de
 
 ---
 
@@ -27,7 +27,7 @@
 
 ## 1. Projektübersicht
 
-APEX Executive ist eine Premium-Plattform für:
+Karriaro ist eine Premium-Plattform für:
 - **CV-Erstellung** (Quick-Check bis C-Suite)
 - **Executive Mentoring** (1:1 Sessions mit Führungskräften)
 - **Karriereberatung** (Interview-Simulation, Zeugnis-Analyse)
@@ -96,10 +96,10 @@ APEX Executive ist eine Premium-Plattform für:
 ## 4. Firebase-Konfiguration
 
 ### Projekt-Details
-- **Project ID:** `apex-executive`
+- **Project ID:** `apex-executive` (Firebase Project ID bleibt unverändert)
 - **Region:** `us-central1`
-- **Hosting URL:** https://apex-executive.web.app
-- **Custom Domain:** https://apex-executive.de
+- **Hosting URL:** https://apex-executive.web.app (Legacy)
+- **Custom Domain:** https://karriaro.de
 
 ### Secrets (Firebase Functions)
 ```bash
@@ -329,8 +329,8 @@ function isAdmin(email) {
 
 ### Konfiguration
 - **Webhook URL:** `https://stripewebhook-plyofowo4a-uc.a.run.app`
-- **Success URL:** `https://apex-executive.de/?payment=success&session_id={CHECKOUT_SESSION_ID}`
-- **Cancel URL:** `https://apex-executive.de/?payment=cancelled`
+- **Success URL:** `https://karriaro.de/?payment=success&session_id={CHECKOUT_SESSION_ID}`
+- **Cancel URL:** `https://karriaro.de/?payment=cancelled`
 
 ### Produkte (in Code definiert)
 
@@ -402,7 +402,7 @@ function isAdmin(email) {
 ## 11. Admin-Panel
 
 ### Zugang
-- URL: https://apex-executive.de → Login → Admin-Button (nur für Admin sichtbar)
+- URL: https://karriaro.de → Login → Admin-Button (nur für Admin sichtbar)
 - Admin-Email: `muammer.kizilaslan@gmail.com`
 
 ### Tabs
@@ -559,7 +559,7 @@ npm update
 
 | Dienst | URL |
 |--------|-----|
-| Produktion | https://apex-executive.de |
+| Produktion | https://karriaro.de |
 | Firebase Console | https://console.firebase.google.com/project/apex-executive |
 | Stripe Dashboard | https://dashboard.stripe.com |
 | Daily.co Dashboard | https://dashboard.daily.co |

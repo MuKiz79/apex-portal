@@ -1,39 +1,39 @@
-# APEX Executive - Karriere-Architektur & CV-Manufaktur
+# Karriaro - CV-Manufaktur & Executive Mentoring
 
 Professionelle Karriereberatung, CV-Erstellung und Executive Coaching für Führungskräfte.
 
-## 🚀 Features
+## Features
 
-- ✅ **Benutzer-Authentifizierung** - Registrierung, Login, E-Mail-Verifizierung
-- ✅ **10% Mitglieder-Rabatt** - Automatisch für registrierte Benutzer
-- ✅ **Warenkorb & Checkout** - LocalStorage-Persistenz
-- ✅ **Coach-Katalog** - Filtering nach Industrie, Detail-Ansichten
-- ✅ **Dashboard** - Profilbild-Upload, Bestellübersicht, Terminkalender
-- ✅ **Terminbuchung** - Für gebuchte Coach-Sessions
-- ✅ **CV-Pakete** - Young Professional, Senior Professional, Executive C-Suite
-- ✅ **Insights Journal** - Artikel zu Karriere-Themen
-- ✅ **Responsive Design** - Mobile-optimiert mit Tailwind CSS
+- **Benutzer-Authentifizierung** - Registrierung, Login, E-Mail-Verifizierung
+- **10% Mitglieder-Rabatt** - Automatisch für registrierte Benutzer
+- **Warenkorb & Checkout** - LocalStorage-Persistenz
+- **Coach-Katalog** - Filtering nach Industrie, Detail-Ansichten
+- **Dashboard** - Profilbild-Upload, Bestellübersicht, Terminkalender
+- **Terminbuchung** - Für gebuchte Coach-Sessions
+- **CV-Pakete** - Young Professional, Senior Professional, Executive C-Suite
+- **Insights Journal** - Artikel zu Karriere-Themen
+- **Responsive Design** - Mobile-optimiert mit Tailwind CSS
 
-## 📁 Struktur
+## Struktur
 
 ```
-apex-executive/
+karriaro/
 ├── index.html          # Haupt-HTML (modulare Version)
 ├── css/
 │   └── styles.css     # Custom Styles
 └── js/
-    ├── core.js        # Firebase, Utils, Navigation (208 Zeilen)
-    └── app.js         # Features, Auth, Cart, Dashboard (828 Zeilen)
+    ├── core.js        # Firebase, Utils, Navigation
+    └── app.js         # Features, Auth, Cart, Dashboard
 ```
 
-## 🔧 Technologie-Stack
+## Technologie-Stack
 
 - **Frontend**: HTML5, Tailwind CSS, Vanilla JavaScript (ES6 Modules)
 - **Backend**: Firebase (Authentication, Firestore, Storage)
 - **Icons**: Font Awesome 6
 - **Fonts**: Google Fonts (Cinzel, Lato)
 
-## 🎨 Design
+## Design
 
 - **Farbschema**:
   - Brand Dark: #0B1120
@@ -42,7 +42,7 @@ apex-executive/
 - **Typography**: Cinzel (Serif), Lato (Sans-serif)
 - **Patterns**: Luxury minimalist design
 
-## 🔥 Firebase Setup
+## Firebase Setup
 
 ### Firebase Config erforderlich:
 
@@ -61,7 +61,7 @@ Die App ist mit Firebase konfiguriert. Falls du dein eigenes Firebase-Projekt nu
 - `coaches` - Coach-Profile (optional)
 - `articles` - Journal-Artikel (optional)
 
-## 🚀 Deployment
+## Deployment
 
 ### GitHub Pages:
 
@@ -69,7 +69,7 @@ Die App ist mit Firebase konfiguriert. Falls du dein eigenes Firebase-Projekt nu
 2. Gehe zu **Settings** → **Pages**
 3. Source: `main` branch, `/ (root)`
 4. Speichern
-5. Deine Seite ist live unter: `https://username.github.io/apex-executive/`
+5. Deine Seite ist live unter: `https://username.github.io/karriaro/`
 
 ### Netlify / Vercel:
 
@@ -78,9 +78,9 @@ Die App ist mit Firebase konfiguriert. Falls du dein eigenes Firebase-Projekt nu
 3. Publish Directory: `/`
 4. Deploy!
 
-## 📝 Lizenz
+## Lizenz
 
-© 2024 APEX Executive. Alle Rechte vorbehalten.
+© 2025 Karriaro. Alle Rechte vorbehalten.
 
 ---
 
