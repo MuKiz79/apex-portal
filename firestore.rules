@@ -41,7 +41,7 @@ service cloud.firestore {
         isAdmin()
       );
       allow create: if false; // Nur Cloud Functions
-      // Update: Admin kann alles ändern, User kann nur Termine bestätigen/ablehnen
+      // Update: Admin kann alles ändern, User kann nur bestimmte Felder ändern
       // Mentor (assignedCoachId) kann auch appointment-Felder ändern
       allow update: if isAdmin() || (
         isSignedIn() &&
@@ -50,7 +50,9 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'appointment', 'appointmentStatus', 'appointmentDeclineReason', 'appointmentDeclinedAt',
           'customerProposals', 'customerProposalNote', 'customerProposalSubmittedAt',
-          'customerDocuments'  // Kunden können eigene Dokumente hochladen
+          'customerDocuments',  // Kunden können eigene Dokumente hochladen
+          // Fragebogen-bezogene Felder (für Smart Questionnaire Submit)
+          'questionnaire', 'questionnaireSubmittedAt', 'cvStatus', 'nextStep', 'nextStepDescription', 'workflow'
         ])
       );
       allow delete: if false;
