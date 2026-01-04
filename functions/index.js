@@ -1,4 +1,5 @@
 const {onRequest, onCall} = require('firebase-functions/v2/https');
+const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 const {defineSecret} = require('firebase-functions/params');
@@ -4916,5 +4917,450 @@ exports.cleanupDuplicateUsers = onRequest({
             error: 'Fehler beim Bereinigen der Duplikate',
             details: error.message
         });
+    }
+});
+
+// ========== DSGVO: COMPLETE USER DATA DELETION (Art. 17 DSGVO) ==========
+// Löscht alle Daten eines Users vollständig aus Firestore und Storage
+exports.deleteUserCompletely = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    invoker: 'public',
+    memory: '512MiB',
+    timeoutSeconds: 300
+}, async (req, res) => {
+    const corsHeaders = getCorsHeaders(req);
+
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { adminEmail, userId, userEmail, reason, dryRun = true } = req.body;
+
+        // Verify admin
+        if (adminEmail !== 'muammer.kizilaslan@gmail.com') {
+            return res.status(403).json({ error: 'Unauthorized - Admin only' });
+        }
+
+        if (!userId && !userEmail) {
+            return res.status(400).json({ error: 'userId or userEmail required' });
+        }
+
+        const db = admin.firestore();
+        const storage = admin.storage().bucket();
+
+        // Find user
+        let targetUserId = userId;
+        let targetUserData = null;
+
+        if (userId) {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                targetUserData = userDoc.data();
+            }
+        } else if (userEmail) {
+            const usersQuery = await db.collection('users')
+                .where('email', '==', userEmail.toLowerCase())
+                .limit(1)
+                .get();
+            if (!usersQuery.empty) {
+                targetUserId = usersQuery.docs[0].id;
+                targetUserData = usersQuery.docs[0].data();
+            }
+        }
+
+        if (!targetUserId) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const deletionReport = {
+            userId: targetUserId,
+            userEmail: targetUserData?.email || userEmail,
+            reason: reason || 'DSGVO Art. 17 - Recht auf Löschung',
+            timestamp: new Date().toISOString(),
+            dryRun,
+            deletedItems: {
+                userProfile: false,
+                orders: [],
+                cvProjects: [],
+                storageFiles: [],
+                authAccount: false
+            },
+            retainedItems: {
+                invoices: [] // Rechnungen müssen 10 Jahre aufbewahrt werden
+            }
+        };
+
+        // 1. Find all orders for this user
+        const ordersQuery = await db.collection('orders')
+            .where('userId', '==', targetUserId)
+            .get();
+
+        for (const orderDoc of ordersQuery.docs) {
+            const orderData = orderDoc.data();
+            const orderId = orderDoc.id;
+
+            // Check if order has invoice (must be retained for 10 years)
+            if (orderData.paymentStatus === 'paid') {
+                deletionReport.retainedItems.invoices.push({
+                    orderId,
+                    reason: 'Steuerrechtliche Aufbewahrungspflicht (10 Jahre)',
+                    anonymizedFields: ['customerName', 'customerEmail', 'customerPhone']
+                });
+
+                // Anonymize instead of delete
+                if (!dryRun) {
+                    await db.collection('orders').doc(orderId).update({
+                        customerName: '[GELÖSCHT]',
+                        customerEmail: '[GELÖSCHT]',
+                        customerPhone: '[GELÖSCHT]',
+                        userId: '[GELÖSCHT]',
+                        anonymizedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        anonymizedReason: 'DSGVO Art. 17'
+                    });
+                }
+            } else {
+                // Unpaid orders can be deleted completely
+                deletionReport.deletedItems.orders.push(orderId);
+                if (!dryRun) {
+                    await db.collection('orders').doc(orderId).delete();
+                }
+            }
+        }
+
+        // 2. Find all CV projects for this user
+        const cvProjectsQuery = await db.collection('cvProjects')
+            .where('userId', '==', targetUserId)
+            .get();
+
+        for (const projectDoc of cvProjectsQuery.docs) {
+            deletionReport.deletedItems.cvProjects.push(projectDoc.id);
+            if (!dryRun) {
+                await db.collection('cvProjects').doc(projectDoc.id).delete();
+            }
+        }
+
+        // 3. Delete Storage files
+        const storagePaths = [
+            `profile-pictures/${targetUserId}`,
+            `users/${targetUserId}/`,
+            `cv-documents/`  // Will need to filter by user
+        ];
+
+        // Delete profile picture
+        try {
+            const profilePicFile = storage.file(`profile-pictures/${targetUserId}`);
+            const [exists] = await profilePicFile.exists();
+            if (exists) {
+                if (!dryRun) await profilePicFile.delete();
+                deletionReport.deletedItems.storageFiles.push(`profile-pictures/${targetUserId}`);
+            }
+        } catch (e) {
+            console.log('No profile picture found');
+        }
+
+        // Delete user folder in Storage
+        try {
+            const [files] = await storage.getFiles({ prefix: `users/${targetUserId}/` });
+            for (const file of files) {
+                if (!dryRun) await file.delete();
+                deletionReport.deletedItems.storageFiles.push(file.name);
+            }
+        } catch (e) {
+            console.log('No user storage folder found');
+        }
+
+        // Delete delivered documents
+        try {
+            const [deliveredFiles] = await storage.getFiles({ prefix: `delivered/${targetUserId}/` });
+            for (const file of deliveredFiles) {
+                if (!dryRun) await file.delete();
+                deletionReport.deletedItems.storageFiles.push(file.name);
+            }
+        } catch (e) {
+            console.log('No delivered files found');
+        }
+
+        // 4. Delete user profile from Firestore
+        if (!dryRun) {
+            await db.collection('users').doc(targetUserId).delete();
+        }
+        deletionReport.deletedItems.userProfile = true;
+
+        // 5. Delete Firebase Auth account
+        try {
+            if (!dryRun) {
+                await admin.auth().deleteUser(targetUserId);
+            }
+            deletionReport.deletedItems.authAccount = true;
+        } catch (e) {
+            console.log('Could not delete auth account:', e.message);
+            deletionReport.deletedItems.authAccount = false;
+        }
+
+        // 6. Log deletion for audit trail
+        if (!dryRun) {
+            await db.collection('auditLog').add({
+                action: 'DSGVO_USER_DELETION',
+                targetUserId,
+                targetUserEmail: targetUserData?.email || userEmail,
+                performedBy: adminEmail,
+                reason: reason || 'DSGVO Art. 17 - Recht auf Löschung',
+                report: deletionReport,
+                timestamp: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        // 7. Send confirmation email to admin
+        if (!dryRun) {
+            const transporter = nodemailer.createTransport({
+                host: smtpHost.value(),
+                port: 465,
+                secure: true,
+                auth: { user: smtpUser.value(), pass: smtpPass.value() }
+            });
+
+            await transporter.sendMail({
+                from: '"Karriaro System" <noreply@karriaro.de>',
+                replyTo: 'kontakt@karriaro.de',
+                to: adminEmail,
+                subject: `DSGVO Löschung durchgeführt - ${targetUserData?.email || userEmail}`,
+                html: `
+                    <h2>DSGVO-konforme Datenlöschung durchgeführt</h2>
+                    <p><strong>User:</strong> ${targetUserData?.email || userEmail}</p>
+                    <p><strong>User-ID:</strong> ${targetUserId}</p>
+                    <p><strong>Grund:</strong> ${reason || 'DSGVO Art. 17 - Recht auf Löschung'}</p>
+                    <p><strong>Zeitpunkt:</strong> ${new Date().toLocaleString('de-DE')}</p>
+                    <h3>Gelöschte Daten:</h3>
+                    <ul>
+                        <li>User-Profil: ${deletionReport.deletedItems.userProfile ? 'Ja' : 'Nein'}</li>
+                        <li>Auth-Account: ${deletionReport.deletedItems.authAccount ? 'Ja' : 'Nein'}</li>
+                        <li>Bestellungen: ${deletionReport.deletedItems.orders.length}</li>
+                        <li>CV-Projekte: ${deletionReport.deletedItems.cvProjects.length}</li>
+                        <li>Dateien: ${deletionReport.deletedItems.storageFiles.length}</li>
+                    </ul>
+                    ${deletionReport.retainedItems.invoices.length > 0 ? `
+                        <h3>Anonymisiert (nicht gelöscht - Aufbewahrungspflicht):</h3>
+                        <ul>
+                            ${deletionReport.retainedItems.invoices.map(inv =>
+                                `<li>Rechnung ${inv.orderId}: ${inv.reason}</li>`
+                            ).join('')}
+                        </ul>
+                    ` : ''}
+                `
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            dryRun,
+            message: dryRun
+                ? 'Dry-Run abgeschlossen. Setze dryRun: false um die Löschung durchzuführen.'
+                : 'DSGVO-konforme Datenlöschung erfolgreich durchgeführt.',
+            report: deletionReport
+        });
+
+    } catch (error) {
+        console.error('Error in DSGVO deletion:', error);
+        return res.status(500).json({
+            error: 'Fehler bei der Datenlöschung',
+            details: error.message
+        });
+    }
+});
+
+// ========== SCHEDULED: AUTOMATIC DATA CLEANUP (DSGVO Compliance) ==========
+// Läuft täglich um 3:00 Uhr und identifiziert Daten, die gelöscht werden sollten
+exports.scheduledDataCleanup = onSchedule({
+    schedule: '0 3 * * *', // Täglich um 3:00 Uhr
+    timeZone: 'Europe/Berlin',
+    memory: '512MiB',
+    timeoutSeconds: 540,
+    secrets: [smtpHost, smtpUser, smtpPass]
+}, async (event) => {
+    const db = admin.firestore();
+    const now = new Date();
+
+    const cleanupReport = {
+        timestamp: now.toISOString(),
+        inactiveUsers: [],
+        oldCvProjects: [],
+        expiredOrders: [],
+        warnings: []
+    };
+
+    try {
+        // 1. Find users inactive for > 2 years (will be warned, not deleted)
+        const twoYearsAgo = new Date(now);
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+        const usersSnapshot = await db.collection('users').get();
+
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data();
+            const lastActivity = userData.lastLoginAt?.toDate?.() || userData.updatedAt?.toDate?.() || userData.createdAt?.toDate?.();
+
+            if (lastActivity && lastActivity < twoYearsAgo && !userData.deletionWarningAt) {
+                cleanupReport.inactiveUsers.push({
+                    id: userDoc.id,
+                    email: userData.email,
+                    lastActivity: lastActivity.toISOString()
+                });
+
+                // Mark user as warned (will be deleted in 30 days if no activity)
+                await db.collection('users').doc(userDoc.id).update({
+                    deletionWarningAt: admin.firestore.FieldValue.serverTimestamp(),
+                    scheduledDeletionAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+                });
+            }
+        }
+
+        // 2. Find CV projects older than 6 months after completion (without active order)
+        const sixMonthsAgo = new Date(now);
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const cvProjectsSnapshot = await db.collection('cvProjects')
+            .where('status', '==', 'completed')
+            .get();
+
+        for (const projectDoc of cvProjectsSnapshot.docs) {
+            const projectData = projectDoc.data();
+            const completedAt = projectData.completedAt?.toDate?.() || projectData.updatedAt?.toDate?.();
+
+            if (completedAt && completedAt < sixMonthsAgo && !projectData.retainData) {
+                cleanupReport.oldCvProjects.push({
+                    id: projectDoc.id,
+                    completedAt: completedAt.toISOString()
+                });
+
+                // Don't delete automatically - just flag for review
+                await db.collection('cvProjects').doc(projectDoc.id).update({
+                    flaggedForDeletion: true,
+                    flaggedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        }
+
+        // 3. Log cleanup run
+        await db.collection('auditLog').add({
+            action: 'SCHEDULED_DATA_CLEANUP',
+            performedBy: 'system',
+            report: cleanupReport,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 4. Send report to admin if there are items to review
+        if (cleanupReport.inactiveUsers.length > 0 || cleanupReport.oldCvProjects.length > 0) {
+            const transporter = nodemailer.createTransport({
+                host: smtpHost.value(),
+                port: 465,
+                secure: true,
+                auth: { user: smtpUser.value(), pass: smtpPass.value() }
+            });
+
+            await transporter.sendMail({
+                from: '"Karriaro System" <noreply@karriaro.de>',
+                replyTo: 'kontakt@karriaro.de',
+                to: 'muammer.kizilaslan@gmail.com',
+                subject: `DSGVO Daten-Cleanup Report - ${now.toLocaleDateString('de-DE')}`,
+                html: `
+                    <h2>Automatischer DSGVO Daten-Cleanup Report</h2>
+                    <p><strong>Datum:</strong> ${now.toLocaleString('de-DE')}</p>
+
+                    ${cleanupReport.inactiveUsers.length > 0 ? `
+                        <h3>Inaktive User (>2 Jahre) - Löschwarnung gesendet</h3>
+                        <ul>
+                            ${cleanupReport.inactiveUsers.map(u =>
+                                `<li>${u.email} - Letzte Aktivität: ${new Date(u.lastActivity).toLocaleDateString('de-DE')}</li>`
+                            ).join('')}
+                        </ul>
+                        <p><em>Diese User werden in 30 Tagen automatisch gelöscht, wenn keine Aktivität erfolgt.</em></p>
+                    ` : '<p>Keine inaktiven User gefunden.</p>'}
+
+                    ${cleanupReport.oldCvProjects.length > 0 ? `
+                        <h3>Alte CV-Projekte (>6 Monate) - Zur Überprüfung markiert</h3>
+                        <ul>
+                            ${cleanupReport.oldCvProjects.map(p =>
+                                `<li>Projekt ${p.id} - Abgeschlossen: ${new Date(p.completedAt).toLocaleDateString('de-DE')}</li>`
+                            ).join('')}
+                        </ul>
+                        <p><em>Bitte überprüfen und ggf. manuell löschen.</em></p>
+                    ` : '<p>Keine alten CV-Projekte gefunden.</p>'}
+
+                    <p style="color: #666; font-size: 12px; margin-top: 20px;">
+                        Dieser Report wird automatisch generiert gemäß DSGVO Aufbewahrungsrichtlinien.
+                    </p>
+                `
+            });
+        }
+
+        console.log('Scheduled data cleanup completed:', cleanupReport);
+        return cleanupReport;
+
+    } catch (error) {
+        console.error('Error in scheduled data cleanup:', error);
+
+        // Log error
+        await db.collection('auditLog').add({
+            action: 'SCHEDULED_DATA_CLEANUP_ERROR',
+            performedBy: 'system',
+            error: error.message,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        throw error;
+    }
+});
+
+// ========== ADMIN AUDIT LOGGING ==========
+// Logs admin actions for DSGVO compliance
+exports.logAdminAction = onRequest({
+    invoker: 'public'
+}, async (req, res) => {
+    const corsHeaders = getCorsHeaders(req);
+
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { adminEmail, action, targetType, targetId, details } = req.body;
+
+        // Verify admin
+        if (adminEmail !== 'muammer.kizilaslan@gmail.com') {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const db = admin.firestore();
+
+        await db.collection('auditLog').add({
+            action,
+            performedBy: adminEmail,
+            targetType, // 'user', 'order', 'document', etc.
+            targetId,
+            details,
+            ip: req.headers['x-forwarded-for'] || req.ip || 'unknown',
+            userAgent: req.headers['user-agent'] || 'unknown',
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        return res.status(200).json({ success: true });
+
+    } catch (error) {
+        console.error('Error logging admin action:', error);
+        return res.status(500).json({ error: 'Failed to log action' });
     }
 });

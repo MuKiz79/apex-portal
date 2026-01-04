@@ -71,9 +71,10 @@ service cloud.firestore {
 
     // ========== PUBLIC CONTENT ==========
 
-    // Coaches/Mentors - Öffentlich lesbar, Admin kann ändern, Mentor kann eigene Verfügbarkeit ändern
+    // Coaches/Mentors - Nur für eingeloggte User lesbar (DSGVO: E-Mail-Adressen schützen)
+    // Admin kann ändern, Mentor kann eigene Verfügbarkeit ändern
     match /coaches/{coachId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       // Admin kann alles ändern
       allow create, delete: if isAdmin();
       // Update: Admin kann alles ändern, Mentor kann nur eigene Verfügbarkeit und userId ändern
@@ -157,6 +158,15 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['questionnaire', 'documents', 'updatedAt', 'status', 'mode', 'submittedAt', 'templateSelection'])
       );
       allow delete: if isAdmin();
+    }
+
+    // ========== AUDIT LOG (DSGVO Compliance) ==========
+
+    match /auditLog/{logId} {
+      // Only admin can read audit logs
+      allow read: if isAdmin();
+      // Only system (Cloud Functions) can write - no direct client writes
+      allow write: if false;
     }
 
     // ========== CATCH-ALL: DENY ==========

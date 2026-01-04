@@ -258,3 +258,115 @@ export function toggleSection(sectionId) {
         }
     }
 }
+
+// ========== COOKIE CONSENT MANAGEMENT (DSGVO) ==========
+
+// Get current cookie consent settings
+export function getCookieConsent() {
+    const consent = localStorage.getItem('cookieConsent');
+    if (!consent) return null;
+    try {
+        return JSON.parse(consent);
+    } catch {
+        return { necessary: true, functional: true, analytics: false, marketing: false };
+    }
+}
+
+// Accept all cookies
+export function acceptCookies() {
+    const consent = {
+        necessary: true,
+        functional: true,
+        analytics: true,
+        marketing: true,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('cookieConsent', JSON.stringify(consent));
+    hideCookieBanner();
+}
+
+// Decline optional cookies (only necessary)
+export function declineCookies() {
+    const consent = {
+        necessary: true,
+        functional: false,
+        analytics: false,
+        marketing: false,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('cookieConsent', JSON.stringify(consent));
+    hideCookieBanner();
+}
+
+// Show cookie settings panel
+export function showCookieSettings() {
+    const settingsPanel = document.getElementById('cookie-settings');
+    if (settingsPanel) {
+        settingsPanel.classList.remove('hidden');
+
+        // Load existing preferences
+        const consent = getCookieConsent();
+        if (consent) {
+            const functional = document.getElementById('cookie-functional');
+            const analytics = document.getElementById('cookie-analytics');
+            const marketing = document.getElementById('cookie-marketing');
+
+            if (functional) functional.checked = consent.functional;
+            if (analytics) analytics.checked = consent.analytics;
+            if (marketing) marketing.checked = consent.marketing;
+        }
+    }
+}
+
+// Hide cookie settings panel
+export function hideCookieSettings() {
+    const settingsPanel = document.getElementById('cookie-settings');
+    if (settingsPanel) {
+        settingsPanel.classList.add('hidden');
+    }
+}
+
+// Save custom cookie settings
+export function saveCookieSettings() {
+    const functional = document.getElementById('cookie-functional')?.checked || false;
+    const analytics = document.getElementById('cookie-analytics')?.checked || false;
+    const marketing = document.getElementById('cookie-marketing')?.checked || false;
+
+    const consent = {
+        necessary: true,
+        functional,
+        analytics,
+        marketing,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('cookieConsent', JSON.stringify(consent));
+    hideCookieBanner();
+}
+
+// Hide the cookie banner
+function hideCookieBanner() {
+    const banner = document.getElementById('cookie-banner');
+    if (banner) {
+        banner.classList.add('translate-y-full');
+    }
+}
+
+// Show the cookie banner
+export function showCookieBanner() {
+    const banner = document.getElementById('cookie-banner');
+    if (banner) {
+        banner.classList.remove('translate-y-full');
+    }
+}
+
+// Check if analytics is allowed
+export function isAnalyticsAllowed() {
+    const consent = getCookieConsent();
+    return consent?.analytics === true;
+}
+
+// Check if marketing is allowed
+export function isMarketingAllowed() {
+    const consent = getCookieConsent();
+    return consent?.marketing === true;
+}

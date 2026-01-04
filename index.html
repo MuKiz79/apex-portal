@@ -4540,6 +4540,19 @@
                 </section>
 
                 <section>
+                    <h2 class="font-serif text-xl text-brand-dark mb-3">6a. Video-Meetings (Mentoring Sessions)</h2>
+                    <p>Für die Durchführung von Mentoring-Sessions nutzen wir <strong>Daily.co</strong>, einen Video-Konferenz-Dienst der Daily, Inc. (USA). Bei der Nutzung werden folgende Daten verarbeitet:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>IP-Adresse</li>
+                        <li>Browser- und Geräteinformationen</li>
+                        <li>Audio- und Videodaten während der Session</li>
+                        <li>Zeitpunkt und Dauer der Teilnahme</li>
+                    </ul>
+                    <p class="mt-2">Video-Sessions werden <strong>nicht aufgezeichnet</strong>, es sei denn, Sie stimmen einer Aufzeichnung ausdrücklich zu. Die Übertragung erfolgt verschlüsselt (TLS/DTLS).</p>
+                    <p class="mt-2">Die Datenübertragung in die USA erfolgt auf Grundlage von EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO). Weitere Informationen: <a href="https://www.daily.co/legal/privacy-policy" target="_blank" class="text-brand-gold hover:underline">Daily.co Datenschutz</a></p>
+                </section>
+
+                <section>
                     <h2 class="font-serif text-xl text-brand-dark mb-3">7. Ihre Rechte</h2>
                     <p>Sie haben jederzeit das Recht:</p>
                     <ul class="list-disc list-inside mt-2 space-y-1">
@@ -4560,10 +4573,23 @@
 
                 <section>
                     <h2 class="font-serif text-xl text-brand-dark mb-3">9. Aufbewahrungsfristen</h2>
-                    <p>Wir speichern Ihre Daten nur so lange, wie es für die Erfüllung des jeweiligen Zwecks erforderlich ist oder gesetzliche Aufbewahrungsfristen bestehen (z.B. 10 Jahre für Rechnungen gemäß Handels- und Steuerrecht).</p>
+                    <p>Wir speichern Ihre Daten nur so lange, wie es für die Erfüllung des jeweiligen Zwecks erforderlich ist oder gesetzliche Aufbewahrungsfristen bestehen:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li><strong>Rechnungen und Zahlungsdaten:</strong> 10 Jahre (gesetzliche Aufbewahrungspflicht gemäß HGB/AO)</li>
+                        <li><strong>Vertragsdaten (Bestellungen):</strong> 3 Jahre nach Vertragsende (Verjährungsfrist)</li>
+                        <li><strong>CV-Unterlagen und hochgeladene Dokumente:</strong> 6 Monate nach Projektabschluss, sofern Sie nicht einer längeren Speicherung zustimmen</li>
+                        <li><strong>Kommunikationsdaten (E-Mails):</strong> 6 Monate nach letzter Aktivität</li>
+                        <li><strong>Account-Daten:</strong> Bis zur Löschung des Accounts oder 2 Jahre nach letzter Aktivität</li>
+                    </ul>
+                    <p class="mt-2">Sie können jederzeit die Löschung Ihrer Daten beantragen (Art. 17 DSGVO), soweit keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Kontaktieren Sie uns unter: kontakt@karriaro.de</p>
                 </section>
 
-                <p class="text-xs text-gray-400 mt-8">Stand: Dezember 2024</p>
+                <section>
+                    <h2 class="font-serif text-xl text-brand-dark mb-3">10. Automatische Löschung</h2>
+                    <p>Wir haben technische Maßnahmen implementiert, um Ihre Daten nach Ablauf der Aufbewahrungsfristen automatisch zu löschen. Sie werden vor der automatischen Löschung per E-Mail informiert und haben die Möglichkeit, eine Verlängerung der Speicherung zu beantragen.</p>
+                </section>
+
+                <p class="text-xs text-gray-400 mt-8">Stand: Januar 2025</p>
             </div>
             <div class="mt-8"><button onclick="app.navigateTo('home')" class="text-brand-gold font-bold hover:underline">Zurück zur Startseite</button></div>
         </div>
@@ -5275,10 +5301,14 @@
             closeStrategyModal: () => App.closeStrategyModal(),
             submitStrategyCall: (event) => App.submitStrategyCall(event),
 
-            // Cookie Consent
-            acceptCookies: () => App.acceptCookies(),
-            declineCookies: () => App.declineCookies(),
-            checkCookieConsent: () => App.checkCookieConsent(),
+            // Cookie Consent (DSGVO)
+            acceptCookies: () => Core.acceptCookies(),
+            declineCookies: () => Core.declineCookies(),
+            showCookieSettings: () => Core.showCookieSettings(),
+            hideCookieSettings: () => Core.hideCookieSettings(),
+            saveCookieSettings: () => Core.saveCookieSettings(),
+            showCookieBanner: () => Core.showCookieBanner(),
+            getCookieConsent: () => Core.getCookieConsent(),
 
             // Email Verification
             checkEmailVerification: () => App.checkEmailVerification(),
@@ -5806,28 +5836,92 @@
         </div>
     </div>
 
-    <!-- COOKIE BANNER (DSGVO) -->
+    <!-- COOKIE BANNER (DSGVO - Erweitertes Consent Management) -->
     <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-brand-dark text-white p-4 z-50 shadow-2xl border-t border-brand-gold/20 transform translate-y-full transition-transform duration-500">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-start gap-4">
-                <div class="hidden md:flex w-12 h-12 bg-brand-gold/20 rounded-full items-center justify-center flex-shrink-0">
-                    <i class="fas fa-cookie-bite text-brand-gold text-xl"></i>
+        <div class="max-w-6xl mx-auto">
+            <!-- Hauptansicht -->
+            <div id="cookie-main" class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                    <div class="hidden md:flex w-12 h-12 bg-brand-gold/20 rounded-full items-center justify-center flex-shrink-0">
+                        <i class="fas fa-cookie-bite text-brand-gold text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm leading-relaxed">
+                            Wir verwenden Cookies für die Funktionalität der Website und zur Verbesserung unserer Dienste.
+                            <button onclick="app.navigateTo('datenschutz')" class="text-brand-gold hover:underline">Datenschutzerklärung</button>
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm leading-relaxed">
-                        Wir verwenden Cookies, um Ihnen die bestmögliche Erfahrung auf unserer Website zu bieten.
-                        Weitere Informationen finden Sie in unserer
-                        <button onclick="app.navigateTo('datenschutz'); app.acceptCookies();" class="text-brand-gold hover:underline">Datenschutzerklärung</button>.
-                    </p>
+                <div class="flex gap-2 flex-shrink-0 flex-wrap justify-center">
+                    <button onclick="app.showCookieSettings()" class="px-4 py-2 text-xs uppercase tracking-wider font-bold border border-white/30 hover:border-white hover:bg-white/10 transition rounded-lg">
+                        Einstellungen
+                    </button>
+                    <button onclick="app.declineCookies()" class="px-4 py-2 text-xs uppercase tracking-wider font-bold border border-white/30 hover:border-white hover:bg-white/10 transition rounded-lg">
+                        Nur Notwendige
+                    </button>
+                    <button onclick="app.acceptCookies()" class="px-4 py-2 text-xs uppercase tracking-wider font-bold bg-brand-gold text-brand-dark hover:bg-white transition rounded-lg">
+                        Alle Akzeptieren
+                    </button>
                 </div>
             </div>
-            <div class="flex gap-3 flex-shrink-0">
-                <button onclick="app.declineCookies()" class="px-5 py-2 text-xs uppercase tracking-wider font-bold border border-white/30 hover:border-white hover:bg-white/10 transition rounded-lg">
-                    Nur Notwendige
-                </button>
-                <button onclick="app.acceptCookies()" class="px-5 py-2 text-xs uppercase tracking-wider font-bold bg-brand-gold text-brand-dark hover:bg-white transition rounded-lg">
-                    Alle Akzeptieren
-                </button>
+
+            <!-- Erweiterte Einstellungen (initial hidden) -->
+            <div id="cookie-settings" class="hidden mt-4 pt-4 border-t border-white/10">
+                <h3 class="font-bold text-brand-gold mb-3">Cookie-Einstellungen</h3>
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    <!-- Notwendige Cookies -->
+                    <div class="bg-white/5 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm">Notwendig</span>
+                            <span class="text-xs text-brand-gold">Immer aktiv</span>
+                        </div>
+                        <p class="text-xs text-gray-400">Erforderlich für Login, Warenkorb und grundlegende Funktionen.</p>
+                    </div>
+
+                    <!-- Funktionale Cookies -->
+                    <div class="bg-white/5 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm">Funktional</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="cookie-functional" class="sr-only peer" checked>
+                                <div class="w-9 h-5 bg-gray-600 peer-focus:ring-2 peer-focus:ring-brand-gold/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-gold after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-400">Speichern Ihrer Präferenzen und Einstellungen.</p>
+                    </div>
+
+                    <!-- Analyse Cookies -->
+                    <div class="bg-white/5 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm">Analyse</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="cookie-analytics" class="sr-only peer">
+                                <div class="w-9 h-5 bg-gray-600 peer-focus:ring-2 peer-focus:ring-brand-gold/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-gold after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-400">Helfen uns, die Website zu verbessern (anonymisiert).</p>
+                    </div>
+
+                    <!-- Marketing Cookies -->
+                    <div class="bg-white/5 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm">Marketing</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="cookie-marketing" class="sr-only peer">
+                                <div class="w-9 h-5 bg-gray-600 peer-focus:ring-2 peer-focus:ring-brand-gold/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-brand-gold after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-400">Für personalisierte Werbung (derzeit nicht verwendet).</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-4">
+                    <button onclick="app.hideCookieSettings()" class="px-4 py-2 text-xs uppercase tracking-wider font-bold border border-white/30 hover:border-white hover:bg-white/10 transition rounded-lg">
+                        Abbrechen
+                    </button>
+                    <button onclick="app.saveCookieSettings()" class="px-4 py-2 text-xs uppercase tracking-wider font-bold bg-brand-gold text-brand-dark hover:bg-white transition rounded-lg">
+                        Auswahl Speichern
+                    </button>
+                </div>
             </div>
         </div>
     </div>
