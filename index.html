@@ -5379,7 +5379,7 @@
     <!-- APP LOGIC -->
     <script type="module">
         // Import modules
-        import * as Core from './js/core.js?v=20251229e';
+        import * as Core from './js/core.js?v=20260104a';
         import * as App from './js/app.js?v=20260104b';
 
         // Make functions globally accessible
@@ -5654,6 +5654,7 @@
             saveCookieSettings: () => Core.saveCookieSettings(),
             showCookieBanner: () => Core.showCookieBanner(),
             getCookieConsent: () => Core.getCookieConsent(),
+            checkCookieConsent: () => Core.checkCookieConsent(),
 
             // DSGVO Admin Functions
             switchDsgvoSubTab: (tabName) => App.switchDsgvoSubTab(tabName),

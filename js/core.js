@@ -370,3 +370,12 @@ export function isMarketingAllowed() {
     const consent = getCookieConsent();
     return consent?.marketing === true;
 }
+
+// Check cookie consent and show banner if needed
+export function checkCookieConsent() {
+    const consent = getCookieConsent();
+    if (!consent) {
+        // No consent given yet, show the banner
+        showCookieBanner();
+    }
+}
