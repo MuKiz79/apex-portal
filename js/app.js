@@ -1256,6 +1256,43 @@ export async function checkout(state, navigateTo) {
         return;
     }
 
+    // Validiere Pflicht-Checkboxen
+    const withdrawalConsent = document.getElementById('checkout-withdrawal-consent');
+    const termsConsent = document.getElementById('checkout-terms-consent');
+    const withdrawalError = document.getElementById('checkout-withdrawal-error');
+    const termsError = document.getElementById('checkout-terms-error');
+
+    let hasError = false;
+
+    // Widerrufsrecht-Verzicht prüfen
+    if (withdrawalConsent && !withdrawalConsent.checked) {
+        if (withdrawalError) withdrawalError.classList.remove('hidden');
+        withdrawalConsent.parentElement.parentElement.classList.add('border-red-400', 'bg-red-50');
+        withdrawalConsent.parentElement.parentElement.classList.remove('border-amber-200', 'bg-amber-50');
+        hasError = true;
+    } else if (withdrawalConsent && withdrawalError) {
+        withdrawalError.classList.add('hidden');
+        withdrawalConsent.parentElement.parentElement.classList.remove('border-red-400', 'bg-red-50');
+        withdrawalConsent.parentElement.parentElement.classList.add('border-amber-200', 'bg-amber-50');
+    }
+
+    // AGB prüfen
+    if (termsConsent && !termsConsent.checked) {
+        if (termsError) termsError.classList.remove('hidden');
+        termsConsent.parentElement.parentElement.classList.add('border-red-400', 'bg-red-50');
+        termsConsent.parentElement.parentElement.classList.remove('border-gray-200', 'bg-gray-50');
+        hasError = true;
+    } else if (termsConsent && termsError) {
+        termsError.classList.add('hidden');
+        termsConsent.parentElement.parentElement.classList.remove('border-red-400', 'bg-red-50');
+        termsConsent.parentElement.parentElement.classList.add('border-gray-200', 'bg-gray-50');
+    }
+
+    if (hasError) {
+        showToast('Bitte bestätigen Sie alle Pflichtfelder', 3000);
+        return;
+    }
+
     const total = state.cart.reduce((sum, item) => sum + item.price, 0);
 
     // Zeige Checkout-Modal mit Optionen (Registrieren/Login/Gast)
@@ -1328,7 +1365,14 @@ export async function checkout(state, navigateTo) {
                 userEmail: emailForStripe,
                 userId: userIdForOrder,
                 customerEmail: emailForStripe, // Prefill Stripe mit E-Mail
-                mode: 'payment'
+                mode: 'payment',
+                // Rechtliche Zustimmungen (DSGVO/Fernabsatz)
+                consents: {
+                    withdrawalWaiver: true, // Widerrufsrecht-Verzicht bestätigt
+                    withdrawalWaiverText: 'Ich verlange ausdrücklich, dass Sie vor Ende der Widerrufsfrist mit der Ausführung der Dienstleistung beginnen. Mir ist bekannt, dass ich bei vollständiger Vertragserfüllung mein Widerrufsrecht verliere.',
+                    termsAccepted: true, // AGB akzeptiert
+                    consentTimestamp: new Date().toISOString()
+                }
             })
         });
 
@@ -10453,6 +10497,8 @@ export async function loadAdminSettings() {
     await loadMentoringSlotsText();
     // Load admin templates
     await loadAdminTemplates();
+    // Load legal texts
+    await loadLegalTexts();
 }
 
 export async function saveMentoringSlots() {
@@ -15070,7 +15116,7 @@ function hideAllViews() {
 
 // Switch between DSGVO sub-tabs
 export function switchDsgvoSubTab(tabName) {
-    const subTabs = ['overview', 'deletion', 'audit', 'encryption'];
+    const subTabs = ['overview', 'deletion', 'audit', 'encryption', 'vvt'];
 
     subTabs.forEach(tab => {
         const btn = document.getElementById(`dsgvo-subtab-${tab}`);
@@ -15078,11 +15124,11 @@ export function switchDsgvoSubTab(tabName) {
 
         if (btn) {
             if (tab === tabName) {
-                btn.classList.add('bg-brand-gold', 'text-brand-dark');
-                btn.classList.remove('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200');
+                btn.classList.add('border-brand-gold', 'text-brand-dark');
+                btn.classList.remove('border-transparent', 'text-gray-500');
             } else {
-                btn.classList.remove('bg-brand-gold', 'text-brand-dark');
-                btn.classList.add('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200');
+                btn.classList.remove('border-brand-gold', 'text-brand-dark');
+                btn.classList.add('border-transparent', 'text-gray-500');
             }
         }
 
@@ -15094,6 +15140,9 @@ export function switchDsgvoSubTab(tabName) {
     // Load data for specific sub-tabs
     if (tabName === 'audit') {
         loadAuditLog();
+    }
+    if (tabName === 'vvt') {
+        loadVvt();
     }
 }
 
@@ -15869,3 +15918,599 @@ export async function testStorageSecurity() {
     `;
 }
 
+// ========== LEGAL TEXTS MANAGEMENT ==========
+
+// Store for legal texts
+let legalTextsData = {
+    agb: [],
+    datenschutz: [],
+    impressum: ''
+};
+
+// Switch between legal tabs
+export function switchLegalTab(tab) {
+    ['agb', 'datenschutz', 'impressum'].forEach(t => {
+        const tabBtn = document.getElementById('legal-tab-' + t);
+        const content = document.getElementById('legal-content-' + t);
+        if (tabBtn && content) {
+            if (t === tab) {
+                tabBtn.classList.add('bg-brand-gold', 'text-brand-dark');
+                tabBtn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                content.classList.remove('hidden');
+            } else {
+                tabBtn.classList.remove('bg-brand-gold', 'text-brand-dark');
+                tabBtn.classList.add('text-gray-600', 'hover:bg-gray-100');
+                content.classList.add('hidden');
+            }
+        }
+    });
+}
+
+// Load legal texts from Firestore
+export async function loadLegalTexts() {
+    try {
+        const docRef = doc(db, 'settings', 'legal');
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            legalTextsData = docSnap.data();
+        } else {
+            await initializeLegalTextsFromHtml();
+        }
+
+        renderAgbEditor();
+        renderDatenschutzEditor();
+        renderImpressumEditor();
+
+    } catch (error) {
+        console.error('Fehler beim Laden der rechtlichen Texte:', error);
+    }
+}
+
+// Render AGB editor
+function renderAgbEditor() {
+    const container = document.getElementById('agb-sections-container');
+    if (!container) return;
+
+    const sections = legalTextsData.agb || [];
+
+    if (sections.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-400 py-4">Keine AGB-Abschnitte vorhanden</p>';
+        return;
+    }
+
+    container.innerHTML = sections.map((section, idx) => {
+        const prevBtn = idx > 0 ? '<button onclick="app.moveAgbSection(' + idx + ', -1)" class="p-1 text-gray-400 hover:text-brand-gold" title="Nach oben"><i class="fas fa-arrow-up"></i></button>' : '';
+        const nextBtn = idx < sections.length - 1 ? '<button onclick="app.moveAgbSection(' + idx + ', 1)" class="p-1 text-gray-400 hover:text-brand-gold" title="Nach unten"><i class="fas fa-arrow-down"></i></button>' : '';
+        return '<div class="border border-gray-200 rounded-lg p-4" data-section-index="' + idx + '">' +
+            '<div class="flex items-center justify-between mb-3">' +
+            '<div class="flex items-center gap-2">' +
+            '<span class="w-8 h-8 bg-brand-gold/20 text-brand-gold rounded-full flex items-center justify-center text-sm font-bold">' + (idx + 1) + '</span>' +
+            '<input type="text" value="' + sanitizeHTML(section.title || '') + '" onchange="app.updateAgbSection(' + idx + ', \'title\', this.value)" class="font-medium text-brand-dark border-0 border-b border-transparent hover:border-gray-300 focus:border-brand-gold focus:outline-none px-1 py-0.5 bg-transparent" placeholder="§ Titel">' +
+            '</div>' +
+            '<div class="flex items-center gap-2">' + prevBtn + nextBtn +
+            '<button onclick="app.deleteAgbSection(' + idx + ')" class="p-1 text-gray-400 hover:text-red-500" title="Löschen"><i class="fas fa-trash"></i></button>' +
+            '</div></div>' +
+            '<textarea onchange="app.updateAgbSection(' + idx + ', \'content\', this.value)" rows="4" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold" placeholder="Absätze mit (1), (2) etc. beginnen...">' + sanitizeHTML(section.content || '') + '</textarea>' +
+            '</div>';
+    }).join('');
+}
+
+// Render Datenschutz editor
+function renderDatenschutzEditor() {
+    const container = document.getElementById('datenschutz-sections-container');
+    if (!container) return;
+
+    const sections = legalTextsData.datenschutz || [];
+
+    if (sections.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-400 py-4">Keine Datenschutz-Abschnitte vorhanden</p>';
+        return;
+    }
+
+    container.innerHTML = sections.map((section, idx) => {
+        const prevBtn = idx > 0 ? '<button onclick="app.moveDatenschutzSection(' + idx + ', -1)" class="p-1 text-gray-400 hover:text-brand-gold" title="Nach oben"><i class="fas fa-arrow-up"></i></button>' : '';
+        const nextBtn = idx < sections.length - 1 ? '<button onclick="app.moveDatenschutzSection(' + idx + ', 1)" class="p-1 text-gray-400 hover:text-brand-gold" title="Nach unten"><i class="fas fa-arrow-down"></i></button>' : '';
+        return '<div class="border border-gray-200 rounded-lg p-4" data-section-index="' + idx + '">' +
+            '<div class="flex items-center justify-between mb-3">' +
+            '<div class="flex items-center gap-2">' +
+            '<span class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">' + (idx + 1) + '</span>' +
+            '<input type="text" value="' + sanitizeHTML(section.title || '') + '" onchange="app.updateDatenschutzSection(' + idx + ', \'title\', this.value)" class="font-medium text-brand-dark border-0 border-b border-transparent hover:border-gray-300 focus:border-brand-gold focus:outline-none px-1 py-0.5 bg-transparent" placeholder="Abschnittstitel">' +
+            '</div>' +
+            '<div class="flex items-center gap-2">' + prevBtn + nextBtn +
+            '<button onclick="app.deleteDatenschutzSection(' + idx + ')" class="p-1 text-gray-400 hover:text-red-500" title="Löschen"><i class="fas fa-trash"></i></button>' +
+            '</div></div>' +
+            '<textarea onchange="app.updateDatenschutzSection(' + idx + ', \'content\', this.value)" rows="4" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold" placeholder="Inhalt des Abschnitts...">' + sanitizeHTML(section.content || '') + '</textarea>' +
+            '</div>';
+    }).join('');
+}
+
+// Render Impressum editor
+function renderImpressumEditor() {
+    const textarea = document.getElementById('impressum-content');
+    if (textarea) {
+        textarea.value = legalTextsData.impressum || '';
+    }
+}
+
+// Update AGB section
+export function updateAgbSection(index, field, value) {
+    if (!legalTextsData.agb[index]) return;
+    legalTextsData.agb[index][field] = value;
+}
+
+// Update Datenschutz section
+export function updateDatenschutzSection(index, field, value) {
+    if (!legalTextsData.datenschutz[index]) return;
+    legalTextsData.datenschutz[index][field] = value;
+}
+
+// Add new AGB section
+export function addAgbSection() {
+    if (!legalTextsData.agb) legalTextsData.agb = [];
+    const nextNumber = legalTextsData.agb.length + 1;
+    legalTextsData.agb.push({
+        title: '§ ' + nextNumber + ' Neuer Paragraph',
+        content: '(1) '
+    });
+    renderAgbEditor();
+}
+
+// Add new Datenschutz section
+export function addDatenschutzSection() {
+    if (!legalTextsData.datenschutz) legalTextsData.datenschutz = [];
+    const nextNumber = legalTextsData.datenschutz.length + 1;
+    legalTextsData.datenschutz.push({
+        title: nextNumber + '. Neuer Abschnitt',
+        content: ''
+    });
+    renderDatenschutzEditor();
+}
+
+// Delete AGB section
+export function deleteAgbSection(index) {
+    if (confirm('Diesen Paragraphen wirklich löschen?')) {
+        legalTextsData.agb.splice(index, 1);
+        renderAgbEditor();
+    }
+}
+
+// Delete Datenschutz section
+export function deleteDatenschutzSection(index) {
+    if (confirm('Diesen Abschnitt wirklich löschen?')) {
+        legalTextsData.datenschutz.splice(index, 1);
+        renderDatenschutzEditor();
+    }
+}
+
+// Move AGB section
+export function moveAgbSection(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= legalTextsData.agb.length) return;
+    const temp = legalTextsData.agb[index];
+    legalTextsData.agb[index] = legalTextsData.agb[newIndex];
+    legalTextsData.agb[newIndex] = temp;
+    renderAgbEditor();
+}
+
+// Move Datenschutz section
+export function moveDatenschutzSection(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= legalTextsData.datenschutz.length) return;
+    const temp = legalTextsData.datenschutz[index];
+    legalTextsData.datenschutz[index] = legalTextsData.datenschutz[newIndex];
+    legalTextsData.datenschutz[newIndex] = temp;
+    renderDatenschutzEditor();
+}
+
+// Save legal texts to Firestore
+export async function saveLegalTexts() {
+    try {
+        const impressumTextarea = document.getElementById('impressum-content');
+        if (impressumTextarea) {
+            legalTextsData.impressum = impressumTextarea.value;
+        }
+
+        await setDoc(doc(db, 'settings', 'legal'), {
+            ...legalTextsData,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser?.email
+        });
+
+        showToast('Rechtliche Texte gespeichert!');
+
+    } catch (error) {
+        console.error('Fehler beim Speichern:', error);
+        showToast('Fehler beim Speichern');
+    }
+}
+
+// Initialize legal texts from current HTML (one-time migration)
+async function initializeLegalTextsFromHtml() {
+    legalTextsData.agb = [
+        { title: '§ 1 Geltungsbereich', content: '(1) Diese Allgemeinen Geschäftsbedingungen gelten für alle Verträge zwischen Karriaro GmbH (nachfolgend "Anbieter") und dem Kunden über die auf der Website karriaro.de angebotenen Dienstleistungen.\n(2) Abweichende Bedingungen des Kunden werden nicht anerkannt, es sei denn, der Anbieter stimmt ihrer Geltung ausdrücklich schriftlich zu.' },
+        { title: '§ 2 Vertragsgegenstand', content: '(1) Der Anbieter erbringt Dienstleistungen im Bereich Karriereberatung, CV-Erstellung und Executive Coaching.\n(2) Der genaue Umfang der Leistungen ergibt sich aus der jeweiligen Produktbeschreibung zum Zeitpunkt der Bestellung.' },
+        { title: '§ 3 Vertragsschluss', content: '(1) Die Darstellung der Produkte auf der Website stellt kein rechtlich bindendes Angebot, sondern eine Aufforderung zur Bestellung dar.\n(2) Mit dem Absenden der Bestellung gibt der Kunde ein verbindliches Angebot ab. Der Vertrag kommt zustande, wenn der Anbieter die Bestellung durch eine Auftragsbestätigung per E-Mail annimmt.' },
+        { title: '§ 4 Preise und Zahlung', content: '(1) Alle Preise sind Endpreise und enthalten die gesetzliche Mehrwertsteuer.\n(2) Die Zahlung erfolgt über den Zahlungsdienstleister Stripe. Es werden folgende Zahlungsarten akzeptiert: Kreditkarte (Visa, Mastercard, American Express), SEPA-Lastschrift, Apple Pay, Google Pay.\n(3) Die Zahlung ist sofort bei Bestellung fällig.' },
+        { title: '§ 5 Leistungserbringung', content: '(1) Die Bearbeitung beginnt nach Zahlungseingang und Erhalt aller erforderlichen Unterlagen vom Kunden.\n(2) Die voraussichtliche Bearbeitungszeit ist in der Produktbeschreibung angegeben und beginnt mit dem Eingang vollständiger Unterlagen.\n(3) Der Kunde ist verpflichtet, alle für die Leistungserbringung erforderlichen Informationen und Unterlagen rechtzeitig und vollständig zur Verfügung zu stellen.\n(4) Der Kunde versichert, dass alle von ihm gemachten Angaben (insbesondere zu Ausbildung, Berufserfahrung, Qualifikationen und Zeugnissen) der Wahrheit entsprechen. Der Anbieter übernimmt keine Verantwortung für die Richtigkeit der vom Kunden bereitgestellten Informationen und prüft diese nicht auf Wahrheitsgehalt.\n(5) Der Kunde stellt den Anbieter von sämtlichen Ansprüchen Dritter frei, die aufgrund unrichtiger oder unvollständiger Angaben des Kunden entstehen.' },
+        { title: '§ 6 Zufriedenheitsgarantie', content: '(1) Der Anbieter bietet eine Zufriedenheitsgarantie. Ist der Kunde mit dem Ergebnis nicht zufrieden, wird die Leistung kostenlos überarbeitet.\n(2) Die Überarbeitung ist innerhalb von 14 Tagen nach Lieferung schriftlich anzufordern.\n(3) Der Anspruch auf Überarbeitung besteht für maximal zwei Korrekturschleifen.' },
+        { title: '§ 7 Widerrufsrecht', content: '(1) Verbraucher haben ein 14-tägiges Widerrufsrecht gemäß den gesetzlichen Bestimmungen.\n(2) Das Widerrufsrecht erlischt vorzeitig, wenn der Anbieter mit der Ausführung der Dienstleistung begonnen hat, nachdem der Kunde ausdrücklich zugestimmt und bestätigt hat, dass er sein Widerrufsrecht verliert.\n(3) Der Widerruf ist zu richten an: kontakt@karriaro.de' },
+        { title: '§ 8 Vertraulichkeit', content: '(1) Der Anbieter verpflichtet sich, alle vom Kunden übermittelten Informationen und Unterlagen streng vertraulich zu behandeln.\n(2) Auf Wunsch wird eine gesonderte Vertraulichkeitsvereinbarung (NDA) abgeschlossen.' },
+        { title: '§ 9 Urheberrecht', content: '(1) Mit vollständiger Bezahlung gehen alle Nutzungsrechte an den erstellten Dokumenten auf den Kunden über.\n(2) Der Kunde darf die Unterlagen für eigene Bewerbungszwecke uneingeschränkt nutzen.' },
+        { title: '§ 10 Haftung und Leistungsumfang', content: '(1) Der Anbieter haftet unbeschränkt für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit sowie für vorsätzlich oder grob fahrlässig verursachte Schäden.\n(2) Der Vertrag ist ein Dienstvertrag im Sinne des § 611 BGB. Der Anbieter schuldet die sorgfältige Erstellung der vereinbarten Bewerbungsunterlagen, nicht jedoch den Erfolg einer Bewerbung oder die Einstellung beim Zielunternehmen.\n(3) Der Anbieter garantiert ausdrücklich nicht den Erfolg von Bewerbungen. Die professionell erstellten Unterlagen erhöhen die Chancen auf positive Rückmeldungen, können jedoch keine Zusage, Einladung zum Vorstellungsgespräch oder Einstellung garantieren.\n(4) Der Anbieter haftet nicht für Schäden, die dem Kunden durch unrichtige oder unvollständige Angaben entstehen, die der Kunde im Rahmen der Leistungserbringung gemacht hat.' },
+        { title: '§ 11 Schlussbestimmungen', content: '(1) Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.\n(2) Gerichtsstand für alle Streitigkeiten ist Berlin, sofern der Kunde Kaufmann ist.\n(3) Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.' }
+    ];
+
+    legalTextsData.datenschutz = [
+        { title: '1. Datenschutz auf einen Blick', content: 'Wir nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung. Diese Datenschutzerklärung gilt für unsere Website karriaro.de.' },
+        { title: '2. Verantwortlicher', content: 'Verantwortlich für die Datenverarbeitung ist:\nKarriaro GmbH\nMusterstraße 123\n10115 Berlin\nE-Mail: kontakt@karriaro.de' },
+        { title: '3. Zahlungsabwicklung mit Stripe', content: 'Für Zahlungen nutzen wir den Dienst Stripe (Stripe, Inc., 510 Townsend Street, San Francisco, CA 94103, USA). Dabei werden Zahlungsdaten direkt an Stripe übermittelt und dort verarbeitet.\n\nStripe ist zertifiziert nach PCI-DSS Level 1 und verarbeitet Ihre Zahlungsdaten nach höchsten Sicherheitsstandards.' },
+        { title: '4. Firebase/Google Cloud', content: 'Wir nutzen Google Firebase für Authentifizierung und Datenspeicherung. Dabei werden Daten auf Google Cloud Servern in der EU gespeichert.' },
+        { title: '5. Video-Meetings mit Daily.co', content: 'Für Video-Meetings verwenden wir den Dienst Daily.co. Bei der Nutzung werden technische Verbindungsdaten verarbeitet.\n\nDie Datenübertragung in die USA erfolgt auf Grundlage von EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO).' },
+        { title: '6. Ihre Rechte', content: 'Sie haben das Recht:\n- auf Auskunft über Ihre gespeicherten Daten (Art. 15 DSGVO)\n- auf Berichtigung unrichtiger Daten (Art. 16 DSGVO)\n- auf Löschung Ihrer Daten (Art. 17 DSGVO)\n- auf Einschränkung der Verarbeitung (Art. 18 DSGVO)\n- auf Datenübertragbarkeit (Art. 20 DSGVO)' }
+    ];
+
+    legalTextsData.impressum = '<p><strong>Karriaro GmbH</strong></p>\n<p>Musterstraße 123<br>10115 Berlin</p>\n<p><strong>Kontakt:</strong><br>E-Mail: kontakt@karriaro.de</p>\n<p><strong>Geschäftsführer:</strong><br>Max Mustermann</p>\n<p><strong>Registergericht:</strong> Amtsgericht Berlin-Charlottenburg<br>\n<strong>Registernummer:</strong> HRB 123456</p>\n<p><strong>USt-IdNr.:</strong> DE123456789</p>';
+
+    await setDoc(doc(db, 'settings', 'legal'), {
+        ...legalTextsData,
+        updatedAt: serverTimestamp(),
+        updatedBy: 'system-init'
+    });
+}
+
+// Load legal texts for public view
+export async function loadPublicLegalText(type) {
+    try {
+        const docRef = doc(db, 'settings', 'legal');
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) return null;
+
+        const data = docSnap.data();
+
+        if (type === 'agb') return data.agb || [];
+        if (type === 'datenschutz') return data.datenschutz || [];
+        if (type === 'impressum') return data.impressum || '';
+
+        return null;
+    } catch (error) {
+        console.error('Fehler beim Laden:', error);
+        return null;
+    }
+}
+
+// Render AGB view from Firestore
+export async function renderAgbView() {
+    const container = document.querySelector('#view-agb .space-y-6');
+    if (!container) return;
+
+    const sections = await loadPublicLegalText('agb');
+    if (!sections || sections.length === 0) return;
+
+    let html = '';
+    sections.forEach(function(section) {
+        html += '<section><h2 class="font-serif text-xl text-brand-dark mb-3">' + sanitizeHTML(section.title) + '</h2>';
+        section.content.split('\n').forEach(function(p) {
+            html += '<p class="mt-2">' + sanitizeHTML(p) + '</p>';
+        });
+        html += '</section>';
+    });
+    html += '<p class="text-xs text-gray-400 mt-8">Stand: Januar 2025</p>';
+    container.innerHTML = html;
+}
+
+// Render Datenschutz view from Firestore
+export async function renderDatenschutzView() {
+    const container = document.querySelector('#view-datenschutz .space-y-6');
+    if (!container) return;
+
+    const sections = await loadPublicLegalText('datenschutz');
+    if (!sections || sections.length === 0) return;
+
+    let html = '';
+    sections.forEach(function(section) {
+        html += '<section><h2 class="font-serif text-xl text-brand-dark mb-3">' + sanitizeHTML(section.title) + '</h2>';
+        section.content.split('\n').forEach(function(p) {
+            html += '<p class="mt-2">' + sanitizeHTML(p) + '</p>';
+        });
+        html += '</section>';
+    });
+    container.innerHTML = html;
+}
+
+// Render Impressum view from Firestore
+export async function renderImpressumView() {
+    const container = document.querySelector('#view-impressum .max-w-4xl');
+    if (!container) return;
+
+    const impressum = await loadPublicLegalText('impressum');
+    if (!impressum) return;
+
+    const h1 = container.querySelector('h1');
+    if (h1 && h1.nextElementSibling) {
+        h1.nextElementSibling.innerHTML = impressum;
+    }
+}
+
+// ========== VVT (Verzeichnis von Verarbeitungstätigkeiten) ==========
+
+let vvtData = {
+    company: '',
+    representative: '',
+    address: '',
+    contact: '',
+    activities: [],
+    updatedAt: null
+};
+
+// Default activities for Karriaro
+const defaultVvtActivities = [
+    {
+        name: 'Benutzerkonten & Authentifizierung',
+        purpose: 'Registrierung und Login von Kunden',
+        dataCategories: 'E-Mail, Passwort (gehasht), Name, Profilbild',
+        dataSubjects: 'Kunden, Mentoren',
+        recipients: 'Firebase Authentication (Google Cloud, EU)',
+        retention: 'Bis zur Kontolöschung durch User oder Admin',
+        legalBasis: 'Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)'
+    },
+    {
+        name: 'Bestellungen & Zahlungen',
+        purpose: 'Abwicklung von CV-Paketen und Mentoring-Sessions',
+        dataCategories: 'Name, E-Mail, Bestelldetails, Zahlungsstatus',
+        dataSubjects: 'Kunden',
+        recipients: 'Stripe (PCI-DSS zertifiziert), Firebase Firestore (EU)',
+        retention: '10 Jahre (Handels- und Steuerrecht)',
+        legalBasis: 'Art. 6 Abs. 1 lit. b, c DSGVO (Vertragserfüllung, rechtliche Pflicht)'
+    },
+    {
+        name: 'CV-Erstellung (Fragebogen)',
+        purpose: 'Erfassung von Lebenslaufdaten für CV-Erstellung',
+        dataCategories: 'Ausbildung, Berufserfahrung, Skills, Projekte, Ziele',
+        dataSubjects: 'Kunden',
+        recipients: 'Firebase Firestore (EU), Admin/Mentoren (intern)',
+        retention: 'Bis zur Kontolöschung oder auf Anfrage',
+        legalBasis: 'Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)'
+    },
+    {
+        name: 'Dokumenten-Upload & -Speicherung',
+        purpose: 'Speicherung von CVs, Zeugnissen, erstellten Dokumenten',
+        dataCategories: 'PDF/Word-Dokumente mit persönlichen Daten',
+        dataSubjects: 'Kunden',
+        recipients: 'Firebase Storage (Google Cloud, EU)',
+        retention: 'Bis zur Kontolöschung oder auf Anfrage',
+        legalBasis: 'Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)'
+    },
+    {
+        name: 'Video-Meetings (Mentoring)',
+        purpose: 'Durchführung von Coaching-Sessions per Video',
+        dataCategories: 'Video/Audio-Stream (nicht aufgezeichnet), Verbindungsdaten',
+        dataSubjects: 'Kunden, Mentoren',
+        recipients: 'Daily.co (USA, EU-Standardvertragsklauseln)',
+        retention: 'Keine Speicherung, nur Live-Übertragung',
+        legalBasis: 'Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)'
+    },
+    {
+        name: 'E-Mail-Kommunikation',
+        purpose: 'Bestellbestätigungen, Terminvorschläge, Support',
+        dataCategories: 'E-Mail-Adresse, Name, Nachrichteninhalt',
+        dataSubjects: 'Kunden, Interessenten',
+        recipients: 'Strato SMTP (Deutschland)',
+        retention: 'Gemäß E-Mail-Archivierungspflicht (6-10 Jahre)',
+        legalBasis: 'Art. 6 Abs. 1 lit. b, f DSGVO (Vertragserfüllung, berechtigtes Interesse)'
+    },
+    {
+        name: 'Kontaktanfragen (Strategiegespräch)',
+        purpose: 'Erfassung von Interessenten für Strategiegespräche',
+        dataCategories: 'Name, E-Mail, optional Telefon/Nachricht',
+        dataSubjects: 'Interessenten',
+        recipients: 'Firebase Firestore (EU)',
+        retention: '90 Tage nach letztem Kontakt',
+        legalBasis: 'Art. 6 Abs. 1 lit. a, b DSGVO (Einwilligung, vorvertragliche Maßnahmen)'
+    }
+];
+
+// Load VVT from Firestore
+export async function loadVvt() {
+    try {
+        const docRef = doc(db, 'settings', 'vvt');
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            vvtData = docSnap.data();
+        } else {
+            // Initialize with default data
+            vvtData = {
+                company: 'Karriaro GmbH',
+                representative: 'Geschäftsführer',
+                address: 'Musterstraße 123, 10115 Berlin',
+                contact: 'kontakt@karriaro.de',
+                activities: defaultVvtActivities,
+                updatedAt: null
+            };
+        }
+
+        renderVvtForm();
+        renderVvtActivities();
+
+    } catch (error) {
+        console.error('Fehler beim Laden des VVT:', error);
+        showToast('Fehler beim Laden des VVT');
+    }
+}
+
+// Render VVT form fields
+function renderVvtForm() {
+    const companyInput = document.getElementById('vvt-company');
+    const representativeInput = document.getElementById('vvt-representative');
+    const addressInput = document.getElementById('vvt-address');
+    const contactInput = document.getElementById('vvt-contact');
+    const lastUpdated = document.getElementById('vvt-last-updated');
+
+    if (companyInput) companyInput.value = vvtData.company || '';
+    if (representativeInput) representativeInput.value = vvtData.representative || '';
+    if (addressInput) addressInput.value = vvtData.address || '';
+    if (contactInput) contactInput.value = vvtData.contact || '';
+
+    if (lastUpdated) {
+        if (vvtData.updatedAt) {
+            const date = vvtData.updatedAt.toDate ? vvtData.updatedAt.toDate() : new Date(vvtData.updatedAt);
+            lastUpdated.textContent = date.toLocaleDateString('de-DE') + ' ' + date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            lastUpdated.textContent = 'Noch nicht gespeichert';
+        }
+    }
+}
+
+// Render VVT activities
+function renderVvtActivities() {
+    const container = document.getElementById('vvt-activities-container');
+    if (!container) return;
+
+    const activities = vvtData.activities || [];
+
+    if (activities.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-gray-400"><p>Keine Verarbeitungstätigkeiten definiert</p></div>';
+        return;
+    }
+
+    container.innerHTML = activities.map((activity, idx) => {
+        return '<div class="p-4 hover:bg-gray-50">' +
+            '<div class="flex items-start justify-between gap-4">' +
+            '<div class="flex-1">' +
+            '<div class="flex items-center gap-2 mb-2">' +
+            '<span class="w-6 h-6 bg-brand-gold/20 text-brand-gold rounded-full flex items-center justify-center text-xs font-bold">' + (idx + 1) + '</span>' +
+            '<input type="text" value="' + sanitizeHTML(activity.name || '') + '" onchange="app.updateVvtActivity(' + idx + ', \'name\', this.value)" class="font-medium text-brand-dark border-0 border-b border-transparent hover:border-gray-300 focus:border-brand-gold focus:outline-none bg-transparent flex-1" placeholder="Name der Verarbeitung">' +
+            '</div>' +
+            '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">' +
+            '<div><label class="text-xs text-gray-500">Zweck</label><input type="text" value="' + sanitizeHTML(activity.purpose || '') + '" onchange="app.updateVvtActivity(' + idx + ', \'purpose\', this.value)" class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-gold"></div>' +
+            '<div><label class="text-xs text-gray-500">Datenkategorien</label><input type="text" value="' + sanitizeHTML(activity.dataCategories || '') + '" onchange="app.updateVvtActivity(' + idx + ', \'dataCategories\', this.value)" class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-gold"></div>' +
+            '<div><label class="text-xs text-gray-500">Betroffene</label><input type="text" value="' + sanitizeHTML(activity.dataSubjects || '') + '" onchange="app.updateVvtActivity(' + idx + ', \'dataSubjects\', this.value)" class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-gold"></div>' +
+            '<div><label class="text-xs text-gray-500">Empfänger</label><input type="text" value="' + sanitizeHTML(activity.recipients || '') + '" onchange="app.updateVvtActivity(' + idx + ', \'recipients\', this.value)" class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-gold"></div>' +
+            '<div><label class="text-xs text-gray-500">Löschfrist</label><input type="text" value="' + sanitizeHTML(activity.retention || '') + '" onchange="app.updateVvtActivity(' + idx + ', \'retention\', this.value)" class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-gold"></div>' +
+            '<div><label class="text-xs text-gray-500">Rechtsgrundlage</label><input type="text" value="' + sanitizeHTML(activity.legalBasis || '') + '" onchange="app.updateVvtActivity(' + idx + ', \'legalBasis\', this.value)" class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-gold"></div>' +
+            '</div></div>' +
+            '<button onclick="app.deleteVvtActivity(' + idx + ')" class="p-2 text-gray-400 hover:text-red-500 flex-shrink-0" title="Löschen"><i class="fas fa-trash"></i></button>' +
+            '</div></div>';
+    }).join('');
+}
+
+// Update VVT activity
+export function updateVvtActivity(index, field, value) {
+    if (!vvtData.activities[index]) return;
+    vvtData.activities[index][field] = value;
+}
+
+// Add new VVT activity
+export function addVvtActivity() {
+    if (!vvtData.activities) vvtData.activities = [];
+    vvtData.activities.push({
+        name: 'Neue Verarbeitungstätigkeit',
+        purpose: '',
+        dataCategories: '',
+        dataSubjects: '',
+        recipients: '',
+        retention: '',
+        legalBasis: 'Art. 6 Abs. 1 lit. b DSGVO'
+    });
+    renderVvtActivities();
+}
+
+// Delete VVT activity
+export function deleteVvtActivity(index) {
+    if (confirm('Diese Verarbeitungstätigkeit wirklich löschen?')) {
+        vvtData.activities.splice(index, 1);
+        renderVvtActivities();
+    }
+}
+
+// Save VVT to Firestore
+export async function saveVvt() {
+    try {
+        // Get form values
+        vvtData.company = document.getElementById('vvt-company')?.value || '';
+        vvtData.representative = document.getElementById('vvt-representative')?.value || '';
+        vvtData.address = document.getElementById('vvt-address')?.value || '';
+        vvtData.contact = document.getElementById('vvt-contact')?.value || '';
+
+        await setDoc(doc(db, 'settings', 'vvt'), {
+            ...vvtData,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser?.email
+        });
+
+        showToast('VVT gespeichert!');
+
+        // Reload to show updated timestamp
+        setTimeout(() => loadVvt(), 500);
+
+    } catch (error) {
+        console.error('Fehler beim Speichern:', error);
+        showToast('Fehler beim Speichern');
+    }
+}
+
+// Export VVT as PDF (using browser print)
+export function exportVvtPdf() {
+    // Create print-friendly HTML
+    const printContent = generateVvtPrintHtml();
+
+    // Open print window
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    // Wait for content to load, then print
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+}
+
+// Generate print-friendly HTML for VVT
+function generateVvtPrintHtml() {
+    const activities = vvtData.activities || [];
+    const date = new Date().toLocaleDateString('de-DE');
+
+    let activitiesHtml = activities.map((a, i) => {
+        return '<div style="border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; page-break-inside: avoid;">' +
+            '<h3 style="margin: 0 0 12px 0; color: #333;">' + (i + 1) + '. ' + sanitizeHTML(a.name) + '</h3>' +
+            '<table style="width: 100%; font-size: 12px; border-collapse: collapse;">' +
+            '<tr><td style="padding: 4px 8px 4px 0; font-weight: bold; width: 30%; vertical-align: top;">Zweck:</td><td style="padding: 4px 0;">' + sanitizeHTML(a.purpose) + '</td></tr>' +
+            '<tr><td style="padding: 4px 8px 4px 0; font-weight: bold; vertical-align: top;">Datenkategorien:</td><td style="padding: 4px 0;">' + sanitizeHTML(a.dataCategories) + '</td></tr>' +
+            '<tr><td style="padding: 4px 8px 4px 0; font-weight: bold; vertical-align: top;">Betroffene:</td><td style="padding: 4px 0;">' + sanitizeHTML(a.dataSubjects) + '</td></tr>' +
+            '<tr><td style="padding: 4px 8px 4px 0; font-weight: bold; vertical-align: top;">Empfänger:</td><td style="padding: 4px 0;">' + sanitizeHTML(a.recipients) + '</td></tr>' +
+            '<tr><td style="padding: 4px 8px 4px 0; font-weight: bold; vertical-align: top;">Löschfrist:</td><td style="padding: 4px 0;">' + sanitizeHTML(a.retention) + '</td></tr>' +
+            '<tr><td style="padding: 4px 8px 4px 0; font-weight: bold; vertical-align: top;">Rechtsgrundlage:</td><td style="padding: 4px 0;">' + sanitizeHTML(a.legalBasis) + '</td></tr>' +
+            '</table></div>';
+    }).join('');
+
+    return '<!DOCTYPE html><html><head><title>VVT - ' + sanitizeHTML(vvtData.company) + '</title>' +
+        '<style>body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #333; } ' +
+        'h1 { color: #1a1a1a; border-bottom: 2px solid #d4a84b; padding-bottom: 10px; } ' +
+        'h2 { color: #1a1a1a; margin-top: 30px; } ' +
+        '.header-info { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 30px; } ' +
+        '.tom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } ' +
+        '.tom-item { background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; } ' +
+        '@media print { body { padding: 20px; } }</style></head><body>' +
+        '<h1>Verzeichnis von Verarbeitungstätigkeiten (VVT)</h1>' +
+        '<p style="color: #666; margin-bottom: 30px;">Gemäß Art. 30 DSGVO · Stand: ' + date + '</p>' +
+        '<div class="header-info">' +
+        '<h2 style="margin-top: 0;">Verantwortlicher</h2>' +
+        '<p><strong>Unternehmen:</strong> ' + sanitizeHTML(vvtData.company) + '</p>' +
+        '<p><strong>Vertreter:</strong> ' + sanitizeHTML(vvtData.representative) + '</p>' +
+        '<p><strong>Adresse:</strong> ' + sanitizeHTML(vvtData.address) + '</p>' +
+        '<p><strong>Kontakt:</strong> ' + sanitizeHTML(vvtData.contact) + '</p>' +
+        '</div>' +
+        '<h2>Verarbeitungstätigkeiten</h2>' +
+        activitiesHtml +
+        '<h2>Technische und organisatorische Maßnahmen (Art. 32 DSGVO)</h2>' +
+        '<div class="tom-grid">' +
+        '<div class="tom-item"><strong>Verschlüsselung:</strong> SSL/TLS, AES-256 at rest, DTLS für Video</div>' +
+        '<div class="tom-item"><strong>Zugriffskontrolle:</strong> Firebase Auth, Rollen (Admin/Mentor/User)</div>' +
+        '<div class="tom-item"><strong>Datensicherung:</strong> Firebase automatische Backups, EU-Server</div>' +
+        '<div class="tom-item"><strong>Audit-Logging:</strong> Protokollierung aller Admin-Aktionen</div>' +
+        '</div>' +
+        '<p style="margin-top: 40px; font-size: 12px; color: #999; text-align: center;">Erstellt am ' + date + ' · ' + sanitizeHTML(vvtData.company) + '</p>' +
+        '</body></html>';
+}

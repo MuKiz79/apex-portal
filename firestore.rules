@@ -71,10 +71,11 @@ service cloud.firestore {
 
     // ========== PUBLIC CONTENT ==========
 
-    // Coaches/Mentors - Nur für eingeloggte User lesbar (DSGVO: E-Mail-Adressen schützen)
+    // Coaches/Mentors - Öffentlich lesbar für Marketing-Seite
+    // E-Mail-Adressen werden im Frontend nicht angezeigt (nur intern für Matching verwendet)
     // Admin kann ändern, Mentor kann eigene Verfügbarkeit ändern
     match /coaches/{coachId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       // Admin kann alles ändern
       allow create, delete: if isAdmin();
       // Update: Admin kann alles ändern, Mentor kann nur eigene Verfügbarkeit und userId ändern

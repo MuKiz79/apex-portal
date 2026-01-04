@@ -234,7 +234,7 @@ exports.createCheckoutSession = onRequest({
     }
 
     try {
-        const { items, userEmail, userId } = req.body;
+        const { items, userEmail, userId, consents } = req.body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ error: 'Invalid items' });
@@ -311,7 +311,9 @@ exports.createCheckoutSession = onRequest({
                 items: itemsMetadata,
                 itemsFull: JSON.stringify(itemsToProcess).substring(0, 450), // Validierte Items
                 expectedTotal: expectedTotal.toString(), // Für Webhook-Validierung
-                createAccount: !userId ? 'true' : 'false' // Flag für Account-Erstellung
+                createAccount: !userId ? 'true' : 'false', // Flag für Account-Erstellung
+                // Rechtliche Zustimmungen (DSGVO/Fernabsatz)
+                consents: consents ? JSON.stringify(consents) : ''
             },
             billing_address_collection: 'required',
             phone_number_collection: {
@@ -513,6 +515,16 @@ exports.stripeWebhook = onRequest({
                 }
             }
 
+            // Parse rechtliche Zustimmungen aus metadata
+            let consentsData = null;
+            try {
+                if (session.metadata.consents) {
+                    consentsData = JSON.parse(session.metadata.consents);
+                }
+            } catch (parseErr) {
+                console.warn('Could not parse consents metadata:', parseErr);
+            }
+
             const orderData = {
                 userId: userId || `guest_${session.id}`,
                 customerEmail: customerEmail || null,
@@ -527,7 +539,9 @@ exports.stripeWebhook = onRequest({
                 status: 'confirmed',
                 date: admin.firestore.FieldValue.serverTimestamp(),
                 billingDetails: session.customer_details || null,
-                paymentMethod: session.payment_method_types?.[0] || 'card'
+                paymentMethod: session.payment_method_types?.[0] || 'card',
+                // Rechtliche Zustimmungen für DSGVO/Fernabsatz-Compliance
+                consents: consentsData || null
             };
 
             // Nur hinzufügen wenn vorhanden (vermeidet undefined)
