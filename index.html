@@ -3107,6 +3107,11 @@
                         <i class="fas fa-file-alt"></i>
                         <span>CV-Generator</span>
                     </button>
+                    <button onclick="app.switchAdminTab('dsgvo')" id="admin-tab-dsgvo"
+                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all border-l border-white/20 ml-2">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>DSGVO & Sicherheit</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -3713,6 +3718,346 @@
                     <h3 class="text-lg font-medium text-gray-600 mb-2">Keine CV-Projekte vorhanden</h3>
                     <p class="text-sm text-gray-400 mb-6">CV-Projekte werden automatisch bei CV-Bestellungen erstellt.</p>
                     <p class="text-xs text-gray-400">Sobald eine CV-Bestellung eingeht, erscheint sie hier.</p>
+                </div>
+            </div>
+
+            <!-- DSGVO & Sicherheit Tab Content -->
+            <div id="admin-content-dsgvo" class="hidden">
+                <!-- Section Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-serif text-brand-dark">DSGVO & Sicherheit</h2>
+                        <div class="relative group">
+                            <button class="w-5 h-5 bg-gray-200 hover:bg-brand-gold rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-brand-dark transition">
+                                <i class="fas fa-info"></i>
+                            </button>
+                            <div class="absolute left-0 top-full mt-2 w-80 bg-brand-dark text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                                <p class="font-bold mb-2">Datenschutz-Compliance</p>
+                                <ul class="space-y-1 text-gray-300">
+                                    <li>• User-Daten DSGVO-konform löschen</li>
+                                    <li>• Audit-Log für Admin-Aktionen</li>
+                                    <li>• Automatische Datenbereinigung</li>
+                                    <li>• Cookie-Consent verwalten</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="app.loadDsgvoStats()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-brand-dark border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="hidden sm:inline">Aktualisieren</span>
+                    </button>
+                </div>
+
+                <!-- Tab Navigation within DSGVO -->
+                <div class="flex gap-2 mb-6 border-b border-gray-200">
+                    <button onclick="app.switchDsgvoSubTab('overview')" id="dsgvo-subtab-overview"
+                            class="px-4 py-2 text-sm font-medium border-b-2 border-brand-gold text-brand-dark">
+                        Übersicht
+                    </button>
+                    <button onclick="app.switchDsgvoSubTab('deletion')" id="dsgvo-subtab-deletion"
+                            class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-brand-dark">
+                        User-Löschung
+                    </button>
+                    <button onclick="app.switchDsgvoSubTab('audit')" id="dsgvo-subtab-audit"
+                            class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-brand-dark">
+                        Audit-Log
+                    </button>
+                    <button onclick="app.switchDsgvoSubTab('encryption')" id="dsgvo-subtab-encryption"
+                            class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-brand-dark">
+                        Verschlüsselung
+                    </button>
+                </div>
+
+                <!-- DSGVO Overview Sub-Tab -->
+                <div id="dsgvo-content-overview">
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl border border-gray-100 p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-users text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Aktive User</p>
+                                    <p class="text-xl font-bold text-brand-dark" id="dsgvo-stat-users">--</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-100 p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-clock text-amber-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Inaktiv (>1 Jahr)</p>
+                                    <p class="text-xl font-bold text-brand-dark" id="dsgvo-stat-inactive">--</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-100 p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-cookie text-green-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Cookie-Consent</p>
+                                    <p class="text-xl font-bold text-brand-dark" id="dsgvo-stat-cookies">--</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-100 p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-history text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Audit-Einträge</p>
+                                    <p class="text-xl font-bold text-brand-dark" id="dsgvo-stat-audits">--</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-xl border border-gray-100 p-6 mb-6">
+                        <h3 class="font-bold text-brand-dark mb-4 flex items-center gap-2">
+                            <i class="fas fa-bolt text-brand-gold"></i>
+                            Schnellaktionen
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="app.runDataCleanupPreview()" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-gold hover:bg-amber-50 transition text-left">
+                                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-broom text-amber-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-brand-dark">Cleanup Preview</p>
+                                    <p class="text-xs text-gray-500">Zeige löschbare Daten (Dry-Run)</p>
+                                </div>
+                            </button>
+                            <button onclick="app.exportAuditLog()" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-gold hover:bg-amber-50 transition text-left">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-download text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-brand-dark">Audit-Log Export</p>
+                                    <p class="text-xs text-gray-500">CSV-Export der letzten 30 Tage</p>
+                                </div>
+                            </button>
+                            <button onclick="app.showDsgvoReport()" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-gold hover:bg-amber-50 transition text-left">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-file-alt text-green-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-brand-dark">DSGVO-Report</p>
+                                    <p class="text-xs text-gray-500">Compliance-Übersicht generieren</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Last Cleanup Info -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium text-blue-800">Automatische Datenbereinigung</p>
+                                <p class="text-sm text-blue-700">Der Cleanup-Job läuft täglich um 3:00 Uhr. Inaktive User werden nach 2 Jahren automatisch gewarnt.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DSGVO User Deletion Sub-Tab -->
+                <div id="dsgvo-content-deletion" class="hidden">
+                    <div class="bg-white rounded-xl border border-gray-100 p-6 mb-6">
+                        <h3 class="font-bold text-brand-dark mb-4 flex items-center gap-2">
+                            <i class="fas fa-user-minus text-red-500"></i>
+                            User-Daten löschen (Art. 17 DSGVO)
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Löscht alle personenbezogenen Daten eines Users. Bezahlte Rechnungen werden anonymisiert (10-Jahres-Aufbewahrungspflicht).
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Search User -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">User suchen</label>
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="dsgvo-user-search" placeholder="E-Mail oder User-ID eingeben..."
+                                           class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-gold">
+                                </div>
+                                <button onclick="app.searchUserForDeletion()" class="mt-3 w-full bg-brand-dark text-white py-2 rounded-lg hover:bg-brand-dark/90 transition">
+                                    <i class="fas fa-search mr-2"></i>User suchen
+                                </button>
+                            </div>
+
+                            <!-- User Search Results -->
+                            <div id="dsgvo-user-search-results" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <p class="text-center text-gray-400 py-6">
+                                    <i class="fas fa-user-circle text-4xl mb-2 block"></i>
+                                    Suche einen User um Details anzuzeigen
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Deletion Preview Container -->
+                        <div id="dsgvo-deletion-preview" class="hidden mt-6"></div>
+
+                        <!-- Cleanup Preview Container -->
+                        <div id="dsgvo-cleanup-result" class="hidden mt-6"></div>
+                    </div>
+
+                    <!-- Deletion History -->
+                    <div class="bg-white rounded-xl border border-gray-100 p-6">
+                        <h3 class="font-bold text-brand-dark mb-4 flex items-center gap-2">
+                            <i class="fas fa-history text-gray-500"></i>
+                            Lösch-Historie
+                        </h3>
+                        <div id="dsgvo-deletion-history" class="space-y-2">
+                            <p class="text-center text-gray-400 py-4">Keine Löschungen durchgeführt</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DSGVO Audit Log Sub-Tab -->
+                <div id="dsgvo-content-audit" class="hidden">
+                    <div class="bg-white rounded-xl border border-gray-100 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-brand-dark flex items-center gap-2">
+                                <i class="fas fa-clipboard-list text-purple-500"></i>
+                                Admin Audit-Log
+                            </h3>
+                            <div class="flex gap-2">
+                                <select id="audit-filter-action" onchange="app.filterAuditLog()" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+                                    <option value="">Alle Aktionen</option>
+                                    <option value="DSGVO_USER_DELETION">User-Löschung</option>
+                                    <option value="SCHEDULED_DATA_CLEANUP">Daten-Cleanup</option>
+                                    <option value="ADMIN_LOGIN">Admin Login</option>
+                                </select>
+                                <button onclick="app.exportAuditLog()" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-brand-gold transition">
+                                    <i class="fas fa-download mr-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="audit-log-list" class="space-y-2 max-h-[500px] overflow-y-auto">
+                            <div class="text-center py-8 text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>
+                                Lade Audit-Log...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DSGVO Encryption Sub-Tab -->
+                <div id="dsgvo-content-encryption" class="hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Encryption Status -->
+                        <div class="bg-white rounded-xl border border-gray-100 p-6">
+                            <h3 class="font-bold text-brand-dark mb-4 flex items-center gap-2">
+                                <i class="fas fa-lock text-green-500"></i>
+                                Verschlüsselungs-Status
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle text-green-500"></i>
+                                        <span class="font-medium">SSL/TLS Website</span>
+                                    </div>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">Aktiv</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle text-green-500"></i>
+                                        <span class="font-medium">Firebase Encryption at Rest</span>
+                                    </div>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">Aktiv</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle text-green-500"></i>
+                                        <span class="font-medium">E-Mail TLS</span>
+                                    </div>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">Aktiv</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle text-green-500"></i>
+                                        <span class="font-medium">Stripe PCI-DSS</span>
+                                    </div>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">Level 1</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle text-green-500"></i>
+                                        <span class="font-medium">Daily.co DTLS/SRTP</span>
+                                    </div>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">Aktiv</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Test Tools -->
+                        <div class="bg-white rounded-xl border border-gray-100 p-6">
+                            <h3 class="font-bold text-brand-dark mb-4 flex items-center gap-2">
+                                <i class="fas fa-tools text-blue-500"></i>
+                                Test-Tools
+                            </h3>
+                            <div class="space-y-4">
+                                <button onclick="app.testEmailEncryption()" class="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-gold hover:bg-amber-50 transition text-left">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-envelope text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-brand-dark">E-Mail Verschlüsselung testen</p>
+                                        <p class="text-xs text-gray-500">Sendet Test-E-Mail mit TLS-Check</p>
+                                    </div>
+                                </button>
+                                <button onclick="app.testFirestoreSecurity()" class="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-gold hover:bg-amber-50 transition text-left">
+                                    <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-database text-amber-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-brand-dark">Firestore Rules testen</p>
+                                        <p class="text-xs text-gray-500">Prüft Zugriffsberechtigungen</p>
+                                    </div>
+                                </button>
+                                <button onclick="app.testStorageSecurity()" class="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-gold hover:bg-amber-50 transition text-left">
+                                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-cloud text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-brand-dark">Storage Security testen</p>
+                                        <p class="text-xs text-gray-500">Prüft Upload-Berechtigungen</p>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <!-- Test Results -->
+                            <div id="encryption-test-results" class="mt-4 hidden">
+                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <h4 class="font-medium text-brand-dark mb-2">Test-Ergebnisse</h4>
+                                    <pre id="encryption-test-output" class="text-xs text-gray-600 whitespace-pre-wrap font-mono"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Recommendations -->
+                    <div class="mt-6 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-200 p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-lightbulb text-amber-500 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium text-amber-800">Sicherheits-Empfehlungen</p>
+                                <ul class="text-sm text-amber-700 mt-2 space-y-1">
+                                    <li>• Regelmäßig Firestore Rules überprüfen</li>
+                                    <li>• Admin-Passwort alle 90 Tage ändern</li>
+                                    <li>• Audit-Log monatlich exportieren und archivieren</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -5035,7 +5380,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20251229e';
-        import * as App from './js/app.js?v=20260101a';
+        import * as App from './js/app.js?v=20260104a';
 
         // Make functions globally accessible
         window.app = {
@@ -5309,6 +5654,21 @@
             saveCookieSettings: () => Core.saveCookieSettings(),
             showCookieBanner: () => Core.showCookieBanner(),
             getCookieConsent: () => Core.getCookieConsent(),
+
+            // DSGVO Admin Functions
+            switchDsgvoSubTab: (tabName) => App.switchDsgvoSubTab(tabName),
+            loadDsgvoStats: () => App.loadDsgvoStats(),
+            searchUserForDeletion: () => App.searchUserForDeletion(),
+            previewUserDeletion: (userId) => App.previewUserDeletion(userId),
+            executeUserDeletion: (userId) => App.executeUserDeletion(userId),
+            loadAuditLog: (filterAction) => App.loadAuditLog(filterAction),
+            filterAuditLog: () => App.filterAuditLog(),
+            exportAuditLog: () => App.exportAuditLog(),
+            runDataCleanupPreview: () => App.runDataCleanupPreview(),
+            showDsgvoReport: () => App.showDsgvoReport(),
+            testEmailEncryption: () => App.testEmailEncryption(),
+            testFirestoreSecurity: () => App.testFirestoreSecurity(),
+            testStorageSecurity: () => App.testStorageSecurity(),
 
             // Email Verification
             checkEmailVerification: () => App.checkEmailVerification(),

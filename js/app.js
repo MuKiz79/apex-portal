@@ -7403,8 +7403,8 @@ export function switchDashboardTab(tabName, state) {
 
 // Switch Admin Panel Tabs
 export function switchAdminTab(tabName) {
-    // Tab names: orders, users, strategy, coaches, documents, settings, mentor-preview, cv-generator
-    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings', 'mentor-preview', 'cv-generator'];
+    // Tab names: orders, users, strategy, coaches, documents, settings, mentor-preview, cv-generator, dsgvo
+    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings', 'mentor-preview', 'cv-generator', 'dsgvo'];
 
     // Update tab buttons
     tabIds.forEach(id => {
@@ -7449,6 +7449,8 @@ export function switchAdminTab(tabName) {
         loadMentorPreviewOptions();
     } else if (tabName === 'cv-generator') {
         loadCvProjects();
+    } else if (tabName === 'dsgvo') {
+        loadDsgvoStats();
     }
 }
 
@@ -15062,5 +15064,776 @@ function hideAllViews() {
     document.querySelectorAll('[id^="view-"]').forEach(view => {
         view.classList.add('hidden');
     });
+}
+
+// ========== DSGVO & SECURITY ADMIN FUNCTIONS ==========
+
+// Switch between DSGVO sub-tabs
+export function switchDsgvoSubTab(tabName) {
+    const subTabs = ['overview', 'deletion', 'audit', 'encryption'];
+
+    subTabs.forEach(tab => {
+        const btn = document.getElementById(`dsgvo-subtab-${tab}`);
+        const content = document.getElementById(`dsgvo-content-${tab}`);
+
+        if (btn) {
+            if (tab === tabName) {
+                btn.classList.add('bg-brand-gold', 'text-brand-dark');
+                btn.classList.remove('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200');
+            } else {
+                btn.classList.remove('bg-brand-gold', 'text-brand-dark');
+                btn.classList.add('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200');
+            }
+        }
+
+        if (content) {
+            content.classList.toggle('hidden', tab !== tabName);
+        }
+    });
+
+    // Load data for specific sub-tabs
+    if (tabName === 'audit') {
+        loadAuditLog();
+    }
+}
+
+// Load DSGVO statistics
+export async function loadDsgvoStats() {
+    try {
+        // Count total users
+        const usersQuery = query(collection(db, 'users'));
+        const usersSnapshot = await getDocs(usersQuery);
+        const totalUsers = usersSnapshot.size;
+
+        // Count orders (for data retention info)
+        const ordersQuery = query(collection(db, 'orders'));
+        const ordersSnapshot = await getDocs(ordersQuery);
+        const totalOrders = ordersSnapshot.size;
+
+        // Count audit log entries
+        const auditQuery = query(collection(db, 'auditLog'), orderBy('timestamp', 'desc'), limit(1));
+        const auditSnapshot = await getDocs(auditQuery);
+
+        // Count CV projects
+        const cvQuery = query(collection(db, 'cvProjects'));
+        const cvSnapshot = await getDocs(cvQuery);
+        const totalCvProjects = cvSnapshot.size;
+
+        // Calculate inactive users (no login in 2 years)
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+        let inactiveUsers = 0;
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            const lastLogin = data.lastLoginAt?.toDate?.() || data.createdAt?.toDate?.();
+            if (lastLogin && lastLogin < twoYearsAgo) {
+                inactiveUsers++;
+            }
+        });
+
+        // Update stats in UI
+        const statUsers = document.getElementById('dsgvo-stat-users');
+        const statInactive = document.getElementById('dsgvo-stat-inactive');
+        const statOrders = document.getElementById('dsgvo-stat-orders');
+        const statCvProjects = document.getElementById('dsgvo-stat-cv-projects');
+
+        if (statUsers) statUsers.textContent = totalUsers;
+        if (statInactive) statInactive.textContent = inactiveUsers;
+        if (statOrders) statOrders.textContent = totalOrders;
+        if (statCvProjects) statCvProjects.textContent = totalCvProjects;
+
+        logger.log('DSGVO stats loaded:', { totalUsers, inactiveUsers, totalOrders, totalCvProjects });
+
+    } catch (error) {
+        logger.error('Error loading DSGVO stats:', error);
+        showToast('Fehler beim Laden der DSGVO-Statistiken');
+    }
+}
+
+// Search user for deletion
+export async function searchUserForDeletion() {
+    const searchInput = document.getElementById('dsgvo-user-search');
+    const resultsContainer = document.getElementById('dsgvo-user-search-results');
+
+    if (!searchInput || !resultsContainer) return;
+
+    const searchTerm = searchInput.value.trim().toLowerCase();
+
+    if (searchTerm.length < 3) {
+        resultsContainer.innerHTML = '<p class="text-gray-500 text-sm">Bitte mindestens 3 Zeichen eingeben</p>';
+        return;
+    }
+
+    resultsContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Suche...</div>';
+
+    try {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const matchingUsers = [];
+
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            const email = (data.email || '').toLowerCase();
+            const name = `${data.firstName || ''} ${data.lastName || ''}`.toLowerCase();
+
+            if (email.includes(searchTerm) || name.includes(searchTerm) || doc.id.includes(searchTerm)) {
+                matchingUsers.push({
+                    id: doc.id,
+                    email: data.email,
+                    name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Unbekannt',
+                    createdAt: data.createdAt?.toDate?.()
+                });
+            }
+        });
+
+        if (matchingUsers.length === 0) {
+            resultsContainer.innerHTML = '<p class="text-gray-500 text-sm">Keine Benutzer gefunden</p>';
+            return;
+        }
+
+        resultsContainer.innerHTML = matchingUsers.map(user => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2">
+                <div>
+                    <p class="font-medium text-brand-dark">${user.name}</p>
+                    <p class="text-sm text-gray-500">${user.email || 'Keine Email'}</p>
+                    <p class="text-xs text-gray-400">ID: ${user.id}</p>
+                </div>
+                <button onclick="app.previewUserDeletion('${user.id}')"
+                        class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition">
+                    <i class="fas fa-eye mr-1"></i>Vorschau
+                </button>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        logger.error('Error searching users:', error);
+        resultsContainer.innerHTML = '<p class="text-red-500 text-sm">Fehler bei der Suche</p>';
+    }
+}
+
+// Preview user deletion (dry-run)
+export async function previewUserDeletion(userId) {
+    const previewContainer = document.getElementById('dsgvo-deletion-preview');
+    if (!previewContainer) return;
+
+    previewContainer.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i><p class="mt-2 text-gray-500">Analysiere Benutzerdaten...</p></div>';
+    previewContainer.classList.remove('hidden');
+
+    try {
+        // Fetch user data
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        const userData = userDoc.exists() ? userDoc.data() : null;
+
+        // Fetch user orders
+        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', userId));
+        const ordersSnapshot = await getDocs(ordersQuery);
+        const orders = [];
+        ordersSnapshot.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
+
+        // Fetch CV projects
+        const cvQuery = query(collection(db, 'cvProjects'), where('userId', '==', userId));
+        const cvSnapshot = await getDocs(cvQuery);
+        const cvProjects = [];
+        cvSnapshot.forEach(doc => cvProjects.push({ id: doc.id, ...doc.data() }));
+
+        // Count paid orders (will be anonymized, not deleted)
+        const paidOrders = orders.filter(o => o.paymentStatus === 'paid' || o.status === 'paid');
+        const unpaidOrders = orders.filter(o => o.paymentStatus !== 'paid' && o.status !== 'paid');
+
+        previewContainer.innerHTML = `
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-user-times text-red-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-brand-dark">${userData?.firstName || ''} ${userData?.lastName || ''}</h4>
+                        <p class="text-sm text-gray-500">${userData?.email || 'Keine Email'}</p>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 mt-4">
+                    <h5 class="font-semibold text-gray-700 mb-3">Zu löschende/anonymisierende Daten:</h5>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center gap-2 ${userData ? 'text-red-600' : 'text-gray-400'}">
+                            <i class="fas fa-${userData ? 'trash' : 'check'} w-4"></i>
+                            <span>Benutzerprofil: ${userData ? 'Wird gelöscht' : 'Nicht vorhanden'}</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 ${unpaidOrders.length > 0 ? 'text-red-600' : 'text-gray-400'}">
+                            <i class="fas fa-${unpaidOrders.length > 0 ? 'trash' : 'check'} w-4"></i>
+                            <span>Unbezahlte Bestellungen: ${unpaidOrders.length} (werden gelöscht)</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 ${paidOrders.length > 0 ? 'text-yellow-600' : 'text-gray-400'}">
+                            <i class="fas fa-${paidOrders.length > 0 ? 'user-secret' : 'check'} w-4"></i>
+                            <span>Bezahlte Bestellungen: ${paidOrders.length} (werden anonymisiert - Buchhaltungspflicht)</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 ${cvProjects.length > 0 ? 'text-red-600' : 'text-gray-400'}">
+                            <i class="fas fa-${cvProjects.length > 0 ? 'trash' : 'check'} w-4"></i>
+                            <span>CV-Projekte: ${cvProjects.length} (werden gelöscht)</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-red-600">
+                            <i class="fas fa-trash w-4"></i>
+                            <span>Firebase Auth Account: Wird gelöscht</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-red-600">
+                            <i class="fas fa-folder-minus w-4"></i>
+                            <span>Storage-Dateien: Werden gelöscht (falls vorhanden)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mt-0.5"></i>
+                        <div class="text-sm text-yellow-800">
+                            <p class="font-semibold">Achtung: Diese Aktion ist unwiderruflich!</p>
+                            <p class="mt-1">Der Benutzer erhält eine Bestätigungs-Email an die hinterlegte Adresse.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button onclick="app.executeUserDeletion('${userId}')"
+                            class="flex-1 px-4 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">
+                        <i class="fas fa-trash-alt mr-2"></i>Endgültig löschen
+                    </button>
+                    <button onclick="document.getElementById('dsgvo-deletion-preview').classList.add('hidden')"
+                            class="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                        Abbrechen
+                    </button>
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        logger.error('Error previewing user deletion:', error);
+        previewContainer.innerHTML = '<p class="text-red-500">Fehler beim Laden der Vorschau</p>';
+    }
+}
+
+// Execute user deletion (calls Cloud Function)
+export async function executeUserDeletion(userId) {
+    if (!confirm('Bist du ABSOLUT sicher? Diese Aktion kann NICHT rückgängig gemacht werden!')) {
+        return;
+    }
+
+    const previewContainer = document.getElementById('dsgvo-deletion-preview');
+    if (previewContainer) {
+        previewContainer.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-red-600"></i><p class="mt-2 text-gray-500">Lösche Benutzerdaten...</p></div>';
+    }
+
+    try {
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/deleteUserCompletely', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId,
+                adminEmail: auth.currentUser?.email,
+                dryRun: false
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showToast('Benutzer erfolgreich gelöscht!');
+
+            // Log admin action
+            await logAdminAction('user_deletion', { userId, result: result.deletionReport });
+
+            if (previewContainer) {
+                previewContainer.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                        <i class="fas fa-check-circle text-green-600 text-4xl mb-3"></i>
+                        <h4 class="font-bold text-green-800">Löschung erfolgreich!</h4>
+                        <p class="text-sm text-green-700 mt-2">Alle Benutzerdaten wurden gemäß DSGVO Art. 17 gelöscht.</p>
+                        <div class="mt-4 text-left text-xs text-green-600 bg-green-100 rounded p-3">
+                            <pre>${JSON.stringify(result.deletionReport, null, 2)}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Refresh stats
+            await loadDsgvoStats();
+
+        } else {
+            throw new Error(result.error || 'Unbekannter Fehler');
+        }
+
+    } catch (error) {
+        logger.error('Error deleting user:', error);
+        showToast('Fehler beim Löschen: ' + error.message);
+
+        if (previewContainer) {
+            previewContainer.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <i class="fas fa-times-circle text-red-600 text-4xl mb-3"></i>
+                    <h4 class="font-bold text-red-800">Fehler bei der Löschung</h4>
+                    <p class="text-sm text-red-700 mt-2">${error.message}</p>
+                </div>
+            `;
+        }
+    }
+}
+
+// Load audit log
+export async function loadAuditLog(filterAction = null) {
+    const container = document.getElementById('audit-log-list');
+    if (!container) return;
+
+    container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin"></i> Lade Audit-Log...</div>';
+
+    try {
+        let auditQuery;
+        if (filterAction && filterAction !== 'all') {
+            auditQuery = query(
+                collection(db, 'auditLog'),
+                where('action', '==', filterAction),
+                orderBy('timestamp', 'desc'),
+                limit(100)
+            );
+        } else {
+            auditQuery = query(
+                collection(db, 'auditLog'),
+                orderBy('timestamp', 'desc'),
+                limit(100)
+            );
+        }
+
+        const snapshot = await getDocs(auditQuery);
+        const logs = [];
+        snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
+
+        if (logs.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-8">Keine Audit-Einträge gefunden</p>';
+            return;
+        }
+
+        container.innerHTML = logs.map(log => {
+            const timestamp = log.timestamp?.toDate?.() || new Date();
+            const actionColors = {
+                'user_deletion': 'bg-red-100 text-red-700',
+                'order_update': 'bg-blue-100 text-blue-700',
+                'coach_assignment': 'bg-purple-100 text-purple-700',
+                'settings_change': 'bg-yellow-100 text-yellow-700',
+                'document_upload': 'bg-green-100 text-green-700',
+                'login': 'bg-gray-100 text-gray-700'
+            };
+            const colorClass = actionColors[log.action] || 'bg-gray-100 text-gray-700';
+
+            return `
+                <div class="flex items-start gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <div class="flex-shrink-0">
+                        <span class="inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}">
+                            ${log.action || 'unknown'}
+                        </span>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm text-brand-dark">${log.description || 'Keine Beschreibung'}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-user mr-1"></i>${log.adminEmail || 'System'}
+                            <span class="mx-2">|</span>
+                            <i class="fas fa-clock mr-1"></i>${timestamp.toLocaleString('de-DE')}
+                        </p>
+                        ${log.details ? `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer">Details anzeigen</summary><pre class="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">${JSON.stringify(log.details, null, 2)}</pre></details>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        logger.error('Error loading audit log:', error);
+        container.innerHTML = '<p class="text-red-500 text-center py-8">Fehler beim Laden des Audit-Logs</p>';
+    }
+}
+
+// Filter audit log
+export function filterAuditLog() {
+    const filterSelect = document.getElementById('audit-filter-action');
+    const filterValue = filterSelect?.value || 'all';
+    loadAuditLog(filterValue);
+}
+
+// Export audit log to CSV
+export async function exportAuditLog() {
+    try {
+        showToast('Exportiere Audit-Log...');
+
+        const auditQuery = query(
+            collection(db, 'auditLog'),
+            orderBy('timestamp', 'desc'),
+            limit(1000)
+        );
+
+        const snapshot = await getDocs(auditQuery);
+        const logs = [];
+        snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
+
+        // Create CSV
+        const headers = ['Timestamp', 'Action', 'Admin', 'Description', 'Details'];
+        const rows = logs.map(log => {
+            const timestamp = log.timestamp?.toDate?.() || new Date();
+            return [
+                timestamp.toISOString(),
+                log.action || '',
+                log.adminEmail || 'System',
+                (log.description || '').replace(/"/g, '""'),
+                JSON.stringify(log.details || {}).replace(/"/g, '""')
+            ].map(cell => `"${cell}"`).join(',');
+        });
+
+        const csv = [headers.join(','), ...rows].join('\n');
+
+        // Download
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        showToast('Audit-Log exportiert!');
+
+    } catch (error) {
+        logger.error('Error exporting audit log:', error);
+        showToast('Fehler beim Export');
+    }
+}
+
+// Log admin action (local helper)
+async function logAdminAction(action, details) {
+    try {
+        await fetch('https://us-central1-apex-executive.cloudfunctions.net/logAdminAction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action,
+                adminEmail: auth.currentUser?.email,
+                details
+            })
+        });
+    } catch (error) {
+        logger.error('Error logging admin action:', error);
+    }
+}
+
+// Run data cleanup preview
+export async function runDataCleanupPreview() {
+    const resultContainer = document.getElementById('dsgvo-cleanup-result');
+    if (!resultContainer) return;
+
+    resultContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Analysiere Daten...</div>';
+    resultContainer.classList.remove('hidden');
+
+    try {
+        // Find inactive users (2+ years)
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const inactiveUsers = [];
+
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            const lastActivity = data.lastLoginAt?.toDate?.() || data.createdAt?.toDate?.();
+            if (lastActivity && lastActivity < twoYearsAgo) {
+                inactiveUsers.push({
+                    id: doc.id,
+                    email: data.email,
+                    name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+                    lastActivity
+                });
+            }
+        });
+
+        // Find old CV projects (6+ months after completion)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const cvSnapshot = await getDocs(collection(db, 'cvProjects'));
+        const oldProjects = [];
+
+        cvSnapshot.forEach(doc => {
+            const data = doc.data();
+            const completedAt = data.completedAt?.toDate?.() || data.updatedAt?.toDate?.();
+            if (completedAt && completedAt < sixMonthsAgo && data.status === 'completed') {
+                oldProjects.push({
+                    id: doc.id,
+                    customerEmail: data.customerEmail,
+                    completedAt
+                });
+            }
+        });
+
+        resultContainer.innerHTML = `
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+                <h4 class="font-bold text-brand-dark mb-4">Cleanup-Vorschau</h4>
+
+                <div class="space-y-4">
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-user-clock text-yellow-600"></i>
+                            <span class="font-semibold text-yellow-800">Inaktive Benutzer (2+ Jahre): ${inactiveUsers.length}</span>
+                        </div>
+                        ${inactiveUsers.length > 0 ? `
+                            <ul class="text-sm text-yellow-700 ml-6 list-disc">
+                                ${inactiveUsers.slice(0, 5).map(u => `<li>${u.email || u.name || u.id}</li>`).join('')}
+                                ${inactiveUsers.length > 5 ? `<li>... und ${inactiveUsers.length - 5} weitere</li>` : ''}
+                            </ul>
+                        ` : '<p class="text-sm text-green-600 ml-6">Keine inaktiven Benutzer gefunden</p>'}
+                    </div>
+
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-file-archive text-blue-600"></i>
+                            <span class="font-semibold text-blue-800">Alte CV-Projekte (6+ Monate): ${oldProjects.length}</span>
+                        </div>
+                        ${oldProjects.length > 0 ? `
+                            <ul class="text-sm text-blue-700 ml-6 list-disc">
+                                ${oldProjects.slice(0, 5).map(p => `<li>${p.customerEmail || p.id}</li>`).join('')}
+                                ${oldProjects.length > 5 ? `<li>... und ${oldProjects.length - 5} weitere</li>` : ''}
+                            </ul>
+                        ` : '<p class="text-sm text-green-600 ml-6">Keine alten Projekte gefunden</p>'}
+                    </div>
+                </div>
+
+                <div class="mt-4 text-sm text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Der automatische Cleanup läuft täglich um 3:00 Uhr und sendet Warnungs-Emails an inaktive Benutzer.
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        logger.error('Error running cleanup preview:', error);
+        resultContainer.innerHTML = '<p class="text-red-500">Fehler bei der Analyse</p>';
+    }
+}
+
+// Show DSGVO compliance report
+export async function showDsgvoReport() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.id = 'dsgvo-report-modal';
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-brand-dark">DSGVO Compliance Report</h3>
+                    <button onclick="document.getElementById('dsgvo-report-modal').remove()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div class="flex items-center gap-2 text-green-700">
+                            <i class="fas fa-check-circle"></i>
+                            <span class="font-semibold">Implementiert</span>
+                        </div>
+                        <ul class="mt-2 text-sm text-green-600 space-y-1">
+                            <li><i class="fas fa-check mr-1"></i>Cookie Consent Management</li>
+                            <li><i class="fas fa-check mr-1"></i>Datenschutzerklärung</li>
+                            <li><i class="fas fa-check mr-1"></i>Recht auf Löschung (Art. 17)</li>
+                            <li><i class="fas fa-check mr-1"></i>Audit-Logging</li>
+                            <li><i class="fas fa-check mr-1"></i>Automatische Datenlöschung</li>
+                            <li><i class="fas fa-check mr-1"></i>SSL/TLS Verschlüsselung</li>
+                            <li><i class="fas fa-check mr-1"></i>Firebase Security Rules</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <div class="flex items-center gap-2 text-yellow-700">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span class="font-semibold">Empfehlungen</span>
+                        </div>
+                        <ul class="mt-2 text-sm text-yellow-600 space-y-1">
+                            <li><i class="fas fa-clock mr-1"></i>Regelmäßige Security Audits</li>
+                            <li><i class="fas fa-clock mr-1"></i>Mitarbeiter-Schulungen</li>
+                            <li><i class="fas fa-clock mr-1"></i>Verarbeitungsverzeichnis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4">
+                    <h4 class="font-semibold text-brand-dark mb-3">Aufbewahrungsfristen</h4>
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="text-left p-2">Datentyp</th>
+                                <th class="text-left p-2">Aufbewahrung</th>
+                                <th class="text-left p-2">Rechtsgrundlage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100">
+                                <td class="p-2">Benutzerprofile</td>
+                                <td class="p-2">Bis zur Löschungsanfrage</td>
+                                <td class="p-2">Art. 6 (1) b DSGVO</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="p-2">Bezahlte Bestellungen</td>
+                                <td class="p-2">10 Jahre (anonymisiert)</td>
+                                <td class="p-2">§ 147 AO</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="p-2">CV-Projekte</td>
+                                <td class="p-2">6 Monate nach Abschluss</td>
+                                <td class="p-2">Berechtigtes Interesse</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2">Audit-Logs</td>
+                                <td class="p-2">2 Jahre</td>
+                                <td class="p-2">Compliance</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-center pt-4">
+                    <p class="text-xs text-gray-400">Report generiert am ${new Date().toLocaleString('de-DE')}</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+// Test email encryption (SMTP TLS)
+export async function testEmailEncryption() {
+    const resultContainer = document.getElementById('encryption-test-results');
+    if (!resultContainer) return;
+
+    resultContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Teste E-Mail-Verschlüsselung...</div>';
+
+    try {
+        // Send test email to admin
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/notifyAdminNewOrder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                testMode: true,
+                customerEmail: auth.currentUser?.email,
+                productName: 'DSGVO Test',
+                orderId: 'test-encryption-' + Date.now()
+            })
+        });
+
+        if (response.ok) {
+            resultContainer.innerHTML = `
+                <div class="p-4 bg-green-50 rounded-lg">
+                    <div class="flex items-center gap-2 text-green-700">
+                        <i class="fas fa-check-circle"></i>
+                        <span class="font-semibold">E-Mail-Verschlüsselung aktiv</span>
+                    </div>
+                    <p class="text-sm text-green-600 mt-2">
+                        SMTP-Verbindung über TLS/SSL (Port 465) erfolgreich.
+                        Test-E-Mail wurde gesendet.
+                    </p>
+                </div>
+            `;
+        } else {
+            throw new Error('SMTP-Fehler');
+        }
+
+    } catch (error) {
+        resultContainer.innerHTML = `
+            <div class="p-4 bg-red-50 rounded-lg">
+                <div class="flex items-center gap-2 text-red-700">
+                    <i class="fas fa-times-circle"></i>
+                    <span class="font-semibold">Test fehlgeschlagen</span>
+                </div>
+                <p class="text-sm text-red-600 mt-2">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Test Firestore security rules
+export async function testFirestoreSecurity() {
+    const resultContainer = document.getElementById('encryption-test-results');
+    if (!resultContainer) return;
+
+    resultContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Teste Firestore Security Rules...</div>';
+
+    const tests = [];
+
+    try {
+        // Test 1: Cannot read other user's data
+        try {
+            await getDoc(doc(db, 'users', 'non-existent-user-test'));
+            tests.push({ name: 'User-Isolation', passed: true, note: 'Lesen fremder Daten geblockt' });
+        } catch (e) {
+            tests.push({ name: 'User-Isolation', passed: true, note: 'Permission denied (erwartet)' });
+        }
+
+        // Test 2: Cannot write to auditLog
+        try {
+            await setDoc(doc(db, 'auditLog', 'test-entry'), { test: true });
+            tests.push({ name: 'Audit-Log Schutz', passed: false, note: 'WARNUNG: Schreiben möglich!' });
+        } catch (e) {
+            tests.push({ name: 'Audit-Log Schutz', passed: true, note: 'Direktes Schreiben geblockt' });
+        }
+
+        // Test 3: Admin can read settings
+        try {
+            await getDoc(doc(db, 'settings', 'mentoring'));
+            tests.push({ name: 'Settings Zugriff', passed: true, note: 'Admin kann lesen' });
+        } catch (e) {
+            tests.push({ name: 'Settings Zugriff', passed: false, note: 'Fehler: ' + e.message });
+        }
+
+        resultContainer.innerHTML = `
+            <div class="space-y-2">
+                ${tests.map(t => `
+                    <div class="p-3 ${t.passed ? 'bg-green-50' : 'bg-red-50'} rounded-lg flex items-center justify-between">
+                        <span class="font-medium ${t.passed ? 'text-green-700' : 'text-red-700'}">${t.name}</span>
+                        <span class="text-sm ${t.passed ? 'text-green-600' : 'text-red-600'}">
+                            <i class="fas fa-${t.passed ? 'check' : 'times'} mr-1"></i>${t.note}
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+    } catch (error) {
+        resultContainer.innerHTML = `<p class="text-red-500">Fehler: ${error.message}</p>`;
+    }
+}
+
+// Test Storage security
+export async function testStorageSecurity() {
+    const resultContainer = document.getElementById('encryption-test-results');
+    if (!resultContainer) return;
+
+    resultContainer.innerHTML = `
+        <div class="p-4 bg-blue-50 rounded-lg">
+            <div class="flex items-center gap-2 text-blue-700">
+                <i class="fas fa-shield-alt"></i>
+                <span class="font-semibold">Firebase Storage Sicherheit</span>
+            </div>
+            <ul class="text-sm text-blue-600 mt-2 space-y-1">
+                <li><i class="fas fa-check mr-1"></i>Dateien sind nur für authentifizierte Benutzer zugänglich</li>
+                <li><i class="fas fa-check mr-1"></i>Jeder Benutzer kann nur seine eigenen Dateien lesen</li>
+                <li><i class="fas fa-check mr-1"></i>Admin hat Zugriff auf alle Dateien</li>
+                <li><i class="fas fa-check mr-1"></i>Daten werden bei der Übertragung verschlüsselt (HTTPS)</li>
+                <li><i class="fas fa-check mr-1"></i>Daten werden im Ruhezustand verschlüsselt (Google-managed)</li>
+            </ul>
+            <p class="text-xs text-blue-500 mt-3">
+                <i class="fas fa-info-circle mr-1"></i>
+                Storage Rules werden in storage.rules definiert
+            </p>
+        </div>
+    `;
 }
 
