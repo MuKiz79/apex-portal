@@ -449,6 +449,7 @@ exports.stripeWebhook = onRequest({
 
                                 await transporter.sendMail({
                                     from: '"Karriaro" <noreply@karriaro.de>',
+                                    replyTo: 'kontakt@karriaro.de',
                                     to: customerEmail,
                                     subject: 'Willkommen bei Karriaro - Bitte Passwort festlegen',
                                     html: `
@@ -466,7 +467,7 @@ exports.stripeWebhook = onRequest({
                                                 <p style="color: #666; font-size: 14px;">Oder kopieren Sie diesen Link in Ihren Browser:<br><a href="${resetLink}" style="color: #1a1a2e;">${resetLink}</a></p>
                                                 <p>Sobald Ihr Passwort festgelegt ist, können Sie sich in Ihrem Dashboard einloggen und Ihre Bestellungen einsehen.</p>
                                                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                                                <p style="color: #666; font-size: 12px;">Bei Fragen stehen wir Ihnen gerne zur Verfügung: concierge@karriaro.de</p>
+                                                <p style="color: #666; font-size: 12px;">Bei Fragen stehen wir Ihnen gerne zur Verfügung: kontakt@karriaro.de</p>
                                             </div>
                                         </div>
                                     `
@@ -623,6 +624,7 @@ async function sendQuestionnaireEmailInternal(customerEmail, customerName, order
 
     await transporter.sendMail({
         from: `"Karriaro" <${user || 'noreply@karriaro.de'}>`,
+        replyTo: 'kontakt@karriaro.de',
         to: customerEmail,
         subject: 'Nächster Schritt: Ihr persönlicher CV-Fragebogen - Karriaro',
         html: `
@@ -761,6 +763,7 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
 
     const mailOptions = {
         from: `"Karriaro" <${smtpUser.value() || 'noreply@karriaro.de'}>`,
+        replyTo: 'kontakt@karriaro.de',
         to: orderData.customerEmail,
         subject: `Bestellbestätigung ${shortOrderId} - Karriaro`,
         html: `
@@ -1192,6 +1195,7 @@ exports.sendAppointmentProposalEmail = onRequest({
 
         await transporter.sendMail({
             from: '"Karriaro" <noreply@karriaro.de>',
+            replyTo: 'kontakt@karriaro.de',
             to: customerEmail,
             subject: 'Terminvorschläge für Ihr Coaching | Karriaro',
             html: emailHtml
@@ -1267,6 +1271,7 @@ exports.notifyAdminAppointmentAccepted = onRequest({
 
         await transporter.sendMail({
             from: '"Karriaro" <noreply@karriaro.de>',
+            replyTo: 'kontakt@karriaro.de',
             to: ADMIN_EMAIL,
             subject: `✅ Termin bestätigt von ${customerName} | Karriaro`,
             html: emailHtml
@@ -1335,6 +1340,7 @@ exports.notifyAdminAppointmentDeclined = onRequest({
 
         await transporter.sendMail({
             from: '"Karriaro" <noreply@karriaro.de>',
+            replyTo: 'kontakt@karriaro.de',
             to: ADMIN_EMAIL,
             subject: `⏳ Neue Terminvorschläge benötigt von ${customerName} | Karriaro`,
             html: emailHtml
@@ -1406,6 +1412,7 @@ exports.notifyCustomerDocumentReady = onRequest({
 
         await transporter.sendMail({
             from: '"Karriaro" <noreply@karriaro.de>',
+            replyTo: 'kontakt@karriaro.de',
             to: customerEmail,
             subject: '📄 Neues Dokument für Sie bereit | Karriaro',
             html: emailHtml
@@ -1473,6 +1480,7 @@ exports.notifyAdminDocumentUploaded = onRequest({
 
         await transporter.sendMail({
             from: '"Karriaro" <noreply@karriaro.de>',
+            replyTo: 'kontakt@karriaro.de',
             to: ADMIN_EMAIL,
             subject: `📤 Neues Dokument von ${customerName} | Karriaro`,
             html: emailHtml
@@ -1641,6 +1649,7 @@ exports.notifyMentorAssignment = onRequest({
         // Send email
         await transporter.sendMail({
             from: `"Karriaro" <${smtpUser.value()}>`,
+            replyTo: 'kontakt@karriaro.de',
             to: coachEmail,
             subject: `Neue Mentoring-Session zugewiesen - ${customerName || 'Kunde'}`,
             html: emailHtml
@@ -2001,6 +2010,7 @@ exports.sendQuestionnaireEmail = onRequest({
         // Send email
         await transporter.sendMail({
             from: `"Karriaro" <${smtpUser.value()}>`,
+            replyTo: 'kontakt@karriaro.de',
             to: customerEmail,
             subject: 'Ihr CV-Fragebogen - Karriaro',
             html: emailHtml
@@ -4798,3 +4808,113 @@ async function generatePdfWithCustomTemplate(cvData, templateStyle, pdfFilePath)
         return generatePdfWithPdfme(cvData, 'corporate');
     }
 }
+
+// ========== ADMIN: CLEANUP DUPLICATE USERS ==========
+// Bereinigt doppelte User-Dokumente (behält den neuesten pro Email)
+exports.cleanupDuplicateUsers = onRequest({
+    invoker: 'public',
+    memory: '512MiB',
+    timeoutSeconds: 300
+}, async (req, res) => {
+    const corsHeaders = getCorsHeaders(req);
+
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        // Verify admin (check Authorization header or request body)
+        const { adminEmail } = req.body;
+        if (adminEmail !== 'muammer.kizilaslan@gmail.com') {
+            return res.status(403).json({ error: 'Unauthorized - Admin only' });
+        }
+
+        const db = admin.firestore();
+        const usersSnapshot = await db.collection('users').get();
+
+        // Gruppiere User nach Email
+        const emailGroups = new Map();
+
+        usersSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const email = (data.email || doc.id).toLowerCase();
+
+            if (!emailGroups.has(email)) {
+                emailGroups.set(email, []);
+            }
+            emailGroups.get(email).push({
+                id: doc.id,
+                data: data,
+                createdAt: data.createdAt?.toDate?.() || data.createdAt || null
+            });
+        });
+
+        // Finde Duplikate und lösche die älteren
+        const duplicates = [];
+        const toDelete = [];
+
+        emailGroups.forEach((users, email) => {
+            if (users.length > 1) {
+                // Sortiere nach createdAt (neueste zuerst)
+                users.sort((a, b) => {
+                    if (!a.createdAt && !b.createdAt) return 0;
+                    if (!a.createdAt) return 1;
+                    if (!b.createdAt) return -1;
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+
+                // Behalte den ersten (neuesten), lösche den Rest
+                const keep = users[0];
+                const deleteThese = users.slice(1);
+
+                duplicates.push({
+                    email,
+                    keep: keep.id,
+                    delete: deleteThese.map(u => u.id)
+                });
+
+                deleteThese.forEach(u => toDelete.push(u.id));
+            }
+        });
+
+        // Dry-run Mode (default) - nur Preview ohne Löschen
+        const dryRun = req.body.dryRun !== false;
+
+        if (!dryRun && toDelete.length > 0) {
+            // Tatsächlich löschen
+            const batch = db.batch();
+            toDelete.forEach(userId => {
+                batch.delete(db.collection('users').doc(userId));
+            });
+            await batch.commit();
+        }
+
+        return res.status(200).json({
+            success: true,
+            dryRun,
+            totalUsers: usersSnapshot.size,
+            uniqueEmails: emailGroups.size,
+            duplicateGroups: duplicates.length,
+            documentsToDelete: toDelete.length,
+            deletedDocuments: dryRun ? 0 : toDelete.length,
+            details: duplicates,
+            message: dryRun
+                ? `Dry-Run: ${toDelete.length} Duplikate gefunden. Setze dryRun: false um zu löschen.`
+                : `${toDelete.length} doppelte User-Dokumente gelöscht.`
+        });
+
+    } catch (error) {
+        console.error('Error cleaning up duplicate users:', error);
+        return res.status(500).json({
+            error: 'Fehler beim Bereinigen der Duplikate',
+            details: error.message
+        });
+    }
+});

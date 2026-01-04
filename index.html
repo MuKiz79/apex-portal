@@ -3230,6 +3230,10 @@
 
                 <!-- Completed Orders List (hidden by default) -->
                 <div id="admin-completed-orders-list" class="space-y-3 hidden">
+                    <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                        <p>Lade abgeschlossene Bestellungen...</p>
+                    </div>
                 </div>
 
                 <!-- Legacy container for compatibility -->
@@ -3294,12 +3298,60 @@
                     </div>
                 </div>
 
+                <!-- Search and Filter -->
+                <div class="bg-white rounded-xl border border-gray-100 p-4 mb-4">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <!-- Search Input -->
+                        <div class="flex-1 relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text"
+                                   id="admin-users-search"
+                                   placeholder="Suche nach Name oder Email..."
+                                   oninput="app.searchUsers(this.value)"
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20">
+                        </div>
+                        <!-- Filter Dropdown -->
+                        <select id="admin-users-filter"
+                                onchange="app.filterUsers(this.value)"
+                                class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-gold bg-white">
+                            <option value="all">Alle Benutzer</option>
+                            <option value="cookies-all">Alle Cookies akzeptiert</option>
+                            <option value="cookies-essential">Nur notwendige</option>
+                            <option value="cookies-none">Keine Auswahl</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Users List -->
                 <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
                     <div id="admin-users-list" class="divide-y divide-gray-100">
                         <div class="p-8 text-center text-gray-400">
                             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
                             <p class="text-sm">Lade Benutzer...</p>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="admin-users-pagination" class="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+                        <div class="text-sm text-gray-500">
+                            Zeige <span id="users-showing-start">0</span>-<span id="users-showing-end">0</span> von <span id="users-showing-total">0</span> Benutzern
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="app.usersPagePrev()"
+                                    id="users-btn-prev"
+                                    disabled
+                                    class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-brand-gold hover:text-brand-dark disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-400 transition">
+                                <i class="fas fa-chevron-left mr-1"></i> Zurück
+                            </button>
+                            <span class="text-sm text-gray-600">
+                                Seite <span id="users-current-page">1</span> von <span id="users-total-pages">1</span>
+                            </span>
+                            <button onclick="app.usersPageNext()"
+                                    id="users-btn-next"
+                                    disabled
+                                    class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-brand-gold hover:text-brand-dark disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-400 transition">
+                                Weiter <i class="fas fa-chevron-right ml-1"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -3522,30 +3574,6 @@
 
                 <!-- Settings Cards -->
                 <div class="space-y-4">
-                    <!-- Mentoring Slots -->
-                    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                        <div class="p-4 border-b border-gray-100 bg-gray-50">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-bullhorn text-brand-gold"></i>
-                                <h3 class="font-bold text-brand-dark">Mentoring-Plätze Hinweis</h3>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">Dieser Text erscheint als Banner im Hero-Bereich der Startseite</p>
-                        </div>
-                        <div class="p-4">
-                            <div class="flex flex-col md:flex-row gap-3">
-                                <input type="text" id="admin-mentoring-slots"
-                                       placeholder="z.B.: Nur noch 3 Mentoring-Plätze im Januar verfügbar"
-                                       class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/20">
-                                <button onclick="app.saveMentoringSlots()"
-                                        class="flex items-center justify-center gap-2 bg-brand-gold text-brand-dark px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-yellow-500 transition whitespace-nowrap">
-                                    <i class="fas fa-save"></i>
-                                    <span>Speichern</span>
-                                </button>
-                            </div>
-                            <p id="admin-mentoring-slots-status" class="text-xs text-gray-400 mt-2"></p>
-                        </div>
-                    </div>
-
                     <!-- CV Templates Verwaltung -->
                     <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
                         <div class="p-4 border-b border-gray-100 bg-gray-50">
@@ -5071,11 +5099,18 @@
             toggleFullscreen: () => App.toggleFullscreen(),
             handleProfilePictureUpload: (input) => App.handleProfilePictureUpload(window.app.state, input),
             showAppointmentCalendar: (orderId) => App.showAppointmentCalendar(orderId),
+            scrollToAppointmentProposals: (orderId) => App.scrollToAppointmentProposals(orderId),
             bookAppointment: (orderId, datetime) => App.bookAppointment(window.app.state, orderId, datetime),
-            // Appointment Proposals (Admin)
-            showAppointmentProposalModal: (orderId, userId, customerName, customerEmail) => App.showAppointmentProposalModal(orderId, userId, customerName, customerEmail),
+            // Appointment Proposals (Admin) - Calendar View
+            showAppointmentProposalModal: (orderId, userId, customerName, customerEmail, assignedCoachId) => App.showAppointmentProposalModal(orderId, userId, customerName, customerEmail, assignedCoachId),
             closeAppointmentProposalModal: () => App.closeAppointmentProposalModal(),
             sendAppointmentProposals: () => App.sendAppointmentProposals(window.app.state),
+            // Proposal Calendar Navigation & Selection
+            proposalPrevWeek: () => App.proposalPrevWeek(),
+            proposalNextWeek: () => App.proposalNextWeek(),
+            toggleProposalSlot: (dateKey, time) => App.toggleProposalSlot(dateKey, time),
+            removeProposalSlot: (index) => App.removeProposalSlot(index),
+            sendProposalFromCalendar: () => App.sendProposalFromCalendar(),
             // Appointment Confirmation/Decline (Customer)
             acceptAppointmentProposal: (orderId, datetime) => App.acceptAppointmentProposal(window.app.state, orderId, datetime),
             declineAllAppointmentProposals: (orderId) => App.declineAllAppointmentProposals(window.app.state, orderId),
@@ -5141,7 +5176,12 @@
             assignCoachToOrder: (coachId, coachName) => App.assignCoachToOrder(coachId, coachName),
             uploadDocumentToUser: (userId, orderId, file, customerEmail, customerName) => App.uploadDocumentToUser(userId, orderId, file, customerEmail, customerName),
             switchAdminTab: (tabName) => App.switchAdminTab(tabName),
+            switchAdminOrderTab: (tab) => App.switchAdminOrderTab(tab),
             loadAdminUsers: () => App.loadAdminUsers(),
+            searchUsers: (searchTerm) => App.searchUsers(searchTerm),
+            filterUsers: (filter) => App.filterUsers(filter),
+            usersPagePrev: () => App.usersPagePrev(),
+            usersPageNext: () => App.usersPageNext(),
             verifyUserEmail: (email) => App.verifyUserEmail(email),
             deleteUser: (userId, email) => App.deleteUser(userId, email),
             exportOrdersToCSV: () => App.exportOrdersToCSV(),
@@ -5525,64 +5565,9 @@
     </div>
 
     <!-- APPOINTMENT PROPOSAL MODAL (Admin) -->
+    <!-- APPOINTMENT PROPOSAL MODAL (Admin) - Content is dynamically generated -->
     <div id="appointment-proposal-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-100">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-serif text-xl text-brand-dark">Terminvorschläge senden</h3>
-                    <button onclick="app.closeAppointmentProposalModal()" class="text-gray-400 hover:text-gray-600 transition">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <p class="text-sm text-gray-500 mt-1">an <span id="proposal-customer-name" class="font-medium text-brand-dark">Kunde</span></p>
-            </div>
-            <div class="p-6">
-                <p class="text-sm text-gray-600 mb-4">Wähle bis zu 3 Terminvorschläge. Der Kunde erhält eine E-Mail und kann einen davon annehmen.</p>
-
-                <!-- Proposal 1 -->
-                <div class="mb-4">
-                    <label class="text-sm font-medium text-gray-700 mb-2 block">Vorschlag 1 *</label>
-                    <div class="flex gap-2">
-                        <input type="date" id="proposal-date-1" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold" required>
-                        <input type="time" id="proposal-time-1" class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold" required>
-                    </div>
-                </div>
-
-                <!-- Proposal 2 -->
-                <div class="mb-4">
-                    <label class="text-sm font-medium text-gray-700 mb-2 block">Vorschlag 2 (optional)</label>
-                    <div class="flex gap-2">
-                        <input type="date" id="proposal-date-2" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
-                        <input type="time" id="proposal-time-2" class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
-                    </div>
-                </div>
-
-                <!-- Proposal 3 -->
-                <div class="mb-4">
-                    <label class="text-sm font-medium text-gray-700 mb-2 block">Vorschlag 3 (optional)</label>
-                    <div class="flex gap-2">
-                        <input type="date" id="proposal-date-3" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
-                        <input type="time" id="proposal-time-3" class="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold">
-                    </div>
-                </div>
-
-                <!-- Optional message -->
-                <div class="mb-6">
-                    <label class="text-sm font-medium text-gray-700 mb-2 block">Nachricht (optional)</label>
-                    <textarea id="proposal-message" rows="2" placeholder="z.B. Bitte wählen Sie einen passenden Termin für unser Gespräch..."
-                              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none"></textarea>
-                </div>
-
-                <input type="hidden" id="proposal-order-id">
-                <input type="hidden" id="proposal-user-id">
-                <input type="hidden" id="proposal-customer-email">
-
-                <button onclick="app.sendAppointmentProposals()"
-                        class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">
-                    <i class="fas fa-paper-plane mr-2"></i>Terminvorschläge senden
-                </button>
-            </div>
-        </div>
+        <!-- Content will be dynamically generated by showAppointmentProposalModal() -->
     </div>
 
     <!-- APPOINTMENT CONFIRMATION MODAL (Customer) - Mobile Optimized -->

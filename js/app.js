@@ -52,7 +52,7 @@ const PAGINATION = {
 
 // Pagination State
 const paginationState = {
-    users: { page: 1, total: 0, data: [] },
+    users: { page: 1, total: 0, data: [], filteredData: [], searchTerm: '', filter: 'all' },
     orders: { page: 1, total: 0, data: [] },
     calls: { page: 1, total: 0, data: [] },
     docs: { page: 1, total: 0, data: [] }
@@ -1516,20 +1516,51 @@ export async function loadUserOrders(state) {
             return order;
         });
 
+        // Load coach images for orders that have assignedCoachId but no assignedCoachImage
+        const coachIdsToLoad = [...new Set(
+            ordersWithCvData
+                .filter(o => o.assignedCoachId && !o.assignedCoachImage)
+                .map(o => o.assignedCoachId)
+        )];
+
+        const coachImagesMap = {};
+        if (coachIdsToLoad.length > 0) {
+            try {
+                const coachPromises = coachIdsToLoad.map(id => getDoc(doc(db, 'coaches', id)));
+                const coachDocs = await Promise.all(coachPromises);
+                coachDocs.forEach((coachDoc, index) => {
+                    if (coachDoc.exists()) {
+                        const coachData = coachDoc.data();
+                        coachImagesMap[coachIdsToLoad[index]] = coachData.image || null;
+                    }
+                });
+            } catch (coachErr) {
+                logger.warn('Failed to load coach images:', coachErr);
+            }
+        }
+
+        // Add coach images to orders
+        const ordersWithCoachImages = ordersWithCvData.map(order => {
+            if (order.assignedCoachId && !order.assignedCoachImage && coachImagesMap[order.assignedCoachId]) {
+                return { ...order, assignedCoachImage: coachImagesMap[order.assignedCoachId] };
+            }
+            return order;
+        });
+
         // Sortiere nach Datum (client-side, um Index-Probleme zu vermeiden)
-        ordersWithCvData.sort((a, b) => {
+        ordersWithCoachImages.sort((a, b) => {
             const dateA = a.date?.seconds || 0;
             const dateB = b.date?.seconds || 0;
             return dateB - dateA;
         });
 
-        renderOrders(ordersWithCvData);
+        renderOrders(ordersWithCoachImages);
 
         // Update Dashboard Stats
-        updateDashboardStats(ordersWithCvData);
+        updateDashboardStats(ordersWithCoachImages);
 
         // Update Sidebar basierend auf Bestellungen
-        renderDashboardSidebar(ordersWithCvData);
+        renderDashboardSidebar(ordersWithCoachImages);
 
     } catch (e) {
         logger.error('Failed to load orders:', e);
@@ -1873,9 +1904,30 @@ function isOrderCompleted(order) {
         return cvStatus === 'gutachten_delivered' || orderStatus === 'completed' || order.quickCheckGutachtenUrl;
     }
 
-    // CV orders: completed when delivered
-    if (isCvOrder(order)) {
+    // Check each component separately
+    const hasCv = isCvOrder(order);
+    const hasMentoring = hasCoachSession(order);
+
+    // If order has both CV and Mentoring, BOTH must be completed
+    if (hasCv && hasMentoring) {
+        const cvCompleted = cvStatus === 'delivered' || cvStatus === 'ready';
+        // Mentoring is only completed when appointment actually happened (date in the past)
+        const mentoringCompleted = order.appointment?.datetime && new Date(order.appointment.datetime) < new Date();
+        return cvCompleted && mentoringCompleted;
+    }
+
+    // CV only: completed when delivered
+    if (hasCv) {
         return cvStatus === 'delivered' || cvStatus === 'ready';
+    }
+
+    // Mentoring only: completed when appointment passed
+    if (hasMentoring) {
+        if (order.appointment?.datetime) {
+            const appointmentDate = new Date(order.appointment.datetime);
+            return appointmentDate < new Date();
+        }
+        return false;
     }
 
     // Other orders: completed status
@@ -1956,12 +2008,27 @@ function renderSingleOrder(order, isExpanded = false) {
                 ${order.appointment?.confirmed ? `
                     <!-- Confirmed Appointment - Mobile-Optimized Design -->
                     <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                        ${order.assignedCoachName ? `
+                            <!-- Coach Info with Photo -->
+                            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-green-200">
+                                <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 shadow-md ${order.assignedCoachImage ? '' : 'bg-gradient-to-br from-brand-dark to-gray-800 flex items-center justify-center'}">
+                                    ${order.assignedCoachImage
+                                        ? `<img src="${order.assignedCoachImage}" alt="${sanitizeHTML(order.assignedCoachName)}" class="w-full h-full object-cover">`
+                                        : `<i class="fas fa-user-tie text-brand-gold text-lg"></i>`
+                                    }
+                                </div>
+                                <div>
+                                    <span class="text-xs text-green-600 font-medium">Ihr Coach</span>
+                                    <p class="font-bold text-brand-dark">${sanitizeHTML(order.assignedCoachName)}</p>
+                                </div>
+                            </div>
+                        ` : ''}
                         <div class="flex items-start gap-3 sm:gap-4">
                             <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
                                 <i class="fas fa-check text-white text-base sm:text-xl"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <span class="inline-block text-xs font-bold text-green-700 uppercase tracking-wider bg-green-100 px-2 py-1 rounded mb-2">Bestätigt</span>
+                                <span class="inline-block text-xs font-bold text-green-700 uppercase tracking-wider bg-green-100 px-2 py-1 rounded mb-2">Termin bestätigt</span>
                                 <div class="bg-white rounded-lg p-3 sm:p-4 border border-green-100 shadow-sm">
                                     <div class="flex items-center gap-2 sm:gap-3 mb-2">
                                         <i class="fas fa-calendar-day text-green-600 text-sm"></i>
@@ -1989,7 +2056,7 @@ function renderSingleOrder(order, isExpanded = false) {
                     </div>
                 ` : order.appointmentProposals?.length > 0 && order.appointmentStatus === 'pending' ? `
                     <!-- Pending Proposals - Mobile-Optimized Selection UI -->
-                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                    <div id="appointment-proposals-${order.id}" class="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 sm:p-5 shadow-sm">
                         <div class="flex items-start gap-3 sm:gap-4 mb-4">
                             <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-brand-gold to-amber-500 rounded-full flex items-center justify-center shadow-lg">
                                 <i class="fas fa-calendar-alt text-white text-base sm:text-xl"></i>
@@ -2034,18 +2101,33 @@ function renderSingleOrder(order, isExpanded = false) {
                         </div>
                     </div>
                 ` : order.appointmentStatus === 'declined' ? `
-                    <!-- Declined - Mobile-Optimized Waiting State -->
+                    <!-- Declined - Waiting for new proposals with Coach info -->
                     <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4 sm:p-5 shadow-sm">
+                        ${order.assignedCoachName ? `
+                            <!-- Coach Info with Photo -->
+                            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-orange-200">
+                                <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 shadow-md ${order.assignedCoachImage ? '' : 'bg-gradient-to-br from-brand-dark to-gray-800 flex items-center justify-center'}">
+                                    ${order.assignedCoachImage
+                                        ? `<img src="${order.assignedCoachImage}" alt="${sanitizeHTML(order.assignedCoachName)}" class="w-full h-full object-cover">`
+                                        : `<i class="fas fa-user-tie text-brand-gold text-lg"></i>`
+                                    }
+                                </div>
+                                <div>
+                                    <span class="text-xs text-orange-600 font-medium">Ihr Coach</span>
+                                    <p class="font-bold text-brand-dark">${sanitizeHTML(order.assignedCoachName)}</p>
+                                </div>
+                            </div>
+                        ` : ''}
                         <div class="flex items-start gap-3 sm:gap-4">
-                            <div class="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                                <i class="fas fa-hourglass-half text-white text-base sm:text-xl animate-pulse"></i>
+                            <div class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-calendar-plus text-white text-base sm:text-lg"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-bold text-orange-800 text-base sm:text-lg mb-1">Neue Termine</h4>
-                                <p class="text-xs sm:text-sm text-orange-700">Wir senden Ihnen neue Vorschläge.</p>
+                                <h4 class="font-bold text-orange-800 text-base sm:text-lg mb-1">Neue Terminvorschläge folgen</h4>
+                                <p class="text-xs sm:text-sm text-orange-700">Wir haben Ihre Rückmeldung erhalten und senden Ihnen in Kürze neue Terminvorschläge.</p>
                                 <p class="text-xs text-orange-600 mt-2 flex items-center gap-1">
-                                    <i class="fas fa-bell"></i>
-                                    Per E-Mail
+                                    <i class="fas fa-envelope"></i>
+                                    Benachrichtigung per E-Mail
                                 </p>
                             </div>
                         </div>
@@ -2053,10 +2135,13 @@ function renderSingleOrder(order, isExpanded = false) {
                 ` : hasCoach && !hasAppointment && order.assignedCoachId ? `
                     <!-- Mentor assigned - Show appointment selection -->
                     <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 sm:p-5 shadow-sm">
-                        <!-- Assigned Mentor Info -->
+                        <!-- Assigned Mentor Info with Photo -->
                         <div class="flex items-start gap-3 sm:gap-4 mb-4 pb-4 border-b border-blue-100">
-                            <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-brand-dark to-gray-800 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-                                <i class="fas fa-user-tie text-brand-gold text-lg sm:text-xl"></i>
+                            <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg overflow-hidden ${order.assignedCoachImage ? '' : 'bg-gradient-to-br from-brand-dark to-gray-800 flex items-center justify-center'}">
+                                ${order.assignedCoachImage
+                                    ? `<img src="${order.assignedCoachImage}" alt="${sanitizeHTML(order.assignedCoachName)}" class="w-full h-full object-cover">`
+                                    : `<i class="fas fa-user-tie text-brand-gold text-lg sm:text-xl"></i>`
+                                }
                             </div>
                             <div class="flex-1 min-w-0">
                                 <span class="inline-block text-xs font-bold text-blue-700 uppercase tracking-wider bg-blue-100 px-2 py-1 rounded mb-1">Ihr Mentor</span>
@@ -2283,7 +2368,7 @@ const CV_CUSTOMER_STATUS = {
 
 // Check if order contains CV package
 function isCvOrder(order) {
-    const cvKeywords = ['CV', 'Lebenslauf', 'Quick-Check', 'Young Professional', 'Senior Professional', 'Executive', 'C-Suite'];
+    const cvKeywords = ['CV', 'Lebenslauf', 'Quick-Check', 'Young Professional', 'Senior Professional', 'Executive', 'C-Suite', 'Komplettpaket'];
     return order.items?.some(item =>
         cvKeywords.some(keyword =>
             item.title?.toLowerCase().includes(keyword.toLowerCase())
@@ -2628,6 +2713,9 @@ function renderMentoringWorkflow(order) {
     // Status-Meldung basierend auf aktuellem Schritt
     const statusMessage = getMentoringStatusMessage(order, currentStep, hasCoach, hasProposals, hasConfirmedAppointment);
 
+    // Check if this step should be clickable (Termin wählen when proposals exist)
+    const isTerminWaehlenClickable = hasProposals && order.appointmentStatus === 'pending';
+
     return `
         <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-3 border border-blue-200">
             <!-- Header mit Fortschritt -->
@@ -2658,6 +2746,7 @@ function renderMentoringWorkflow(order) {
                     const isCompleted = step.status === 'completed';
                     const isPending = step.status === 'pending';
                     const isCurrent = step.step === currentStep && isPending;
+                    const isClickable = isCurrent && step.name === 'Termin wählen' && isTerminWaehlenClickable;
 
                     let circleClasses = '';
                     let textClasses = '';
@@ -2674,7 +2763,8 @@ function renderMentoringWorkflow(order) {
                     }
 
                     return `
-                        <div class="flex items-center gap-2 ${isCurrent ? 'bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg p-2 border border-blue-300' : 'py-1'}">
+                        <div class="flex items-center gap-2 ${isCurrent ? 'bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg p-2 border border-blue-300' : 'py-1'} ${isClickable ? 'cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all' : ''}"
+                             ${isClickable ? `onclick="app.scrollToAppointmentProposals('${order.id}')"` : ''}>
                             <div class="w-6 h-6 rounded-full ${circleClasses} flex items-center justify-center flex-shrink-0 transition-all">
                                 ${isCompleted
                                     ? '<i class="fas fa-check text-[10px]"></i>'
@@ -2723,7 +2813,7 @@ function getMentoringStatusMessage(order, currentStep, hasCoach, hasProposals, h
     }
 
     if (hasProposals && order.appointmentStatus === 'pending') {
-        return 'Bitte wählen Sie einen der vorgeschlagenen Termine aus.';
+        return '👇 Wählen Sie unten einen der Terminvorschläge aus.';
     }
 
     if (hasCoach) {
@@ -4003,7 +4093,7 @@ function getOrderStatusInfo(status) {
 
 export function hasCoachSession(order) {
     // Check for any mentoring/session products
-    const sessionKeywords = ['Session', 'Mentoring', 'Coaching', 'Komplettpaket'];
+    const sessionKeywords = ['Session', 'Mentoring', 'Coaching', 'Komplettpaket', 'Interview-Simulation'];
     return order.items && order.items.some(item =>
         item.title && sessionKeywords.some(keyword => item.title.includes(keyword))
     );
@@ -4042,6 +4132,19 @@ export function getOrderStatusText(status) {
         'cancelled': 'Storniert'
     };
     return statusTexts[status] || 'Unbekannt';
+}
+
+// Scroll to appointment proposals section
+export function scrollToAppointmentProposals(orderId) {
+    const proposalsSection = document.getElementById(`appointment-proposals-${orderId}`);
+    if (proposalsSection) {
+        proposalsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight effect
+        proposalsSection.classList.add('ring-2', 'ring-blue-400', 'ring-offset-2');
+        setTimeout(() => {
+            proposalsSection.classList.remove('ring-2', 'ring-blue-400', 'ring-offset-2');
+        }, 2000);
+    }
 }
 
 export function showAppointmentCalendar(orderId) {
@@ -4114,32 +4217,439 @@ export async function bookAppointment(state, orderId, datetime) {
 
 // ========== APPOINTMENT PROPOSALS (Admin) ==========
 
-export function showAppointmentProposalModal(orderId, userId, customerName, customerEmail) {
+// State for proposal calendar
+let proposalCalendarWeekOffset = 0;
+let proposalCoachAvailability = {};
+let proposalSelectedSlots = []; // Array of {date, time} - max 3
+let proposalCoachName = '';
+let proposalOrderData = {};
+
+export async function showAppointmentProposalModal(orderId, userId, customerName, customerEmail, assignedCoachId) {
     const modal = document.getElementById('appointment-proposal-modal');
     if (!modal) return;
 
-    // Set hidden fields
-    document.getElementById('proposal-order-id').value = orderId;
-    document.getElementById('proposal-user-id').value = userId;
-    document.getElementById('proposal-customer-email').value = customerEmail;
-    document.getElementById('proposal-customer-name').textContent = customerName;
+    // Reset state
+    proposalCalendarWeekOffset = 0;
+    proposalCoachAvailability = {};
+    proposalSelectedSlots = [];
+    proposalCoachName = '';
+    proposalOrderData = { orderId, userId, customerName, customerEmail, assignedCoachId };
 
-    // Clear previous inputs
-    document.getElementById('proposal-date-1').value = '';
-    document.getElementById('proposal-time-1').value = '';
-    document.getElementById('proposal-date-2').value = '';
-    document.getElementById('proposal-time-2').value = '';
-    document.getElementById('proposal-date-3').value = '';
-    document.getElementById('proposal-time-3').value = '';
-    document.getElementById('proposal-message').value = 'Vielen Dank für Ihre Bestellung! Bitte wählen Sie einen der folgenden Termine für unser persönliches Gespräch. Wir freuen uns auf Sie!';
-
-    // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('proposal-date-1').min = today;
-    document.getElementById('proposal-date-2').min = today;
-    document.getElementById('proposal-date-3').min = today;
-
+    // Show loading state
+    modal.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-serif text-xl text-brand-dark">Terminvorschläge senden</h3>
+                    <button onclick="app.closeAppointmentProposalModal()" class="text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">an <span class="font-medium text-brand-dark">${sanitizeHTML(customerName)}</span></p>
+            </div>
+            <div class="p-8 text-center">
+                <i class="fas fa-spinner fa-spin text-4xl text-brand-gold mb-4"></i>
+                <p class="text-gray-600">Lade Verfügbarkeiten...</p>
+            </div>
+        </div>
+    `;
     modal.classList.remove('hidden');
+
+    // If no assignedCoachId passed, try to get it from the order
+    let coachId = assignedCoachId;
+    if ((!coachId || coachId === '') && db && orderId) {
+        try {
+            const orderDoc = await getDoc(doc(db, 'orders', orderId));
+            if (orderDoc.exists()) {
+                coachId = orderDoc.data().assignedCoachId;
+                logger.log('Loaded assignedCoachId from order:', coachId);
+            }
+        } catch (error) {
+            logger.error('Failed to load order for coachId:', error);
+        }
+    }
+
+    // Load coach availability
+    if (coachId && coachId !== '' && db) {
+        try {
+            logger.log('Loading availability for coach:', coachId);
+            const coachDoc = await getDoc(doc(db, 'coaches', coachId));
+            if (coachDoc.exists()) {
+                const coach = coachDoc.data();
+                proposalCoachAvailability = coach.availability || {};
+                proposalCoachName = coach.name || 'Mentor';
+                logger.log('Loaded availability:', Object.keys(proposalCoachAvailability).length, 'days');
+            } else {
+                logger.warn('Coach document not found:', coachId);
+            }
+        } catch (error) {
+            logger.error('Failed to load coach availability:', error);
+        }
+    } else {
+        logger.warn('No valid coachId available:', coachId);
+    }
+
+    // Render the full modal with calendar
+    renderProposalCalendarModal();
+}
+
+function renderProposalCalendarModal() {
+    const modal = document.getElementById('appointment-proposal-modal');
+    if (!modal) return;
+
+    const { customerName } = proposalOrderData;
+    const hasAvailability = Object.keys(proposalCoachAvailability).length > 0;
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <!-- Header -->
+            <div class="p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="font-serif text-lg sm:text-xl text-brand-dark">Terminvorschläge senden</h3>
+                        <p class="text-sm text-gray-500 mt-1">an <span class="font-medium text-brand-dark">${sanitizeHTML(customerName)}</span></p>
+                    </div>
+                    <button onclick="app.closeAppointmentProposalModal()" class="text-gray-400 hover:text-gray-600 transition p-2">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4 sm:p-6 overflow-y-auto flex-1">
+                ${hasAvailability ? `
+                    <!-- Coach Info & Instructions -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-user-tie text-brand-gold"></i>
+                            <span class="text-sm font-medium text-gray-700">Verfügbarkeit von ${sanitizeHTML(proposalCoachName)}</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs">
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-4 h-4 bg-green-500 rounded"></div>
+                                <span class="text-gray-600">Verfügbar</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-4 h-4 bg-brand-gold rounded ring-2 ring-brand-gold ring-offset-1"></div>
+                                <span class="text-gray-600">Ausgewählt</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-4 h-4 bg-gray-200 rounded"></div>
+                                <span class="text-gray-600">Nicht verfügbar</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-sm text-gray-600 mb-4">
+                        <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                        Klicke auf <span class="text-green-600 font-medium">grüne Slots</span>, um bis zu 3 Terminvorschläge auszuwählen.
+                    </p>
+
+                    <!-- Week Navigation -->
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="app.proposalPrevWeek()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                            <i class="fas fa-chevron-left text-gray-600"></i>
+                        </button>
+                        <span id="proposal-week-label" class="font-medium text-gray-700"></span>
+                        <button onclick="app.proposalNextWeek()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                            <i class="fas fa-chevron-right text-gray-600"></i>
+                        </button>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div id="proposal-calendar-grid" class="overflow-x-auto mb-4"></div>
+
+                    <!-- Selected Slots Display -->
+                    <div id="proposal-selected-display" class="mb-4"></div>
+
+                    <!-- Message -->
+                    <div class="mb-4">
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Nachricht (optional)</label>
+                        <textarea id="proposal-message" rows="2" placeholder="z.B. Vielen Dank für Ihre Bestellung..."
+                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none">Vielen Dank für Ihre Bestellung! Bitte wählen Sie einen der folgenden Termine für unser persönliches Gespräch. Wir freuen uns auf Sie!</textarea>
+                    </div>
+                ` : `
+                    <!-- No Availability Warning -->
+                    <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 text-center mb-4">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-3"></i>
+                        <h4 class="font-bold text-yellow-700 mb-2">Keine Verfügbarkeiten hinterlegt</h4>
+                        <p class="text-sm text-yellow-600 mb-4">
+                            ${proposalCoachName ? `${sanitizeHTML(proposalCoachName)} hat` : 'Der Mentor hat'} noch keine Verfügbarkeiten im Kalender eingetragen.
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            Bitte den Mentor bitten, seine Verfügbarkeit im Mentor-Dashboard zu hinterlegen.
+                        </p>
+                    </div>
+                `}
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="app.closeAppointmentProposalModal()"
+                            class="flex-1 sm:flex-none px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition">
+                        Abbrechen
+                    </button>
+                    <button onclick="app.sendProposalFromCalendar()"
+                            id="proposal-send-btn"
+                            class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            ${!hasAvailability || proposalSelectedSlots.length === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        <span id="proposal-send-btn-text">${proposalSelectedSlots.length > 0 ? `${proposalSelectedSlots.length} Termin${proposalSelectedSlots.length > 1 ? 'e' : ''} vorschlagen` : 'Termine auswählen'}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Render calendar if availability exists
+    if (hasAvailability) {
+        renderProposalCalendarGrid();
+        renderProposalSelectedSlots();
+    }
+}
+
+function renderProposalCalendarGrid() {
+    const container = document.getElementById('proposal-calendar-grid');
+    const weekLabel = document.getElementById('proposal-week-label');
+    if (!container) return;
+
+    // Calculate week dates
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (proposalCalendarWeekOffset * 7)); // Monday
+
+    // Update week label
+    const weekNumber = getWeekNumber(startOfWeek);
+    const monthName = startOfWeek.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    if (weekLabel) {
+        weekLabel.textContent = `KW ${weekNumber} - ${monthName}`;
+    }
+
+    // Time slots (9:00 - 21:00)
+    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
+
+    // Days of the week
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        days.push(date);
+    }
+
+    // Build calendar HTML
+    let html = `
+        <table class="w-full border-collapse min-w-[600px]">
+            <thead>
+                <tr>
+                    <th class="p-2 text-xs text-gray-500 font-medium w-16"></th>
+                    ${days.map(d => `
+                        <th class="p-2 text-center ${d.getDay() === 0 || d.getDay() === 6 ? 'bg-gray-50' : ''}">
+                            <div class="text-xs text-gray-500 font-medium">${d.toLocaleDateString('de-DE', { weekday: 'short' })}</div>
+                            <div class="text-sm font-bold ${isToday(d) ? 'text-brand-gold' : 'text-gray-700'}">${d.getDate()}</div>
+                        </th>
+                    `).join('')}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    timeSlots.forEach(time => {
+        html += `<tr>`;
+        html += `<td class="p-2 text-xs text-gray-500 font-medium text-right pr-3">${time}</td>`;
+
+        days.forEach(d => {
+            const dateKey = d.toISOString().split('T')[0];
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const isAvailable = proposalCoachAvailability[dateKey]?.includes(time);
+            const isPast = new Date(`${dateKey}T${time}`) <= new Date();
+            const isSelected = proposalSelectedSlots.some(s => s.date === dateKey && s.time === time);
+
+            let cellClass = 'p-1';
+            let slotClass = 'w-full h-8 rounded transition-all ';
+
+            if (isPast) {
+                slotClass += 'bg-gray-100 cursor-not-allowed';
+            } else if (isSelected) {
+                slotClass += 'bg-brand-gold ring-2 ring-brand-gold ring-offset-1 cursor-pointer hover:bg-brand-gold/80';
+            } else if (isAvailable) {
+                slotClass += 'bg-green-500 hover:bg-green-600 cursor-pointer';
+            } else {
+                slotClass += 'bg-gray-200 cursor-not-allowed';
+            }
+
+            if (isWeekend) {
+                cellClass += ' bg-gray-50';
+            }
+
+            // Only available (and not past) slots are clickable
+            const clickHandler = (!isPast && isAvailable) ? `onclick="app.toggleProposalSlot('${dateKey}', '${time}')"` : '';
+
+            let title = '';
+            if (isPast) title = 'Vergangen';
+            else if (isSelected) title = 'Ausgewählt - Klicken zum Entfernen';
+            else if (isAvailable) title = 'Verfügbar - Klicken zum Auswählen';
+            else title = 'Nicht verfügbar';
+
+            html += `<td class="${cellClass}">
+                <div class="${slotClass}" ${clickHandler} title="${title}"></div>
+            </td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+function renderProposalSelectedSlots() {
+    const container = document.getElementById('proposal-selected-display');
+    const sendBtn = document.getElementById('proposal-send-btn');
+    const sendBtnText = document.getElementById('proposal-send-btn-text');
+
+    if (!container) return;
+
+    if (proposalSelectedSlots.length === 0) {
+        container.innerHTML = `
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                <i class="fas fa-hand-pointer text-blue-500 mr-2"></i>
+                <span class="text-sm text-blue-700">Klicke auf grüne Slots im Kalender, um Termine auszuwählen (max. 3)</span>
+            </div>
+        `;
+        if (sendBtn) sendBtn.disabled = true;
+        if (sendBtnText) sendBtnText.textContent = 'Termine auswählen';
+    } else {
+        container.innerHTML = `
+            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fas fa-check-circle text-green-600"></i>
+                    <span class="text-sm font-medium text-green-700">${proposalSelectedSlots.length} von 3 Terminen ausgewählt</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    ${proposalSelectedSlots.map((slot, idx) => {
+                        const date = new Date(slot.date);
+                        const weekday = date.toLocaleDateString('de-DE', { weekday: 'short' });
+                        const displayDate = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                        return `
+                            <div class="flex items-center gap-2 bg-white border border-green-300 rounded-lg px-3 py-2">
+                                <span class="font-bold text-green-700">${idx + 1}.</span>
+                                <span class="text-gray-700">${weekday}, ${displayDate}</span>
+                                <span class="font-bold text-green-700">${slot.time}</span>
+                                <button onclick="app.removeProposalSlot(${idx})" class="text-red-400 hover:text-red-600 ml-1">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        if (sendBtn) sendBtn.disabled = false;
+        if (sendBtnText) sendBtnText.textContent = `${proposalSelectedSlots.length} Termin${proposalSelectedSlots.length > 1 ? 'e' : ''} vorschlagen`;
+    }
+}
+
+// Toggle slot selection
+export function toggleProposalSlot(dateKey, time) {
+    const existingIndex = proposalSelectedSlots.findIndex(s => s.date === dateKey && s.time === time);
+
+    if (existingIndex > -1) {
+        // Remove slot
+        proposalSelectedSlots.splice(existingIndex, 1);
+    } else if (proposalSelectedSlots.length < 3) {
+        // Add slot (max 3)
+        proposalSelectedSlots.push({ date: dateKey, time: time });
+        // Sort by date/time
+        proposalSelectedSlots.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.time}`);
+            const dateB = new Date(`${b.date}T${b.time}`);
+            return dateA - dateB;
+        });
+    } else {
+        showToast('⚠️ Maximal 3 Termine auswählbar', 2000);
+        return;
+    }
+
+    renderProposalCalendarGrid();
+    renderProposalSelectedSlots();
+}
+
+// Remove a selected slot
+export function removeProposalSlot(index) {
+    proposalSelectedSlots.splice(index, 1);
+    renderProposalCalendarGrid();
+    renderProposalSelectedSlots();
+}
+
+// Navigate weeks
+export function proposalPrevWeek() {
+    proposalCalendarWeekOffset--;
+    renderProposalCalendarGrid();
+}
+
+export function proposalNextWeek() {
+    proposalCalendarWeekOffset++;
+    renderProposalCalendarGrid();
+}
+
+// Send proposals from calendar selection
+export async function sendProposalFromCalendar() {
+    if (proposalSelectedSlots.length === 0) {
+        showToast('⚠️ Bitte mindestens einen Termin auswählen', 3000);
+        return;
+    }
+
+    const { orderId, userId, customerEmail } = proposalOrderData;
+    const message = document.getElementById('proposal-message')?.value || '';
+
+    // Convert to proposals format
+    const proposals = proposalSelectedSlots.map(slot => ({
+        date: slot.date,
+        time: slot.time,
+        datetime: `${slot.date}T${slot.time}`
+    }));
+
+    try {
+        if (db) {
+            // Save proposals to order
+            await updateDoc(doc(db, "orders", orderId), {
+                appointmentProposals: proposals,
+                appointmentProposalMessage: message,
+                appointmentProposalSentAt: new Date(),
+                appointmentStatus: 'pending'
+            });
+
+            // Call Cloud Function to send email
+            try {
+                const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/sendAppointmentProposalEmail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId,
+                        userId,
+                        customerEmail,
+                        proposals,
+                        message
+                    })
+                });
+                if (!response.ok) {
+                    logger.warn('Email notification failed but proposals saved');
+                }
+            } catch (emailErr) {
+                logger.warn('Email notification failed:', emailErr);
+            }
+
+            showToast('✅ Terminvorschläge gesendet!');
+            closeAppointmentProposalModal();
+
+            // Reload admin orders to show updated status
+            await loadAllOrders();
+        }
+    } catch (e) {
+        logger.error('Failed to send appointment proposals:', e);
+        showToast('❌ Fehler beim Senden', 3000);
+    }
 }
 
 export function closeAppointmentProposalModal() {
@@ -5954,14 +6464,16 @@ export async function assignCoachToOrder(coachId, coachName) {
         const orderDoc = await getDoc(doc(db, 'orders', currentAssignOrderId));
         const orderData = orderDoc.exists() ? orderDoc.data() : {};
 
-        // Hole Coach-Email für Benachrichtigung
+        // Hole Coach-Details für Benachrichtigung und Bild
         const coachDoc = await getDoc(doc(db, 'coaches', coachId));
         const coachData = coachDoc.exists() ? coachDoc.data() : {};
         const coachEmail = coachData.email;
+        const coachImage = coachData.image || null;
 
         await updateDoc(doc(db, 'orders', currentAssignOrderId), {
             assignedCoachId: coachId,
             assignedCoachName: coachName,
+            assignedCoachImage: coachImage,
             assignedAt: new Date()
         });
 
@@ -7850,15 +8362,31 @@ export async function loadAllOrders() {
         return;
     }
 
-    const container = document.getElementById('admin-orders-list');
-    if (!container) return;
+    // Use new containers (active/completed split) or legacy container
+    const activeContainer = document.getElementById('admin-active-orders-list');
+    const completedContainer = document.getElementById('admin-completed-orders-list');
+    const legacyContainer = document.getElementById('admin-orders-list');
 
-    container.innerHTML = `
-        <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
-            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
-            <p>Lade Bestellungen...</p>
-        </div>
-    `;
+    // At least one container must exist
+    if (!activeContainer && !legacyContainer) return;
+
+    // Show loading state
+    if (activeContainer) {
+        activeContainer.innerHTML = `
+            <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400">
+                <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                <p>Lade Bestellungen...</p>
+            </div>
+        `;
+    }
+    if (legacyContainer) {
+        legacyContainer.innerHTML = `
+            <div class="bg-white p-12 rounded-sm shadow-sm text-center text-gray-400">
+                <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                <p>Lade Bestellungen...</p>
+            </div>
+        `;
+    }
 
     try {
         const ordersRef = collection(db, 'orders');
@@ -7917,12 +8445,14 @@ export async function loadAllOrders() {
 
     } catch (e) {
         logger.error('Failed to load orders:', e);
-        container.innerHTML = `
-            <div class="bg-white p-12 rounded-sm shadow-sm text-center text-red-500">
+        const errorHtml = `
+            <div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-red-500">
                 <i class="fas fa-exclamation-circle text-3xl mb-4"></i>
                 <p>Fehler beim Laden: ${e.message}</p>
             </div>
         `;
+        if (activeContainer) activeContainer.innerHTML = errorHtml;
+        if (legacyContainer) legacyContainer.innerHTML = errorHtml;
     }
 }
 
@@ -8094,18 +8624,31 @@ function isAdminOrderCompleted(order) {
         return cvStatus === 'gutachten_delivered' || orderStatus === 'completed' || order.quickCheckGutachtenUrl;
     }
 
-    // CV orders: completed when delivered
-    if (isCvOrder(order)) {
+    // Check each component separately
+    const hasCv = isCvOrder(order);
+    const hasMentoring = hasCoachSession(order);
+
+    // If order has both CV and Mentoring, BOTH must be completed
+    if (hasCv && hasMentoring) {
+        const cvCompleted = cvStatus === 'delivered' || cvStatus === 'ready';
+        // Mentoring is only completed when appointment actually happened (date in the past)
+        const mentoringCompleted = order.appointment?.datetime && new Date(order.appointment.datetime) < new Date();
+        return cvCompleted && mentoringCompleted;
+    }
+
+    // CV only: completed when delivered
+    if (hasCv) {
         return cvStatus === 'delivered' || cvStatus === 'ready';
     }
 
-    // Mentoring: completed when appointment passed or status is completed
-    if (hasCoachSession(order)) {
+    // Mentoring only: completed when appointment passed or status is completed
+    if (hasMentoring) {
         if (orderStatus === 'completed') return true;
         if (order.appointment?.datetime) {
             const appointmentDate = new Date(order.appointment.datetime);
             return appointmentDate < new Date();
         }
+        return false;
     }
 
     return orderStatus === 'completed';
@@ -8270,46 +8813,75 @@ function renderSingleAdminOrder(order) {
 
 // Bestimme welche Admin-Aktion erforderlich ist
 function getAdminActionNeeded(order, isSession, isCvOrder, isQuickCheck) {
+    let actions = [];
+
     // Mentoring: Coach zuweisen
     if (isSession && !order.assignedCoachId) {
-        return { needed: true, action: 'assign_coach', label: 'Coach zuweisen' };
+        actions.push({ action: 'assign_coach', label: 'Coach zuweisen' });
     }
 
     // Mentoring: Termine vorschlagen nach Ablehnung
     if (isSession && order.appointmentStatus === 'declined') {
-        return { needed: true, action: 'new_proposals', label: 'Neue Termine vorschlagen' };
+        actions.push({ action: 'new_proposals', label: 'Neue Termine vorschlagen' });
+    }
+
+    // Mentoring: Termine vorschlagen (Coach zugewiesen, aber keine Vorschläge)
+    if (isSession && order.assignedCoachId && !order.appointmentProposals?.length && !order.appointment?.datetime) {
+        actions.push({ action: 'send_proposals', label: 'Termine vorschlagen' });
     }
 
     // CV Order: Fragebogen senden
     if (isCvOrder && !isQuickCheck && !order.cvProjectId) {
-        return { needed: true, action: 'send_questionnaire', label: 'Fragebogen senden' };
+        actions.push({ action: 'send_questionnaire', label: 'Fragebogen senden' });
     }
 
     // CV Order: CV erstellen (Daten erhalten)
     if (isCvOrder && !isQuickCheck && order.cvStatus === 'data_received') {
-        return { needed: true, action: 'create_cv', label: 'CV erstellen' };
+        actions.push({ action: 'create_cv', label: 'CV erstellen' });
     }
 
     // Quick-Check: Gutachten hochladen (CV erhalten)
     if (isQuickCheck && order.quickCheckDocument && !order.quickCheckGutachtenUrl) {
-        return { needed: true, action: 'upload_gutachten', label: 'Gutachten hochladen' };
+        actions.push({ action: 'upload_gutachten', label: 'Gutachten hochladen' });
     }
 
-    return { needed: false };
+    if (actions.length === 0) {
+        return { needed: false };
+    }
+
+    // Gib die erste Aktion zurück, aber speichere alle für die Anzeige
+    return {
+        needed: true,
+        action: actions[0].action,
+        label: actions.length > 1 ? `${actions.length} Aktionen` : actions[0].label,
+        allActions: actions
+    };
 }
 
 // Render Admin Workflow Steps - wie beim Kunden, aber mit Admin-Aktionen
 function renderAdminWorkflowSteps(order, isSession, isCvOrderType, isQuickCheckType) {
+    let workflows = [];
+
+    // Quick-Check hat eigenen Workflow
     if (isQuickCheckType) {
         return renderAdminQuickCheckWorkflow(order);
     }
-    if (isCvOrderType) {
-        return renderAdminCvWorkflow(order);
+
+    // CV-Erstellung Workflow
+    if (isCvOrderType && !isQuickCheckType) {
+        workflows.push(renderAdminCvWorkflow(order));
     }
+
+    // Mentoring/Interview Workflow (kann zusätzlich zum CV sein)
     if (isSession) {
-        return renderAdminMentoringWorkflow(order);
+        workflows.push(renderAdminMentoringWorkflow(order));
     }
-    return '<p class="text-gray-500 text-sm">Keine Workflow-Schritte verfügbar</p>';
+
+    if (workflows.length === 0) {
+        return '<p class="text-gray-500 text-sm">Keine Workflow-Schritte verfügbar</p>';
+    }
+
+    return workflows.join('<div class="border-t border-gray-200 my-4"></div>');
 }
 
 // Admin Quick-Check Workflow
@@ -8631,7 +9203,7 @@ function renderAdminMentoringWorkflow(order) {
                     ${order.appointmentDeclineReason ? `
                         <p class="text-sm text-gray-600 italic mb-3">"${sanitizeHTML(order.appointmentDeclineReason)}"</p>
                     ` : ''}
-                    <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
+                    <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}', '${order.assignedCoachId || ''}')"
                             class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
                         <i class="fas fa-calendar-plus"></i>
                         Neue Termine vorschlagen
@@ -8658,7 +9230,7 @@ function renderAdminMentoringWorkflow(order) {
                         <i class="fas fa-hand-point-right text-orange-500"></i>
                         <span class="font-bold text-orange-700">Deine Aktion erforderlich</span>
                     </div>
-                    <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}')"
+                    <button onclick="app.showAppointmentProposalModal('${order.id}', '${order.userId}', '${sanitizeHTML(order.customerName || 'Kunde')}', '${sanitizeHTML(order.customerEmail || '')}', '${order.assignedCoachId || ''}')"
                             class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
                         <i class="fas fa-calendar-plus"></i>
                         Terminvorschläge senden
@@ -9515,18 +10087,47 @@ export async function loadAdminUsers() {
         }
 
         const usersSnap = await getDocs(collection(db, 'users'));
-        const users = usersSnap.docs
+        let users = usersSnap.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(u => !u.deleted); // Gelöschte Benutzer ausblenden
+
+        // Deduplizieren nach Email (behalte den neuesten Eintrag)
+        const emailMap = new Map();
+        users.forEach(user => {
+            const email = (user.email || user.id).toLowerCase();
+            const existing = emailMap.get(email);
+            // Behalte den mit dem neuesten createdAt oder den ersten gefundenen
+            if (!existing || (user.createdAt && (!existing.createdAt || user.createdAt > existing.createdAt))) {
+                emailMap.set(email, user);
+            }
+        });
+        users = Array.from(emailMap.values());
+
+        // Sortiere nach Erstellungsdatum (neueste zuerst)
+        users.sort((a, b) => {
+            const dateA = a.createdAt?.toDate?.() || a.createdAt || 0;
+            const dateB = b.createdAt?.toDate?.() || b.createdAt || 0;
+            return new Date(dateB) - new Date(dateA);
+        });
 
         // Speichere für Export und Pagination
         window._adminUsers = users;
         paginationState.users.data = users;
+        paginationState.users.filteredData = users;
         paginationState.users.total = users.length;
-        paginationState.users.page = 1; // Reset to first page on reload
+        paginationState.users.page = 1;
+        paginationState.users.searchTerm = '';
+        paginationState.users.filter = 'all';
+
+        // Reset search and filter inputs
+        const searchInput = document.getElementById('admin-users-search');
+        const filterSelect = document.getElementById('admin-users-filter');
+        if (searchInput) searchInput.value = '';
+        if (filterSelect) filterSelect.value = 'all';
 
         if (users.length === 0) {
-            container.innerHTML = '<p class="text-gray-400">Keine Benutzer gefunden.</p>';
+            container.innerHTML = '<div class="p-8 text-center text-gray-400"><i class="fas fa-users text-2xl mb-2"></i><p>Keine Benutzer gefunden.</p></div>';
+            updateUsersPaginationUI();
             return;
         }
 
@@ -9558,35 +10159,159 @@ function renderAdminUsersList() {
     const perPage = PAGINATION.USERS_PER_PAGE;
     const start = (state.page - 1) * perPage;
     const end = start + perPage;
-    const usersToShow = state.data.slice(start, end);
+    const usersToShow = state.filteredData.slice(start, end);
 
-    container.innerHTML = usersToShow.map(user => `
-        <div class="bg-brand-dark/50 rounded-lg p-4 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center">
-                    <span class="text-brand-gold font-bold">${(user.firstname || user.email || '?')[0].toUpperCase()}</span>
-                </div>
-                <div>
-                    <h4 class="font-bold text-white">${user.firstname || ''} ${user.lastname || ''}</h4>
-                    <p class="text-sm text-gray-400">${user.email || user.id}</p>
-                </div>
+    if (usersToShow.length === 0) {
+        container.innerHTML = `
+            <div class="p-8 text-center text-gray-400">
+                <i class="fas fa-search text-2xl mb-2"></i>
+                <p>Keine Benutzer gefunden${state.searchTerm ? ` für "${state.searchTerm}"` : ''}</p>
             </div>
-            <div class="flex items-center gap-3">
-                <button onclick="app.verifyUserEmail('${user.email}')" class="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold hover:text-brand-dark transition" title="E-Mail als verifiziert markieren">
-                    <i class="fas fa-check-circle mr-1"></i>Verifizieren
-                </button>
-                <button onclick="app.deleteUser('${user.id}', '${user.email}')" class="text-xs px-3 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition" title="Benutzer deaktivieren">
-                    <i class="fas fa-trash mr-1"></i>Löschen
-                </button>
-                <span class="text-xs px-2 py-1 rounded ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'bg-green-500/20 text-green-400' : user.cookieConsent === 'essential' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}">
-                    ${user.cookieConsent === 'all' || user.cookieConsent === true ? 'Alle Cookies' : user.cookieConsent === 'essential' ? 'Nur notwendige' : 'Keine Auswahl'}
-                </span>
-                <div class="text-sm text-gray-400">
-                    ${user.company || ''}
+        `;
+    } else {
+        container.innerHTML = usersToShow.map(user => {
+            const name = `${user.firstname || ''} ${user.lastname || ''}`.trim() || 'Unbekannt';
+            const initial = (user.firstname || user.email || '?')[0].toUpperCase();
+            const cookieStatus = user.cookieConsent === 'all' || user.cookieConsent === true
+                ? { class: 'bg-green-100 text-green-700', text: 'Alle Cookies' }
+                : user.cookieConsent === 'essential'
+                    ? { class: 'bg-yellow-100 text-yellow-700', text: 'Nur notwendige' }
+                    : { class: 'bg-gray-100 text-gray-500', text: 'Keine Auswahl' };
+
+            return `
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center flex-shrink-0">
+                            <span class="text-brand-gold font-bold">${initial}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-semibold text-brand-dark truncate">${sanitizeHTML(name)}</h4>
+                            <p class="text-sm text-gray-500 truncate">${sanitizeHTML(user.email || user.id)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <button onclick="app.verifyUserEmail('${user.email}')"
+                                class="text-xs px-2.5 py-1.5 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 transition"
+                                title="E-Mail als verifiziert markieren">
+                            <i class="fas fa-check-circle"></i>
+                            <span class="hidden sm:inline ml-1">Verifizieren</span>
+                        </button>
+                        <button onclick="app.deleteUser('${user.id}', '${user.email}')"
+                                class="text-xs px-2.5 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition"
+                                title="Benutzer deaktivieren">
+                            <i class="fas fa-trash"></i>
+                            <span class="hidden sm:inline ml-1">Löschen</span>
+                        </button>
+                        <span class="text-xs px-2.5 py-1.5 rounded-lg ${cookieStatus.class}">
+                            ${cookieStatus.text}
+                        </span>
+                    </div>
                 </div>
-            </div>
-        </div>
-    `).join('') + renderPagination('users');
+            `;
+        }).join('');
+    }
+
+    updateUsersPaginationUI();
+}
+
+// Update pagination UI for users
+function updateUsersPaginationUI() {
+    const state = paginationState.users;
+    const perPage = PAGINATION.USERS_PER_PAGE;
+    const totalFiltered = state.filteredData.length;
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / perPage));
+
+    const start = totalFiltered === 0 ? 0 : (state.page - 1) * perPage + 1;
+    const end = Math.min(state.page * perPage, totalFiltered);
+
+    // Update text displays
+    const showingStart = document.getElementById('users-showing-start');
+    const showingEnd = document.getElementById('users-showing-end');
+    const showingTotal = document.getElementById('users-showing-total');
+    const currentPage = document.getElementById('users-current-page');
+    const totalPagesEl = document.getElementById('users-total-pages');
+
+    if (showingStart) showingStart.textContent = start;
+    if (showingEnd) showingEnd.textContent = end;
+    if (showingTotal) showingTotal.textContent = totalFiltered;
+    if (currentPage) currentPage.textContent = state.page;
+    if (totalPagesEl) totalPagesEl.textContent = totalPages;
+
+    // Update button states
+    const prevBtn = document.getElementById('users-btn-prev');
+    const nextBtn = document.getElementById('users-btn-next');
+
+    if (prevBtn) prevBtn.disabled = state.page <= 1;
+    if (nextBtn) nextBtn.disabled = state.page >= totalPages;
+}
+
+// Search users
+export function searchUsers(searchTerm) {
+    const state = paginationState.users;
+    state.searchTerm = searchTerm.toLowerCase().trim();
+    state.page = 1;
+    applyUsersFilter();
+}
+
+// Filter users by cookie consent
+export function filterUsers(filter) {
+    const state = paginationState.users;
+    state.filter = filter;
+    state.page = 1;
+    applyUsersFilter();
+}
+
+// Apply both search and filter
+function applyUsersFilter() {
+    const state = paginationState.users;
+    let filtered = state.data;
+
+    // Apply search
+    if (state.searchTerm) {
+        filtered = filtered.filter(user => {
+            const name = `${user.firstname || ''} ${user.lastname || ''}`.toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            return name.includes(state.searchTerm) || email.includes(state.searchTerm);
+        });
+    }
+
+    // Apply filter
+    if (state.filter !== 'all') {
+        filtered = filtered.filter(user => {
+            switch (state.filter) {
+                case 'cookies-all':
+                    return user.cookieConsent === 'all' || user.cookieConsent === true;
+                case 'cookies-essential':
+                    return user.cookieConsent === 'essential';
+                case 'cookies-none':
+                    return !user.cookieConsent || (user.cookieConsent !== 'all' && user.cookieConsent !== true && user.cookieConsent !== 'essential');
+                default:
+                    return true;
+            }
+        });
+    }
+
+    state.filteredData = filtered;
+    renderAdminUsersList();
+}
+
+// Pagination navigation for users
+export function usersPagePrev() {
+    const state = paginationState.users;
+    if (state.page > 1) {
+        state.page--;
+        renderAdminUsersList();
+    }
+}
+
+export function usersPageNext() {
+    const state = paginationState.users;
+    const perPage = PAGINATION.USERS_PER_PAGE;
+    const totalPages = Math.ceil(state.filteredData.length / perPage);
+    if (state.page < totalPages) {
+        state.page++;
+        renderAdminUsersList();
+    }
 }
 
 // Admin: E-Mail eines Users als verifiziert markieren
@@ -13553,8 +14278,8 @@ function showSmartSubmitSuccess() {
                         Was passiert als Nächstes?
                     </h4>
                     <ul class="text-sm text-blue-700 space-y-1">
-                        <li>• Unsere KI analysiert Ihre Dokumente</li>
-                        <li>• Ein Experte überprüft und optimiert Ihren CV</li>
+                        <li>• Wir prüfen Ihre eingereichten Dokumente</li>
+                        <li>• Ein Experte erstellt und optimiert Ihren CV</li>
                         <li>• Sie erhalten Ihren fertigen Lebenslauf per E-Mail</li>
                     </ul>
                 </div>
