@@ -15714,6 +15714,7 @@ export async function testEmailEncryption() {
     const resultContainer = document.getElementById('encryption-test-results');
     if (!resultContainer) return;
 
+    resultContainer.classList.remove('hidden');
     resultContainer.innerHTML = `
         <div class="p-4 bg-green-50 rounded-lg">
             <div class="flex items-center gap-2 text-green-700">
@@ -15751,6 +15752,7 @@ export async function testFirestoreSecurity() {
     const resultContainer = document.getElementById('encryption-test-results');
     if (!resultContainer) return;
 
+    resultContainer.classList.remove('hidden');
     resultContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Teste Firestore Security Rules...</div>';
 
     const tests = [];
@@ -15803,6 +15805,7 @@ export async function testStorageSecurity() {
     const resultContainer = document.getElementById('encryption-test-results');
     if (!resultContainer) return;
 
+    resultContainer.classList.remove('hidden');
     resultContainer.innerHTML = `
         <div class="p-4 bg-blue-50 rounded-lg">
             <div class="flex items-center gap-2 text-blue-700">
