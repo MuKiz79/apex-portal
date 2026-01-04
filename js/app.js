@@ -15111,23 +15111,30 @@ export async function loadDsgvoStats() {
         const totalOrders = ordersSnapshot.size;
 
         // Count audit log entries
-        const auditQuery = query(collection(db, 'auditLog'), orderBy('timestamp', 'desc'), limit(1));
-        const auditSnapshot = await getDocs(auditQuery);
+        let totalAuditLogs = 0;
+        try {
+            const auditQuery = query(collection(db, 'auditLog'));
+            const auditSnapshot = await getDocs(auditQuery);
+            totalAuditLogs = auditSnapshot.size;
+        } catch (e) {
+            // Audit log might be empty or have permission issues
+            totalAuditLogs = 0;
+        }
 
         // Count CV projects
         const cvQuery = query(collection(db, 'cvProjects'));
         const cvSnapshot = await getDocs(cvQuery);
         const totalCvProjects = cvSnapshot.size;
 
-        // Calculate inactive users (no login in 2 years)
-        const twoYearsAgo = new Date();
-        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+        // Calculate inactive users (no login in 1 year - matches UI label)
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
         let inactiveUsers = 0;
         usersSnapshot.forEach(doc => {
             const data = doc.data();
             const lastLogin = data.lastLoginAt?.toDate?.() || data.createdAt?.toDate?.();
-            if (lastLogin && lastLogin < twoYearsAgo) {
+            if (lastLogin && lastLogin < oneYearAgo) {
                 inactiveUsers++;
             }
         });
@@ -15135,13 +15142,13 @@ export async function loadDsgvoStats() {
         // Update stats in UI
         const statUsers = document.getElementById('dsgvo-stat-users');
         const statInactive = document.getElementById('dsgvo-stat-inactive');
-        const statOrders = document.getElementById('dsgvo-stat-orders');
         const statCvProjects = document.getElementById('dsgvo-stat-cv-projects');
+        const statAudits = document.getElementById('dsgvo-stat-audits');
 
         if (statUsers) statUsers.textContent = totalUsers;
         if (statInactive) statInactive.textContent = inactiveUsers;
-        if (statOrders) statOrders.textContent = totalOrders;
         if (statCvProjects) statCvProjects.textContent = totalCvProjects;
+        if (statAudits) statAudits.textContent = totalAuditLogs;
 
         logger.log('DSGVO stats loaded:', { totalUsers, inactiveUsers, totalOrders, totalCvProjects });
 
@@ -15522,6 +15529,41 @@ async function logAdminAction(action, details) {
         });
     } catch (error) {
         logger.error('Error logging admin action:', error);
+    }
+}
+
+// Create test audit entry
+export async function createTestAuditEntry() {
+    try {
+        showToast('Erstelle Test-Eintrag...');
+
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/logAdminAction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'TEST_ENTRY',
+                adminEmail: auth.currentUser?.email,
+                targetType: 'system',
+                targetId: 'test-' + Date.now(),
+                details: {
+                    message: 'Test-Audit-Eintrag erstellt',
+                    timestamp: new Date().toISOString(),
+                    browser: navigator.userAgent.substring(0, 50)
+                }
+            })
+        });
+
+        if (response.ok) {
+            showToast('Test-Eintrag erstellt!');
+            // Refresh stats
+            await loadDsgvoStats();
+        } else {
+            throw new Error('API-Fehler');
+        }
+
+    } catch (error) {
+        logger.error('Error creating test audit entry:', error);
+        showToast('Fehler beim Erstellen des Test-Eintrags');
     }
 }
 

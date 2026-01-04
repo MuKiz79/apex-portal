@@ -3797,11 +3797,11 @@
                         <div class="bg-white rounded-xl border border-gray-100 p-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-cookie text-green-600"></i>
+                                    <i class="fas fa-file-alt text-green-600"></i>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-500">Cookie-Consent</p>
-                                    <p class="text-xl font-bold text-brand-dark" id="dsgvo-stat-cookies">--</p>
+                                    <p class="text-xs text-gray-500">CV-Projekte</p>
+                                    <p class="text-xl font-bold text-brand-dark" id="dsgvo-stat-cv-projects">--</p>
                                 </div>
                             </div>
                         </div>
@@ -3850,6 +3850,15 @@
                                 <div>
                                     <p class="font-medium text-brand-dark">DSGVO-Report</p>
                                     <p class="text-xs text-gray-500">Compliance-Übersicht generieren</p>
+                                </div>
+                            </button>
+                            <button onclick="app.createTestAuditEntry()" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition text-left">
+                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-plus-circle text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-brand-dark">Test Audit-Eintrag</p>
+                                    <p class="text-xs text-gray-500">Erstellt einen Beispiel-Eintrag</p>
                                 </div>
                             </button>
                         </div>
@@ -5380,7 +5389,7 @@
     <script type="module">
         // Import modules
         import * as Core from './js/core.js?v=20260104a';
-        import * as App from './js/app.js?v=20260104d';
+        import * as App from './js/app.js?v=20260104e';
 
         // Make functions globally accessible
         window.app = {
@@ -5667,6 +5676,7 @@
             exportAuditLog: () => App.exportAuditLog(),
             runDataCleanupPreview: () => App.runDataCleanupPreview(),
             showDsgvoReport: () => App.showDsgvoReport(),
+            createTestAuditEntry: () => App.createTestAuditEntry(),
             testEmailEncryption: () => App.testEmailEncryption(),
             testFirestoreSecurity: () => App.testFirestoreSecurity(),
             testStorageSecurity: () => App.testStorageSecurity(),
