@@ -1942,6 +1942,12 @@ export function renderOrders(orders) {
 function isOrderCompleted(order) {
     const cvStatus = order.cvStatus || 'new';
     const orderStatus = order.status || 'confirmed';
+    const refundStatus = order.refundStatus;
+
+    // Fully refunded orders are always completed
+    if (refundStatus === 'refunded') {
+        return true;
+    }
 
     // Quick-Check: completed when gutachten delivered
     if (isQuickCheck(order)) {
@@ -1955,8 +1961,9 @@ function isOrderCompleted(order) {
     // If order has both CV and Mentoring, BOTH must be completed
     if (hasCv && hasMentoring) {
         const cvCompleted = cvStatus === 'delivered' || cvStatus === 'ready';
-        // Mentoring is only completed when appointment actually happened (date in the past)
-        const mentoringCompleted = order.appointment?.datetime && new Date(order.appointment.datetime) < new Date();
+        // Mentoring is completed when: appointment happened OR was refunded (partially_refunded)
+        const mentoringRefunded = refundStatus === 'partially_refunded';
+        const mentoringCompleted = mentoringRefunded || (order.appointment?.datetime && new Date(order.appointment.datetime) < new Date());
         return cvCompleted && mentoringCompleted;
     }
 
@@ -2049,7 +2056,8 @@ function renderSingleOrder(order, isExpanded = false) {
                     ${renderSimpleDocumentsSection(order)}
 
                         <!-- Professional Appointment Section - Mobile Optimized -->
-                ${order.appointment?.confirmed ? `
+                        <!-- Hide appointment sections if order is refunded -->
+                ${(order.refundStatus === 'refunded' || order.refundStatus === 'partially_refunded') ? '' : order.appointment?.confirmed ? `
                     <!-- Confirmed Appointment - Mobile-Optimized Design -->
                     <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-5 shadow-sm">
                         ${order.assignedCoachName ? `
@@ -2692,6 +2700,41 @@ function renderWorkflowSteps(order) {
 // Mit 3er-Paket Session-Tracking
 function renderMentoringWorkflow(order) {
     if (!hasCoachSession(order)) return '';
+
+    // Prüfe ob Mentoring erstattet wurde
+    const isRefunded = order.refundStatus === 'refunded' || order.refundStatus === 'partially_refunded';
+    if (isRefunded) {
+        const refundDate = order.refundedAt?.seconds
+            ? new Date(order.refundedAt.seconds * 1000).toLocaleDateString('de-DE')
+            : 'kürzlich';
+        const refundAmount = order.refundAmount ? `€${order.refundAmount.toFixed(2)}` : '';
+
+        return `
+            <div class="bg-red-50 rounded-xl p-4 mb-3 border border-red-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-ban text-red-500"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-red-700">${order.refundStatus === 'partially_refunded' ? 'Mentoring storniert' : 'Storniert & Erstattet'}</p>
+                        <p class="text-sm text-red-600">${refundAmount ? refundAmount + ' erstattet am ' : 'Erstattet am '}${refundDate}</p>
+                    </div>
+                </div>
+                ${order.refundReason ? `
+                    <div class="mt-3 pt-3 border-t border-red-200">
+                        <p class="text-xs text-gray-500 uppercase font-medium">Grund</p>
+                        <p class="text-sm text-gray-700">${sanitizeHTML(order.refundReason)}</p>
+                    </div>
+                ` : ''}
+                ${order.refundStatus === 'partially_refunded' ? `
+                    <p class="text-xs text-gray-500 mt-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Ihre CV-Erstellung wird wie geplant fortgesetzt.
+                    </p>
+                ` : ''}
+            </div>
+        `;
+    }
 
     // Prüfe ob es ein 3er-Paket ist
     const packageInfo = isMentoringPackage(order);
@@ -5300,6 +5343,10 @@ export function bookSessionWithComplianceCheck(productName, price, coachName) {
                                     <strong>${coachName || 'Ihr Wunschkandidat'}</strong> Ihr Mentor. Andernfalls wählen wir
                                     einen gleichwertigen Mentor für Sie aus.
                                 </p>
+                                <p class="text-amber-600 text-xs mt-2 flex items-center gap-1">
+                                    <i class="fas fa-info-circle"></i>
+                                    Sollte kein passender Mentor verfügbar sein, erhalten Sie eine vollständige Rückerstattung.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -5311,7 +5358,7 @@ export function bookSessionWithComplianceCheck(productName, price, coachName) {
                                class="w-5 h-5 mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold cursor-pointer">
                         <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
                             Ich stimme dem <strong>Compliance-Check</strong> zu und verstehe, dass bei erfolgreicher
-                            Prüfung ${coachName || 'mein Wunschkandidat'} mein Mentor wird, andernfalls ein gleichwertiger Mentor.
+                            Prüfung ${coachName || 'mein Wunschkandidat'} mein Mentor wird. Bei Ablehnung erfolgt eine Rückerstattung.
                         </span>
                     </label>
 
@@ -6651,7 +6698,7 @@ export function filterCoaches(state) {
                     <div class="relative px-6 pb-6 -mt-16">
                         <!-- Name & Role -->
                         <h4 class="font-serif text-xl text-white mb-1 group-hover:text-brand-gold transition-colors duration-300">${name}</h4>
-                        <p class="text-brand-gold text-xs font-semibold uppercase tracking-[0.15em] mb-4">${role}</p>
+                        <p class="text-brand-gold text-xs font-semibold tracking-wide mb-4">${role}</p>
                         <!-- Expertise Tags -->
                         ${expertise.length > 0 ? `
                         <div class="flex flex-wrap gap-2 mb-5">
@@ -6684,7 +6731,7 @@ export function openCoachDetail(state, id, navigateTo) {
     const bio = sanitizeHTML(coach.bio || 'Keine Bio verfügbar.');
     const experience = sanitizeHTML(coach.experience || '15+ Jahre Leadership-Erfahrung');
 
-    contentArea.innerHTML = '<div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/3"><img src="' + coach.image + '" class="w-full rounded border-4 border-white shadow-lg object-cover" alt="' + name + '" loading="lazy"><div class="mt-4 p-4 bg-gray-50 rounded text-sm"><p class="text-gray-600 mb-2"><i class="fas fa-briefcase mr-2 text-brand-gold"></i>' + experience + '</p><p class="text-gray-600"><i class="fas fa-check-circle mr-2 text-brand-gold"></i>Alle Formate verfügbar</p></div></div><div class="w-full md:w-2/3"><h1 class="font-serif text-3xl mb-2">' + name + '</h1><p class="text-brand-gold uppercase font-bold text-xs mb-6">' + role + '</p><p class="text-gray-600 mb-6 leading-relaxed">' + bio + '</p><div class="mb-6"><h4 class="font-bold text-xs uppercase mb-2">Expertise</h4><div class="flex flex-wrap gap-2">' + expertise.map(e => '<span class="bg-brand-dark text-white px-2 py-1 text-[10px] uppercase rounded">' + sanitizeHTML(e) + '</span>').join('') + '</div></div>' + (coach.stats ? '<p class="text-sm text-gray-500 mb-6"><i class="fas fa-chart-line mr-2" aria-hidden="true"></i>' + sanitizeHTML(coach.stats) + '</p>' : '') + '<div class="flex gap-4"><button onclick="app.navigateToSection(\'home\', \'coaches\')" class="border-2 border-brand-dark text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:bg-brand-dark hover:text-white transition">Zurück zur Übersicht</button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350); app.navigateToSection(\'home\', \'coaches\')" class="bg-brand-gold text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:shadow-lg transition">Session Buchen</button></div></div></div>';
+    contentArea.innerHTML = '<div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/3"><img src="' + coach.image + '" class="w-full rounded border-4 border-white shadow-lg object-cover" alt="' + name + '" loading="lazy"><div class="mt-4 p-4 bg-gray-50 rounded text-sm"><p class="text-gray-600 mb-2"><i class="fas fa-briefcase mr-2 text-brand-gold"></i>' + experience + '</p><p class="text-gray-600"><i class="fas fa-check-circle mr-2 text-brand-gold"></i>Alle Formate verfügbar</p></div></div><div class="w-full md:w-2/3"><h1 class="font-serif text-3xl mb-2">' + name + '</h1><p class="text-brand-gold font-bold text-xs mb-6">' + role + '</p><p class="text-gray-600 mb-6 leading-relaxed">' + bio + '</p><div class="mb-6"><h4 class="font-bold text-xs uppercase mb-2">Expertise</h4><div class="flex flex-wrap gap-2">' + expertise.map(e => '<span class="bg-brand-dark text-white px-2 py-1 text-[10px] uppercase rounded">' + sanitizeHTML(e) + '</span>').join('') + '</div></div>' + (coach.stats ? '<p class="text-sm text-gray-500 mb-6"><i class="fas fa-chart-line mr-2" aria-hidden="true"></i>' + sanitizeHTML(coach.stats) + '</p>' : '') + '<div class="flex gap-4"><button onclick="app.navigateToSection(\'home\', \'coaches\')" class="border-2 border-brand-dark text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:bg-brand-dark hover:text-white transition">Zurück zur Übersicht</button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350); app.navigateToSection(\'home\', \'coaches\')" class="bg-brand-gold text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:shadow-lg transition">Session Buchen</button></div></div></div>';
 
     navigateTo('coach-detail');
 }
@@ -8664,6 +8711,12 @@ export function filterAdminOrders() {
 function isAdminOrderCompleted(order) {
     const cvStatus = order.cvStatus || 'new';
     const orderStatus = order.status || 'confirmed';
+    const refundStatus = order.refundStatus;
+
+    // Fully refunded orders are always completed
+    if (refundStatus === 'refunded') {
+        return true;
+    }
 
     // Quick-Check: completed when gutachten delivered
     if (isQuickCheckOrder(order)) {
@@ -8677,8 +8730,9 @@ function isAdminOrderCompleted(order) {
     // If order has both CV and Mentoring, BOTH must be completed
     if (hasCv && hasMentoring) {
         const cvCompleted = cvStatus === 'delivered' || cvStatus === 'ready';
-        // Mentoring is only completed when appointment actually happened (date in the past)
-        const mentoringCompleted = order.appointment?.datetime && new Date(order.appointment.datetime) < new Date();
+        // Mentoring is completed when: appointment happened OR was refunded (partially_refunded)
+        const mentoringRefunded = refundStatus === 'partially_refunded';
+        const mentoringCompleted = mentoringRefunded || (order.appointment?.datetime && new Date(order.appointment.datetime) < new Date());
         return cvCompleted && mentoringCompleted;
     }
 
@@ -8809,7 +8863,17 @@ function renderSingleAdminOrder(order) {
 
                         <!-- Action Badge -->
                         <div class="flex-shrink-0">
-                            ${adminAction.needed ? `
+                            ${order.refundStatus === 'refunded' ? `
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-full">
+                                    <i class="fas fa-ban"></i>
+                                    <span class="text-xs font-medium">Erstattet</span>
+                                </div>
+                            ` : order.refundStatus === 'partially_refunded' ? `
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span class="text-xs font-medium">Teilerstattung</span>
+                                </div>
+                            ` : adminAction.needed ? `
                                 <div class="flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full animate-pulse">
                                     <i class="fas fa-hand-point-right"></i>
                                     <span class="text-xs font-bold">Du bist dran</span>
@@ -8861,18 +8925,21 @@ function renderSingleAdminOrder(order) {
 function getAdminActionNeeded(order, isSession, isCvOrder, isQuickCheck) {
     let actions = [];
 
-    // Mentoring: Coach zuweisen
-    if (isSession && !order.assignedCoachId) {
+    // Skip mentoring actions if refunded
+    const isMentoringRefunded = order.refundStatus === 'refunded' || order.refundStatus === 'partially_refunded';
+
+    // Mentoring: Coach zuweisen (nur wenn nicht erstattet)
+    if (isSession && !order.assignedCoachId && !isMentoringRefunded) {
         actions.push({ action: 'assign_coach', label: 'Coach zuweisen' });
     }
 
-    // Mentoring: Termine vorschlagen nach Ablehnung
-    if (isSession && order.appointmentStatus === 'declined') {
+    // Mentoring: Termine vorschlagen nach Ablehnung (nur wenn nicht erstattet)
+    if (isSession && order.appointmentStatus === 'declined' && !isMentoringRefunded) {
         actions.push({ action: 'new_proposals', label: 'Neue Termine vorschlagen' });
     }
 
-    // Mentoring: Termine vorschlagen (Coach zugewiesen, aber keine Vorschläge)
-    if (isSession && order.assignedCoachId && !order.appointmentProposals?.length && !order.appointment?.datetime) {
+    // Mentoring: Termine vorschlagen (Coach zugewiesen, aber keine Vorschläge) (nur wenn nicht erstattet)
+    if (isSession && order.assignedCoachId && !order.appointmentProposals?.length && !order.appointment?.datetime && !isMentoringRefunded) {
         actions.push({ action: 'send_proposals', label: 'Termine vorschlagen' });
     }
 
@@ -9106,12 +9173,20 @@ function renderAdminCvWorkflow(order) {
                         <i class="fas fa-hand-point-right text-orange-500"></i>
                         <span class="font-bold text-orange-700">Deine Aktion erforderlich</span>
                     </div>
-                    <button onclick="app.toggleAdminQuestionnaireView('${order.id}')"
-                            class="w-full bg-white border-2 border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium mb-2 flex items-center justify-center gap-2">
-                        <i class="fas fa-eye"></i>
-                        Fragebogen-Daten ansehen
-                        <i class="fas fa-chevron-down text-indigo-400 transition-transform" id="admin-cv-q-toggle-${order.id}"></i>
-                    </button>
+                    <div class="flex gap-2 mb-2">
+                        <button onclick="app.toggleAdminQuestionnaireView('${order.id}')"
+                                class="flex-1 bg-white border-2 border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
+                            <i class="fas fa-eye"></i>
+                            Fragebogen-Daten ansehen
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform" id="admin-cv-q-toggle-${order.id}"></i>
+                        </button>
+                        <button onclick="app.exportQuestionnaireToWord('${order.id}')"
+                                class="bg-white border-2 border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-green-50 transition"
+                                title="Als Word exportieren">
+                            <i class="fas fa-file-word"></i>
+                            <span class="hidden sm:inline">Word</span>
+                        </button>
+                    </div>
                     <div id="admin-cv-questionnaire-view-${order.id}" class="hidden mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200 max-h-96 overflow-y-auto mb-3">
                         ${order.questionnaire ? renderAdminQuestionnaireData(order.questionnaire, order.cvProject?.documents, order.cvProject?.templateSelection) : '<p class="text-gray-500">Keine Daten</p>'}
                     </div>
@@ -9157,6 +9232,32 @@ function renderAdminMentoringWorkflow(order) {
     const isDeclined = order.appointmentStatus === 'declined';
     const hasConfirmed = order.appointment?.confirmed;
     const appointmentPassed = hasConfirmed && new Date(order.appointment.datetime) < new Date();
+    const isRefunded = order.refundStatus === 'refunded' || order.refundStatus === 'partially_refunded';
+
+    // If refunded, show cancelled state
+    if (isRefunded) {
+        return `
+            <div class="space-y-3">
+                <div class="bg-red-50 rounded-xl p-4 border border-red-200">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-ban text-red-500"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-red-700">${order.refundStatus === 'partially_refunded' ? 'Mentoring storniert (Teilerstattung)' : 'Storniert & Erstattet'}</p>
+                            <p class="text-xs text-red-600">€${(order.refundAmount || 0).toFixed(2)} erstattet am ${order.refundedAt ? new Date(order.refundedAt.seconds * 1000).toLocaleDateString('de-DE') : 'unbekannt'}</p>
+                        </div>
+                    </div>
+                    ${order.refundReason ? `
+                        <div class="bg-white/50 rounded-lg p-3 mt-2">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Grund</p>
+                            <p class="text-sm text-gray-700">${sanitizeHTML(order.refundReason)}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
 
     const steps = [
         {
@@ -9312,6 +9413,34 @@ function renderAdminMentoringWorkflow(order) {
                 <div class="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
                     <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
                     <p class="font-bold text-green-700">Session abgeschlossen!</p>
+                </div>
+            ` : ''}
+
+            <!-- Refund Section (only if not already refunded and session not completed) -->
+            ${order.refundStatus === 'refunded' || order.refundStatus === 'partially_refunded' ? `
+                <div class="bg-red-50 rounded-xl p-4 border border-red-200">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-undo text-red-500 text-xl"></i>
+                        <div>
+                            <p class="font-bold text-red-700">${order.refundStatus === 'partially_refunded' ? 'Teilweise erstattet' : 'Erstattet'}</p>
+                            <p class="text-xs text-red-600">€${(order.refundAmount || 0).toFixed(2)} von €${(order.total || 0).toFixed(2)} am ${order.refundedAt ? new Date(order.refundedAt.seconds * 1000).toLocaleDateString('de-DE') : 'unbekannt'}</p>
+                            ${order.refundReason ? `<p class="text-xs text-gray-500 mt-1">${sanitizeHTML(order.refundReason)}</p>` : ''}
+                        </div>
+                    </div>
+                    ${order.refundStatus === 'partially_refunded' && !appointmentPassed ? `
+                        <button onclick="app.showRefundModal('${order.id}', '${sanitizeHTML(order.customerName || 'Kunde')}', ${order.total || 0}, '${encodeURIComponent(JSON.stringify(order.items || []))}')"
+                                class="mt-3 w-full text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 hover:bg-red-50 px-3 py-2 rounded-lg text-xs font-medium transition">
+                            Weitere Erstattung
+                        </button>
+                    ` : ''}
+                </div>
+            ` : !appointmentPassed ? `
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <button onclick="app.showRefundModal('${order.id}', '${sanitizeHTML(order.customerName || 'Kunde')}', ${order.total || 0}, '${encodeURIComponent(JSON.stringify(order.items || []))}')"
+                            class="w-full text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 hover:bg-red-50 px-4 py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-2">
+                        <i class="fas fa-undo"></i>
+                        Rückerstattung (Compliance-Konflikt)
+                    </button>
                 </div>
             ` : ''}
         </div>
@@ -16513,4 +16642,459 @@ function generateVvtPrintHtml() {
         '</div>' +
         '<p style="margin-top: 40px; font-size: 12px; color: #999; text-align: center;">Erstellt am ' + date + ' · ' + sanitizeHTML(vvtData.company) + '</p>' +
         '</body></html>';
+}
+
+// ========== REFUND MANAGEMENT ==========
+
+// Mentoring-Preise für Teilerstattung
+const MENTORING_PRICES = {
+    'single': 350,
+    '3pack': 950,
+    '3-pack': 950,
+    '3 sessions': 950,
+    'retainer': 2500
+};
+
+// Berechne Mentoring-Anteil aus Items
+function calculateMentoringAmount(items) {
+    if (!items || items.length === 0) return 0;
+
+    let mentoringTotal = 0;
+    for (const item of items) {
+        const title = (item.title || '').toLowerCase();
+        if (title.includes('mentoring') || title.includes('session') || title.includes('coaching')) {
+            // Direkten Preis verwenden wenn vorhanden
+            if (item.price) {
+                mentoringTotal += item.price;
+            } else {
+                // Fallback auf bekannte Preise
+                if (title.includes('3') || title.includes('pack')) {
+                    mentoringTotal += MENTORING_PRICES['3pack'];
+                } else if (title.includes('retainer')) {
+                    mentoringTotal += MENTORING_PRICES['retainer'];
+                } else {
+                    mentoringTotal += MENTORING_PRICES['single'];
+                }
+            }
+        }
+    }
+    return mentoringTotal;
+}
+
+// Show refund confirmation modal
+export function showRefundModal(orderId, customerName, total, itemsEncoded) {
+    // Decode items
+    let items = [];
+    try {
+        items = JSON.parse(decodeURIComponent(itemsEncoded || '[]'));
+    } catch (e) {
+        console.warn('Could not parse items:', e);
+    }
+
+    // Calculate suggested refund amount (mentoring portion only)
+    const mentoringAmount = calculateMentoringAmount(items);
+    const suggestedAmount = mentoringAmount > 0 ? mentoringAmount : total;
+    const isPartialRefund = mentoringAmount > 0 && mentoringAmount < total;
+
+    const modal = document.createElement('div');
+    modal.id = 'refund-modal';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-undo text-red-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-brand-dark text-lg">Rückerstattung</h3>
+                    <p class="text-sm text-gray-500">${sanitizeHTML(customerName)}</p>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">Bestellübersicht</p>
+                ${items.map(item => `
+                    <div class="flex justify-between py-1 ${(item.title || '').toLowerCase().includes('mentoring') || (item.title || '').toLowerCase().includes('session') ? 'text-red-600 font-medium' : 'text-gray-600'}">
+                        <span>${sanitizeHTML(item.title || 'Unbekannt')}</span>
+                        <span>€${(item.price || 0).toFixed(2)}</span>
+                    </div>
+                `).join('')}
+                <div class="flex justify-between pt-2 mt-2 border-t border-gray-200 font-bold text-brand-dark">
+                    <span>Gesamt</span>
+                    <span>€${total.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <!-- Refund Amount -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Erstattungsbetrag:</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+                    <input type="number"
+                           id="refund-amount-input"
+                           value="${suggestedAmount.toFixed(2)}"
+                           min="0.01"
+                           max="${total.toFixed(2)}"
+                           step="0.01"
+                           class="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-3 text-lg font-bold focus:ring-2 focus:ring-brand-gold/50 focus:border-brand-gold">
+                </div>
+                ${isPartialRefund ? `
+                    <p class="text-xs text-blue-600 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Vorschlag: Nur Mentoring-Anteil (€${mentoringAmount.toFixed(2)}) erstatten. CV-Leistungen bleiben erhalten.
+                    </p>
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" onclick="document.getElementById('refund-amount-input').value = '${mentoringAmount.toFixed(2)}'" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition">
+                            Nur Mentoring (€${mentoringAmount.toFixed(2)})
+                        </button>
+                        <button type="button" onclick="document.getElementById('refund-amount-input').value = '${total.toFixed(2)}'" class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition">
+                            Gesamtbetrag (€${total.toFixed(2)})
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Grund für Rückerstattung:</label>
+                <select id="refund-reason-select" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-gold/50 focus:border-brand-gold">
+                    <option value="Compliance-Konflikt: Interessenkonflikt mit Mentor">Compliance-Konflikt (Interessenkonflikt)</option>
+                    <option value="Compliance-Konflikt: Tätigkeit bei Wettbewerber des Mentors">Compliance-Konflikt (Wettbewerber)</option>
+                    <option value="Compliance-Konflikt: Bewerbung beim Arbeitgeber des Mentors">Compliance-Konflikt (Bewerbung beim Arbeitgeber)</option>
+                    <option value="Kein passender Mentor verfügbar">Kein passender Mentor verfügbar</option>
+                    <option value="Kundenanfrage: Stornierung">Kundenanfrage: Stornierung</option>
+                    <option value="other">Anderer Grund...</option>
+                </select>
+                <textarea id="refund-reason-custom" class="hidden w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-2 focus:ring-2 focus:ring-brand-gold/50" rows="2" placeholder="Bitte Grund angeben..."></textarea>
+            </div>
+
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p class="text-xs text-yellow-800">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <strong>Achtung:</strong> Die Rückerstattung wird sofort bei Stripe veranlasst und kann nicht rückgängig gemacht werden. Der Kunde erhält eine Benachrichtigung per E-Mail.
+                </p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('refund-modal').remove()"
+                        class="flex-1 border border-gray-200 text-gray-700 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                    Abbrechen
+                </button>
+                <button onclick="app.processRefund('${orderId}')"
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+                    <i class="fas fa-undo"></i>
+                    Erstatten
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Handle "other" reason selection
+    modal.querySelector('#refund-reason-select').addEventListener('change', function() {
+        const customInput = modal.querySelector('#refund-reason-custom');
+        if (this.value === 'other') {
+            customInput.classList.remove('hidden');
+        } else {
+            customInput.classList.add('hidden');
+        }
+    });
+
+    document.body.appendChild(modal);
+}
+
+// Process the refund
+export async function processRefund(orderId) {
+    const modal = document.getElementById('refund-modal');
+    const selectEl = document.getElementById('refund-reason-select');
+    const customEl = document.getElementById('refund-reason-custom');
+    const amountInput = document.getElementById('refund-amount-input');
+
+    let reason = selectEl.value;
+    if (reason === 'other') {
+        reason = customEl.value.trim();
+        if (!reason) {
+            showToast('Bitte gib einen Grund an');
+            return;
+        }
+    }
+
+    // Get refund amount
+    const refundAmount = parseFloat(amountInput.value);
+    if (isNaN(refundAmount) || refundAmount <= 0) {
+        showToast('Bitte gib einen gültigen Betrag ein');
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = modal.querySelector('button[onclick*="processRefund"]');
+    const originalHtml = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verarbeite...';
+    submitBtn.disabled = true;
+
+    try {
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/processRefund', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId,
+                reason,
+                amount: refundAmount, // Teilerstattung möglich
+                adminEmail: auth.currentUser?.email
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showToast(`Rückerstattung erfolgreich: €${result.amount.toFixed(2)}`);
+            modal.remove();
+
+            // Reload orders to show updated status
+            await loadAdminOrders();
+        } else {
+            showToast(result.error || 'Fehler bei der Rückerstattung');
+            submitBtn.innerHTML = originalHtml;
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        logger.error('Refund error:', error);
+        showToast('Netzwerkfehler bei der Rückerstattung');
+        submitBtn.innerHTML = originalHtml;
+        submitBtn.disabled = false;
+    }
+}
+
+// ========== EXPORT QUESTIONNAIRE TO WORD ==========
+export async function exportQuestionnaireToWord(orderId) {
+    try {
+        // Find the order in cached data
+        const orderDoc = await getDoc(doc(db, 'orders', orderId));
+        if (!orderDoc.exists()) {
+            showToast('Bestellung nicht gefunden');
+            return;
+        }
+
+        const order = orderDoc.data();
+        const questionnaire = order.questionnaire;
+
+        if (!questionnaire) {
+            showToast('Keine Fragebogen-Daten vorhanden');
+            return;
+        }
+
+        const customerName = order.customerName || 'Kunde';
+        const templateSelection = order.cvProject?.templateSelection;
+
+        // Build Word-compatible HTML
+        let html = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                  xmlns:w="urn:schemas-microsoft-com:office:word"
+                  xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <title>CV-Daten ${customerName}</title>
+                <style>
+                    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; }
+                    h1 { color: #1e40af; font-size: 18pt; border-bottom: 2px solid #c9a87c; padding-bottom: 5pt; }
+                    h2 { color: #1e40af; font-size: 14pt; margin-top: 15pt; border-bottom: 1px solid #e5e7eb; }
+                    h3 { color: #374151; font-size: 12pt; margin-top: 10pt; }
+                    .section { margin-bottom: 15pt; }
+                    .label { color: #6b7280; font-size: 9pt; text-transform: uppercase; }
+                    .value { font-weight: bold; margin-bottom: 5pt; }
+                    .experience-item { margin-bottom: 10pt; padding-left: 10pt; border-left: 3px solid #c9a87c; }
+                    .date { color: #6b7280; font-size: 10pt; }
+                    table { border-collapse: collapse; width: 100%; margin-bottom: 10pt; }
+                    td { padding: 5pt; vertical-align: top; }
+                    .color-box { display: inline-block; width: 15pt; height: 15pt; border: 1px solid #ccc; }
+                </style>
+            </head>
+            <body>
+                <h1>CV-Daten: ${escapeHtml(customerName)}</h1>
+                <p class="date">Exportiert am: ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString('de-DE')}</p>
+        `;
+
+        // Template Selection
+        if (templateSelection) {
+            const colors = templateSelection.customization || {};
+            html += `
+                <div class="section">
+                    <h2>Gewähltes Template & Farben</h2>
+                    <table>
+                        <tr>
+                            <td width="30%"><span class="label">Template:</span><br><span class="value">${escapeHtml(templateSelection.templateName || templateSelection.templateId)}</span></td>
+                            <td>
+                                <span class="label">Farbschema:</span><br>
+                                Primary: ${colors.primaryColor || '-'} |
+                                Accent: ${colors.accentColor || '-'} |
+                                Circle: ${colors.circleColor || '-'}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Personal Info
+        if (questionnaire.personal) {
+            const p = questionnaire.personal;
+            html += `
+                <div class="section">
+                    <h2>Persönliche Daten</h2>
+                    <table>
+                        <tr>
+                            <td width="50%"><span class="label">Name:</span><br><span class="value">${escapeHtml(p.fullName || '-')}</span></td>
+                            <td><span class="label">E-Mail:</span><br><span class="value">${escapeHtml(p.email || '-')}</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="label">Telefon:</span><br><span class="value">${escapeHtml(p.phone || '-')}</span></td>
+                            <td><span class="label">Ort:</span><br><span class="value">${escapeHtml(p.location || '-')}</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="label">Geburtsdatum:</span><br><span class="value">${escapeHtml(p.birthDate || '-')}</span></td>
+                            <td><span class="label">Nationalität:</span><br><span class="value">${escapeHtml(p.nationality || '-')}</span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><span class="label">Zielposition:</span><br><span class="value">${escapeHtml(p.targetRole || '-')}</span></td>
+                        </tr>
+                        ${p.linkedin ? `<tr><td colspan="2"><span class="label">LinkedIn:</span><br><span class="value">${escapeHtml(p.linkedin)}</span></td></tr>` : ''}
+                    </table>
+                </div>
+            `;
+        }
+
+        // Summary
+        if (questionnaire.summary) {
+            html += `
+                <div class="section">
+                    <h2>Zusammenfassung / Profil</h2>
+                    <p>${escapeHtml(questionnaire.summary).replace(/\\n/g, '<br>')}</p>
+                </div>
+            `;
+        }
+
+        // Experience
+        if (questionnaire.experience?.length > 0) {
+            html += `
+                <div class="section">
+                    <h2>Berufserfahrung (${questionnaire.experience.length})</h2>
+            `;
+            questionnaire.experience.forEach((exp, idx) => {
+                const achievements = exp.achievements
+                    ? (Array.isArray(exp.achievements) ? exp.achievements.join('<br>• ') : exp.achievements.replace(/\\n/g, '<br>• '))
+                    : '';
+                html += `
+                    <div class="experience-item">
+                        <h3>${escapeHtml(exp.role || exp.title || 'Position')}</h3>
+                        <p><strong>${escapeHtml(exp.company || '')}</strong></p>
+                        <p class="date">${exp.startDate || ''} ${exp.endDate ? '- ' + exp.endDate : exp.current ? '- Heute' : ''}</p>
+                        ${achievements ? `<p>• ${achievements}</p>` : ''}
+                        ${exp.description ? `<p>${escapeHtml(exp.description)}</p>` : ''}
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        // Education
+        if (questionnaire.education?.length > 0) {
+            html += `
+                <div class="section">
+                    <h2>Ausbildung (${questionnaire.education.length})</h2>
+            `;
+            questionnaire.education.forEach(edu => {
+                html += `
+                    <div class="experience-item">
+                        <h3>${escapeHtml(edu.degree || edu.title || 'Abschluss')}</h3>
+                        <p><strong>${escapeHtml(edu.institution || edu.school || '')}</strong></p>
+                        <p class="date">${edu.startDate || ''} ${edu.endDate ? '- ' + edu.endDate : ''}</p>
+                        ${edu.description ? `<p>${escapeHtml(edu.description)}</p>` : ''}
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        // Skills
+        if (questionnaire.skills?.length > 0) {
+            html += `
+                <div class="section">
+                    <h2>Skills</h2>
+                    <p>${questionnaire.skills.map(s => typeof s === 'string' ? escapeHtml(s) : escapeHtml(s.name || s.skill)).join(', ')}</p>
+                </div>
+            `;
+        }
+
+        // Languages
+        if (questionnaire.languages?.length > 0) {
+            html += `
+                <div class="section">
+                    <h2>Sprachen</h2>
+                    <ul>
+                        ${questionnaire.languages.map(lang =>
+                            `<li><strong>${escapeHtml(typeof lang === 'string' ? lang : lang.language || lang.name)}</strong>${lang.level ? ` - ${escapeHtml(lang.level)}` : ''}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Certifications
+        if (questionnaire.certifications?.length > 0) {
+            html += `
+                <div class="section">
+                    <h2>Zertifikate & Weiterbildungen</h2>
+                    <ul>
+                        ${questionnaire.certifications.map(cert =>
+                            `<li><strong>${escapeHtml(typeof cert === 'string' ? cert : cert.name || cert.title)}</strong>${cert.year ? ` (${cert.year})` : ''}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Additional Info
+        if (questionnaire.additionalInfo || questionnaire.interests || questionnaire.hobbies) {
+            html += `
+                <div class="section">
+                    <h2>Zusätzliche Informationen</h2>
+                    ${questionnaire.additionalInfo ? `<p>${escapeHtml(questionnaire.additionalInfo).replace(/\\n/g, '<br>')}</p>` : ''}
+                    ${questionnaire.interests ? `<p><strong>Interessen:</strong> ${escapeHtml(Array.isArray(questionnaire.interests) ? questionnaire.interests.join(', ') : questionnaire.interests)}</p>` : ''}
+                    ${questionnaire.hobbies ? `<p><strong>Hobbies:</strong> ${escapeHtml(Array.isArray(questionnaire.hobbies) ? questionnaire.hobbies.join(', ') : questionnaire.hobbies)}</p>` : ''}
+                </div>
+            `;
+        }
+
+        html += `
+            </body>
+            </html>
+        `;
+
+        // Create and download the file
+        const blob = new Blob([html], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CV-Daten_${customerName.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '_')}_${new Date().toISOString().split('T')[0]}.doc`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('Word-Export gestartet');
+    } catch (error) {
+        logger.error('Export error:', error);
+        showToast('Fehler beim Export');
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const str = String(text);
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }

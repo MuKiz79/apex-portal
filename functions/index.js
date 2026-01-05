@@ -126,24 +126,30 @@ function validateItemPrice(item) {
         }
 
         // Letzte Fallback: Prüfe auf Schlüsselwörter
+        // WICHTIG: Die Reihenfolge ist kritisch! Spezifischere Keywords müssen zuerst geprüft werden
+        // z.B. "Executive Mentoring" muss als mentoring erkannt werden, nicht als executive-c-suite
         if (!catalogProduct) {
-            const keywordMap = {
-                'quick-check': ['quick', 'check'],
-                'young-professional': ['young', 'professional'],
-                'senior-professional': ['senior', 'professional'],
-                'executive-c-suite': ['executive', 'c-suite', 'csuite'],
-                'mentoring-single': ['single', 'mentoring', 'session'],
-                'mentoring-3pack': ['3 mentoring', '3er', '3-pack', '3pack'],
-                'mentoring-complete': ['komplett', 'complete', '6 session'],
-                'addon-express': ['express', '48h', '48 stunden'],
-                'addon-english': ['english', 'englisch'],
-                'addon-interview': ['interview', 'coaching'],
-                'addon-zeugnis': ['zeugnis', 'arbeitszeugnis'],
-                'addon-website': ['landing', 'website', 'page'],
-                'addon-linkedin': ['linkedin']
-            };
+            // Prioritäts-Array: Spezifischere Matches zuerst
+            const keywordPriority = [
+                // Mentoring MUSS zuerst geprüft werden (vor CV-Paketen mit "Executive" im Namen)
+                { id: 'mentoring-single', keywords: ['executive mentoring', 'single session', 'mentoring - single'] },
+                { id: 'mentoring-3pack', keywords: ['3 mentoring', '3er', '3-pack', '3pack', '3 sessions'] },
+                { id: 'mentoring-complete', keywords: ['komplett', 'complete', '6 session'] },
+                // CV-Pakete
+                { id: 'quick-check', keywords: ['quick-check', 'quick check'] },
+                { id: 'young-professional', keywords: ['young professional'] },
+                { id: 'senior-professional', keywords: ['senior professional'] },
+                { id: 'executive-c-suite', keywords: ['c-suite', 'csuite', 'executive cv'] }, // Nicht nur 'executive'!
+                // Add-ons
+                { id: 'addon-express', keywords: ['express', '48h', '48 stunden'] },
+                { id: 'addon-english', keywords: ['english', 'englisch'] },
+                { id: 'addon-interview', keywords: ['interview', 'coaching'] },
+                { id: 'addon-zeugnis', keywords: ['zeugnis', 'arbeitszeugnis'] },
+                { id: 'addon-website', keywords: ['landing', 'website', 'page'] },
+                { id: 'addon-linkedin', keywords: ['linkedin'] }
+            ];
 
-            for (const [id, keywords] of Object.entries(keywordMap)) {
+            for (const { id, keywords } of keywordPriority) {
                 if (keywords.some(kw => itemTitleLower.includes(kw))) {
                     catalogProduct = PRODUCT_CATALOG[id];
                     matchedKey = id;
@@ -1003,6 +1009,161 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         doc.fontSize(8).font('Helvetica').fillColor('#999999')
            .text('Karriaro | Premium Career Services', 50, footerY + 10, { align: 'center', width: 495 })
            .text('Diese Rechnung wurde maschinell erstellt und ist ohne Unterschrift gültig.', 50, footerY + 22, { align: 'center', width: 495 });
+
+        doc.end();
+    });
+}
+
+// ========== GENERATE CREDIT NOTE PDF (GUTSCHRIFT) ==========
+function generateCreditNotePDF(orderData, orderId, refundData) {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        const chunks = [];
+
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        const creditNoteDate = new Date().toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+
+        // Gutschrift-Nummer: GS-JAHR-RANDOM6
+        const creditNoteNumber = `GS-${new Date().getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
+        const originalInvoiceNumber = `RE-${new Date(orderData.createdAt?.seconds * 1000 || Date.now()).getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
+
+        // Header
+        doc.fontSize(24).font('Helvetica-Bold').text('KARRIARO', 50, 50);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666')
+           .text('Premium Career Services', 50, 80);
+
+        // Gutschrift Label (rot)
+        doc.fontSize(28).font('Helvetica-Bold').fillColor('#dc2626')
+           .text('GUTSCHRIFT', 350, 50, { align: 'right' });
+
+        doc.fontSize(10).font('Helvetica').fillColor('#666666')
+           .text(`Gutschriftnummer: ${creditNoteNumber}`, 350, 85, { align: 'right' })
+           .text(`Urspr. Rechnung: ${originalInvoiceNumber}`, 350, 100, { align: 'right' })
+           .text(`Datum: ${creditNoteDate}`, 350, 115, { align: 'right' });
+
+        // Trennlinie
+        doc.moveTo(50, 150).lineTo(545, 150).strokeColor('#dc2626').lineWidth(2).stroke();
+
+        // Kundenadresse
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333')
+           .text('Gutschrift an:', 50, 170);
+        doc.fontSize(10).font('Helvetica').fillColor('#333333')
+           .text(orderData.customerName || 'Kunde', 50, 185)
+           .text(orderData.customerEmail, 50, 200);
+
+        if (orderData.billingDetails?.address) {
+            const addr = orderData.billingDetails.address;
+            if (addr.line1) doc.text(addr.line1, 50, 215);
+            if (addr.postal_code || addr.city) {
+                doc.text(`${addr.postal_code || ''} ${addr.city || ''}`, 50, 230);
+            }
+            if (addr.country) doc.text(addr.country, 50, 245);
+        }
+
+        // Grund für Gutschrift
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333')
+           .text('Grund der Gutschrift:', 50, 280);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666')
+           .text(refundData.reason || 'Stornierung/Rückerstattung auf Kundenwunsch', 50, 295, { width: 495 });
+
+        // Artikeltabelle
+        const tableTop = 340;
+        const tableHeaders = ['Beschreibung', 'Erstattungsbetrag'];
+        const colWidths = [360, 135];
+        let xPos = 50;
+
+        // Tabellenkopf
+        doc.rect(50, tableTop, 495, 25).fillColor('#fef2f2').fill();
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333');
+
+        tableHeaders.forEach((header, i) => {
+            doc.text(header, xPos + 5, tableTop + 8, {
+                width: colWidths[i] - 10,
+                align: i > 0 ? 'right' : 'left'
+            });
+            xPos += colWidths[i];
+        });
+
+        // Erstattungsposten
+        let yPos = tableTop + 35;
+        doc.font('Helvetica').fontSize(10);
+
+        // Wenn Teilerstattung: Zeige welche Teile erstattet wurden
+        const refundAmount = refundData.amount;
+        const isPartial = refundData.isPartialRefund;
+
+        if (isPartial) {
+            // Bei Teilerstattung: Zeige nur den erstatteten Teil
+            doc.fillColor('#333333')
+               .text('Teilerstattung - Mentoring Session', 55, yPos, { width: colWidths[0] - 10 })
+               .text(`€${refundAmount.toFixed(2)}`, 410 + 5, yPos, { width: colWidths[1] - 10, align: 'right' });
+            yPos += 25;
+
+            doc.fontSize(9).fillColor('#666666')
+               .text('(CV-Erstellung wird wie geplant fortgesetzt)', 55, yPos);
+            yPos += 20;
+        } else {
+            // Vollständige Erstattung: Liste alle Items
+            (orderData.items || []).forEach(item => {
+                xPos = 50;
+                doc.fillColor('#333333')
+                   .text(item.title, xPos + 5, yPos, { width: colWidths[0] - 10 })
+                   .text(`€${item.price.toFixed(2)}`, xPos + colWidths[0] + 5, yPos, { width: colWidths[1] - 10, align: 'right' });
+                yPos += 25;
+            });
+        }
+
+        // Trennlinie zwischen Artikeln
+        doc.moveTo(50, yPos).lineTo(545, yPos).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+
+        // Summen
+        yPos += 20;
+        const netAmount = refundAmount / 1.19; // 19% MwSt zurückrechnen
+        const vatAmount = refundAmount - netAmount;
+
+        doc.fontSize(10).font('Helvetica')
+           .text('Nettobetrag:', 350, yPos, { width: 100, align: 'right' })
+           .text(`€${netAmount.toFixed(2)}`, 455, yPos, { width: 85, align: 'right' });
+
+        yPos += 20;
+        doc.text('USt. 19%:', 350, yPos, { width: 100, align: 'right' })
+           .text(`€${vatAmount.toFixed(2)}`, 455, yPos, { width: 85, align: 'right' });
+
+        yPos += 25;
+        doc.rect(350, yPos - 5, 195, 30).fillColor('#dc2626').fill();
+        doc.fontSize(12).font('Helvetica-Bold').fillColor('#ffffff')
+           .text('Gutschriftbetrag:', 355, yPos + 3, { width: 95, align: 'right' })
+           .text(`€${refundAmount.toFixed(2)}`, 455, yPos + 3, { width: 85, align: 'right' });
+
+        // Erstattungshinweis
+        yPos += 60;
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#333333')
+           .text('Erstattungshinweis', 50, yPos);
+        doc.fontSize(9).font('Helvetica').fillColor('#666666')
+           .text(`Stripe Refund-ID: ${refundData.refundId || 'N/A'}`, 50, yPos + 15)
+           .text('Die Gutschrift erfolgt innerhalb von 5-10 Werktagen auf Ihr ursprüngliches Zahlungsmittel.', 50, yPos + 30, { width: 495 });
+
+        // Hinweis auf Originalrechnung
+        yPos += 70;
+        doc.rect(50, yPos, 495, 40).fillColor('#f3f4f6').fill();
+        doc.fontSize(9).font('Helvetica').fillColor('#666666')
+           .text(`Diese Gutschrift bezieht sich auf die Rechnung ${originalInvoiceNumber}.`, 60, yPos + 8)
+           .text(`Ursprünglicher Rechnungsbetrag: €${(orderData.total || 0).toFixed(2)}`, 60, yPos + 22);
+
+        // Footer
+        const footerY = 750;
+        doc.moveTo(50, footerY).lineTo(545, footerY).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+
+        doc.fontSize(8).font('Helvetica').fillColor('#999999')
+           .text('Karriaro | Premium Career Services', 50, footerY + 10, { align: 'center', width: 495 })
+           .text('Diese Gutschrift wurde maschinell erstellt und ist ohne Unterschrift gültig.', 50, footerY + 22, { align: 'center', width: 495 });
 
         doc.end();
     });
@@ -5376,5 +5537,259 @@ exports.logAdminAction = onRequest({
     } catch (error) {
         console.error('Error logging admin action:', error);
         return res.status(500).json({ error: 'Failed to log action' });
+    }
+});
+
+// ========== REFUND MANAGEMENT ==========
+// Process refunds for declined mentoring sessions (compliance conflicts)
+
+exports.processRefund = onRequest({
+    secrets: [stripeSecretKey, smtpHost, smtpUser, smtpPass],
+    invoker: 'public'
+}, async (req, res) => {
+    const corsHeaders = getCorsHeaders(req);
+
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders);
+        return res.status(204).send('');
+    }
+    res.set(corsHeaders);
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { orderId, reason, amount, adminEmail } = req.body;
+
+        // Verify admin
+        if (adminEmail !== 'muammer.kizilaslan@gmail.com') {
+            return res.status(403).json({ error: 'Nur Admin kann Rückerstattungen veranlassen' });
+        }
+
+        if (!orderId) {
+            return res.status(400).json({ error: 'orderId ist erforderlich' });
+        }
+
+        const db = admin.firestore();
+
+        // Get order
+        const orderDoc = await db.collection('orders').doc(orderId).get();
+        if (!orderDoc.exists) {
+            return res.status(404).json({ error: 'Bestellung nicht gefunden' });
+        }
+
+        const order = orderDoc.data();
+
+        // Check if already refunded (full refund)
+        if (order.refundStatus === 'refunded') {
+            return res.status(400).json({ error: 'Bestellung wurde bereits vollständig erstattet' });
+        }
+
+        // Get payment intent ID
+        const paymentIntentId = order.stripePaymentIntent;
+        if (!paymentIntentId) {
+            return res.status(400).json({ error: 'Keine Stripe Payment Intent ID gefunden. Manuelle Erstattung im Stripe Dashboard erforderlich.' });
+        }
+
+        // Initialize Stripe
+        const stripe = require('stripe')(stripeSecretKey.value());
+
+        // Calculate refund amount (in cents for Stripe)
+        const orderTotal = order.total || 0;
+        const refundAmount = amount ? Math.min(amount, orderTotal) : orderTotal;
+        const refundAmountCents = Math.round(refundAmount * 100);
+        const isPartialRefund = refundAmount < orderTotal;
+
+        // Check for previous partial refunds
+        const previousRefunds = order.refundAmount || 0;
+        const remainingRefundable = (orderTotal - previousRefunds) * 100;
+
+        if (refundAmountCents > remainingRefundable) {
+            return res.status(400).json({
+                error: `Maximaler Erstattungsbetrag: €${(remainingRefundable / 100).toFixed(2)} (bereits €${previousRefunds.toFixed(2)} erstattet)`
+            });
+        }
+
+        // Create refund
+        console.log('💳 Creating refund for order:', orderId, 'PaymentIntent:', paymentIntentId, 'Amount:', refundAmountCents, 'cents');
+
+        const refundParams = {
+            payment_intent: paymentIntentId,
+            amount: refundAmountCents, // Teilerstattung in Cents
+            reason: 'requested_by_customer', // Stripe-valid reason
+            metadata: {
+                orderId: orderId,
+                reason: reason || 'Compliance-Konflikt bei Mentoring',
+                processedBy: adminEmail,
+                isPartialRefund: isPartialRefund.toString()
+            }
+        };
+
+        const refund = await stripe.refunds.create(refundParams);
+
+        console.log('✅ Refund created:', refund.id, 'Status:', refund.status, 'Amount:', refund.amount);
+
+        // Calculate total refunded amount (including previous refunds)
+        const totalRefunded = previousRefunds + (refund.amount / 100);
+        const isFullyRefunded = totalRefunded >= orderTotal;
+
+        // Update order in Firestore
+        await db.collection('orders').doc(orderId).update({
+            refundStatus: isFullyRefunded ? 'refunded' : 'partially_refunded',
+            refundId: refund.id,
+            refundAmount: totalRefunded, // Total refunded amount (including previous)
+            refundReason: reason || 'Compliance-Konflikt bei Mentoring',
+            refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+            refundedBy: adminEmail,
+            status: isFullyRefunded ? 'refunded' : 'partially_refunded',
+            // Keep track of all refunds
+            refundHistory: admin.firestore.FieldValue.arrayUnion({
+                refundId: refund.id,
+                amount: refund.amount / 100,
+                reason: reason || 'Compliance-Konflikt bei Mentoring',
+                processedBy: adminEmail,
+                timestamp: new Date().toISOString()
+            })
+        });
+
+        // Log to audit log
+        await db.collection('auditLog').add({
+            action: isPartialRefund ? 'PARTIAL_REFUND_PROCESSED' : 'REFUND_PROCESSED',
+            performedBy: adminEmail,
+            targetType: 'order',
+            targetId: orderId,
+            details: {
+                refundId: refund.id,
+                amount: refund.amount / 100,
+                totalRefunded: totalRefunded,
+                orderTotal: orderTotal,
+                isPartialRefund: isPartialRefund,
+                reason: reason || 'Compliance-Konflikt bei Mentoring',
+                customerEmail: order.customerEmail
+            },
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Send notification email to customer with credit note PDF
+        if (order.customerEmail) {
+            try {
+                // Generate Credit Note PDF
+                const creditNotePDF = await generateCreditNotePDF(order, orderId, {
+                    amount: refund.amount / 100,
+                    isPartialRefund: isPartialRefund,
+                    reason: reason || 'Compliance-Konflikt bei Mentoring',
+                    refundId: refund.id
+                });
+
+                console.log('📄 Credit note PDF generated for order:', orderId);
+
+                const transporter = nodemailer.createTransport({
+                    host: smtpHost.value(),
+                    port: 587,
+                    secure: false,
+                    auth: {
+                        user: smtpUser.value(),
+                        pass: smtpPass.value()
+                    }
+                });
+
+                const customerName = order.customerName || 'Kunde';
+                const refundAmountFormatted = (refund.amount / 100).toFixed(2).replace('.', ',');
+                const orderTotalFormatted = orderTotal.toFixed(2).replace('.', ',');
+                const creditNoteNumber = `GS-${new Date().getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
+
+                // Different email content for partial vs full refund
+                const refundMessage = isPartialRefund
+                    ? `Wir haben Ihnen <strong>€${refundAmountFormatted}</strong> für den Mentoring-Anteil Ihrer Buchung zurückerstattet. Ihre CV-Bestellung (Gesamtwert: €${orderTotalFormatted}) bleibt davon unberührt und wird wie geplant bearbeitet.`
+                    : `Wir haben Ihnen den vollständigen Betrag von <strong>€${refundAmountFormatted}</strong> zurückerstattet.`;
+
+                await transporter.sendMail({
+                    from: '"Karriaro" <kontakt@karriaro.de>',
+                    to: order.customerEmail,
+                    subject: isPartialRefund ? 'Teilerstattung Ihrer Buchung - Karriaro' : 'Rückerstattung Ihrer Buchung - Karriaro',
+                    html: `
+                        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto;">
+                            <div style="background: #0B1120; padding: 30px; text-align: center;">
+                                <h1 style="color: #C6A87C; margin: 0; font-size: 24px;">KARRIARO</h1>
+                            </div>
+                            <div style="padding: 30px; background: #f9f9f9;">
+                                <p style="color: #333;">Hallo ${customerName},</p>
+                                <p style="color: #333;">
+                                    wir bedauern, Ihnen mitteilen zu müssen, dass ${isPartialRefund ? 'der Mentoring-Teil' : 'Ihre Buchung'} leider nicht
+                                    durchgeführt werden kann.
+                                </p>
+                                <p style="color: #333;">
+                                    <strong>Grund:</strong> ${reason || 'Nach unserem Compliance-Check liegt ein Interessenkonflikt vor, der eine Zusammenarbeit ausschließt.'}
+                                </p>
+                                <div style="background: #f8f9fa; border-left: 4px solid #22c55e; padding: 15px; margin: 20px 0;">
+                                    <p style="color: #333; margin: 0;">
+                                        <strong>Gute Nachricht:</strong> ${refundMessage}
+                                    </p>
+                                    <p style="color: #666; margin: 10px 0 0; font-size: 14px;">
+                                        Die Gutschrift erfolgt innerhalb von 5-10 Werktagen auf Ihr ursprüngliches Zahlungsmittel.
+                                    </p>
+                                </div>
+                                <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 15px; margin: 20px 0; border-radius: 8px;">
+                                    <p style="color: #991b1b; margin: 0; font-weight: bold;">
+                                        📄 Gutschrift ${creditNoteNumber} im Anhang
+                                    </p>
+                                    <p style="color: #666; margin: 10px 0 0; font-size: 14px;">
+                                        Für Ihre Unterlagen und Buchhaltung finden Sie die offizielle Gutschrift als PDF im Anhang.
+                                    </p>
+                                </div>
+                                <p style="color: #333;">
+                                    ${isPartialRefund
+                                        ? 'Ihre CV-Erstellung wird wie geplant fortgesetzt. Bei Fragen stehen wir Ihnen gerne zur Verfügung.'
+                                        : 'Wenn Sie Fragen haben oder an unseren CV-Services interessiert sind, stehen wir Ihnen gerne zur Verfügung.'}
+                                </p>
+                                <p style="color: #333;">Mit besten Grüßen,<br><strong>Ihr Karriaro Team</strong></p>
+                            </div>
+                            <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+                                <p style="margin: 0;">Karriaro | Premium Career Services</p>
+                                <p style="margin: 5px 0 0;">Diese E-Mail wurde automatisch generiert.</p>
+                            </div>
+                        </div>
+                    `,
+                    attachments: [
+                        {
+                            filename: `Gutschrift_${creditNoteNumber}.pdf`,
+                            content: creditNotePDF,
+                            contentType: 'application/pdf'
+                        }
+                    ]
+                });
+
+                console.log('📧 Refund notification email with credit note sent to:', order.customerEmail);
+
+            } catch (emailError) {
+                console.error('⚠️ Failed to send refund email:', emailError.message);
+                // Don't fail the refund if email fails
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            refundId: refund.id,
+            amount: refund.amount / 100,
+            status: refund.status,
+            message: 'Rückerstattung erfolgreich verarbeitet'
+        });
+
+    } catch (error) {
+        console.error('❌ Refund error:', error);
+
+        // Check for specific Stripe errors
+        if (error.type === 'StripeInvalidRequestError') {
+            return res.status(400).json({
+                error: 'Stripe-Fehler: ' + error.message,
+                details: 'Möglicherweise wurde die Zahlung bereits erstattet oder ist zu alt.'
+            });
+        }
+
+        return res.status(500).json({
+            error: 'Fehler bei der Rückerstattung',
+            details: error.message
+        });
     }
 });
