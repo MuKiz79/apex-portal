@@ -244,44 +244,38 @@
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
-                    <!-- LINKS: Quick-Check (Einstieg) -->
-                    <div class="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.05] hover:border-white/20 transition-all duration-500 text-center flex flex-col group">
+                    <!-- LINKS: Quick-Check (Einstieg) - Komplett klickbar -->
+                    <div onclick="app.openPackageConfigModal('CV Quick-Check', 99)" class="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.05] hover:border-brand-gold/30 transition-all duration-500 text-center flex flex-col group cursor-pointer">
                         <div class="text-brand-gold/60 text-xs uppercase tracking-widest mb-3 font-semibold">Einstieg</div>
-                        <h3 class="font-serif text-xl mb-3 text-white/90">CV Quick-Check</h3>
+                        <h3 class="font-serif text-xl mb-3 text-white/90 group-hover:text-brand-gold transition-colors">CV Quick-Check</h3>
                         <p class="text-white/70 text-sm mb-6 leading-relaxed flex-grow">
                             Professionelle Einschätzung Ihrer aktuellen Unterlagen.
                         </p>
-                        <div class="text-white text-2xl font-serif mb-6">€99</div>
-                        <button onclick="app.openPackageConfigModal('CV Quick-Check', 99)" class="w-full border border-white/20 text-white/80 px-6 py-3 text-sm font-semibold tracking-wider hover:bg-white/10 hover:text-white transition-all duration-300 rounded-xl mt-auto">
-                            Jetzt buchen
-                        </button>
+                        <div class="text-white text-2xl font-serif mb-4">€99</div>
+                        <span class="text-brand-gold text-sm font-semibold group-hover:underline">Jetzt buchen →</span>
                     </div>
 
-                    <!-- MITTE: CV-Manufaktur (Featured) -->
-                    <div class="bg-gradient-to-b from-brand-gold/20 to-brand-gold/5 backdrop-blur-xl border-2 border-brand-gold/40 rounded-2xl p-8 relative text-center flex flex-col group md:scale-105 md:-my-2 shadow-lg shadow-brand-gold/10">
+                    <!-- MITTE: CV-Manufaktur (Featured) - Komplett klickbar -->
+                    <div onclick="app.scrollToSection('cv-packages')" class="bg-gradient-to-b from-brand-gold/20 to-brand-gold/5 backdrop-blur-xl border-2 border-brand-gold/40 rounded-2xl p-8 relative text-center flex flex-col group md:scale-105 md:-my-2 shadow-lg shadow-brand-gold/10 cursor-pointer hover:border-brand-gold transition-all duration-300">
                         <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-dark px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-full">Beliebt</div>
                         <div class="text-brand-gold text-xs uppercase tracking-widest mb-3 font-semibold mt-1">Unterlagen</div>
-                        <h3 class="font-serif text-xl mb-3">CV-Manufaktur</h3>
+                        <h3 class="font-serif text-xl mb-3 group-hover:text-brand-gold transition-colors">CV-Manufaktur</h3>
                         <p class="text-white/70 text-sm mb-6 leading-relaxed flex-grow">
                             CV, LinkedIn & Anschreiben – professionell erstellt.
                         </p>
-                        <div class="text-brand-gold text-2xl font-serif mb-6">Ab €249</div>
-                        <button onclick="app.scrollToSection('cv-packages')" class="w-full bg-brand-gold text-brand-dark px-6 py-3 text-sm font-bold tracking-wider hover:bg-white transition-all duration-300 rounded-xl mt-auto">
-                            Pakete ansehen
-                        </button>
+                        <div class="text-brand-gold text-2xl font-serif mb-4">Ab €249</div>
+                        <span class="text-white text-sm font-semibold group-hover:underline">Pakete ansehen →</span>
                     </div>
 
-                    <!-- RECHTS: Executive Mentoring -->
-                    <div class="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.05] hover:border-white/20 transition-all duration-500 text-center flex flex-col group">
+                    <!-- RECHTS: Executive Mentoring - Komplett klickbar -->
+                    <div onclick="app.scrollToSection('coaches')" class="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.05] hover:border-brand-gold/30 transition-all duration-500 text-center flex flex-col group cursor-pointer">
                         <div class="text-brand-gold/60 text-xs uppercase tracking-widest mb-3 font-semibold">Strategie</div>
-                        <h3 class="font-serif text-xl mb-3 text-white/90">Executive Mentoring</h3>
+                        <h3 class="font-serif text-xl mb-3 text-white/90 group-hover:text-brand-gold transition-colors">Executive Mentoring</h3>
                         <p class="text-white/70 text-sm mb-6 leading-relaxed flex-grow">
                             1:1 Sparring mit erfahrenen Führungskräften.
                         </p>
-                        <div class="text-white text-2xl font-serif mb-6">Ab €350</div>
-                        <button onclick="app.scrollToSection('coaches')" class="w-full border border-white/20 text-white/80 px-6 py-3 text-sm font-semibold tracking-wider hover:bg-white/10 hover:text-white transition-all duration-300 rounded-xl mt-auto">
-                            Mentoren ansehen
-                        </button>
+                        <div class="text-white text-2xl font-serif mb-4">Ab €350</div>
+                        <span class="text-brand-gold text-sm font-semibold group-hover:underline">Mentoren ansehen →</span>
                     </div>
                 </div>
             </div>
