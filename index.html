@@ -110,30 +110,30 @@
                     <img src="/images/karriaro-logo-transparent.svg" alt="Karriaro" class="h-12 w-auto">
                 </div>
 
-                <!-- Desktop Menu -->
-                <div id="nav-links" class="hidden md:flex space-x-8 text-xs uppercase tracking-widest font-bold text-gray-400">
-                    <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">CV-Manufaktur</button>
-                    <button onclick="app.navigateTo('home'); app.scrollToSection('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Executive Mentoring</button>
-                    <button onclick="app.navigateTo('inner-circle')" class="text-brand-gold hover:text-white transition py-2 border-b-2 border-brand-gold/50 hover:border-brand-gold flex items-center gap-2">
-                        <i class="fas fa-lock text-xs" aria-hidden="true"></i>
-                        Inner Circle
-                    </button>
-                    <button onclick="app.navigateTo('journal')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Insights</button>
-                    <button onclick="app.navigateTo('about')" class="text-white hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Über uns</button>
+                <!-- Desktop Menu - Anker-Links -->
+                <div id="nav-links" class="hidden md:flex space-x-6 text-xs uppercase tracking-widest font-bold text-gray-400">
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('cv-packages')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Pakete</button>
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('process')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Ablauf</button>
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('coaches')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">Mentoren</button>
+                    <button onclick="app.navigateTo('home'); app.scrollToSection('faq')" class="hover:text-brand-gold transition py-2 border-b-2 border-transparent hover:border-brand-gold">FAQ</button>
                 </div>
 
                 <!-- User Actions -->
-                <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-4">
+                    <!-- Jetzt anfragen CTA -->
+                    <button onclick="app.scrollToSection('cv-packages')" class="hidden md:block bg-brand-gold text-brand-dark px-5 py-2 rounded-full font-bold text-xs uppercase tracking-wide hover:bg-white transition duration-300">
+                        Jetzt anfragen
+                    </button>
+
                     <!-- Cart -->
                     <button onclick="app.toggleCart()" class="relative text-white hover:text-brand-gold transition group flex items-center gap-2" aria-label="Warenkorb anzeigen">
                         <i class="fas fa-shopping-cart text-lg group-hover:scale-110 transition-transform" aria-hidden="true"></i>
-                        <span class="hidden md:inline text-[10px] uppercase tracking-widest font-bold">Warenkorb</span>
                         <span id="cart-count" class="absolute -top-2 -right-2 bg-brand-gold text-brand-dark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden shadow-md" aria-live="polite">0</span>
                     </button>
 
-                    <div class="hidden md:block">
+                    <div class="hidden md:flex items-center gap-3">
                         <!-- Login Button -->
-                        <button id="nav-login-btn" onclick="app.navigateTo('login')" class="border border-brand-gold/30 text-brand-gold px-6 py-2 rounded-lg font-bold text-xs uppercase hover:bg-brand-gold hover:text-brand-dark transition duration-300">
+                        <button id="nav-login-btn" onclick="app.navigateTo('login')" class="border border-white/20 text-white/80 px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-white/10 transition duration-300">
                             Login
                         </button>
                         <!-- User Profile (Hidden initially) -->
@@ -2649,6 +2649,12 @@
                     </div>
                     <div>
                         <h3 class="font-serif text-2xl text-brand-dark mb-4">Entstanden aus Erfahrung</h3>
+                        <!-- Hard-Facts -->
+                        <div class="flex flex-wrap gap-3 mb-6">
+                            <span class="bg-brand-gold/10 text-brand-dark text-xs font-bold px-3 py-1.5 rounded-full">15+ Jahre Erfahrung</span>
+                            <span class="bg-brand-gold/10 text-brand-dark text-xs font-bold px-3 py-1.5 rounded-full">200+ Executive Platzierungen</span>
+                            <span class="bg-brand-gold/10 text-brand-dark text-xs font-bold px-3 py-1.5 rounded-full">DACH-Spezialist</span>
+                        </div>
                         <p class="text-gray-600 leading-relaxed mb-4">Die Idee zu Karriaro entstand in der Vorstandsetage: Unser Gründer hat als CIO hunderte Bewerbungen gesehen – und erkannt, dass die meisten Dienstleister die Sprache des C-Levels nicht verstehen. Die Lösung: Eine Brücke zwischen ambitionierten Talenten und der Realität in den Führungsgremien.</p>
                         <p class="text-gray-600 leading-relaxed mb-4">Heute begleiten wir jährlich über 500 Fach- und Führungskräfte auf ihrem Karriereweg. Unser Netzwerk aus aktiven Senior Executives macht uns einzigartig: Keine Theoretiker, nur Praktizierende, die wissen, wie Entscheidungen wirklich getroffen werden.</p>
                         <div class="border-l-4 border-brand-gold pl-4 py-2 bg-gray-50">
