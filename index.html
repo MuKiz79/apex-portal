@@ -226,26 +226,21 @@
                         Maßgeschneiderte Unterlagen und strategisches Sparring – <strong class="text-white">100% diskret.</strong>
                     </p>
 
-                    <!-- Trust Markers (Kein Border - nur Text + Icon) -->
-                    <div class="flex flex-wrap items-center justify-center gap-6 md:gap-8 mb-12">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-lock text-brand-gold text-sm"></i>
-                            <span class="text-white/80 text-sm">100% Diskret</span>
+                    <!-- Trust Markers (Größer & deutlicher) -->
+                    <div class="flex flex-wrap items-center justify-center gap-8 md:gap-10">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fas fa-lock text-brand-gold"></i>
+                            <span class="text-white font-semibold">100% Diskret</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-users text-brand-gold text-sm"></i>
-                            <span class="text-white/80 text-sm">500+ Kunden/Jahr</span>
+                        <div class="flex items-center gap-2.5">
+                            <i class="fas fa-users text-brand-gold"></i>
+                            <span class="text-white font-semibold">500+ Kunden/Jahr</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-user-tie text-brand-gold text-sm"></i>
-                            <span class="text-white/80 text-sm">Senior Executives</span>
+                        <div class="flex items-center gap-2.5">
+                            <i class="fas fa-user-tie text-brand-gold"></i>
+                            <span class="text-white font-semibold">Senior Executives</span>
                         </div>
                     </div>
-
-                    <!-- Haupt-CTA -->
-                    <button onclick="app.scrollToSection('cv-packages')" class="bg-brand-gold text-brand-dark px-10 py-4 text-sm font-bold uppercase tracking-wider hover:bg-white transition-all duration-300 rounded-full shadow-lg shadow-brand-gold/20">
-                        Lösungen entdecken
-                    </button>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
@@ -547,7 +542,7 @@
                         <div class="text-center text-xs text-gray-400 mb-5">Lieferzeit: 3-5 Werktage</div>
 
                         <button onclick="app.openPackageConfigModal('High-Potential CV', 249)" class="w-full border-2 border-gray-200 text-brand-dark py-3.5 text-sm font-semibold tracking-wide hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 rounded-full">
-                            Jetzt starten
+                            Paket wählen
                         </button>
 
                         <!-- Bundle-Hinweis -->
@@ -625,7 +620,7 @@
                         <div class="text-center text-xs text-gray-500 mb-5">Lieferzeit: 5-7 Werktage</div>
 
                         <button onclick="app.openPackageConfigModal('Senior Professional CV', 490)" class="w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full shadow-lg shadow-brand-gold/30">
-                            Zum Senior-Profil
+                            Paket wählen
                         </button>
 
                         <!-- Bundle-Hinweis -->
@@ -701,7 +696,7 @@
                         <div class="text-center text-xs text-gray-400 mb-5">Lieferzeit: 5-7 Werktage</div>
 
                         <button onclick="app.openPackageConfigModal('Executive C-Suite CV', 1290)" class="w-full border-2 border-brand-dark text-brand-dark py-3.5 text-sm font-semibold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full">
-                            Strategie-Gespräch anfordern
+                            Anfrage stellen
                         </button>
 
                         <!-- Bundle-Hinweis -->
@@ -778,9 +773,8 @@
                             <div class="flex items-center justify-between mb-4">
                                 <span class="text-2xl font-bold text-brand-dark">€49</span>
                             </div>
-                            <button onclick="app.addToCart('Zeugnis-Analyse', 49)" class="w-full bg-gray-100 hover:bg-brand-gold text-brand-dark font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group/btn">
-                                <span>Hinzufügen</span>
-                                <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform"></i>
+                            <button onclick="app.addToCart('Zeugnis-Analyse', 49)" class="w-full border border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-dark font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300">
+                                In den Warenkorb
                             </button>
                         </div>
 
@@ -795,9 +789,8 @@
                             <div class="flex items-center justify-between mb-4">
                                 <span class="text-2xl font-bold text-brand-dark">€199</span>
                             </div>
-                            <button onclick="app.addToCart('Interview-Simulation (60 Min.)', 199)" class="w-full bg-brand-gold hover:bg-brand-dark text-brand-dark hover:text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group/btn">
-                                <span>Hinzufügen</span>
-                                <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform"></i>
+                            <button onclick="app.addToCart('Interview-Simulation (60 Min.)', 199)" class="w-full bg-brand-gold hover:bg-brand-dark text-brand-dark hover:text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300">
+                                In den Warenkorb
                             </button>
                         </div>
 
@@ -812,9 +805,8 @@
                             <div class="flex items-center justify-between mb-4">
                                 <span class="text-2xl font-bold text-white">€499</span>
                             </div>
-                            <button onclick="app.addToCart('Executive Landing Page', 499)" class="w-full bg-brand-gold hover:bg-white text-brand-dark font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group/btn">
-                                <span>Hinzufügen</span>
-                                <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform"></i>
+                            <button onclick="app.addToCart('Executive Landing Page', 499)" class="w-full bg-brand-gold hover:bg-white text-brand-dark font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-300">
+                                In den Warenkorb
                             </button>
                         </div>
                     </div>
@@ -894,7 +886,7 @@
                                 <i class="fas fa-award text-brand-gold text-xl"></i>
                             </div>
                             <h3 class="font-serif text-xl mb-4">Aktive Executives, keine Coaches</h3>
-                            <p class="text-sm text-white/75 leading-loose">
+                            <p class="text-sm text-gray-300 leading-loose">
                                 VPs, SVPs und C-Level aus DAX-Konzernen, Fortune 500 und mittelständischen Hidden Champions. 15+ Jahre Leadership-Erfahrung. <strong class="text-brand-gold">Praktizierende, keine Theoretiker.</strong>
                             </p>
                         </div>
@@ -906,7 +898,7 @@
                                 <i class="fas fa-lock text-brand-gold text-xl"></i>
                             </div>
                             <h3 class="font-serif text-xl mb-4">Vertraulich & diskret</h3>
-                            <p class="text-sm text-white/75 leading-loose">
+                            <p class="text-sm text-gray-300 leading-loose">
                                 Strikte NDAs. Compliance-geprüftes Matching. Ihre Wechselabsichten, Gehaltsverhandlungen und Karrierepläne bleiben absolut vertraulich.
                             </p>
                         </div>
@@ -918,7 +910,7 @@
                                 <i class="fas fa-bullseye text-brand-gold text-xl"></i>
                             </div>
                             <h3 class="font-serif text-xl mb-4">Einblicke aus der Praxis</h3>
-                            <p class="text-sm text-white/75 leading-loose">
+                            <p class="text-sm text-gray-300 leading-loose">
                                 Keine Theorie, keine Frameworks. Ihre Mentoren teilen echte Erfahrungen: Was funktioniert hat, was nicht, und warum. Perspektiven, die Sie nirgendwo sonst bekommen.
                             </p>
                         </div>
@@ -1148,7 +1140,7 @@
                                 </li>
                             </ul>
 
-                            <button onclick="app.addToCart('Executive Mentoring - Single Session', 350)" class="w-full border border-brand-gold/30 text-brand-gold py-3.5 uppercase text-xs font-semibold tracking-wider hover:bg-brand-gold hover:text-brand-dark transition-all duration-300 rounded-full mt-auto">
+                            <button onclick="app.addToCart('Executive Mentoring - Single Session', 350)" class="w-full bg-brand-gold text-brand-dark py-3.5 uppercase text-xs font-bold tracking-wider hover:bg-white transition-all duration-300 rounded-full mt-auto shadow-lg shadow-brand-gold/30">
                                 Session buchen
                             </button>
                         </div>
@@ -1293,7 +1285,7 @@
                     </div>
 
                     <div class="flex items-center justify-center gap-6 mb-8">
-                        <div class="text-6xl font-serif text-brand-gold">€1.299</div>
+                        <div class="text-6xl font-serif text-brand-gold">Ab €1.299</div>
                         <div class="bg-brand-gold text-brand-dark px-4 py-2 text-sm font-bold uppercase rounded-lg">
                             Alles aus einer Hand
                         </div>
@@ -1305,11 +1297,11 @@
 
                     <!-- Bundle-Optionen -->
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-                        <button onclick="app.addToCart('Komplettpaket: Senior CV + 3 Mentoring-Sessions', 1299)" class="bg-brand-gold text-brand-dark px-10 py-5 uppercase text-sm font-bold tracking-wider hover:bg-white transition rounded-full shadow-xl">
+                        <button onclick="app.addToCart('Komplettpaket: Senior CV + 3 Mentoring-Sessions', 1299)" class="bg-brand-gold text-brand-dark px-12 py-5 uppercase text-sm font-bold tracking-wider hover:bg-white transition rounded-full shadow-xl min-w-[240px]">
                             Senior Bundle · €1.299
                         </button>
                         <span class="text-gray-600 text-sm">oder</span>
-                        <button onclick="app.addToCart('Komplettpaket: C-Suite CV + 3 Mentoring-Sessions', 1799)" class="border-2 border-brand-gold text-brand-gold px-10 py-5 uppercase text-sm font-bold tracking-wider hover:bg-brand-gold hover:text-brand-dark transition rounded-full">
+                        <button onclick="app.addToCart('Komplettpaket: C-Suite CV + 3 Mentoring-Sessions', 1799)" class="border-2 border-brand-gold text-brand-gold px-12 py-5 uppercase text-sm font-bold tracking-wider hover:bg-brand-gold hover:text-brand-dark transition rounded-full min-w-[240px]">
                             C-Suite Bundle · €1.799
                         </button>
                     </div>
