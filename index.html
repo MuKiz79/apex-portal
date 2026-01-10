@@ -3451,58 +3451,58 @@
                     </div>
                 </div>
 
-                <!-- Navigation Tabs - Professional Style -->
-                <div class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+                <!-- Navigation Tabs - Professional Style - Two Rows for better visibility -->
+                <div class="flex flex-wrap gap-1 pb-1">
                     <button onclick="app.switchAdminTab('orders')" id="admin-tab-orders"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium bg-gray-50 text-brand-dark transition-all">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium bg-gray-50 text-brand-dark transition-all">
                         <i class="fas fa-shopping-cart"></i>
                         <span>Bestellungen</span>
                     </button>
                     <button onclick="app.switchAdminTab('users')" id="admin-tab-users"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-users"></i>
                         <span>Benutzer</span>
                     </button>
                     <button onclick="app.switchAdminTab('strategy')" id="admin-tab-strategy"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-phone-alt"></i>
                         <span>Anfragen</span>
                     </button>
                     <button onclick="app.switchAdminTab('coaches')" id="admin-tab-coaches"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-user-tie"></i>
                         <span>Mentoren</span>
                     </button>
                     <button onclick="app.switchAdminTab('documents')" id="admin-tab-documents"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-folder-open"></i>
                         <span>Dokumente</span>
                     </button>
                     <button onclick="app.switchAdminTab('settings')" id="admin-tab-settings"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-cog"></i>
                         <span>Einstellungen</span>
                     </button>
                     <button onclick="app.switchAdminTab('mentor-preview')" id="admin-tab-mentor-preview"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all border-l border-white/20 ml-2">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-eye"></i>
-                        <span>Mentor-Vorschau</span>
+                        <span>Mentor</span>
                     </button>
                     <button onclick="app.switchAdminTab('cv-generator')" id="admin-tab-cv-generator"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-file-alt"></i>
-                        <span>CV-Generator</span>
+                        <span>CV</span>
                     </button>
                     <button onclick="app.switchAdminTab('dsgvo')" id="admin-tab-dsgvo"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all border-l border-white/20 ml-2">
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all">
                         <i class="fas fa-shield-alt"></i>
-                        <span>DSGVO & Sicherheit</span>
+                        <span>DSGVO</span>
                     </button>
                     <button onclick="app.switchAdminTab('inner-circle')" id="admin-tab-inner-circle"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition-all border-l border-white/20 ml-2">
-                        <i class="fas fa-crown"></i>
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium text-gray-300 hover:bg-white/10 transition-all bg-gradient-to-r from-brand-gold/20 to-transparent">
+                        <i class="fas fa-crown text-brand-gold"></i>
                         <span>Inner Circle</span>
-                        <span id="admin-waitlist-badge" class="bg-brand-gold text-brand-dark text-xs px-1.5 py-0.5 rounded-full font-bold hidden">0</span>
+                        <span id="admin-waitlist-badge" class="bg-brand-gold text-brand-dark text-[10px] px-1.5 py-0.5 rounded-full font-bold hidden">0</span>
                     </button>
                 </div>
             </div>
