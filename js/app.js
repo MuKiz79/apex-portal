@@ -11056,12 +11056,12 @@ export function renderBundleSection() {
 
     if (seniorBtn) {
         seniorBtn.textContent = `Senior Bundle · €${seniorBundle.price.toLocaleString('de-DE')}`;
-        seniorBtn.onclick = () => addToCart(seniorBundle.name, seniorBundle.price);
+        seniorBtn.onclick = () => window.app.addToCart(seniorBundle.name, seniorBundle.price);
     }
 
     if (cSuiteBtn) {
         cSuiteBtn.textContent = `C-Suite Bundle · €${cSuiteBundle.price.toLocaleString('de-DE')}`;
-        cSuiteBtn.onclick = () => addToCart(cSuiteBundle.name, cSuiteBundle.price);
+        cSuiteBtn.onclick = () => window.app.addToCart(cSuiteBundle.name, cSuiteBundle.price);
     }
 
     // Update C-Suite extras
