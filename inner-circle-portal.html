@@ -474,7 +474,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, increment, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, increment, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js";
 
         const firebaseConfig = {
@@ -514,17 +514,30 @@
                 return;
             }
 
-            // Check if user is in members collection
+            // Check if user is in members collection (search by email)
             try {
-                const memberDoc = await getDoc(doc(db, 'members', user.uid));
-                if (!memberDoc.exists()) {
+                const membersRef = collection(db, 'members');
+                const q = query(membersRef, where('email', '==', user.email));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
                     alert('Sie sind noch kein freigeschaltetes Inner Circle Member.');
                     window.location.href = '/index.html';
                     return;
                 }
 
+                // Check if member is active
+                const memberDoc = snapshot.docs[0];
+                const memberData = memberDoc.data();
+
+                if (!memberData.isActive) {
+                    alert('Ihre Mitgliedschaft ist derzeit nicht aktiv. Bitte kontaktieren Sie uns.');
+                    window.location.href = '/index.html';
+                    return;
+                }
+
                 currentUser = user;
-                currentMemberData = memberDoc.data();
+                currentMemberData = { id: memberDoc.id, ...memberData };
 
                 document.getElementById('member-name').textContent = currentMemberData.name;
                 document.getElementById('member-number').textContent = `#${String(currentMemberData.memberNumber).padStart(4, '0')}`;
@@ -591,8 +604,150 @@
             }
             document.getElementById('recent-opportunities').innerHTML = oppsHTML;
 
-            // Activity feed placeholder
-            document.getElementById('activity-feed').innerHTML = '<p class="text-gray-500 text-center py-4">Activity Feed kommt bald...</p>';
+            // Load activity feed
+            await loadActivityFeed();
+        }
+
+        async function loadActivityFeed() {
+            const feedDiv = document.getElementById('activity-feed');
+            if (!feedDiv) return;
+
+            try {
+                // Fetch recent activities from multiple sources
+                const activities = [];
+
+                // Get recent opportunities
+                const oppsQuery = query(
+                    collection(db, 'opportunities'),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                const oppsSnap = await getDocs(oppsQuery);
+                oppsSnap.forEach(doc => {
+                    const data = doc.data();
+                    activities.push({
+                        type: 'opportunity',
+                        icon: 'fa-briefcase',
+                        iconColor: 'text-green-400',
+                        bgColor: 'bg-green-500/20',
+                        title: `Neue Opportunity: ${data.title}`,
+                        subtitle: data.company || 'Vertraulich',
+                        timestamp: data.createdAt
+                    });
+                });
+
+                // Get recent headhunter reviews
+                const reviewsQuery = query(
+                    collection(db, 'headhunter_reviews'),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                const reviewsSnap = await getDocs(reviewsQuery);
+                reviewsSnap.forEach(doc => {
+                    const data = doc.data();
+                    activities.push({
+                        type: 'review',
+                        icon: 'fa-star',
+                        iconColor: 'text-yellow-400',
+                        bgColor: 'bg-yellow-500/20',
+                        title: 'Neue Headhunter-Bewertung',
+                        subtitle: `${data.rating}/5 Sterne`,
+                        timestamp: data.createdAt
+                    });
+                });
+
+                // Get recent forum posts
+                const postsQuery = query(
+                    collection(db, 'forum_posts'),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                const postsSnap = await getDocs(postsQuery);
+                postsSnap.forEach(doc => {
+                    const data = doc.data();
+                    activities.push({
+                        type: 'post',
+                        icon: 'fa-comment',
+                        iconColor: 'text-blue-400',
+                        bgColor: 'bg-blue-500/20',
+                        title: `Forum: ${data.title}`,
+                        subtitle: data.category,
+                        timestamp: data.createdAt
+                    });
+                });
+
+                // Get recent forum replies
+                const repliesQuery = query(
+                    collection(db, 'forum_replies'),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                const repliesSnap = await getDocs(repliesQuery);
+                repliesSnap.forEach(doc => {
+                    const data = doc.data();
+                    activities.push({
+                        type: 'reply',
+                        icon: 'fa-reply',
+                        iconColor: 'text-purple-400',
+                        bgColor: 'bg-purple-500/20',
+                        title: `${data.authorName || 'Anonym'} hat geantwortet`,
+                        subtitle: data.content?.substring(0, 50) + (data.content?.length > 50 ? '...' : ''),
+                        timestamp: data.createdAt
+                    });
+                });
+
+                // Sort by timestamp (newest first)
+                activities.sort((a, b) => {
+                    const timeA = a.timestamp?.seconds || 0;
+                    const timeB = b.timestamp?.seconds || 0;
+                    return timeB - timeA;
+                });
+
+                // Take only the 10 most recent
+                const recentActivities = activities.slice(0, 10);
+
+                if (recentActivities.length === 0) {
+                    feedDiv.innerHTML = `
+                        <p class="text-gray-500 text-center py-6">
+                            <i class="fas fa-stream text-2xl mb-2 block"></i>
+                            Noch keine Aktivitäten
+                        </p>
+                    `;
+                    return;
+                }
+
+                feedDiv.innerHTML = recentActivities.map(activity => {
+                    const timeAgo = getTimeAgo(activity.timestamp);
+                    return `
+                        <div class="flex items-start gap-4 py-3 border-b border-gray-800 last:border-0">
+                            <div class="w-10 h-10 rounded-full ${activity.bgColor} flex items-center justify-center flex-shrink-0">
+                                <i class="fas ${activity.icon} ${activity.iconColor}"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm text-white truncate">${activity.title}</p>
+                                <p class="text-xs text-gray-500">${activity.subtitle}</p>
+                            </div>
+                            <span class="text-xs text-gray-600 whitespace-nowrap">${timeAgo}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading activity feed:', error);
+                feedDiv.innerHTML = '<p class="text-red-400 text-center py-4">Fehler beim Laden</p>';
+            }
+        }
+
+        function getTimeAgo(timestamp) {
+            if (!timestamp) return '';
+            const seconds = timestamp.seconds || Math.floor(timestamp / 1000);
+            const now = Math.floor(Date.now() / 1000);
+            const diff = now - seconds;
+
+            if (diff < 60) return 'gerade eben';
+            if (diff < 3600) return `vor ${Math.floor(diff / 60)} Min.`;
+            if (diff < 86400) return `vor ${Math.floor(diff / 3600)} Std.`;
+            if (diff < 604800) return `vor ${Math.floor(diff / 86400)} Tagen`;
+            return new Date(seconds * 1000).toLocaleDateString('de-DE');
         }
 
         // Tab switching
@@ -886,7 +1041,7 @@
                 });
 
                 // Award karma (+5 for review)
-                await updateDoc(doc(db, 'members', currentUser.uid), {
+                await updateDoc(doc(db, 'members', currentMemberData.id), {
                     karma: increment(5)
                 });
 
@@ -1113,7 +1268,7 @@
                 });
 
                 // Award karma (+10 for sharing opportunity)
-                await updateDoc(doc(db, 'members', currentUser.uid), {
+                await updateDoc(doc(db, 'members', currentMemberData.id), {
                     karma: increment(10)
                 });
 
@@ -1222,9 +1377,13 @@
             listDiv.innerHTML = html;
         }
 
-        window.viewForumPost = function(postId) {
+        let currentViewPostId = null;
+
+        window.viewForumPost = async function(postId) {
             const post = allPosts.find(p => p.id === postId);
             if(!post) return;
+
+            currentViewPostId = postId;
 
             const createdDate = post.createdAt && post.createdAt.seconds
                 ? new Date(post.createdAt.seconds * 1000).toLocaleDateString('de-DE')
@@ -1240,9 +1399,9 @@
             const categoryColor = categoryColors[post.category] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
 
             const html = `
-                <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="this.remove()">
+                <div id="forum-post-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="closeForumPostModal()">
                     <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-                        <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center">
+                        <div class="sticky top-0 bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 flex justify-between items-center z-10">
                             <div>
                                 <span class="text-xs px-3 py-1 rounded-full border ${categoryColor} inline-block mb-2">
                                     ${post.category}
@@ -1250,20 +1409,39 @@
                                 <h3 class="font-serif text-2xl">${post.title}</h3>
                                 <p class="text-xs text-gray-500 mt-2">Gepostet am ${createdDate}</p>
                             </div>
-                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+                            <button onclick="closeForumPostModal()" class="text-gray-400 hover:text-white">
                                 <i class="fas fa-times text-xl"></i>
                             </button>
                         </div>
                         <div class="p-6 space-y-6">
-                            <div>
+                            <div class="bg-gray-900/30 rounded-lg p-4">
                                 <p class="text-gray-300 leading-relaxed whitespace-pre-wrap">${post.content}</p>
                             </div>
 
-                            <div class="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
-                                <p class="text-sm text-gray-500 text-center">
-                                    <i class="fas fa-info-circle mr-2"></i>
-                                    Reply-Funktionalität kommt in Kürze
-                                </p>
+                            <!-- Replies Section -->
+                            <div class="border-t border-gray-800 pt-6">
+                                <h4 class="text-sm uppercase tracking-wider text-brand-gold mb-4 flex items-center gap-2">
+                                    <i class="fas fa-comments"></i>
+                                    Antworten
+                                    <span id="replies-count" class="text-xs bg-gray-800 px-2 py-0.5 rounded-full">0</span>
+                                </h4>
+
+                                <!-- Reply Form -->
+                                <div class="bg-gray-900/50 rounded-lg p-4 mb-4">
+                                    <textarea id="reply-content" rows="3" placeholder="Ihre Antwort..." class="w-full bg-gray-800 border border-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-brand-gold resize-none"></textarea>
+                                    <div class="flex justify-end mt-3">
+                                        <button onclick="submitReply('${postId}')" class="bg-brand-gold text-brand-dark px-4 py-2 rounded-lg font-bold text-sm hover:bg-white transition">
+                                            <i class="fas fa-paper-plane mr-2"></i>Antworten (+2 Karma)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Replies List -->
+                                <div id="replies-list">
+                                    <p class="text-gray-500 text-center py-4">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Lade Antworten...
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1271,6 +1449,150 @@
             `;
 
             document.body.insertAdjacentHTML('beforeend', html);
+
+            // Load replies
+            await loadReplies(postId);
+        };
+
+        window.closeForumPostModal = function() {
+            const modal = document.getElementById('forum-post-modal');
+            if (modal) modal.remove();
+            currentViewPostId = null;
+        };
+
+        async function loadReplies(postId) {
+            const repliesDiv = document.getElementById('replies-list');
+            const countSpan = document.getElementById('replies-count');
+            if (!repliesDiv) return;
+
+            try {
+                const repliesRef = collection(db, 'forum_replies');
+                const q = query(repliesRef, where('postId', '==', postId), orderBy('createdAt', 'asc'));
+                const snapshot = await getDocs(q);
+
+                const replies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                if (countSpan) countSpan.textContent = replies.length;
+
+                if (replies.length === 0) {
+                    repliesDiv.innerHTML = `
+                        <p class="text-gray-500 text-center py-6">
+                            <i class="fas fa-comment-slash text-2xl mb-2 block"></i>
+                            Noch keine Antworten. Seien Sie der Erste!
+                        </p>
+                    `;
+                    return;
+                }
+
+                // Get member data for each reply author
+                const membersCache = {};
+                for (const reply of replies) {
+                    if (!membersCache[reply.authorId]) {
+                        try {
+                            const memberQuery = query(collection(db, 'members'), where('email', '==', reply.authorEmail || ''));
+                            const memberSnap = await getDocs(memberQuery);
+                            if (!memberSnap.empty) {
+                                membersCache[reply.authorId] = memberSnap.docs[0].data();
+                            }
+                        } catch(e) {
+                            console.warn('Could not load member data for reply');
+                        }
+                    }
+                }
+
+                repliesDiv.innerHTML = replies.map(reply => {
+                    const replyDate = reply.createdAt?.seconds
+                        ? new Date(reply.createdAt.seconds * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : 'Unbekannt';
+
+                    const authorName = reply.authorName || 'Anonym';
+                    const isOwnReply = reply.authorId === currentUser?.uid;
+
+                    return `
+                        <div class="bg-gray-900/30 rounded-lg p-4 mb-3 ${isOwnReply ? 'border-l-2 border-brand-gold' : ''}">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-brand-gold/30 to-yellow-500/30 rounded-full flex items-center justify-center text-brand-gold text-sm font-bold">
+                                        ${authorName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-white">${authorName}</p>
+                                        <p class="text-xs text-gray-500">${replyDate}</p>
+                                    </div>
+                                </div>
+                                ${isOwnReply ? `
+                                    <button onclick="deleteReply('${reply.id}')" class="text-red-400 hover:text-red-300 text-xs">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <p class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">${reply.content}</p>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading replies:', error);
+                repliesDiv.innerHTML = `<p class="text-red-400 text-center py-4">Fehler beim Laden der Antworten</p>`;
+            }
+        }
+
+        window.submitReply = async function(postId) {
+            const contentEl = document.getElementById('reply-content');
+            const content = contentEl?.value?.trim();
+
+            if (!content) {
+                alert('Bitte geben Sie eine Antwort ein.');
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'forum_replies'), {
+                    postId: postId,
+                    authorId: currentUser.uid,
+                    authorEmail: currentUser.email,
+                    authorName: currentMemberData?.name || currentUser.email.split('@')[0],
+                    content: content,
+                    createdAt: new Date(),
+                    likes: 0
+                });
+
+                // Award karma (+2 for reply)
+                if (currentMemberData?.id) {
+                    await updateDoc(doc(db, 'members', currentMemberData.id), {
+                        karma: increment(2)
+                    });
+
+                    // Update local karma display
+                    const newKarma = (currentMemberData.karma || 0) + 2;
+                    currentMemberData.karma = newKarma;
+                    document.getElementById('member-karma').textContent = newKarma;
+                    document.getElementById('member-level').textContent = getMemberLevel(newKarma);
+                }
+
+                contentEl.value = '';
+                await loadReplies(postId);
+
+                // Also update reply count in main post list
+                const post = allPosts.find(p => p.id === postId);
+                if (post) {
+                    post.replyCount = (post.replyCount || 0) + 1;
+                }
+            } catch (error) {
+                console.error('Error submitting reply:', error);
+                alert('❌ Fehler beim Senden der Antwort');
+            }
+        };
+
+        window.deleteReply = async function(replyId) {
+            if (!confirm('Möchten Sie diese Antwort wirklich löschen?')) return;
+
+            try {
+                await deleteDoc(doc(db, 'forum_replies', replyId));
+                await loadReplies(currentViewPostId);
+            } catch (error) {
+                console.error('Error deleting reply:', error);
+                alert('❌ Fehler beim Löschen der Antwort');
+            }
         };
 
         window.filterForum = function(category) {
@@ -1304,7 +1626,7 @@
                 });
 
                 // Award karma (+3 for forum post)
-                await updateDoc(doc(db, 'members', currentUser.uid), {
+                await updateDoc(doc(db, 'members', currentMemberData.id), {
                     karma: increment(3)
                 });
 

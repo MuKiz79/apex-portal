@@ -5,7 +5,7 @@
 import { auth, db, storage, navigateTo } from './core.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, reload, applyActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc, deleteDoc, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, getMetadata, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
 import { sampleArticles } from './data.js';
 
@@ -49,6 +49,142 @@ const PAGINATION = {
     CALLS_PER_PAGE: 15,
     DOCS_PER_PAGE: 20
 };
+
+// ========== PACKAGE CONFIGURATION (Single Source of Truth) ==========
+
+export const PACKAGES = {
+    // === CV PAKETE ===
+    highPotential: {
+        id: 'high-potential',
+        name: 'High-Potential CV',
+        subtitle: 'Young Professionals',
+        targetGroup: 'Berufseinsteiger · Young Professionals',
+        price: 249,
+        description: 'Für Talente am Anfang ihrer Karriere.',
+        features: [
+            'Kompakter Premium-CV (2 Seiten)',
+            'ATS-optimiert',
+            'Template-Anschreiben'
+        ],
+        extras: '1 Feedbackrunde · Abnahmegarantie',
+        delivery: '3-5 Werktage',
+        revisions: 1,
+        strategyCall: null,
+        faqDescription: 'Kompaktes Einstiegspaket für Young Professionals. Enthält professionellen CV mit ATS-Optimierung und Template-Anschreiben.'
+    },
+    seniorProfessional: {
+        id: 'senior-professional',
+        name: 'Senior Professional',
+        subtitle: 'Manager · Senior Experts',
+        targetGroup: 'Manager · Senior Experts',
+        price: 490,
+        description: 'Für Experten, die ihre Strategie schärfen wollen.',
+        features: [
+            '30 Min. Strategie-Gespräch',
+            'Premium-CV + Anschreiben',
+            'LinkedIn-Profil Audit'
+        ],
+        extras: '2 Feedbackrunden · Abnahmegarantie',
+        delivery: '5-7 Werktage',
+        revisions: 2,
+        strategyCall: 30,
+        faqDescription: 'Erweitert um USP-Erarbeitung, LinkedIn Profil-Audit, individuelles Anschreiben und Interview-Guide. Für erfahrene Professionals.'
+    },
+    executiveCSuite: {
+        id: 'executive-csuite',
+        name: 'Executive & C-Level',
+        subtitle: 'Director · VP · C-Level',
+        targetGroup: 'Director · VP · C-Level',
+        price: 990,
+        description: 'Für Führungskräfte mit Board-Ambitionen.',
+        features: [
+            '60 Min. Executive-Strategie',
+            'Board CV + Executive Bio',
+            'LinkedIn Premium-Optimierung'
+        ],
+        extras: 'Unbegrenzte Korrekturen · 30 Tage Support',
+        delivery: '7-10 Werktage',
+        revisions: 'Unbegrenzt',
+        strategyCall: 60,
+        faqDescription: 'Das Premium-Paket für C-Level. Inkl. Executive Bio, Board-Ready One-Pager, LinkedIn Rebranding und Headhunter-Intros.'
+    },
+
+    // === MENTORING PAKETE ===
+    mentoringSingle: {
+        id: 'mentoring-single',
+        name: 'Single Session',
+        price: 350,
+        priceNote: 'Einmalig · zzgl. MwSt.',
+        features: [
+            '60 Min Video-Call',
+            'Passender Executive',
+            'Schriftliches Summary'
+        ]
+    },
+    mentoring3Sessions: {
+        id: 'mentoring-3-sessions',
+        name: '3-Session Paket',
+        price: 950,
+        priceNote: 'Einmalig · €317/Session · zzgl. MwSt.',
+        idealFor: 'Jobwechsel, Gehaltsverhandlung, Interview-Training, die ersten 100 Tage im neuen Job.',
+        features: [
+            '3× 60 Min über 3 Monate',
+            'Derselbe Executive (Kontinuität)',
+            'E-Mail-Support zwischen Sessions'
+        ],
+        recommended: true
+    },
+    mentoringRetainer: {
+        id: 'mentoring-retainer',
+        name: 'Executive Retainer',
+        price: 2500,
+        priceNote: 'pro Monat · min. 6 Monate',
+        features: [
+            'Priority Access & Direct Line',
+            '2 Executives parallel',
+            'Netzwerk-Intros & Krisenintervention'
+        ],
+        isInquiry: true
+    }
+};
+
+// Bundle-Konfiguration (berechnet sich aus Einzelpaketen)
+export const BUNDLES = {
+    seniorBundle: {
+        id: 'senior-bundle',
+        name: 'Executive Transformation: Senior CV + 3 Mentoring-Sessions',
+        shortName: 'Senior Bundle',
+        cvPackage: 'seniorProfessional',
+        mentoringPackage: 'mentoring3Sessions',
+        price: 1299,
+        get regularPrice() {
+            return PACKAGES[this.cvPackage].price + PACKAGES[this.mentoringPackage].price;
+        },
+        get savings() {
+            return this.regularPrice - this.price;
+        }
+    },
+    cSuiteBundle: {
+        id: 'csuite-bundle',
+        name: 'Executive Transformation: C-Suite CV + 3 Mentoring-Sessions',
+        shortName: 'C-Suite Bundle',
+        cvPackage: 'executiveCSuite',
+        mentoringPackage: 'mentoring3Sessions',
+        price: 1799,
+        extras: 'Executive Bio + Board-Ready One-Pager',
+        get regularPrice() {
+            return PACKAGES[this.cvPackage].price + PACKAGES[this.mentoringPackage].price;
+        },
+        get savings() {
+            return this.regularPrice - this.price;
+        }
+    }
+};
+
+// Hilfsfunktion zum Formatieren von Preisen
+export function formatPrice(price) {
+    return price.toLocaleString('de-DE');
+}
 
 // Pagination State
 const paginationState = {
@@ -754,6 +890,7 @@ export async function updateAuthUI(state) {
     const adminSection = document.getElementById('admin-section');
     const mentorSection = document.getElementById('mentor-section');
     const mentorTab = document.getElementById('dash-tab-mentor');
+    const innerCircleTab = document.getElementById('dash-tab-inner-circle');
 
     if (state.user) {
         loginBtn?.classList.add('hidden');
@@ -792,6 +929,9 @@ export async function updateAuthUI(state) {
             }
         }
 
+        // Check if user is an Inner Circle member
+        await checkAndSetupInnerCircleMember(state, innerCircleTab);
+
         // Load profile picture if available
         loadProfilePicture(state);
     } else {
@@ -810,6 +950,9 @@ export async function updateAuthUI(state) {
         }
         if (mentorTab) {
             mentorTab.classList.add('hidden');
+        }
+        if (innerCircleTab) {
+            innerCircleTab.classList.add('hidden');
         }
 
         // Clear mentor data
@@ -883,6 +1026,46 @@ async function checkAndSetupMentor(state) {
 // Get current mentor data (for use in other functions)
 export function getCurrentMentorData() {
     return currentMentorData;
+}
+
+// Check if current user is an Inner Circle member
+async function checkAndSetupInnerCircleMember(state, innerCircleTab) {
+    if (!db || !state.user?.email || !innerCircleTab) {
+        return;
+    }
+
+    try {
+        const userEmail = state.user.email.toLowerCase();
+        const membersRef = collection(db, 'members');
+        const q = query(membersRef, where('email', '==', state.user.email));
+        let snapshot = await getDocs(q);
+
+        // Try lowercase match if no exact match
+        if (snapshot.empty) {
+            const qLower = query(membersRef, where('email', '==', userEmail));
+            snapshot = await getDocs(qLower);
+        }
+
+        if (!snapshot.empty) {
+            const memberDoc = snapshot.docs[0];
+            const memberData = memberDoc.data();
+
+            // Only show tab if member is active
+            if (memberData.isActive) {
+                innerCircleTab.classList.remove('hidden');
+                console.log('[Inner Circle] ✅ Member detected:', memberData.name);
+            } else {
+                innerCircleTab.classList.add('hidden');
+                console.log('[Inner Circle] ⚠️ Member inactive');
+            }
+        } else {
+            innerCircleTab.classList.add('hidden');
+            console.log('[Inner Circle] ❌ No membership found');
+        }
+    } catch (e) {
+        console.error('[Inner Circle] Error checking membership:', e);
+        innerCircleTab.classList.add('hidden');
+    }
 }
 
 async function loadProfilePicture(state) {
@@ -1106,6 +1289,115 @@ export function setupAuthListener(state, navigateTo) {
                 loadUserOrders(state);
             }
         });
+
+        // Navbar scroll effect - add shadow when scrolled
+        const nav = document.getElementById('main-nav');
+        const pageNav = document.getElementById('page-nav');
+        if (nav) {
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    nav.classList.add('shadow-lg', 'shadow-black/30', 'bg-[#080d16]');
+                } else {
+                    nav.classList.remove('shadow-lg', 'shadow-black/30', 'bg-[#080d16]');
+                }
+
+                // Show/hide sticky page navigation after scrolling past hero
+                if (pageNav) {
+                    const heroEnd = document.getElementById('two-paths')?.offsetHeight || 600;
+                    if (window.scrollY > heroEnd - 100) {
+                        pageNav.style.display = 'block';
+                        setTimeout(() => {
+                            pageNav.classList.remove('-translate-y-full', 'opacity-0');
+                            pageNav.classList.add('translate-y-0', 'opacity-100');
+                        }, 10);
+                    } else {
+                        pageNav.classList.add('-translate-y-full', 'opacity-0');
+                        pageNav.classList.remove('translate-y-0', 'opacity-100');
+                    }
+                }
+            }, { passive: true });
+        }
+    }
+}
+
+// ========== CONCIERGE MODAL ==========
+
+export function openConciergeModal() {
+    const overlay = document.getElementById('concierge-overlay');
+    const modal = document.getElementById('concierge-modal');
+    const form = document.getElementById('concierge-form');
+    const options = document.querySelector('#concierge-modal > div:nth-child(2)'); // Options container
+
+    if (!overlay || !modal) return;
+
+    // Reset to options view
+    if (form) form.classList.add('hidden');
+    if (options) options.classList.remove('hidden');
+
+    overlay.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('scale-95', 'opacity-0');
+        modal.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+export function closeConciergeModal() {
+    const overlay = document.getElementById('concierge-overlay');
+    const modal = document.getElementById('concierge-modal');
+
+    if (!overlay || !modal) return;
+
+    modal.classList.remove('scale-100', 'opacity-100');
+    modal.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+}
+
+export function showConciergeForm() {
+    const form = document.getElementById('concierge-form');
+    const options = document.querySelector('#concierge-modal .p-6.space-y-3');
+
+    if (options) options.classList.add('hidden');
+    if (form) form.classList.remove('hidden');
+}
+
+export function hideConciergeForm() {
+    const form = document.getElementById('concierge-form');
+    const options = document.querySelector('#concierge-modal .p-6.space-y-3');
+
+    if (form) form.classList.add('hidden');
+    if (options) options.classList.remove('hidden');
+}
+
+export async function submitConciergeForm(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('concierge-name')?.value;
+    const email = document.getElementById('concierge-email')?.value;
+    const message = document.getElementById('concierge-message')?.value;
+
+    if (!name || !email || !message) return;
+
+    try {
+        // Save to Firestore strategyCalls collection
+        await addDoc(collection(db, 'strategyCalls'), {
+            name: name,
+            email: email,
+            message: message,
+            source: 'concierge-modal',
+            createdAt: serverTimestamp()
+        });
+
+        // Close modal and show success
+        closeConciergeModal();
+        showToast('Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.');
+
+        // Reset form
+        document.getElementById('concierge-name').value = '';
+        document.getElementById('concierge-email').value = '';
+        document.getElementById('concierge-message').value = '';
+    } catch (error) {
+        console.error('Error submitting concierge form:', error);
+        showToast('Fehler beim Senden. Bitte versuchen Sie es erneut.');
     }
 }
 
@@ -1741,7 +2033,7 @@ function renderDashboardSidebar(orders) {
                     </div>
                 `}
                 ${!hasActiveMentoring ? `
-                    <button onclick="app.navigateToSection('home', 'coaches')" class="w-full btn-secondary justify-start text-sm py-2">
+                    <button onclick="app.navigateToSection('home', 'mentoring')" class="w-full btn-secondary justify-start text-sm py-2">
                         <i class="fas fa-user-tie"></i>
                         Mentoring buchen
                     </button>
@@ -6676,38 +6968,44 @@ export function filterCoaches(state) {
         const name = sanitizeHTML(coach.name);
         const role = sanitizeHTML(coach.role);
         const experience = sanitizeHTML(coach.experience || '15+ Jahre');
-        const expertise = Array.isArray(coach.expertise) ? coach.expertise.slice(0, 2) : [];
+        const expertise = Array.isArray(coach.expertise) ? coach.expertise.slice(0, 3) : [];
+        // Proof points - use coach.stats or generate from data
+        const proofPoints = coach.stats || `${coach.projectCount || '50'}+ Projekte • ${coach.industry || 'Tech, Beratung'} • ${coach.levelFocus || 'Manager–C-Level'}`;
         return `
             <div class="group cursor-pointer" onclick="app.openCoachDetail('${coach.id}')">
                 <div class="relative bg-gradient-to-b from-[#0D1321] to-[#1A1F2E] rounded-2xl overflow-hidden border border-white/[0.08] hover:border-brand-gold/30 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-gold/10 hover:-translate-y-1">
-                    <!-- Large Image Area -->
-                    <div class="relative aspect-[3/4] overflow-hidden">
+                    <!-- Image Area - Face visible -->
+                    <div class="relative aspect-[4/5] overflow-hidden">
                         <img src="${coach.image}"
-                             class="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
+                             class="w-full h-full object-cover object-[center_20%] transition-all duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
                              alt="${name}" loading="lazy">
                         <!-- Gradient Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-[#0D1321] via-transparent to-transparent"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0D1321] via-[#0D1321]/20 to-transparent"></div>
                         <!-- Gold tint on hover -->
                         <div class="absolute inset-0 bg-brand-gold/0 group-hover:bg-brand-gold/10 transition-all duration-500"></div>
                         <!-- Experience Badge -->
-                        <div class="absolute top-4 right-4 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
-                            <span class="text-[10px] text-white/80 font-medium uppercase tracking-wider">${experience}</span>
+                        <div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
+                            <span class="text-[10px] text-white/90 font-medium uppercase tracking-wider">${experience}</span>
                         </div>
                     </div>
                     <!-- Content -->
-                    <div class="relative px-6 pb-6 -mt-16">
+                    <div class="relative px-6 pb-6 -mt-12">
                         <!-- Name & Role -->
                         <h4 class="font-serif text-xl text-white mb-1 group-hover:text-brand-gold transition-colors duration-300">${name}</h4>
-                        <p class="text-brand-gold text-xs font-semibold tracking-wide mb-4">${role}</p>
-                        <!-- Expertise Tags -->
+                        <p class="text-brand-gold text-xs font-semibold tracking-wide mb-3">${role}</p>
+                        <!-- Core Competencies as Bullet Points -->
                         ${expertise.length > 0 ? `
-                        <div class="flex flex-wrap gap-2 mb-5">
-                            ${expertise.map(e => `<span class="text-[10px] text-white/50 border border-white/10 rounded-full px-3 py-1 uppercase tracking-wider">${sanitizeHTML(e)}</span>`).join('')}
-                        </div>
+                        <ul class="space-y-1.5 mb-4 text-[11px] text-gray-300">
+                            ${expertise.map(e => `<li class="flex items-start gap-2"><span class="text-brand-gold mt-0.5">•</span><span>${sanitizeHTML(e)}</span></li>`).join('')}
+                        </ul>
                         ` : ''}
+                        <!-- Proof Points -->
+                        <div class="text-[10px] text-white/50 border-t border-white/10 pt-3 mb-4">
+                            ${sanitizeHTML(proofPoints)}
+                        </div>
                         <!-- Action Button -->
                         <button onclick="event.stopPropagation(); app.bookSessionWithComplianceCheck('Executive Mentoring - Single Session', 350, '${name}')"
-                                class="w-full bg-white/[0.05] hover:bg-brand-gold border border-white/10 hover:border-brand-gold text-white hover:text-brand-dark font-semibold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                                class="w-full bg-brand-gold hover:bg-brand-dark border-2 border-brand-gold hover:border-brand-dark text-brand-dark hover:text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-lg shadow-brand-gold/20">
                             <span>Session buchen</span>
                             <i class="fas fa-arrow-right text-[10px] group-hover/btn:translate-x-1 transition-transform"></i>
                         </button>
@@ -6730,8 +7028,54 @@ export function openCoachDetail(state, id, navigateTo) {
     const role = sanitizeHTML(coach.role);
     const bio = sanitizeHTML(coach.bio || 'Keine Bio verfügbar.');
     const experience = sanitizeHTML(coach.experience || '15+ Jahre Leadership-Erfahrung');
+    const proofPoints = coach.stats || `${coach.projectCount || '50'}+ Projekte • ${coach.industry || 'Tech, Beratung'} • ${coach.levelFocus || 'Manager–C-Level'}`;
 
-    contentArea.innerHTML = '<div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/3"><img src="' + coach.image + '" class="w-full rounded border-4 border-white shadow-lg object-cover" alt="' + name + '" loading="lazy"><div class="mt-4 p-4 bg-gray-50 rounded text-sm"><p class="text-gray-600 mb-2"><i class="fas fa-briefcase mr-2 text-brand-gold"></i>' + experience + '</p><p class="text-gray-600"><i class="fas fa-check-circle mr-2 text-brand-gold"></i>Alle Formate verfügbar</p></div></div><div class="w-full md:w-2/3"><h1 class="font-serif text-3xl mb-2">' + name + '</h1><p class="text-brand-gold font-bold text-xs mb-6">' + role + '</p><p class="text-gray-600 mb-6 leading-relaxed">' + bio + '</p><div class="mb-6"><h4 class="font-bold text-xs uppercase mb-2">Expertise</h4><div class="flex flex-wrap gap-2">' + expertise.map(e => '<span class="bg-brand-dark text-white px-2 py-1 text-[10px] uppercase rounded">' + sanitizeHTML(e) + '</span>').join('') + '</div></div>' + (coach.stats ? '<p class="text-sm text-gray-500 mb-6"><i class="fas fa-chart-line mr-2" aria-hidden="true"></i>' + sanitizeHTML(coach.stats) + '</p>' : '') + '<div class="flex gap-4"><button onclick="app.navigateToSection(\'home\', \'coaches\')" class="border-2 border-brand-dark text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:bg-brand-dark hover:text-white transition">Zurück zur Übersicht</button><button onclick="app.addToCart(\'Executive Mentoring - Single Session\', 350); app.navigateToSection(\'home\', \'coaches\')" class="bg-brand-gold text-brand-dark font-bold py-3 px-8 uppercase text-xs hover:shadow-lg transition">Session Buchen</button></div></div></div>';
+    contentArea.innerHTML = `
+        <div class="flex flex-col md:flex-row gap-10">
+            <!-- Left: Image -->
+            <div class="w-full md:w-2/5">
+                <img src="${coach.image}" class="w-full rounded-2xl shadow-2xl object-cover aspect-[3/4] object-[center_20%]" alt="${name}" loading="lazy">
+                <!-- Proof Points Box -->
+                <div class="mt-6 p-5 bg-brand-dark rounded-xl text-white">
+                    <h4 class="text-xs uppercase tracking-wider text-brand-gold mb-3 font-semibold">Track Record</h4>
+                    <p class="text-sm text-gray-300">${sanitizeHTML(proofPoints)}</p>
+                </div>
+            </div>
+            <!-- Right: Content -->
+            <div class="w-full md:w-3/5">
+                <h1 class="font-serif text-4xl mb-2">${name}</h1>
+                <p class="text-brand-gold font-bold text-sm mb-4">${role}</p>
+                <p class="text-xs text-gray-500 mb-6"><i class="fas fa-briefcase mr-2"></i>${experience}</p>
+
+                <!-- Core Competencies -->
+                <div class="mb-6">
+                    <h4 class="font-bold text-xs uppercase mb-3 text-gray-700">Kernkompetenzen</h4>
+                    <ul class="space-y-2">
+                        ${expertise.map(e => `<li class="flex items-start gap-3 text-gray-600"><span class="text-brand-gold font-bold">•</span><span>${sanitizeHTML(e)}</span></li>`).join('')}
+                    </ul>
+                </div>
+
+                <!-- Bio / Warum ich -->
+                <div class="mb-8 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 class="font-bold text-xs uppercase mb-3 text-gray-700">Über mich</h4>
+                    <p class="text-gray-600 leading-relaxed">${bio}</p>
+                </div>
+
+                <!-- CTAs -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="app.bookSessionWithComplianceCheck('Executive Mentoring - Single Session', 350, '${name}')"
+                            class="bg-brand-gold text-brand-dark font-bold py-4 px-8 uppercase text-xs tracking-wider hover:shadow-lg transition rounded-xl flex items-center justify-center gap-2">
+                        <span>Session buchen</span>
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                    <button onclick="app.navigateToSection('home', 'mentoring')"
+                            class="border-2 border-gray-300 text-gray-600 font-bold py-4 px-8 uppercase text-xs tracking-wider hover:border-brand-gold hover:text-brand-gold transition rounded-xl">
+                        Zurück zur Übersicht
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 
     navigateTo('coach-detail');
 }
@@ -6942,6 +7286,588 @@ export async function submitWaitlist(event) {
     } catch (error) {
         logger.error('Error submitting waitlist:', error);
         showToast('❌ Fehler beim Absenden. Bitte versuchen Sie es später erneut.', 'error');
+    }
+}
+
+// ========== INNER CIRCLE - ADMIN FUNCTIONS ==========
+
+let allWaitlistEntries = [];
+let allMembers = [];
+let currentWaitlistEntry = null;
+
+// Load all Inner Circle data
+export async function loadInnerCircleData() {
+    await Promise.all([
+        loadWaitlist(),
+        loadMembers()
+    ]);
+    updateInnerCircleStats();
+}
+
+// Load waitlist entries
+export async function loadWaitlist() {
+    const container = document.getElementById('ic-waitlist-list');
+    if (!container) return;
+
+    container.innerHTML = '<div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-3xl mb-4"></i><p>Lade Bewerbungen...</p></div>';
+
+    try {
+        const waitlistRef = collection(db, 'waitlist');
+        const q = query(waitlistRef, orderBy('submittedAt', 'desc'));
+        const snapshot = await getDocs(q);
+
+        allWaitlistEntries = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        displayWaitlist(allWaitlistEntries);
+        updateInnerCircleStats();
+    } catch (error) {
+        logger.error('Error loading waitlist:', error);
+        container.innerHTML = '<div class="bg-white p-12 rounded-xl border border-red-100 text-center text-red-500"><i class="fas fa-exclamation-triangle text-3xl mb-4"></i><p>Fehler beim Laden der Bewerbungen</p></div>';
+    }
+}
+
+// Display waitlist entries
+function displayWaitlist(entries) {
+    const container = document.getElementById('ic-waitlist-list');
+    if (!container) return;
+
+    if (entries.length === 0) {
+        container.innerHTML = `
+            <div class="bg-white p-12 rounded-xl border border-dashed border-gray-200 text-center">
+                <i class="fas fa-inbox text-gray-300 text-4xl mb-4"></i>
+                <p class="text-gray-500">Keine Bewerbungen vorhanden</p>
+            </div>
+        `;
+        return;
+    }
+
+    const statusColors = {
+        'pending': { bg: 'bg-orange-100', text: 'text-orange-600', label: 'Neu' },
+        'reviewing': { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'In Prüfung' },
+        'interview_scheduled': { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Interview geplant' },
+        'approved': { bg: 'bg-green-100', text: 'text-green-600', label: 'Genehmigt' },
+        'rejected': { bg: 'bg-red-100', text: 'text-red-600', label: 'Abgelehnt' }
+    };
+
+    container.innerHTML = entries.map(entry => {
+        const status = statusColors[entry.status] || statusColors['pending'];
+        const submittedDate = entry.submittedAt?.toDate?.() || new Date(entry.submittedAt);
+        const dateStr = submittedDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        return `
+            <div class="bg-white rounded-xl border border-gray-100 hover:border-brand-gold hover:shadow-md transition cursor-pointer" onclick="app.openWaitlistDetail('${entry.id}')">
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-brand-dark to-gray-800 rounded-full flex items-center justify-center text-brand-gold font-bold">
+                                ${entry.name?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-brand-dark">${sanitizeHTML(entry.name)}</h4>
+                                <p class="text-sm text-gray-500">${sanitizeHTML(entry.email)}</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${status.bg} ${status.text}">
+                            ${status.label}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-4 text-sm text-gray-500">
+                        <span><i class="fas fa-briefcase mr-1"></i>${sanitizeHTML(entry.currentRole || '--')}</span>
+                        <span><i class="fas fa-building mr-1"></i>${sanitizeHTML(entry.company || '--')}</span>
+                        <span><i class="fas fa-clock mr-1"></i>${entry.yearsExperience || '--'} Jahre</span>
+                        <span class="ml-auto text-xs">${dateStr}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Filter waitlist
+export function filterWaitlist() {
+    const searchTerm = document.getElementById('ic-search-waitlist')?.value?.toLowerCase() || '';
+    const statusFilter = document.getElementById('ic-filter-status')?.value || '';
+
+    const filtered = allWaitlistEntries.filter(entry => {
+        const matchesSearch = !searchTerm ||
+            entry.name?.toLowerCase().includes(searchTerm) ||
+            entry.email?.toLowerCase().includes(searchTerm) ||
+            entry.company?.toLowerCase().includes(searchTerm);
+        const matchesStatus = !statusFilter || entry.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    displayWaitlist(filtered);
+}
+
+// Open waitlist detail modal
+export function openWaitlistDetail(entryId) {
+    currentWaitlistEntry = allWaitlistEntries.find(e => e.id === entryId);
+    if (!currentWaitlistEntry) return;
+
+    const entry = currentWaitlistEntry;
+    const submittedDate = entry.submittedAt?.toDate?.() || new Date(entry.submittedAt);
+
+    document.getElementById('waitlist-detail-name').textContent = entry.name || '--';
+    document.getElementById('waitlist-detail-email').textContent = entry.email || '--';
+    document.getElementById('waitlist-detail-position').textContent = entry.currentRole || '--';
+    document.getElementById('waitlist-detail-company').textContent = entry.company || '--';
+    document.getElementById('waitlist-detail-experience').textContent = entry.yearsExperience ? `${entry.yearsExperience} Jahre` : '--';
+    document.getElementById('waitlist-detail-reason').textContent = entry.reason || 'Keine Angabe';
+    document.getElementById('waitlist-detail-date').textContent = `Eingereicht am: ${submittedDate.toLocaleDateString('de-DE')}`;
+    document.getElementById('waitlist-detail-notes').value = entry.notes || '';
+
+    const linkedinLink = document.getElementById('waitlist-detail-linkedin');
+    if (entry.linkedin) {
+        linkedinLink.href = entry.linkedin;
+        linkedinLink.textContent = 'Profil öffnen';
+    } else {
+        linkedinLink.href = '#';
+        linkedinLink.textContent = 'Nicht angegeben';
+    }
+
+    // Interview date
+    if (entry.interviewDate) {
+        const interviewDate = entry.interviewDate.toDate?.() || new Date(entry.interviewDate);
+        document.getElementById('waitlist-detail-interview-date').value = interviewDate.toISOString().slice(0, 16);
+    } else {
+        document.getElementById('waitlist-detail-interview-date').value = '';
+    }
+
+    // Status badge
+    const statusColors = {
+        'pending': { bg: 'bg-orange-100', text: 'text-orange-600', label: 'Neu / Offen' },
+        'reviewing': { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'In Prüfung' },
+        'interview_scheduled': { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Interview geplant' },
+        'approved': { bg: 'bg-green-100', text: 'text-green-600', label: 'Genehmigt' },
+        'rejected': { bg: 'bg-red-100', text: 'text-red-600', label: 'Abgelehnt' }
+    };
+    const status = statusColors[entry.status] || statusColors['pending'];
+    const statusBadge = document.getElementById('waitlist-detail-status-badge');
+    statusBadge.className = `px-3 py-1 rounded-full text-sm font-bold ${status.bg} ${status.text}`;
+    statusBadge.textContent = status.label;
+
+    // Show/hide sections based on status
+    const actionsDiv = document.getElementById('waitlist-detail-actions');
+    const approvedSection = document.getElementById('waitlist-approved-section');
+
+    if (entry.status === 'approved') {
+        actionsDiv.classList.add('hidden');
+        approvedSection.classList.remove('hidden');
+    } else {
+        actionsDiv.classList.remove('hidden');
+        approvedSection.classList.add('hidden');
+    }
+
+    document.getElementById('modal-waitlist-detail').classList.remove('hidden');
+}
+
+// Close waitlist detail modal
+export function closeWaitlistDetailModal() {
+    document.getElementById('modal-waitlist-detail').classList.add('hidden');
+    currentWaitlistEntry = null;
+}
+
+// Update waitlist status
+export async function updateWaitlistStatus(newStatus) {
+    if (!currentWaitlistEntry) return;
+
+    try {
+        const updates = {
+            status: newStatus,
+            reviewedAt: new Date(),
+            notes: document.getElementById('waitlist-detail-notes').value || ''
+        };
+
+        // Add interview date if scheduling
+        if (newStatus === 'interview_scheduled') {
+            const interviewDateValue = document.getElementById('waitlist-detail-interview-date').value;
+            if (!interviewDateValue) {
+                showToast('❌ Bitte wählen Sie einen Interview-Termin aus.', 'error');
+                return;
+            }
+            updates.interviewDate = new Date(interviewDateValue);
+        }
+
+        await updateDoc(doc(db, 'waitlist', currentWaitlistEntry.id), updates);
+
+        showToast('✅ Status erfolgreich aktualisiert!');
+        closeWaitlistDetailModal();
+        loadWaitlist();
+    } catch (error) {
+        logger.error('Error updating waitlist status:', error);
+        showToast('❌ Fehler beim Aktualisieren.', 'error');
+    }
+}
+
+// Create member from approved waitlist entry
+export async function createMemberFromWaitlist() {
+    if (!currentWaitlistEntry || currentWaitlistEntry.status !== 'approved') {
+        showToast('❌ Nur genehmigte Bewerbungen können freigeschaltet werden.', 'error');
+        return;
+    }
+
+    try {
+        // Get next member number
+        const membersSnapshot = await getDocs(collection(db, 'members'));
+        const nextMemberNumber = membersSnapshot.size + 1;
+
+        // Create member document
+        const memberData = {
+            name: currentWaitlistEntry.name,
+            email: currentWaitlistEntry.email,
+            linkedin: currentWaitlistEntry.linkedin || '',
+            role: currentWaitlistEntry.currentRole || '',
+            company: currentWaitlistEntry.company || '',
+            memberSince: new Date(),
+            memberNumber: nextMemberNumber,
+            karma: 0,
+            industries: [],
+            functions: [],
+            isActive: true,
+            lastActive: new Date(),
+            waitlistId: currentWaitlistEntry.id
+        };
+
+        await addDoc(collection(db, 'members'), memberData);
+
+        // Update waitlist entry
+        await updateDoc(doc(db, 'waitlist', currentWaitlistEntry.id), {
+            status: 'member_created',
+            memberCreatedAt: new Date()
+        });
+
+        showToast(`✅ Member #${String(nextMemberNumber).padStart(4, '0')} erfolgreich erstellt!`);
+        closeWaitlistDetailModal();
+        loadInnerCircleData();
+    } catch (error) {
+        logger.error('Error creating member:', error);
+        showToast('❌ Fehler beim Erstellen des Members.', 'error');
+    }
+}
+
+// Load members
+export async function loadMembers() {
+    const container = document.getElementById('ic-members-list');
+    if (!container) return;
+
+    container.innerHTML = '<div class="bg-white p-12 rounded-xl border border-gray-100 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-3xl mb-4"></i><p>Lade Members...</p></div>';
+
+    try {
+        const membersRef = collection(db, 'members');
+        const q = query(membersRef, orderBy('memberSince', 'desc'));
+        const snapshot = await getDocs(q);
+
+        allMembers = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        displayMembers(allMembers);
+    } catch (error) {
+        logger.error('Error loading members:', error);
+        container.innerHTML = '<div class="bg-white p-12 rounded-xl border border-red-100 text-center text-red-500"><i class="fas fa-exclamation-triangle text-3xl mb-4"></i><p>Fehler beim Laden der Members</p></div>';
+    }
+}
+
+// Display members
+function displayMembers(members) {
+    const container = document.getElementById('ic-members-list');
+    if (!container) return;
+
+    if (members.length === 0) {
+        container.innerHTML = `
+            <div class="bg-white p-12 rounded-xl border border-dashed border-gray-200 text-center">
+                <i class="fas fa-crown text-gray-300 text-4xl mb-4"></i>
+                <p class="text-gray-500 mb-4">Noch keine Members freigeschaltet</p>
+                <button onclick="app.openAddMemberModal()" class="px-4 py-2 bg-brand-gold text-brand-dark font-bold rounded-lg hover:bg-yellow-500 transition text-sm">
+                    <i class="fas fa-user-plus mr-2"></i>Ersten Member hinzufügen
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    const getMemberLevel = (karma) => {
+        if (karma >= 501) return { name: 'Elite', color: 'text-purple-600 bg-purple-100' };
+        if (karma >= 201) return { name: 'Insider', color: 'text-blue-600 bg-blue-100' };
+        if (karma >= 51) return { name: 'Contributor', color: 'text-green-600 bg-green-100' };
+        return { name: 'Explorer', color: 'text-gray-600 bg-gray-100' };
+    };
+
+    container.innerHTML = members.map(member => {
+        const memberSince = member.memberSince?.toDate?.() || new Date(member.memberSince);
+        const level = getMemberLevel(member.karma || 0);
+
+        return `
+            <div class="bg-white rounded-xl border border-gray-100 hover:shadow-md transition p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-brand-gold to-yellow-500 rounded-full flex items-center justify-center text-brand-dark font-bold text-lg">
+                            ${member.name?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-brand-dark">${sanitizeHTML(member.name)}</h4>
+                                <span class="text-xs text-brand-gold font-mono">#${String(member.memberNumber).padStart(4, '0')}</span>
+                            </div>
+                            <p class="text-sm text-gray-500">${sanitizeHTML(member.email)}</p>
+                            <div class="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                                <span>${sanitizeHTML(member.role || '--')}</span>
+                                <span>•</span>
+                                <span>${sanitizeHTML(member.company || '--')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-center">
+                            <p class="text-lg font-bold text-brand-dark">${member.karma || 0}</p>
+                            <p class="text-xs text-gray-400">Karma</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${level.color}">
+                            ${level.name}
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="app.toggleMemberStatus('${member.id}', ${!member.isActive})" class="p-2 rounded-lg ${member.isActive ? 'text-green-500 hover:bg-green-50' : 'text-red-500 hover:bg-red-50'} transition" title="${member.isActive ? 'Deaktivieren' : 'Aktivieren'}">
+                                <i class="fas ${member.isActive ? 'fa-toggle-on' : 'fa-toggle-off'} text-xl"></i>
+                            </button>
+                            <button onclick="app.deleteMember('${member.id}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Löschen">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+                    <span>Member seit: ${memberSince.toLocaleDateString('de-DE')}</span>
+                    ${member.linkedin ? `<a href="${member.linkedin}" target="_blank" class="text-blue-500 hover:underline"><i class="fab fa-linkedin mr-1"></i>LinkedIn</a>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Filter members
+export function filterMembers() {
+    const searchTerm = document.getElementById('ic-search-members')?.value?.toLowerCase() || '';
+
+    const filtered = allMembers.filter(member => {
+        return !searchTerm ||
+            member.name?.toLowerCase().includes(searchTerm) ||
+            member.email?.toLowerCase().includes(searchTerm);
+    });
+
+    displayMembers(filtered);
+}
+
+// Toggle member active status
+export async function toggleMemberStatus(memberId, newStatus) {
+    try {
+        await updateDoc(doc(db, 'members', memberId), {
+            isActive: newStatus,
+            lastActive: new Date()
+        });
+        showToast(`✅ Member ${newStatus ? 'aktiviert' : 'deaktiviert'}.`);
+        loadMembers();
+    } catch (error) {
+        logger.error('Error toggling member status:', error);
+        showToast('❌ Fehler beim Aktualisieren.', 'error');
+    }
+}
+
+// Delete member
+export async function deleteMember(memberId) {
+    if (!confirm('Sind Sie sicher, dass Sie diesen Member löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+        return;
+    }
+
+    try {
+        await deleteDoc(doc(db, 'members', memberId));
+        showToast('✅ Member gelöscht.');
+        loadMembers();
+        updateInnerCircleStats();
+    } catch (error) {
+        logger.error('Error deleting member:', error);
+        showToast('❌ Fehler beim Löschen.', 'error');
+    }
+}
+
+// Open add member modal
+export function openAddMemberModal() {
+    document.getElementById('modal-add-member').classList.remove('hidden');
+}
+
+// Close add member modal
+export function closeAddMemberModal() {
+    document.getElementById('modal-add-member').classList.add('hidden');
+    document.getElementById('form-add-member').reset();
+}
+
+// Handle add member form
+export function initAddMemberForm() {
+    const form = document.getElementById('form-add-member');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+
+        try {
+            // Get next member number
+            const membersSnapshot = await getDocs(collection(db, 'members'));
+            const nextMemberNumber = membersSnapshot.size + 1;
+
+            const memberData = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                linkedin: formData.get('linkedin') || '',
+                role: formData.get('role') || '',
+                company: formData.get('company') || '',
+                memberSince: new Date(),
+                memberNumber: nextMemberNumber,
+                karma: 0,
+                industries: [],
+                functions: [],
+                isActive: true,
+                lastActive: new Date()
+            };
+
+            await addDoc(collection(db, 'members'), memberData);
+
+            showToast(`✅ Member #${String(nextMemberNumber).padStart(4, '0')} erfolgreich erstellt!`);
+            closeAddMemberModal();
+            loadMembers();
+            updateInnerCircleStats();
+        } catch (error) {
+            logger.error('Error adding member:', error);
+            showToast('❌ Fehler beim Erstellen des Members.', 'error');
+        }
+    });
+}
+
+// Switch Inner Circle sub-tab
+export function switchInnerCircleSubTab(tabName) {
+    const tabs = ['waitlist', 'members'];
+
+    tabs.forEach(tab => {
+        const btn = document.getElementById(`ic-subtab-${tab}`);
+        const content = document.getElementById(`ic-content-${tab}`);
+
+        if (btn) {
+            if (tab === tabName) {
+                btn.classList.add('border-brand-gold', 'text-brand-dark');
+                btn.classList.remove('border-transparent', 'text-gray-500');
+            } else {
+                btn.classList.remove('border-brand-gold', 'text-brand-dark');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            }
+        }
+
+        if (content) {
+            if (tab === tabName) {
+                content.classList.remove('hidden');
+            } else {
+                content.classList.add('hidden');
+            }
+        }
+    });
+
+    if (tabName === 'members') {
+        loadMembers();
+    } else {
+        loadWaitlist();
+    }
+}
+
+// Update Inner Circle stats
+function updateInnerCircleStats() {
+    const pending = allWaitlistEntries.filter(e => e.status === 'pending').length;
+    const reviewing = allWaitlistEntries.filter(e => e.status === 'reviewing').length;
+    const interviews = allWaitlistEntries.filter(e => e.status === 'interview_scheduled').length;
+    const activeMembers = allMembers.filter(m => m.isActive).length;
+
+    const setTextSafe = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+
+    setTextSafe('ic-stat-waitlist', allWaitlistEntries.length);
+    setTextSafe('ic-stat-reviewing', reviewing);
+    setTextSafe('ic-stat-interviews', interviews);
+    setTextSafe('ic-stat-members', activeMembers);
+    setTextSafe('ic-waitlist-count', pending);
+
+    // Update badge in admin tab
+    const badge = document.getElementById('admin-waitlist-badge');
+    if (badge) {
+        if (pending > 0) {
+            badge.textContent = pending;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+}
+
+// ========== INNER CIRCLE CHECKOUT ==========
+
+// Start Inner Circle Checkout
+export async function startInnerCircleCheckout(membershipType = 'founding') {
+    const productId = membershipType === 'founding' ? 'inner-circle-founding' : 'inner-circle-regular';
+    const price = membershipType === 'founding' ? 2490 : 4990;
+    const title = membershipType === 'founding' ? 'Inner Circle Founding Member' : 'Inner Circle Membership';
+
+    try {
+        showToast('🔄 Checkout wird vorbereitet...');
+
+        // Get current user info
+        const userEmail = auth?.currentUser?.email || null;
+        const userId = auth?.currentUser?.uid || null;
+
+        const items = [{
+            id: productId,
+            title: title,
+            price: price,
+            quantity: 1
+        }];
+
+        // Call checkout function
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/createCheckoutSession', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                items: items,
+                userEmail: userEmail,
+                userId: userId,
+                consents: {
+                    agb: true,
+                    datenschutz: true,
+                    widerruf: true
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Checkout fehlgeschlagen');
+        }
+
+        const { url } = await response.json();
+
+        // Redirect to Stripe Checkout
+        if (url) {
+            window.location.href = url;
+        } else {
+            throw new Error('Keine Checkout-URL erhalten');
+        }
+    } catch (error) {
+        logger.error('Inner Circle Checkout Error:', error);
+        showToast('❌ Fehler beim Starten des Checkouts. Bitte versuchen Sie es erneut.', 'error');
     }
 }
 
@@ -7494,8 +8420,8 @@ export function switchDashboardTab(tabName, state) {
 
 // Switch Admin Panel Tabs
 export function switchAdminTab(tabName) {
-    // Tab names: orders, users, strategy, coaches, documents, settings, mentor-preview, cv-generator, dsgvo
-    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings', 'mentor-preview', 'cv-generator', 'dsgvo'];
+    // Tab names: orders, users, strategy, coaches, documents, settings, mentor-preview, cv-generator, dsgvo, inner-circle
+    const tabIds = ['orders', 'users', 'strategy', 'coaches', 'documents', 'settings', 'mentor-preview', 'cv-generator', 'dsgvo', 'inner-circle'];
 
     // Update tab buttons
     tabIds.forEach(id => {
@@ -7542,6 +8468,8 @@ export function switchAdminTab(tabName) {
         loadCvProjects();
     } else if (tabName === 'dsgvo') {
         loadDsgvoStats();
+    } else if (tabName === 'inner-circle') {
+        loadInnerCircleData();
     }
 }
 
@@ -10046,11 +10974,9 @@ export function openPackageConfigModal(state, name, price) {
 
     const languageSection = document.getElementById('config-language-section');
     const languageIncluded = document.getElementById('config-language-included');
-    const addonsSection = document.getElementById('config-addons-section');
 
     if (languageSection) languageSection.classList.toggle('hidden', isExecutive || isQuickCheck);
     if (languageIncluded) languageIncluded.classList.toggle('hidden', !isExecutive);
-    if (addonsSection) addonsSection.classList.toggle('hidden', isQuickCheck);
 
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
@@ -10069,6 +10995,644 @@ export function closePackageConfigModal() {
         modal.classList.add('hidden');
         modal.style.display = 'none';
         document.body.style.overflow = '';
+    }
+}
+
+// ========== BUNDLE RENDERER (Dynamic from PACKAGES config) ==========
+
+export function renderBundleSection() {
+    const container = document.getElementById('bundle-content');
+    if (!container) return;
+
+    const seniorCV = PACKAGES.seniorProfessional;
+    const mentoring = PACKAGES.mentoring3Sessions;
+    const seniorBundle = BUNDLES.seniorBundle;
+    const cSuiteBundle = BUNDLES.cSuiteBundle;
+
+    container.innerHTML = `
+        <div class="grid md:grid-cols-2 gap-6 text-left">
+            <div>
+                <h4 class="font-serif text-lg mb-3 text-brand-gold">${seniorCV.name} CV</h4>
+                <ul class="space-y-2 text-sm text-gray-400">
+                    ${seniorCV.features.map(f => `
+                        <li class="flex items-start">
+                            <span class="text-brand-gold mr-2">—</span>
+                            <span>${f}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+                <div class="mt-4 text-gray-400 text-sm">Regulär: <span class="line-through text-gray-500">€${seniorCV.price}</span></div>
+            </div>
+
+            <div>
+                <h4 class="font-serif text-lg mb-3 text-brand-gold">${mentoring.name}</h4>
+                <ul class="space-y-2 text-sm text-gray-400">
+                    ${mentoring.features.map(f => `
+                        <li class="flex items-start">
+                            <span class="text-brand-gold mr-2">—</span>
+                            <span>${f}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+                <div class="mt-4 text-gray-400 text-sm">Regulär: <span class="line-through text-gray-500">€${mentoring.price}</span></div>
+            </div>
+        </div>
+        <!-- Ersparnis-Hinweis -->
+        <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-center gap-3">
+            <span class="text-gray-400 text-sm">Einzelpreis: <span class="line-through">€${seniorBundle.regularPrice}</span></span>
+            <span class="bg-green-500/20 text-green-400 px-3 py-1 text-xs font-bold uppercase rounded-full">Sie sparen €${seniorBundle.savings}</span>
+        </div>
+    `;
+
+    // Update price display
+    const priceDisplay = document.getElementById('bundle-price');
+    if (priceDisplay) {
+        priceDisplay.textContent = `Ab €${seniorBundle.price.toLocaleString('de-DE')}`;
+    }
+
+    // Update buttons
+    const seniorBtn = document.getElementById('bundle-senior-btn');
+    const cSuiteBtn = document.getElementById('bundle-csuite-btn');
+
+    if (seniorBtn) {
+        seniorBtn.textContent = `Senior Bundle · €${seniorBundle.price.toLocaleString('de-DE')}`;
+        seniorBtn.onclick = () => addToCart(seniorBundle.name, seniorBundle.price);
+    }
+
+    if (cSuiteBtn) {
+        cSuiteBtn.textContent = `C-Suite Bundle · €${cSuiteBundle.price.toLocaleString('de-DE')}`;
+        cSuiteBtn.onclick = () => addToCart(cSuiteBundle.name, cSuiteBundle.price);
+    }
+
+    // Update C-Suite extras
+    const extrasText = document.getElementById('bundle-csuite-extras');
+    if (extrasText && cSuiteBundle.extras) {
+        extrasText.innerHTML = `C-Suite Bundle enthält zusätzlich: <span class="text-brand-gold font-medium">${cSuiteBundle.extras}</span>`;
+    }
+}
+
+// ========== MENTORING PACKAGES RENDERER (Dynamic from PACKAGES config) ==========
+
+export function renderMentoringPackages() {
+    const container = document.getElementById('mentoring-packages-grid');
+    if (!container) return;
+
+    const single = PACKAGES.mentoringSingle;
+    const sessions3 = PACKAGES.mentoring3Sessions;
+    const retainer = PACKAGES.mentoringRetainer;
+
+    container.innerHTML = `
+        <!-- Single Session - Kompakt -->
+        <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 hover:border-brand-gold/30 transition-all flex flex-col">
+            <div class="mb-4">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">${single.name}</div>
+                <div class="text-3xl font-serif text-white">€${formatPrice(single.price)}</div>
+                <div class="text-[11px] text-gray-500">${single.priceNote}</div>
+            </div>
+            <ul class="space-y-2 mb-5 text-sm text-gray-400 flex-grow">
+                ${single.features.map(f => `
+                    <li class="flex items-center gap-2">
+                        <i class="fas fa-check text-brand-gold text-[10px]"></i>
+                        <span>${f}</span>
+                    </li>
+                `).join('')}
+            </ul>
+            <button onclick="app.addToCart('Executive Mentoring - ${single.name}', ${single.price})" class="w-full border border-brand-gold/40 text-brand-gold py-3 text-xs font-semibold uppercase tracking-wider hover:bg-brand-gold hover:text-brand-dark transition-all rounded-full mt-auto">
+                Session buchen
+            </button>
+        </div>
+
+        <!-- 3-Session Package - HERO (empfohlen) -->
+        <div class="relative bg-brand-gold text-brand-dark rounded-xl p-6 flex flex-col shadow-xl shadow-brand-gold/20">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-dark text-brand-gold px-3 py-1 text-[10px] font-bold uppercase tracking-wide rounded-full border border-brand-gold/30">
+                Empfohlen
+            </div>
+            <div class="mb-4 pt-2">
+                <div class="text-xs text-brand-dark/70 uppercase tracking-wider mb-1">${sessions3.name}</div>
+                <div class="text-3xl font-serif">€${formatPrice(sessions3.price)}</div>
+                <div class="text-[11px] text-brand-dark/60">${sessions3.priceNote}</div>
+            </div>
+            <p class="text-xs text-brand-dark/80 mb-4 leading-relaxed">
+                <strong>Ideal für:</strong> ${sessions3.idealFor}
+            </p>
+            <ul class="space-y-2.5 mb-5 text-sm flex-grow">
+                ${sessions3.features.map(f => `
+                    <li class="flex items-center gap-2">
+                        <i class="fas fa-check text-brand-dark/80 text-[10px]"></i>
+                        <span>${f}</span>
+                    </li>
+                `).join('')}
+            </ul>
+            <button onclick="app.addToCart('Executive Mentoring - ${sessions3.name}', ${sessions3.price})" class="w-full bg-brand-dark text-brand-gold py-3 text-xs font-bold uppercase tracking-wider hover:bg-white hover:text-brand-dark transition-all rounded-full mt-auto">
+                Paket buchen
+            </button>
+        </div>
+
+        <!-- Executive Retainer - Kompakt -->
+        <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 hover:border-brand-gold/30 transition-all flex flex-col">
+            <div class="mb-4">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">${retainer.name}</div>
+                <div class="text-3xl font-serif text-white">€${formatPrice(retainer.price)}</div>
+                <div class="text-[11px] text-gray-500">${retainer.priceNote}</div>
+            </div>
+            <ul class="space-y-2 mb-5 text-sm text-gray-400 flex-grow">
+                ${retainer.features.slice(0, -1).map(f => `
+                    <li class="flex items-center gap-2">
+                        <i class="fas fa-check text-brand-gold text-[10px]"></i>
+                        <span>${f}</span>
+                    </li>
+                `).join('')}
+                <li class="flex items-center gap-2">
+                    <i class="fas fa-star text-brand-gold text-[10px]"></i>
+                    <span class="text-white">${retainer.features[retainer.features.length - 1]}</span>
+                </li>
+            </ul>
+            <button onclick="app.openStrategyModal()" class="w-full border border-brand-gold/40 text-brand-gold py-3 text-xs font-semibold uppercase tracking-wider hover:bg-brand-gold hover:text-brand-dark transition-all rounded-full mt-auto">
+                Beratung anfragen
+            </button>
+        </div>
+    `;
+}
+
+// ========== PRICE INJECTION (Updates all hardcoded prices from PACKAGES config) ==========
+
+export function injectPackagePrices() {
+    // CV Package Preise
+    const highPotential = PACKAGES.highPotential;
+    const senior = PACKAGES.seniorProfessional;
+    const executive = PACKAGES.executiveCSuite;
+
+    // Mentoring Package Preise
+    const mentoringSingle = PACKAGES.mentoringSingle;
+    const mentoring3 = PACKAGES.mentoring3Sessions;
+    const mentoringRetainer = PACKAGES.mentoringRetainer;
+
+    // Hero-Sektion Preise
+    const heroCV = document.getElementById('hero-cv-price');
+    const heroMentoring = document.getElementById('hero-mentoring-price');
+    if (heroCV) heroCV.textContent = `Ab €${formatPrice(highPotential.price)}`;
+    if (heroMentoring) heroMentoring.textContent = `Ab €${formatPrice(mentoringSingle.price)}`;
+
+    // CV-Karten Preise (Startseite)
+    const cvYoungPrice = document.getElementById('cv-young-price');
+    const cvSeniorPrice = document.getElementById('cv-senior-price');
+    const cvExecutivePrice = document.getElementById('cv-executive-price');
+    if (cvYoungPrice) cvYoungPrice.textContent = `€${formatPrice(highPotential.price)}`;
+    if (cvSeniorPrice) cvSeniorPrice.textContent = `€${formatPrice(senior.price)}`;
+    if (cvExecutivePrice) cvExecutivePrice.textContent = `€${formatPrice(executive.price)}`;
+
+    // Detail-Page Preise
+    const detailYoungPrice = document.getElementById('detail-young-price');
+    const detailSeniorPrice = document.getElementById('detail-senior-price');
+    const detailExecutivePrice = document.getElementById('detail-executive-price');
+    if (detailYoungPrice) detailYoungPrice.textContent = `€${formatPrice(highPotential.price)}`;
+    if (detailSeniorPrice) detailSeniorPrice.textContent = `€${formatPrice(senior.price)}`;
+    if (detailExecutivePrice) detailExecutivePrice.textContent = `€${formatPrice(executive.price)}`;
+
+    // Vergleichstabelle Preise
+    const tableYoungPrice = document.getElementById('table-young-price');
+    const tableSeniorPrice = document.getElementById('table-senior-price');
+    const tableExecutivePrice = document.getElementById('table-executive-price');
+    if (tableYoungPrice) tableYoungPrice.textContent = `€${formatPrice(highPotential.price)}`;
+    if (tableSeniorPrice) tableSeniorPrice.textContent = `€${formatPrice(senior.price)}`;
+    if (tableExecutivePrice) tableExecutivePrice.textContent = `€${formatPrice(executive.price)}`;
+
+    // FAQ Paket-Beschreibungen
+    const faqPackages = document.getElementById('faq-packages-content');
+    if (faqPackages) {
+        faqPackages.innerHTML = `
+            <strong>${highPotential.name} (€${formatPrice(highPotential.price)}):</strong> ${highPotential.faqDescription}<br><br>
+            <strong>${senior.name} (€${formatPrice(senior.price)}):</strong> ${senior.faqDescription}<br><br>
+            <strong>${executive.name} (€${formatPrice(executive.price)}):</strong> ${executive.faqDescription}
+        `;
+    }
+}
+
+// ========== CV SAMPLE MODAL ==========
+
+export function openCvSampleModal() {
+    const modal = document.getElementById('cv-sample-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+export function closeCvSampleModal() {
+    const modal = document.getElementById('cv-sample-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// ========== PORTFOLIO GALLERY MANAGEMENT ==========
+
+// Portfolio state
+let portfolioImages = [];
+let currentPortfolioIndex = 0;
+
+// Load portfolio gallery on page load
+export async function loadPortfolioImage() {
+    try {
+        const docRef = doc(db, 'settings', 'portfolio');
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+
+            // Check for new format (images array)
+            if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+                portfolioImages = data.images;
+            }
+            // Migrate old format (single imageUrl) to new format
+            else if (data.imageUrl) {
+                portfolioImages = [{
+                    imageUrl: data.imageUrl,
+                    fileName: data.fileName || 'Migriert',
+                    storagePath: data.storagePath || '',
+                    uploadedAt: data.uploadedAt || new Date().toISOString()
+                }];
+            } else {
+                portfolioImages = [];
+            }
+
+            if (portfolioImages.length > 0) {
+                currentPortfolioIndex = 0;
+
+                // Update showcase images (stacked cards)
+                const showcaseImg = document.getElementById('cv-showcase-image');
+                const showcaseImg2 = document.getElementById('cv-showcase-image-2');
+                const showcaseImg3 = document.getElementById('cv-showcase-image-3');
+
+                if (showcaseImg) {
+                    showcaseImg.src = portfolioImages[0].imageUrl;
+                }
+                // Set second card image (use second image or first if only one)
+                if (showcaseImg2 && portfolioImages.length > 1) {
+                    showcaseImg2.src = portfolioImages[1].imageUrl;
+                } else if (showcaseImg2) {
+                    showcaseImg2.src = portfolioImages[0].imageUrl;
+                }
+                // Set third card image (use third, second, or first depending on available)
+                if (showcaseImg3) {
+                    if (portfolioImages.length > 2) {
+                        showcaseImg3.src = portfolioImages[2].imageUrl;
+                    } else if (portfolioImages.length > 1) {
+                        showcaseImg3.src = portfolioImages[1].imageUrl;
+                    } else {
+                        showcaseImg3.src = portfolioImages[0].imageUrl;
+                    }
+                }
+
+                // Update modal image (only if modal elements exist)
+                if (document.getElementById('cv-sample-image')) {
+                    updateModalImage();
+                }
+            }
+        } else {
+            portfolioImages = [];
+        }
+
+        // Render admin gallery grid (only if admin panel exists)
+        if (document.getElementById('portfolio-gallery-grid')) {
+            renderAdminGallery();
+        }
+
+        // Set default fallback for showcase if no images
+        if (portfolioImages.length === 0) {
+            const showcaseImg = document.getElementById('cv-showcase-image');
+            if (showcaseImg && !showcaseImg.src.includes('firebase')) {
+                showcaseImg.src = '/images/cv-sample-executive.svg';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading portfolio:', error);
+        // Silent fail - don't block page load
+    }
+}
+
+// Update all showcase images (stacked cards on homepage)
+function updateShowcaseImages() {
+    const showcaseImg = document.getElementById('cv-showcase-image');
+    const showcaseImg2 = document.getElementById('cv-showcase-image-2');
+    const showcaseImg3 = document.getElementById('cv-showcase-image-3');
+
+    if (portfolioImages.length === 0) {
+        if (showcaseImg) showcaseImg.src = '/images/cv-sample-executive.svg';
+        return;
+    }
+
+    if (showcaseImg) {
+        showcaseImg.src = portfolioImages[0].imageUrl;
+    }
+    if (showcaseImg2) {
+        showcaseImg2.src = portfolioImages.length > 1 ? portfolioImages[1].imageUrl : portfolioImages[0].imageUrl;
+    }
+    if (showcaseImg3) {
+        if (portfolioImages.length > 2) {
+            showcaseImg3.src = portfolioImages[2].imageUrl;
+        } else if (portfolioImages.length > 1) {
+            showcaseImg3.src = portfolioImages[1].imageUrl;
+        } else {
+            showcaseImg3.src = portfolioImages[0].imageUrl;
+        }
+    }
+}
+
+// Update modal image and navigation
+function updateModalImage() {
+    const modalImg = document.getElementById('cv-sample-image');
+    const placeholder = document.getElementById('cv-sample-placeholder');
+    const prevBtn = document.getElementById('portfolio-prev-btn');
+    const nextBtn = document.getElementById('portfolio-next-btn');
+    const counter = document.getElementById('portfolio-counter');
+    const dotsContainer = document.getElementById('portfolio-dots');
+
+    if (portfolioImages.length === 0) {
+        if (modalImg) modalImg.src = '/images/cv-sample-executive.svg';
+        if (prevBtn) prevBtn.classList.add('hidden');
+        if (nextBtn) nextBtn.classList.add('hidden');
+        if (counter) counter.classList.add('hidden');
+        if (dotsContainer) dotsContainer.innerHTML = '';
+        return;
+    }
+
+    // Update image
+    if (modalImg) {
+        modalImg.style.opacity = '0';
+        setTimeout(() => {
+            modalImg.src = portfolioImages[currentPortfolioIndex].imageUrl;
+            modalImg.style.opacity = '1';
+        }, 150);
+        modalImg.classList.remove('hidden');
+    }
+    if (placeholder) placeholder.classList.add('hidden');
+
+    // Show/hide navigation based on image count
+    if (portfolioImages.length > 1) {
+        if (prevBtn) prevBtn.classList.remove('hidden');
+        if (nextBtn) nextBtn.classList.remove('hidden');
+        if (counter) {
+            counter.classList.remove('hidden');
+            counter.textContent = `| Bild ${currentPortfolioIndex + 1} von ${portfolioImages.length}`;
+        }
+
+        // Render dots
+        if (dotsContainer) {
+            dotsContainer.innerHTML = portfolioImages.map((_, i) => `
+                <button onclick="app.goToPortfolioImage(${i})" class="w-2 h-2 rounded-full transition ${i === currentPortfolioIndex ? 'bg-brand-gold' : 'bg-white/30 hover:bg-white/50'}"></button>
+            `).join('');
+        }
+    } else {
+        if (prevBtn) prevBtn.classList.add('hidden');
+        if (nextBtn) nextBtn.classList.add('hidden');
+        if (counter) counter.classList.add('hidden');
+        if (dotsContainer) dotsContainer.innerHTML = '';
+    }
+}
+
+// Navigation functions
+export function nextPortfolioImage() {
+    if (portfolioImages.length <= 1) return;
+    currentPortfolioIndex = (currentPortfolioIndex + 1) % portfolioImages.length;
+    updateModalImage();
+}
+
+export function prevPortfolioImage() {
+    if (portfolioImages.length <= 1) return;
+    currentPortfolioIndex = (currentPortfolioIndex - 1 + portfolioImages.length) % portfolioImages.length;
+    updateModalImage();
+}
+
+export function goToPortfolioImage(index) {
+    if (index >= 0 && index < portfolioImages.length) {
+        currentPortfolioIndex = index;
+        updateModalImage();
+    }
+}
+
+// Render admin gallery grid
+function renderAdminGallery() {
+    const grid = document.getElementById('portfolio-gallery-grid');
+    const emptyState = document.getElementById('portfolio-empty-state');
+    const countBadge = document.getElementById('portfolio-count-badge');
+
+    if (!grid) return;
+
+    // Update count badge
+    if (countBadge) {
+        countBadge.textContent = `${portfolioImages.length} Bild${portfolioImages.length !== 1 ? 'er' : ''}`;
+    }
+
+    if (portfolioImages.length === 0) {
+        grid.innerHTML = `
+            <div id="portfolio-empty-state" class="col-span-full text-center py-8 text-gray-400">
+                <i class="fas fa-images text-3xl mb-2 opacity-50"></i>
+                <p class="text-sm">Noch keine Portfolio-Bilder</p>
+                <p class="text-xs mt-1">Klicken Sie oben auf "Bilder hinzufügen"</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = portfolioImages.map((img, index) => `
+        <div class="relative group aspect-[1/1.414] bg-gray-100 rounded-lg overflow-hidden border border-gray-200" data-index="${index}">
+            <img src="${img.imageUrl}" alt="${img.fileName}" class="w-full h-full object-cover object-top">
+            <!-- Overlay with actions -->
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                ${index > 0 ? `<button onclick="app.movePortfolioImage(${index}, -1)" class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-700 hover:bg-brand-gold hover:text-brand-dark transition" title="Nach vorne">
+                    <i class="fas fa-arrow-left text-xs"></i>
+                </button>` : ''}
+                <button onclick="app.deletePortfolioImage(${index})" class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition" title="Löschen">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+                ${index < portfolioImages.length - 1 ? `<button onclick="app.movePortfolioImage(${index}, 1)" class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-700 hover:bg-brand-gold hover:text-brand-dark transition" title="Nach hinten">
+                    <i class="fas fa-arrow-right text-xs"></i>
+                </button>` : ''}
+            </div>
+            <!-- Position badge -->
+            ${index === 0 ? `<div class="absolute top-1 left-1 bg-brand-gold text-brand-dark text-[10px] font-bold px-1.5 py-0.5 rounded">Vorschau</div>` : ''}
+            <!-- Filename -->
+            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                <p class="text-white text-[10px] truncate">${img.fileName}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Handle portfolio upload (multiple files)
+export async function handlePortfolioUpload(input) {
+    const files = Array.from(input.files || []);
+    if (files.length === 0) return;
+
+    // Validate files
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const validFiles = files.filter(file => {
+        if (!validTypes.includes(file.type)) {
+            showToast(`${file.name}: Nur JPG, PNG oder WebP`, 'error');
+            return false;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showToast(`${file.name}: Zu groß (max. 5MB)`, 'error');
+            return false;
+        }
+        return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    // Show progress
+    const progressContainer = document.getElementById('portfolio-upload-progress');
+    const progressBar = document.getElementById('portfolio-progress-bar');
+    const statusText = document.getElementById('portfolio-upload-status');
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (progressBar) progressBar.style.width = '0%';
+
+    try {
+        const newImages = [];
+        let completed = 0;
+
+        for (const file of validFiles) {
+            if (statusText) statusText.textContent = `Lade hoch: ${file.name} (${completed + 1}/${validFiles.length})`;
+
+            const timestamp = Date.now();
+            const ext = file.name.split('.').pop();
+            const storageRef = ref(storage, `settings/portfolio-${timestamp}-${Math.random().toString(36).substr(2, 9)}.${ext}`);
+
+            // Upload file
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            await new Promise((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes);
+                        const totalProgress = ((completed + fileProgress) / validFiles.length) * 100;
+                        if (progressBar) progressBar.style.width = totalProgress + '%';
+                    },
+                    reject,
+                    async () => {
+                        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                        newImages.push({
+                            imageUrl: downloadUrl,
+                            fileName: file.name,
+                            storagePath: storageRef.fullPath,
+                            uploadedAt: new Date().toISOString()
+                        });
+                        completed++;
+                        resolve();
+                    }
+                );
+            });
+        }
+
+        // Add new images to existing array
+        portfolioImages = [...portfolioImages, ...newImages];
+
+        // Save to Firestore
+        await setDoc(doc(db, 'settings', 'portfolio'), {
+            images: portfolioImages,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser?.email || 'unknown'
+        });
+
+        // Update UI
+        renderAdminGallery();
+        updateModalImage();
+
+        // Update showcase images (stacked cards)
+        updateShowcaseImages();
+
+        showToast(`${newImages.length} Bild${newImages.length > 1 ? 'er' : ''} hochgeladen!`);
+    } catch (error) {
+        console.error('Error uploading portfolio:', error);
+        showToast('Fehler beim Hochladen', 'error');
+    } finally {
+        if (progressContainer) progressContainer.classList.add('hidden');
+        input.value = '';
+    }
+}
+
+// Delete single portfolio image
+export async function deletePortfolioImage(index) {
+    if (!confirm('Dieses Bild wirklich löschen?')) return;
+
+    try {
+        const imageToDelete = portfolioImages[index];
+
+        // Delete from storage
+        if (imageToDelete.storagePath) {
+            try {
+                const storageRef = ref(storage, imageToDelete.storagePath);
+                await deleteObject(storageRef);
+            } catch (e) {
+                console.log('Storage file may already be deleted');
+            }
+        }
+
+        // Remove from array
+        portfolioImages.splice(index, 1);
+
+        // Save to Firestore
+        await setDoc(doc(db, 'settings', 'portfolio'), {
+            images: portfolioImages,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser?.email || 'unknown'
+        });
+
+        // Reset index if needed
+        if (currentPortfolioIndex >= portfolioImages.length) {
+            currentPortfolioIndex = Math.max(0, portfolioImages.length - 1);
+        }
+
+        // Update UI
+        renderAdminGallery();
+        updateModalImage();
+
+        // Update showcase image
+        const showcaseImg = document.getElementById('cv-showcase-image');
+        if (showcaseImg) {
+            showcaseImg.src = portfolioImages.length > 0 ? portfolioImages[0].imageUrl : '/images/cv-sample-executive.svg';
+        }
+
+        showToast('Bild gelöscht');
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        showToast('Fehler beim Löschen', 'error');
+    }
+}
+
+// Move portfolio image (reorder)
+export async function movePortfolioImage(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= portfolioImages.length) return;
+
+    // Swap images
+    [portfolioImages[index], portfolioImages[newIndex]] = [portfolioImages[newIndex], portfolioImages[index]];
+
+    // Save to Firestore
+    try {
+        await setDoc(doc(db, 'settings', 'portfolio'), {
+            images: portfolioImages,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser?.email || 'unknown'
+        });
+
+        // Update UI
+        renderAdminGallery();
+
+        // Update showcase image (always first image)
+        const showcaseImg = document.getElementById('cv-showcase-image');
+        if (showcaseImg && portfolioImages.length > 0) {
+            showcaseImg.src = portfolioImages[0].imageUrl;
+        }
+
+        showToast('Reihenfolge geändert');
+    } catch (error) {
+        console.error('Error reordering:', error);
+        showToast('Fehler beim Sortieren', 'error');
     }
 }
 
@@ -10130,55 +11694,14 @@ export function confirmPackageConfig(state) {
         nameSuffix.push('Standard');
     }
 
-    // Check add-ons
-    const addonCheckboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
-    addonCheckboxes.forEach(cb => {
-        const addonPrice = parseInt(cb.value) || 0;
-        total += addonPrice;
-    });
-
     // Build final name
     let finalName = baseName;
     if (nameSuffix.length > 0) {
         finalName = `${baseName} (${nameSuffix.join(', ')})`;
     }
 
-    // WICHTIG: Zuerst alle alten Add-ons entfernen (Interview-Simulation, Zeugnis-Analyse)
-    // bevor das neue Paket hinzugefügt wird
-    state.cart = state.cart.filter(item =>
-        !item.title.includes('Interview-Simulation') &&
-        !item.title.includes('Zeugnis-Analyse')
-    );
-
-    // Add main package (addToCart entfernt auch alte CV-Pakete)
-    addToCart(state, finalName, total - getAddonsTotal(addonCheckboxes));
-
-    // Add add-ons separately to cart (diese sind jetzt definitiv neu)
-    addonCheckboxes.forEach(cb => {
-        let addonName;
-        if (cb.name === 'addon-interview') {
-            addonName = 'Interview-Simulation (60 Min.)';
-        } else if (cb.name === 'addon-zeugnis') {
-            addonName = 'Zeugnis-Analyse';
-        } else if (cb.name === 'addon-website') {
-            addonName = 'Executive Landing Page';
-        } else {
-            addonName = 'Add-on';
-        }
-        const addonPrice = parseInt(cb.value) || 0;
-
-        // Add as separate item with unique integer ID
-        state.cart.push({
-            title: addonName,
-            price: addonPrice,
-            id: Date.now() + Math.floor(Math.random() * 1000)
-        });
-    });
-
-    if (addonCheckboxes.length > 0) {
-        updateCartUI(state);
-        saveCartToLocalStorage(state.cart);
-    }
+    // Add main package to cart
+    addToCart(state, finalName, total);
 
     closePackageConfigModal();
 }
@@ -10583,27 +12106,83 @@ function renderStrategyCallsList() {
     const end = start + perPage;
     const callsToShow = state.data.slice(start, end);
 
-    container.innerHTML = callsToShow.map(call => `
-        <div class="bg-brand-dark/50 rounded-lg p-4">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <h4 class="font-bold text-white">${call.name || 'Unbekannt'}</h4>
-                    <p class="text-sm text-gray-400">${call.email || ''}</p>
-                    ${call.phone ? `<p class="text-sm text-gray-400">${call.phone}</p>` : ''}
+    if (callsToShow.length === 0) {
+        container.innerHTML = `
+            <div class="p-12 text-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-inbox text-gray-300 text-2xl"></i>
                 </div>
-                <div class="flex items-center gap-2">
-                    <select onchange="app.updateStrategyCallStatus('${call.id}', this.value)"
-                            class="bg-brand-dark border border-gray-600 rounded px-2 py-1 text-sm text-white">
-                        <option value="new" ${call.status === 'new' ? 'selected' : ''}>Neu</option>
-                        <option value="contacted" ${call.status === 'contacted' ? 'selected' : ''}>Kontaktiert</option>
-                        <option value="completed" ${call.status === 'completed' ? 'selected' : ''}>Abgeschlossen</option>
-                    </select>
+                <p class="text-gray-500 font-medium">Keine Anfragen vorhanden</p>
+                <p class="text-gray-400 text-sm mt-1">Neue Anfragen erscheinen hier automatisch</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = callsToShow.map(call => {
+        const isNew = !call.status || call.status === 'new';
+        const isContacted = call.status === 'contacted';
+        const isCompleted = call.status === 'completed';
+        const statusColor = isNew ? 'red' : isContacted ? 'yellow' : 'green';
+        const statusBg = isNew ? 'bg-red-50 border-red-200' : isContacted ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200';
+        const source = call.source === 'concierge-modal' ? 'Concierge-Modal' : 'Strategie-Formular';
+
+        let dateStr = 'Unbekannt';
+        try {
+            if (call.createdAt) {
+                const date = call.createdAt.toDate ? call.createdAt.toDate() : new Date(call.createdAt);
+                dateStr = date.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+        } catch (e) {
+            dateStr = 'Ungültiges Datum';
+        }
+
+        return `
+            <div class="p-5 hover:bg-gray-50 transition-colors ${isNew ? 'border-l-4 border-l-red-400' : ''}">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <!-- Left: Contact Info -->
+                    <div class="flex-grow">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-full bg-brand-gold/10 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-user text-brand-gold"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-brand-dark">${sanitizeHTML(call.name) || 'Unbekannt'}</h4>
+                                <a href="mailto:${call.email}" class="text-sm text-brand-gold hover:underline">${sanitizeHTML(call.email) || ''}</a>
+                            </div>
+                        </div>
+
+                        ${call.message ? `
+                            <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <p class="text-sm text-gray-600 leading-relaxed">${sanitizeHTML(call.message)}</p>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-400">
+                            <span><i class="fas fa-clock mr-1"></i>${dateStr}</span>
+                            <span><i class="fas fa-tag mr-1"></i>${source}</span>
+                            ${call.phone ? `<span><i class="fas fa-phone mr-1"></i>${sanitizeHTML(call.phone)}</span>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Right: Actions -->
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <select onchange="app.updateStrategyCallStatus('${call.id}', this.value)"
+                                class="px-3 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${statusBg}">
+                            <option value="new" ${isNew ? 'selected' : ''}>🔴 Neu</option>
+                            <option value="contacted" ${isContacted ? 'selected' : ''}>🟡 Kontaktiert</option>
+                            <option value="completed" ${isCompleted ? 'selected' : ''}>🟢 Abgeschlossen</option>
+                        </select>
+                        <a href="mailto:${call.email}?subject=Re: Ihre Anfrage bei Karriaro"
+                           class="px-4 py-2 bg-brand-gold text-brand-dark rounded-lg text-sm font-bold hover:bg-brand-dark hover:text-white transition-colors flex items-center gap-2">
+                            <i class="fas fa-reply"></i>
+                            <span class="hidden sm:inline">Antworten</span>
+                        </a>
+                    </div>
                 </div>
             </div>
-            ${call.message ? `<p class="text-sm text-gray-300 mt-2">${call.message}</p>` : ''}
-            <p class="text-xs text-gray-500 mt-2">${new Date(call.createdAt).toLocaleString('de-DE')}</p>
-        </div>
-    `).join('') + renderPagination('calls');
+        `;
+    }).join('') + renderPagination('calls');
 }
 
 export async function updateStrategyCallStatus(callId, status) {

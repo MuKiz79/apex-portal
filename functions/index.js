@@ -1,5 +1,6 @@
 const {onRequest, onCall} = require('firebase-functions/v2/https');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 const {defineSecret} = require('firebase-functions/params');
@@ -78,7 +79,11 @@ const PRODUCT_CATALOG = {
     'addon-interview': { title: 'Interview-Coaching', price: 199, category: 'addon' },
     'addon-zeugnis': { title: 'Arbeitszeugnis-Optimierung', price: 49, category: 'addon' },
     'addon-website': { title: 'Executive Landing Page', price: 499, category: 'addon' },
-    'addon-linkedin': { title: 'LinkedIn-Profil Optimierung', price: 149, category: 'addon' }
+    'addon-linkedin': { title: 'LinkedIn-Profil Optimierung', price: 149, category: 'addon' },
+
+    // Inner Circle Membership
+    'inner-circle-founding': { title: 'Inner Circle Founding Member', price: 2490, category: 'membership' },
+    'inner-circle-regular': { title: 'Inner Circle Membership', price: 4990, category: 'membership' }
 };
 
 // Preisvalidierung - prüft ob Preis zum Produkt passt
@@ -5791,5 +5796,99 @@ exports.processRefund = onRequest({
             error: 'Fehler bei der Rückerstattung',
             details: error.message
         });
+    }
+});
+
+// ========== CONCIERGE ANFRAGE EMAIL ==========
+// Sendet Email bei neuer Anfrage aus dem Concierge-Modal
+
+exports.onNewConciergeRequest = onDocumentCreated({
+    document: 'strategyCalls/{docId}',
+    secrets: [smtpHost, smtpUser, smtpPass]
+}, async (event) => {
+    const data = event.data.data();
+
+    if (!data) {
+        console.log('No data in document');
+        return;
+    }
+
+    // Nur für Anfragen aus dem Concierge-Modal
+    if (data.source !== 'concierge-modal') {
+        console.log('Not a concierge request, skipping email');
+        return;
+    }
+
+    const { name, email, message, createdAt } = data;
+    const adminEmail = 'muammer.kizilaslan@gmail.com';
+
+    console.log('📧 Sending concierge request notification to admin...');
+
+    try {
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value(),
+            port: 465,
+            secure: true,
+            auth: {
+                user: smtpUser.value(),
+                pass: smtpPass.value()
+            }
+        });
+
+        const timestamp = createdAt ? new Date(createdAt.toDate()).toLocaleString('de-DE') : new Date().toLocaleString('de-DE');
+
+        await transporter.sendMail({
+            from: `"Karriaro" <${smtpUser.value()}>`,
+            to: adminEmail,
+            subject: `🔔 Neue Anfrage von ${name}`,
+            html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #0B1120; padding: 40px; border-radius: 16px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #c9a87c; margin: 0; font-size: 24px;">Neue Anfrage</h1>
+                        <p style="color: #9ca3af; margin: 10px 0 0;">über das Concierge-Modal</p>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; margin-bottom: 20px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="color: #9ca3af; padding: 8px 0; width: 100px;">Name:</td>
+                                <td style="color: #ffffff; padding: 8px 0; font-weight: bold;">${name}</td>
+                            </tr>
+                            <tr>
+                                <td style="color: #9ca3af; padding: 8px 0;">E-Mail:</td>
+                                <td style="color: #c9a87c; padding: 8px 0;">
+                                    <a href="mailto:${email}" style="color: #c9a87c; text-decoration: none;">${email}</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="color: #9ca3af; padding: 8px 0;">Zeitpunkt:</td>
+                                <td style="color: #ffffff; padding: 8px 0;">${timestamp}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div style="background: rgba(201, 168, 124, 0.1); border: 1px solid rgba(201, 168, 124, 0.3); border-radius: 12px; padding: 24px;">
+                        <p style="color: #c9a87c; margin: 0 0 10px; font-weight: bold; font-size: 14px;">Nachricht:</p>
+                        <p style="color: #ffffff; margin: 0; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+                    </div>
+
+                    <div style="margin-top: 30px; text-align: center;">
+                        <a href="mailto:${email}?subject=Re: Ihre Anfrage bei Karriaro"
+                           style="display: inline-block; background: #c9a87c; color: #0B1120; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 14px;">
+                            Direkt antworten
+                        </a>
+                    </div>
+
+                    <div style="margin-top: 30px; text-align: center; color: #6b7280; font-size: 12px;">
+                        <p style="margin: 0;">Karriaro | Premium Career Services</p>
+                    </div>
+                </div>
+            `
+        });
+
+        console.log('✅ Concierge notification email sent to admin');
+
+    } catch (error) {
+        console.error('❌ Error sending concierge email:', error);
     }
 });
