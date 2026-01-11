@@ -814,11 +814,21 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
             await updateProfile(user, { displayName: `${firstname} ${lastname}` });
 
             // Send verification email with action URL
-            const actionCodeSettings = {
-                url: window.location.origin + window.location.pathname,
-                handleCodeInApp: false
-            };
-            await sendEmailVerification(user, actionCodeSettings);
+            try {
+                const actionCodeSettings = {
+                    url: window.location.origin,
+                    handleCodeInApp: false
+                };
+                await sendEmailVerification(user, actionCodeSettings);
+            } catch (emailError) {
+                console.warn('Verification email could not be sent:', emailError.message);
+                // Versuche ohne actionCodeSettings
+                try {
+                    await sendEmailVerification(user);
+                } catch (e) {
+                    console.warn('Verification email failed completely:', e.message);
+                }
+            }
             await signOut(auth);
 
             document.getElementById('auth-form')?.classList.add('hidden');
