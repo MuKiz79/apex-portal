@@ -739,14 +739,18 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
                 if (errorDiv) {
                     errorDiv.innerHTML = `
                         <div class="text-red-600 text-sm">
-                            <p class="mb-2">Bitte bestätigen Sie erst Ihre E-Mail-Adresse.</p>
-                            <p class="text-xs text-gray-600 mb-3">Prüfen Sie auch Ihren Spam-Ordner.</p>
-                            <button
-                                onclick="app.resendVerificationEmail()"
-                                class="text-brand-gold underline text-xs font-semibold hover:text-brand-dark"
-                            >
-                                Bestätigungs-E-Mail erneut senden
-                            </button>
+                            <p class="mb-2"><i class="fas fa-envelope-open mr-1"></i> Bitte bestätigen Sie erst Ihre E-Mail-Adresse.</p>
+                            <p class="text-xs text-gray-600 mb-3">Prüfen Sie Ihr Postfach (auch Spam-Ordner) nach der Bestätigungs-E-Mail.</p>
+                            <div class="bg-blue-50 border border-blue-200 rounded p-3 mt-3">
+                                <p class="text-xs text-blue-800 mb-2"><strong>Keine E-Mail erhalten?</strong></p>
+                                <p class="text-xs text-blue-700 mb-2">Wir senden Ihnen einen Link, mit dem Sie Ihr Passwort neu setzen und Ihr Konto aktivieren können.</p>
+                                <button
+                                    onclick="app.resendVerificationEmail()"
+                                    class="bg-brand-gold text-brand-dark px-3 py-1.5 rounded text-xs font-semibold hover:bg-yellow-500 transition"
+                                >
+                                    <i class="fas fa-paper-plane mr-1"></i> Aktivierungslink senden
+                                </button>
+                            </div>
                         </div>
                     `;
                     errorDiv.classList.remove('hidden');
@@ -1233,8 +1237,10 @@ export function resetAuthToLogin() {
     toggleAuthMode(true);
 }
 
-// Funktion zum erneuten Senden der Bestätigungs-E-Mail
-// SICHERHEIT: Verwendet sendSignInLinkToEmail statt Passwort-Speicherung
+// Funktion zum Senden eines Aktivierungslinks (Passwort-Reset, der auch E-Mail verifiziert)
+// Hinweis: Firebase sendEmailVerification erfordert einen eingeloggten User.
+// Da der User ausgeloggt wurde (wegen nicht verifizierter E-Mail), nutzen wir
+// sendPasswordResetEmail als Workaround - dies verifiziert die E-Mail implizit.
 export async function resendVerificationEmail() {
     const email = sessionStorage.getItem('_pendingVerificationEmail');
 
@@ -1244,22 +1250,32 @@ export async function resendVerificationEmail() {
     }
 
     try {
-        // Sende Passwort-Reset Email - Nutzer kann danach neues Passwort setzen
-        // sendPasswordResetEmail ist bereits oben importiert
+        // Sende Passwort-Reset Email - dies verifiziert die E-Mail und erlaubt neues Passwort
         await sendPasswordResetEmail(auth, email);
 
         // Lösche temporäre Email nach Verwendung
         sessionStorage.removeItem('_pendingVerificationEmail');
 
-        showToast('✅ Bestätigungs-E-Mail wurde erneut gesendet!');
+        showToast('✅ Aktivierungslink wurde gesendet!');
 
-        // Verstecke die Fehlermeldung
+        // Zeige Erfolgsmeldung
         const errorDiv = document.getElementById('auth-error');
         if (errorDiv) {
             errorDiv.innerHTML = `
-                <div class="text-green-600 text-sm">
-                    <p>Bestätigungs-E-Mail wurde gesendet!</p>
-                    <p class="text-xs text-gray-600 mt-1">Prüfen Sie Ihr Postfach und klicken Sie auf den Link.</p>
+                <div class="bg-green-50 border border-green-200 rounded p-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 text-xl mt-0.5"></i>
+                        <div>
+                            <p class="text-green-800 font-semibold mb-1">Aktivierungslink gesendet!</p>
+                            <p class="text-green-700 text-sm mb-2">Wir haben eine E-Mail an <strong>${email}</strong> gesendet.</p>
+                            <ol class="text-xs text-green-600 space-y-1 list-decimal list-inside">
+                                <li>Prüfen Sie Ihr Postfach (auch Spam-Ordner)</li>
+                                <li>Klicken Sie auf den Link in der E-Mail</li>
+                                <li>Legen Sie ein neues Passwort fest</li>
+                                <li>Melden Sie sich mit dem neuen Passwort an</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             `;
         }
