@@ -1553,11 +1553,11 @@
                 <div id="login-fields">
                     <div>
                         <label for="login-email" class="block text-xs uppercase tracking-widest text-gray-600 mb-1">E-Mail</label>
-                        <input type="email" id="login-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                        <input type="email" id="login-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" autocomplete="off" required>
                     </div>
                     <div class="mt-4">
                         <label for="login-password" class="block text-xs uppercase tracking-widest text-gray-600 mb-1">Passwort</label>
-                        <input type="password" id="login-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required>
+                        <input type="password" id="login-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" autocomplete="new-password" required>
                     </div>
                     <div class="mt-3 text-right">
                         <button type="button" onclick="app.showPasswordReset()" class="text-xs text-brand-gold hover:text-brand-dark hover:underline transition">
@@ -1596,11 +1596,11 @@
                     </div>
                     <div>
                         <label for="new-password" class="block text-xs uppercase tracking-widest text-gray-600 mb-1">Neues Passwort</label>
-                        <input type="password" id="new-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Mindestens 6 Zeichen" required>
+                        <input type="password" id="new-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Mindestens 6 Zeichen" autocomplete="new-password" required>
                     </div>
                     <div>
                         <label for="confirm-new-password" class="block text-xs uppercase tracking-widest text-gray-600 mb-1">Passwort bestätigen</label>
-                        <input type="password" id="confirm-new-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Passwort wiederholen" required>
+                        <input type="password" id="confirm-new-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" placeholder="Passwort wiederholen" autocomplete="new-password" required>
                     </div>
                     <button type="button" onclick="app.confirmNewPassword()" id="new-password-submit-btn" class="w-full gold-gradient text-brand-dark font-bold py-3 uppercase text-xs hover:shadow-lg transition">
                         Passwort speichern
@@ -1658,13 +1658,13 @@
                     </div>
                     <div>
                         <label for="reg-email" class="block text-xs uppercase tracking-widest text-gray-600 mb-1">E-Mail <span class="text-red-500">*</span></label>
-                        <input type="email" id="reg-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.validateEmailField(this.value)">
+                        <input type="email" id="reg-email" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" autocomplete="off" required oninput="app.validateEmailField(this.value)">
                         <div id="email-feedback" class="form-feedback"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label for="reg-password" class="block text-xs uppercase tracking-widest text-gray-600 mb-1">Passwort <span class="text-red-500">*</span></label>
-                            <input type="password" id="reg-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.updatePasswordStrength(this.value)">
+                            <input type="password" id="reg-password" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" autocomplete="new-password" required oninput="app.updatePasswordStrength(this.value)">
                             <!-- Password Strength Indicator -->
                             <div class="mt-2 bg-gray-200 rounded-full h-1 overflow-hidden">
                                 <div id="password-strength-bar" class="password-strength-bar h-full"></div>
@@ -1673,7 +1673,7 @@
                         </div>
                         <div>
                             <label for="reg-password-confirm" class="block text-xs uppercase tracking-widest text-gray-600 mb-1">Wiederholen <span class="text-red-500">*</span></label>
-                            <input type="password" id="reg-password-confirm" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" required oninput="app.validatePasswordMatchField()">
+                            <input type="password" id="reg-password-confirm" class="w-full bg-gray-50 border border-gray-300 p-3 outline-none focus:border-brand-gold text-brand-dark" autocomplete="new-password" required oninput="app.validatePasswordMatchField()">
                             <div id="password-match-feedback" class="form-feedback"></div>
                         </div>
                     </div>
@@ -2056,11 +2056,11 @@
                             <div class="p-6 space-y-4">
                                 <div>
                                     <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Neues Passwort</label>
-                                    <input type="password" id="dashboard-new-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none">
+                                    <input type="password" id="dashboard-new-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none" autocomplete="new-password">
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">Passwort bestätigen</label>
-                                    <input type="password" id="dashboard-confirm-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none">
+                                    <input type="password" id="dashboard-confirm-password" placeholder="••••••••" class="w-full p-3 border border-gray-200 rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none" autocomplete="new-password">
                                 </div>
                                 <button onclick="app.changePassword()" class="btn-secondary">
                                     <i class="fas fa-key" aria-hidden="true"></i>
@@ -6435,8 +6435,8 @@
 
     <!-- APP LOGIC -->
     <script type="module">
-        import * as Core from './js/core.js?v=20260110b';
-        import * as App from './js/app.js?v=20260110b';
+        import * as Core from './js/core.js?v=20260110c';
+        import * as App from './js/app.js?v=20260110c';
         console.log('✅ Modules imported, setting up window.app...');
 
         // Make functions globally accessible

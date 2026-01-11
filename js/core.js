@@ -1,6 +1,6 @@
-// Firebase Configuration & Initialization - v2.1
+// Firebase Configuration & Initialization - v2.2
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, browserSessionPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
@@ -33,6 +33,12 @@ try {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
+
+    // Session-Persistenz: Session wird beim Schließen des Browsers beendet
+    setPersistence(auth, browserSessionPersistence)
+        .then(() => logger.log("✅ Session persistence set to browser session"))
+        .catch((err) => logger.error("❌ Failed to set persistence:", err));
+
     logger.log("✅ Firebase initialized successfully");
     logger.log("   auth:", auth ? "OK" : "MISSING");
     logger.log("   db:", db ? "OK" : "MISSING");
@@ -40,6 +46,75 @@ try {
 } catch(e) {
     logger.error("❌ Firebase initialization failed:", e);
     logger.warn("⚠️ Running in demo mode - no data will load");
+}
+
+// ========== SESSION TIMEOUT (15 Minuten Inaktivität) ==========
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 Minuten
+let sessionTimeoutId = null;
+let lastActivityTime = Date.now();
+
+function resetSessionTimeout() {
+    lastActivityTime = Date.now();
+
+    if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId);
+    }
+
+    // Nur wenn ein Nutzer eingeloggt ist
+    if (auth?.currentUser) {
+        sessionTimeoutId = setTimeout(async () => {
+            logger.log("⏰ Session timeout - automatische Abmeldung");
+            try {
+                await signOut(auth);
+                // Zeige Timeout-Nachricht
+                const toast = document.getElementById('toast');
+                if (toast) {
+                    toast.textContent = 'Sie wurden aus Sicherheitsgründen automatisch abgemeldet.';
+                    toast.classList.remove('translate-y-20');
+                    setTimeout(() => toast.classList.add('translate-y-20'), 5000);
+                }
+                // Zurück zur Startseite
+                window.location.href = '/';
+            } catch (e) {
+                logger.error("❌ Logout failed:", e);
+            }
+        }, SESSION_TIMEOUT_MS);
+    }
+}
+
+// Aktivitäts-Listener registrieren
+function initSessionTimeout() {
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+
+    activityEvents.forEach(event => {
+        document.addEventListener(event, () => {
+            // Debounce: Nur alle 30 Sekunden neu starten
+            if (Date.now() - lastActivityTime > 30000) {
+                resetSessionTimeout();
+            }
+        }, { passive: true });
+    });
+
+    // Initial starten wenn Nutzer eingeloggt
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            resetSessionTimeout();
+        } else {
+            if (sessionTimeoutId) {
+                clearTimeout(sessionTimeoutId);
+                sessionTimeoutId = null;
+            }
+        }
+    });
+}
+
+// Session Timeout initialisieren
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSessionTimeout);
+    } else {
+        initSessionTimeout();
+    }
 }
 
 export { auth, db, storage, onAuthStateChanged };
