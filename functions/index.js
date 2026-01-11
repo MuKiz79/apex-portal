@@ -5288,13 +5288,37 @@ exports.deleteUserCompletely = onRequest({
 
         // 5. Delete Firebase Auth account
         try {
-            if (!dryRun) {
-                await admin.auth().deleteUser(targetUserId);
+            // Versuche Auth-User über die E-Mail zu finden (zuverlässiger als userId)
+            const emailToDelete = targetUserData?.email || userEmail;
+            if (emailToDelete) {
+                try {
+                    const authUser = await admin.auth().getUserByEmail(emailToDelete);
+                    if (!dryRun) {
+                        await admin.auth().deleteUser(authUser.uid);
+                        console.log('Auth account deleted via email lookup:', authUser.uid);
+                    }
+                    deletionReport.deletedItems.authAccount = true;
+                    deletionReport.deletedItems.authUid = authUser.uid;
+                } catch (emailError) {
+                    // Fallback: Versuche mit der targetUserId
+                    console.log('Email lookup failed, trying userId:', emailError.message);
+                    if (!dryRun) {
+                        await admin.auth().deleteUser(targetUserId);
+                        console.log('Auth account deleted via userId:', targetUserId);
+                    }
+                    deletionReport.deletedItems.authAccount = true;
+                }
+            } else {
+                // Kein Email vorhanden, versuche mit userId
+                if (!dryRun) {
+                    await admin.auth().deleteUser(targetUserId);
+                }
+                deletionReport.deletedItems.authAccount = true;
             }
-            deletionReport.deletedItems.authAccount = true;
         } catch (e) {
-            console.log('Could not delete auth account:', e.message);
+            console.error('Could not delete auth account:', e.message);
             deletionReport.deletedItems.authAccount = false;
+            deletionReport.deletedItems.authError = e.message;
         }
 
         // 6. Log deletion for audit trail
