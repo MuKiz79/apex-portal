@@ -1925,7 +1925,7 @@ exports.createMeetingRoom = onRequest({
         }
 
         // Create unique room name based on order ID
-        const roomName = `apex-${orderId.slice(-8).toLowerCase()}-${Date.now()}`;
+        const roomName = `karriaro-${orderId.slice(-8).toLowerCase()}-${Date.now()}`;
 
         // Calculate expiry time (appointment time + 2 hours)
         const appointmentDate = new Date(appointmentDatetime);
