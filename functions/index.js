@@ -319,6 +319,7 @@ exports.createCheckoutSession = onRequest({
             cancel_url: `${req.headers.origin || 'https://karriaro.de'}?payment=cancelled`,
             metadata: {
                 userId: userId || '',
+                userEmail: userEmail || '', // Preserve original user email for order lookup
                 items: itemsMetadata,
                 itemsFull: JSON.stringify(itemsToProcess).substring(0, 450), // Validierte Items
                 expectedTotal: expectedTotal.toString(), // Für Webhook-Validierung
@@ -407,9 +408,16 @@ exports.stripeWebhook = onRequest({
             }
 
             let userId = session.client_reference_id;
-            const customerEmail = session.customer_email;
+            // WICHTIG: Bevorzuge die Original-User-E-Mail aus Metadaten, falls vorhanden
+            // Dies stellt sicher, dass Bestellungen dem richtigen Account zugeordnet werden,
+            // auch wenn der Kunde bei Stripe eine andere E-Mail eingibt
+            const metadataEmail = session.metadata?.userEmail;
+            const stripeEmail = session.customer_email;
+            const customerEmail = (metadataEmail && metadataEmail.trim()) ? metadataEmail : stripeEmail;
             const customerName = session.customer_details?.name || 'Karriaro User';
             const createAccount = session.metadata.createAccount === 'true';
+
+            console.log('📧 Email Resolution: metadata=' + metadataEmail + ', stripe=' + stripeEmail + ', using=' + customerEmail);
 
             // Automatische Account-Erstellung für neue Kunden
             if (createAccount && customerEmail && (!userId || userId === 'new_customer')) {
@@ -536,9 +544,13 @@ exports.stripeWebhook = onRequest({
                 console.warn('Could not parse consents metadata:', parseErr);
             }
 
+            // Normalize email to lowercase for consistent lookups
+            const normalizedEmail = customerEmail ? customerEmail.toLowerCase().trim() : null;
+
             const orderData = {
                 userId: userId || `guest_${session.id}`,
-                customerEmail: customerEmail || null,
+                customerEmail: normalizedEmail,
+                customerEmailOriginal: customerEmail || null, // Keep original for display
                 customerName: customerName || 'Kunde',
                 items: parsedItems,
                 total: session.amount_total / 100,

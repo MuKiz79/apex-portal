@@ -514,11 +514,31 @@
                 return;
             }
 
-            // Check if user is in members collection (search by email)
+            // Check if user is in members collection (search by email - case insensitive)
             try {
                 const membersRef = collection(db, 'members');
-                const q = query(membersRef, where('email', '==', user.email));
-                const snapshot = await getDocs(q);
+                const userEmailLower = user.email.toLowerCase();
+
+                // Try exact match first
+                let q = query(membersRef, where('email', '==', user.email));
+                let snapshot = await getDocs(q);
+
+                // If not found, try lowercase match
+                if (snapshot.empty) {
+                    q = query(membersRef, where('email', '==', userEmailLower));
+                    snapshot = await getDocs(q);
+                }
+
+                // If still not found, fetch all and do case-insensitive comparison
+                if (snapshot.empty) {
+                    const allMembersSnap = await getDocs(membersRef);
+                    const matchingDoc = allMembersSnap.docs.find(doc =>
+                        doc.data().email?.toLowerCase() === userEmailLower
+                    );
+                    if (matchingDoc) {
+                        snapshot = { empty: false, docs: [matchingDoc] };
+                    }
+                }
 
                 if (snapshot.empty) {
                     alert('Sie sind noch kein freigeschaltetes Inner Circle Member.');

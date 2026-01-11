@@ -1037,13 +1037,24 @@ async function checkAndSetupInnerCircleMember(state, innerCircleTab) {
     try {
         const userEmail = state.user.email.toLowerCase();
         const membersRef = collection(db, 'members');
-        const q = query(membersRef, where('email', '==', state.user.email));
+        let q = query(membersRef, where('email', '==', state.user.email));
         let snapshot = await getDocs(q);
 
         // Try lowercase match if no exact match
         if (snapshot.empty) {
             const qLower = query(membersRef, where('email', '==', userEmail));
             snapshot = await getDocs(qLower);
+        }
+
+        // If still not found, fetch all and do case-insensitive comparison
+        if (snapshot.empty) {
+            const allMembersSnap = await getDocs(membersRef);
+            const matchingDoc = allMembersSnap.docs.find(doc =>
+                doc.data().email?.toLowerCase() === userEmail
+            );
+            if (matchingDoc) {
+                snapshot = { empty: false, docs: [matchingDoc] };
+            }
         }
 
         if (!snapshot.empty) {
@@ -1803,13 +1814,25 @@ export async function loadUserOrders(state) {
 
         let snapshot = ordersSnapshot;
 
-        // Falls keine Bestellungen gefunden, versuche auch mit customerEmail
+        // Falls keine Bestellungen gefunden, versuche auch mit customerEmail (case-insensitive)
         if (snapshot.empty && state.user.email) {
-            const emailQuery = query(
+            const userEmailLower = state.user.email.toLowerCase();
+
+            // Try exact match first
+            let emailQuery = query(
                 collection(db, "orders"),
                 where("customerEmail", "==", state.user.email)
             );
             snapshot = await getDocs(emailQuery);
+
+            // Try lowercase match
+            if (snapshot.empty) {
+                emailQuery = query(
+                    collection(db, "orders"),
+                    where("customerEmail", "==", userEmailLower)
+                );
+                snapshot = await getDocs(emailQuery);
+            }
         }
 
         const orders = snapshot.docs.map(doc => ({
