@@ -780,12 +780,23 @@ async function sendQuestionnaireEmailInternal(customerEmail, customerName, order
 
 // ========== SEND ORDER CONFIRMATION EMAIL WITH PDF ==========
 async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
-    // Generiere alle PDFs parallel
-    const [pdfBuffer, agbBuffer, datenschutzBuffer] = await Promise.all([
-        generateInvoicePDF(orderData, orderId, sessionId),
-        generateAGBPDF(),
-        generateDatenschutzPDF()
-    ]);
+    // Service-spezifische Konfiguration
+    const service = orderData.service || 'cv-manufaktur';
+    const isWebdesign = service === 'webdesign';
+
+    // Generiere PDFs - für Webdesign nur Rechnung, für andere Services auch AGB/Datenschutz
+    let pdfBuffer, agbBuffer, datenschutzBuffer;
+    if (isWebdesign) {
+        // Webdesign: Nur Rechnung (AGBs wurden bei Checkout akzeptiert und sind auf der Website)
+        pdfBuffer = await generateInvoicePDF(orderData, orderId, sessionId);
+    } else {
+        // CV-Manufaktur/Mentoring: Rechnung + AGB + Datenschutz
+        [pdfBuffer, agbBuffer, datenschutzBuffer] = await Promise.all([
+            generateInvoicePDF(orderData, orderId, sessionId),
+            generateAGBPDF(),
+            generateDatenschutzPDF()
+        ]);
+    }
 
     // Konfiguriere SMTP-Transport
     const host = smtpHost.value() || 'smtp.gmail.com';
@@ -812,15 +823,95 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
 
     const transporter = nodemailer.createTransport(transportConfig);
 
-    console.log(`Email configured: host=${host}, user=${user ? user.substring(0, 5) + '***' : 'NOT SET'}`);
+    console.log(`Email configured: host=${host}, user=${user ? user.substring(0, 5) + '***' : 'NOT SET'}, service=${service}`);
 
     const shortOrderId = 'KAR-' + sessionId.slice(-8).toUpperCase();
 
+    // Service-spezifische E-Mail-Konfiguration
+    const emailConfig = {
+        'cv-manufaktur': {
+            fromName: 'Karriaro',
+            replyTo: 'kontakt@karriaro.de',
+            headerTitle: 'KARRIARO',
+            headerSubtitle: 'Premium Career Services',
+            footerText: 'Karriaro | Premium Career Services',
+            dashboardUrl: 'https://karriaro.de/',
+            dashboardText: 'Bestellung im Dashboard ansehen',
+            primaryColor: '#C6A87C'
+        },
+        'webdesign': {
+            fromName: 'Karriaro Webdesign',
+            replyTo: 'kontakt@karriaro-webdesign.de',
+            headerTitle: 'KARRIARO',
+            headerSubtitle: 'Webdesign',
+            footerText: 'Karriaro Webdesign | karriaro-webdesign.de',
+            dashboardUrl: 'https://karriaro-webdesign.de/',
+            dashboardText: 'Zurück zur Website',
+            primaryColor: '#3B82F6'
+        },
+        'mentoring': {
+            fromName: 'Karriaro',
+            replyTo: 'kontakt@karriaro.de',
+            headerTitle: 'KARRIARO',
+            headerSubtitle: 'Executive Mentoring',
+            footerText: 'Karriaro | Executive Mentoring',
+            dashboardUrl: 'https://karriaro.de/',
+            dashboardText: 'Bestellung im Dashboard ansehen',
+            primaryColor: '#C6A87C'
+        }
+    };
+
+    const emailCfg = emailConfig[service] || emailConfig['cv-manufaktur'];
+
+    // Attachments basierend auf Service
+    const attachments = [
+        {
+            filename: `Rechnung_${shortOrderId}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }
+    ];
+
+    // Nur für CV-Manufaktur und Mentoring: AGB und Datenschutz anhängen
+    if (!isWebdesign && agbBuffer && datenschutzBuffer) {
+        attachments.push(
+            {
+                filename: 'AGB_Karriaro.pdf',
+                content: agbBuffer,
+                contentType: 'application/pdf'
+            },
+            {
+                filename: 'Datenschutzerklaerung_Karriaro.pdf',
+                content: datenschutzBuffer,
+                contentType: 'application/pdf'
+            }
+        );
+    }
+
+    // Anhang-Info für E-Mail-Text
+    const attachmentInfo = isWebdesign
+        ? '<li>Ihre Rechnung als PDF</li>'
+        : `<li>Ihre Rechnung als PDF</li>
+           <li>Unsere Allgemeinen Geschäftsbedingungen (AGB)</li>
+           <li>Unsere Datenschutzerklärung</li>`;
+
+    // Webdesign-spezifische nächste Schritte
+    const nextStepsHtml = isWebdesign
+        ? `<div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+               <h3 style="margin: 0 0 10px 0; color: #0369a1;">Wie geht es weiter?</h3>
+               <ol style="margin: 0; padding-left: 20px; color: #374151;">
+                   <li>Wir melden uns innerhalb von 24 Stunden bei Ihnen</li>
+                   <li>Gemeinsam besprechen wir die Details Ihres Projekts</li>
+                   <li>Nach Freigabe des Konzepts beginnen wir mit der Entwicklung</li>
+               </ol>
+           </div>`
+        : '';
+
     const mailOptions = {
-        from: `"Karriaro" <${smtpUser.value() || 'noreply@karriaro.de'}>`,
-        replyTo: 'kontakt@karriaro.de',
+        from: `"${emailCfg.fromName}" <${smtpUser.value() || 'noreply@karriaro.de'}>`,
+        replyTo: emailCfg.replyTo,
         to: orderData.customerEmail,
-        subject: `Bestellbestätigung ${shortOrderId} - Karriaro`,
+        subject: `Bestellbestätigung ${shortOrderId} - ${emailCfg.fromName}`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -829,8 +920,9 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
                 <style>
                     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: #0B1120; color: #C6A87C; padding: 30px; text-align: center; }
+                    .header { background: #0B1120; color: ${emailCfg.primaryColor}; padding: 30px; text-align: center; }
                     .header h1 { margin: 0; font-size: 24px; }
+                    .header p { margin: 5px 0 0 0; font-size: 12px; color: #9ca3af; letter-spacing: 2px; }
                     .content { padding: 30px; background: #f9f9f9; }
                     .order-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }
                     .order-number { font-size: 24px; font-weight: bold; color: #0B1120; letter-spacing: 2px; }
@@ -839,13 +931,14 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
                     .items-table th { background: #f3f4f6; font-size: 12px; text-transform: uppercase; }
                     .total-row { font-weight: bold; font-size: 18px; }
                     .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-                    .btn { display: inline-block; background: #C6A87C; color: #0B1120; padding: 12px 30px; text-decoration: none; font-weight: bold; border-radius: 4px; }
+                    .btn { display: inline-block; background: ${emailCfg.primaryColor}; color: ${isWebdesign ? '#ffffff' : '#0B1120'}; padding: 12px 30px; text-decoration: none; font-weight: bold; border-radius: 4px; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>KARRIARO</h1>
+                        <h1>${emailCfg.headerTitle}</h1>
+                        <p>${emailCfg.headerSubtitle}</p>
                     </div>
                     <div class="content">
                         <h2>Vielen Dank für Ihre Bestellung!</h2>
@@ -878,45 +971,29 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
                             </tbody>
                         </table>
 
+                        ${nextStepsHtml}
+
                         <p>Im Anhang finden Sie:</p>
                         <ul style="margin: 10px 0; padding-left: 20px; color: #374151;">
-                            <li>Ihre Rechnung als PDF</li>
-                            <li>Unsere Allgemeinen Geschäftsbedingungen (AGB)</li>
-                            <li>Unsere Datenschutzerklärung</li>
+                            ${attachmentInfo}
                         </ul>
 
                         <p style="text-align: center; margin-top: 30px;">
-                            <a href="https://karriaro.de/" class="btn">Bestellung im Dashboard ansehen</a>
+                            <a href="${emailCfg.dashboardUrl}" class="btn">${emailCfg.dashboardText}</a>
                         </p>
 
                         <p style="margin-top: 30px;">Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.</p>
-                        <p>Mit besten Grüßen,<br><strong>Ihr Karriaro Team</strong></p>
+                        <p>Mit besten Grüßen,<br><strong>Ihr ${emailCfg.fromName} Team</strong></p>
                     </div>
                     <div class="footer">
-                        <p>Karriaro | Premium Career Services</p>
+                        <p>${emailCfg.footerText}</p>
                         <p>Diese E-Mail wurde automatisch generiert.</p>
                     </div>
                 </div>
             </body>
             </html>
         `,
-        attachments: [
-            {
-                filename: `Rechnung_${shortOrderId}.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-            },
-            {
-                filename: 'AGB_Karriaro.pdf',
-                content: agbBuffer,
-                contentType: 'application/pdf'
-            },
-            {
-                filename: 'Datenschutzerklaerung_Karriaro.pdf',
-                content: datenschutzBuffer,
-                contentType: 'application/pdf'
-            }
-        ]
+        attachments
     };
 
     await transporter.sendMail(mailOptions);
