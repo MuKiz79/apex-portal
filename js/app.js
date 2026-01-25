@@ -813,21 +813,12 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
 
             await updateProfile(user, { displayName: `${firstname} ${lastname}` });
 
-            // Send verification email with action URL
+            // Send verification email - ohne actionCodeSettings (einfacher und zuverlässiger)
             try {
-                const actionCodeSettings = {
-                    url: window.location.origin,
-                    handleCodeInApp: false
-                };
-                await sendEmailVerification(user, actionCodeSettings);
+                await sendEmailVerification(user);
+                console.log('Verification email sent successfully to:', email);
             } catch (emailError) {
-                console.warn('Verification email could not be sent:', emailError.message);
-                // Versuche ohne actionCodeSettings
-                try {
-                    await sendEmailVerification(user);
-                } catch (e) {
-                    console.warn('Verification email failed completely:', e.message);
-                }
+                console.error('Verification email failed:', emailError.code, emailError.message);
             }
             await signOut(auth);
 
@@ -868,6 +859,7 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
             }
         }
     } catch (error) {
+        console.error('Auth error:', error.code, error.message);
         let errorMessage = error.message;
         if (error.code) errorMessage = getFirebaseErrorMessage(error.code);
 
@@ -9149,6 +9141,178 @@ export async function deleteCoach(coachId) {
     } catch (e) {
         logger.error('Error deleting coach:', e);
         showToast('Fehler beim Löschen');
+    }
+}
+
+// ===== MANUAL INVOICE MODAL =====
+
+let invoiceItems = [];
+
+export function openInvoiceModal() {
+    const modal = document.getElementById('invoice-modal');
+    if (!modal) return;
+
+    // Reset form
+    document.getElementById('invoice-form').reset();
+    invoiceItems = [{ title: '', price: 0, quantity: 1 }];
+    renderInvoiceItems();
+    updateInvoiceTotal();
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+export function closeInvoiceModal() {
+    const modal = document.getElementById('invoice-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+export function addInvoiceItem() {
+    invoiceItems.push({ title: '', price: 0, quantity: 1 });
+    renderInvoiceItems();
+}
+
+export function removeInvoiceItem(index) {
+    if (invoiceItems.length > 1) {
+        invoiceItems.splice(index, 1);
+        renderInvoiceItems();
+        updateInvoiceTotal();
+    }
+}
+
+export function updateInvoiceItem(index, field, value) {
+    if (field === 'price' || field === 'quantity') {
+        invoiceItems[index][field] = parseFloat(value) || 0;
+    } else {
+        invoiceItems[index][field] = value;
+    }
+    updateInvoiceTotal();
+}
+
+function renderInvoiceItems() {
+    const container = document.getElementById('invoice-items-container');
+    if (!container) return;
+
+    container.innerHTML = invoiceItems.map((item, index) => `
+        <div class="flex gap-2 items-start p-3 bg-gray-50 rounded-lg">
+            <div class="flex-1">
+                <input type="text"
+                       value="${item.title}"
+                       onchange="app.updateInvoiceItem(${index}, 'title', this.value)"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold"
+                       placeholder="Bezeichnung (z.B. Business Paket)">
+            </div>
+            <div class="w-24">
+                <input type="number"
+                       value="${item.price}"
+                       onchange="app.updateInvoiceItem(${index}, 'price', this.value)"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold text-right"
+                       placeholder="Preis" min="0" step="0.01">
+            </div>
+            <div class="w-16">
+                <input type="number"
+                       value="${item.quantity}"
+                       onchange="app.updateInvoiceItem(${index}, 'quantity', this.value)"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold text-center"
+                       placeholder="Anz." min="1">
+            </div>
+            <button type="button"
+                    onclick="app.removeInvoiceItem(${index})"
+                    class="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition ${invoiceItems.length === 1 ? 'opacity-30 cursor-not-allowed' : ''}">
+                <i class="fas fa-trash-alt text-sm"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function updateInvoiceTotal() {
+    const total = invoiceItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totalElement = document.getElementById('invoice-total');
+    if (totalElement) {
+        totalElement.textContent = `€${total.toFixed(2).replace('.', ',')}`;
+    }
+}
+
+export async function createManualInvoice() {
+    const service = document.getElementById('invoice-service').value;
+    const customerName = document.getElementById('invoice-customer-name').value.trim();
+    const customerEmail = document.getElementById('invoice-customer-email').value.trim();
+    const paymentMethod = document.querySelector('input[name="invoice-payment"]:checked')?.value || 'vorkasse';
+    const notes = document.getElementById('invoice-notes').value.trim();
+
+    // Validate required fields
+    if (!service) {
+        showToast('Bitte Service wählen');
+        return;
+    }
+    if (!customerName || !customerEmail) {
+        showToast('Bitte Kundenname und E-Mail eingeben');
+        return;
+    }
+
+    // Validate items
+    const validItems = invoiceItems.filter(item => item.title && item.price > 0);
+    if (validItems.length === 0) {
+        showToast('Bitte mindestens eine Position mit Bezeichnung und Preis eingeben');
+        return;
+    }
+
+    // Get address if provided
+    const addressLine1 = document.getElementById('invoice-address-line1').value.trim();
+    const addressPostal = document.getElementById('invoice-address-postal').value.trim();
+    const addressCity = document.getElementById('invoice-address-city').value.trim();
+    const addressCountry = document.getElementById('invoice-address-country').value;
+
+    const customerAddress = addressLine1 ? {
+        line1: addressLine1,
+        postalCode: addressPostal,
+        city: addressCity,
+        country: addressCountry
+    } : null;
+
+    // Disable button
+    const submitBtn = document.getElementById('invoice-submit-btn');
+    const originalContent = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird erstellt...';
+
+    try {
+        const response = await fetch('https://us-central1-apex-executive.cloudfunctions.net/createManualInvoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customerName,
+                customerEmail,
+                customerAddress,
+                items: validItems,
+                service,
+                paymentMethod,
+                notes: notes || null,
+                adminEmail: auth.currentUser?.email
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Fehler beim Erstellen der Rechnung');
+        }
+
+        showToast(`Rechnung ${result.invoiceNumber} erstellt und versendet!`, 'success');
+        closeInvoiceModal();
+
+        // Refresh orders list
+        loadAllOrders();
+
+    } catch (error) {
+        logger.error('Error creating manual invoice:', error);
+        showToast(error.message || 'Fehler beim Erstellen der Rechnung');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalContent;
     }
 }
 

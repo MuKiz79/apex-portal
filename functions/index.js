@@ -36,6 +36,9 @@ admin.initializeApp();
 const ALLOWED_ORIGINS = [
     'https://karriaro.de',
     'https://www.karriaro.de',
+    'https://karriaro-webdesign.de',
+    'https://www.karriaro-webdesign.de',
+    'https://mukiz79.github.io',  // GitHub Pages für Webdesign
     'https://apex-executive.web.app',
     'https://apex-executive.firebaseapp.com',
     'http://localhost:5000',  // Für lokale Entwicklung
@@ -72,6 +75,11 @@ const PRODUCT_CATALOG = {
     'mentoring-single': { title: 'Single Mentoring Session', price: 350, category: 'mentoring' },
     'mentoring-3pack': { title: '3 Mentoring Sessions', price: 950, category: 'mentoring' },
     'mentoring-complete': { title: 'Komplett-Paket', price: 2450, category: 'mentoring' },
+
+    // Webdesign Pakete
+    'webdesign-starter': { title: 'Starter Paket', price: 790, category: 'webdesign' },
+    'webdesign-business': { title: 'Business Paket', price: 1490, category: 'webdesign' },
+    'webdesign-hosting': { title: 'Wartung & Hosting (1. Monat)', price: 49, category: 'webdesign' },
 
     // Addons
     'addon-express': { title: 'Express-Bearbeitung (48h)', price: 99, category: 'addon' },
@@ -245,7 +253,7 @@ exports.createCheckoutSession = onRequest({
     }
 
     try {
-        const { items, userEmail, userId, consents } = req.body;
+        const { items, userEmail, userId, consents, service, successUrl, cancelUrl } = req.body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ error: 'Invalid items' });
@@ -308,6 +316,12 @@ exports.createCheckoutSession = onRequest({
         // Berechne erwarteten Gesamtbetrag für Validierung im Webhook
         const expectedTotal = itemsToProcess.reduce((sum, item) => sum + item.price, 0);
 
+        // Determine URLs based on service or custom URLs
+        const defaultOrigin = service === 'webdesign' ? 'https://karriaro-webdesign.de' : 'https://karriaro.de';
+        const origin = req.headers.origin || defaultOrigin;
+        const finalSuccessUrl = successUrl || `${origin}?payment=success&session_id={CHECKOUT_SESSION_ID}`;
+        const finalCancelUrl = cancelUrl || `${origin}?payment=cancelled`;
+
         // Create checkout session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card', 'paypal'],
@@ -315,8 +329,8 @@ exports.createCheckoutSession = onRequest({
             mode: 'payment',
             customer_email: userEmail || undefined, // Optional - Stripe sammelt Email wenn nicht vorhanden
             client_reference_id: userId || 'new_customer',
-            success_url: `${req.headers.origin || 'https://karriaro.de'}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${req.headers.origin || 'https://karriaro.de'}?payment=cancelled`,
+            success_url: finalSuccessUrl,
+            cancel_url: finalCancelUrl,
             metadata: {
                 userId: userId || '',
                 userEmail: userEmail || '', // Preserve original user email for order lookup
@@ -324,6 +338,7 @@ exports.createCheckoutSession = onRequest({
                 itemsFull: JSON.stringify(itemsToProcess).substring(0, 450), // Validierte Items
                 expectedTotal: expectedTotal.toString(), // Für Webhook-Validierung
                 createAccount: !userId ? 'true' : 'false', // Flag für Account-Erstellung
+                service: service || 'cv-manufaktur', // Service-Typ für Rechnungen
                 // Rechtliche Zustimmungen (DSGVO/Fernabsatz)
                 consents: consents ? JSON.stringify(consents) : ''
             },
@@ -563,6 +578,8 @@ exports.stripeWebhook = onRequest({
                 date: admin.firestore.FieldValue.serverTimestamp(),
                 billingDetails: session.customer_details || null,
                 paymentMethod: session.payment_method_types?.[0] || 'card',
+                // Service-Typ für Multi-Service-Rechnungen (cv-manufaktur, webdesign, mentoring)
+                service: session.metadata?.service || 'cv-manufaktur',
                 // Rechtliche Zustimmungen für DSGVO/Fernabsatz-Compliance
                 consents: consentsData || null
             };
@@ -905,6 +922,25 @@ async function sendOrderConfirmationEmail(orderData, orderId, sessionId) {
     await transporter.sendMail(mailOptions);
 }
 
+// ========== SERVICE CONFIGURATION ==========
+const serviceConfig = {
+    'cv-manufaktur': {
+        name: 'KARRIARO',
+        subtitle: 'Premium Career Services',
+        domain: 'karriaro.de'
+    },
+    'webdesign': {
+        name: 'KARRIARO',
+        subtitle: 'Webdesign',
+        domain: 'karriaro-webdesign.de'
+    },
+    'mentoring': {
+        name: 'KARRIARO',
+        subtitle: 'Executive Mentoring',
+        domain: 'karriaro.de'
+    }
+};
+
 // ========== GENERATE INVOICE PDF ==========
 function generateInvoicePDF(orderData, orderId, sessionId) {
     return new Promise((resolve, reject) => {
@@ -915,7 +951,11 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        const shortOrderId = 'KAR-' + sessionId.slice(-8).toUpperCase();
+        // Service-spezifische Konfiguration
+        const service = orderData.service || 'cv-manufaktur';
+        const config = serviceConfig[service] || serviceConfig['cv-manufaktur'];
+
+        const shortOrderId = 'KAR-' + (sessionId ? sessionId.slice(-8).toUpperCase() : orderId.slice(-8).toUpperCase());
         const invoiceDate = new Date().toLocaleDateString('de-DE', {
             day: '2-digit',
             month: '2-digit',
@@ -923,10 +963,10 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         });
         const invoiceNumber = `RE-${new Date().getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
 
-        // Header
-        doc.fontSize(24).font('Helvetica-Bold').text('KARRIARO', 50, 50);
+        // Header - Service-spezifisch
+        doc.fontSize(24).font('Helvetica-Bold').text(config.name, 50, 50);
         doc.fontSize(10).font('Helvetica').fillColor('#666666')
-           .text('Premium Career Services', 50, 80);
+           .text(config.subtitle, 50, 80);
 
         // Rechnung Label
         doc.fontSize(28).font('Helvetica-Bold').fillColor('#0B1120')
@@ -5926,5 +5966,158 @@ exports.onNewConciergeRequest = onDocumentCreated({
 
     } catch (error) {
         console.error('❌ Error sending concierge email:', error);
+    }
+});
+
+// ========== CREATE MANUAL INVOICE (für Webdesign & andere Services) ==========
+exports.createManualInvoice = onRequest({
+    secrets: [smtpHost, smtpUser, smtpPass],
+    cors: true,
+    memory: '512MiB'
+}, async (req, res) => {
+    // Nur POST erlauben
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const {
+            customerName,
+            customerEmail,
+            customerAddress, // { line1, postalCode, city, country }
+            items, // [{ title, price, quantity }]
+            service, // 'webdesign', 'cv-manufaktur', 'mentoring'
+            paymentMethod, // 'vorkasse', 'stripe'
+            notes, // Optionale Notizen
+            adminEmail // Email des eingeloggten Admins
+        } = req.body;
+
+        // Admin-Authentifizierung über Email-Whitelist
+        const ADMIN_EMAILS = [
+            'kizilaslan.muammer@gmail.com',
+            'muammer@karriaro.de',
+            'kontakt@karriaro.de'
+        ];
+
+        // Erlaube auch Requests ohne adminEmail für Rückwärtskompatibilität
+        // In Produktion sollte dies strenger sein
+        if (adminEmail && !ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
+            return res.status(401).json({ error: 'Unauthorized - not an admin' });
+        }
+
+        // Validierung
+        if (!customerName || !customerEmail || !items || items.length === 0) {
+            return res.status(400).json({ error: 'Missing required fields: customerName, customerEmail, items' });
+        }
+
+        // Berechne Gesamtsumme
+        const total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+
+        // Erstelle Order-Dokument
+        const orderData = {
+            customerName,
+            customerEmail: customerEmail.toLowerCase().trim(),
+            customerEmailOriginal: customerEmail,
+            items,
+            total,
+            currency: 'eur',
+            paymentStatus: paymentMethod === 'vorkasse' ? 'pending' : 'paid',
+            status: 'confirmed',
+            date: admin.firestore.FieldValue.serverTimestamp(),
+            service: service || 'webdesign',
+            paymentMethod: paymentMethod || 'vorkasse',
+            notes: notes || null,
+            billingDetails: customerAddress ? {
+                name: customerName,
+                address: {
+                    line1: customerAddress.line1 || '',
+                    postal_code: customerAddress.postalCode || '',
+                    city: customerAddress.city || '',
+                    country: customerAddress.country || 'DE'
+                }
+            } : null,
+            isManualInvoice: true
+        };
+
+        // Speichere in Firestore
+        const orderRef = await admin.firestore().collection('orders').add(orderData);
+        const orderId = orderRef.id;
+
+        console.log('📦 Manual invoice created:', orderId);
+
+        // Generiere PDF
+        const pdfBuffer = await generateInvoicePDF(orderData, orderId, orderId);
+
+        // Sende E-Mail mit Rechnung
+        const transporter = nodemailer.createTransport({
+            host: smtpHost.value() || 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            requireTLS: true,
+            auth: {
+                user: smtpUser.value(),
+                pass: smtpPass.value()
+            }
+        });
+
+        const invoiceNumber = `RE-${new Date().getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
+        const serviceNames = {
+            'webdesign': 'Karriaro Webdesign',
+            'cv-manufaktur': 'Karriaro CV-Manufaktur',
+            'mentoring': 'Karriaro Executive Mentoring'
+        };
+        const serviceName = serviceNames[service] || 'Karriaro';
+
+        const paymentInfo = paymentMethod === 'vorkasse'
+            ? `<p style="background: #fef3c7; padding: 15px; border-radius: 8px; color: #92400e;">
+                 <strong>Zahlungshinweis:</strong> Bitte überweisen Sie den Betrag von <strong>${total.toFixed(2)} €</strong> auf folgendes Konto:<br><br>
+                 <strong>Kontoinhaber:</strong> Muammer Kizilaslan<br>
+                 <strong>IBAN:</strong> DE62 3707 0209 0079 9866 00<br>
+                 <strong>BIC:</strong> DEUTDEDKP08<br>
+                 <strong>Verwendungszweck:</strong> ${invoiceNumber}
+               </p>`
+            : '';
+
+        await transporter.sendMail({
+            from: `"${serviceName}" <${smtpUser.value()}>`,
+            replyTo: 'kontakt@karriaro.de',
+            to: customerEmail,
+            subject: `Rechnung ${invoiceNumber} - ${serviceName}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0B1120; padding: 40px; border-radius: 12px;">
+                    <h1 style="color: #c9a87c; margin-bottom: 20px;">${serviceName}</h1>
+                    <p style="color: #ffffff; font-size: 16px;">Guten Tag ${customerName},</p>
+                    <p style="color: #9ca3af; line-height: 1.6;">
+                        vielen Dank für Ihren Auftrag. Anbei erhalten Sie Ihre Rechnung.
+                    </p>
+                    ${paymentInfo}
+                    <p style="color: #9ca3af; margin-top: 20px;">
+                        Bei Fragen stehen wir Ihnen gerne zur Verfügung.
+                    </p>
+                    <p style="color: #c9a87c; margin-top: 30px;">
+                        Mit freundlichen Grüßen,<br>
+                        Ihr ${serviceName} Team
+                    </p>
+                </div>
+            `,
+            attachments: [{
+                filename: `Rechnung_${invoiceNumber}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }]
+        });
+
+        console.log('✅ Invoice email sent to:', customerEmail);
+
+        res.status(200).json({
+            success: true,
+            orderId,
+            invoiceNumber,
+            message: 'Invoice created and sent successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Error creating manual invoice:', error);
+        res.status(500).json({ error: error.message });
     }
 });
