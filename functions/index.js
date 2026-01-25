@@ -1063,8 +1063,9 @@ function generateInvoicePDF(orderData, orderId, sessionId) {
         const footerY = 750;
         doc.moveTo(50, footerY).lineTo(545, footerY).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
 
+        const footerEmail = service === 'webdesign' ? 'kontakt@karriaro-webdesign.de' : 'kontakt@karriaro.de';
         doc.fontSize(8).font('Helvetica').fillColor('#999999')
-           .text('Karriaro | Premium Career Services', 50, footerY + 10, { align: 'center', width: 495 })
+           .text(`${config.name} | ${config.subtitle} | ${config.domain} | ${footerEmail}`, 50, footerY + 10, { align: 'center', width: 495 })
            .text('Diese Rechnung wurde maschinell erstellt und ist ohne Unterschrift gültig.', 50, footerY + 22, { align: 'center', width: 495 });
 
         doc.end();
@@ -1091,10 +1092,14 @@ function generateCreditNotePDF(orderData, orderId, refundData) {
         const creditNoteNumber = `GS-${new Date().getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
         const originalInvoiceNumber = `RE-${new Date(orderData.createdAt?.seconds * 1000 || Date.now()).getFullYear()}-${orderId.slice(-6).toUpperCase()}`;
 
-        // Header
-        doc.fontSize(24).font('Helvetica-Bold').text('KARRIARO', 50, 50);
+        // Service-spezifische Konfiguration
+        const service = orderData.service || 'cv-manufaktur';
+        const config = serviceConfig[service] || serviceConfig['cv-manufaktur'];
+
+        // Header - Service-spezifisch
+        doc.fontSize(24).font('Helvetica-Bold').text(config.name, 50, 50);
         doc.fontSize(10).font('Helvetica').fillColor('#666666')
-           .text('Premium Career Services', 50, 80);
+           .text(config.subtitle, 50, 80);
 
         // Gutschrift Label (rot)
         doc.fontSize(28).font('Helvetica-Bold').fillColor('#dc2626')
@@ -1218,8 +1223,9 @@ function generateCreditNotePDF(orderData, orderId, refundData) {
         const footerY = 750;
         doc.moveTo(50, footerY).lineTo(545, footerY).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
 
+        const creditNoteFooterEmail = service === 'webdesign' ? 'kontakt@karriaro-webdesign.de' : 'kontakt@karriaro.de';
         doc.fontSize(8).font('Helvetica').fillColor('#999999')
-           .text('Karriaro | Premium Career Services', 50, footerY + 10, { align: 'center', width: 495 })
+           .text(`${config.name} | ${config.subtitle} | ${config.domain} | ${creditNoteFooterEmail}`, 50, footerY + 10, { align: 'center', width: 495 })
            .text('Diese Gutschrift wurde maschinell erstellt und ist ohne Unterschrift gültig.', 50, footerY + 22, { align: 'center', width: 495 });
 
         doc.end();
