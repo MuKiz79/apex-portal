@@ -494,11 +494,11 @@
         <div id="page-nav" class="sticky top-20 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transform -translate-y-full opacity-0 transition-all duration-300" style="display: none;">
             <div class="max-w-4xl mx-auto px-4">
                 <nav class="flex items-center justify-center gap-1 md:gap-3 py-3 overflow-x-auto scrollbar-hide">
-                    <button onclick="app.scrollToSection('cv-packages')" class="page-nav-link whitespace-nowrap px-4 py-2 text-xs md:text-sm font-medium text-gray-600 hover:text-brand-gold hover:bg-brand-gold/5 rounded-full transition-all">
-                        Pakete
-                    </button>
                     <button onclick="app.scrollToSection('testimonials')" class="page-nav-link whitespace-nowrap px-4 py-2 text-xs md:text-sm font-medium text-gray-600 hover:text-brand-gold hover:bg-brand-gold/5 rounded-full transition-all">
                         Ergebnisse
+                    </button>
+                    <button onclick="app.scrollToSection('cv-packages')" class="page-nav-link whitespace-nowrap px-4 py-2 text-xs md:text-sm font-medium text-gray-600 hover:text-brand-gold hover:bg-brand-gold/5 rounded-full transition-all">
+                        Pakete
                     </button>
                     <button onclick="app.scrollToSection('faq')" class="page-nav-link whitespace-nowrap px-4 py-2 text-xs md:text-sm font-medium text-gray-600 hover:text-brand-gold hover:bg-brand-gold/5 rounded-full transition-all">
                         FAQ
@@ -507,13 +507,57 @@
             </div>
         </div>
 
-        <!-- Drei Stufen — ein Angebot -->
-        <section id="cv-packages" class="py-24 md:py-[120px] bg-white relative">
+        <!-- 1. SOCIAL PROOF — Beweis vor Verkauf -->
+        <section class="py-32 md:py-44 bg-white" id="testimonials">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center scroll-reveal">
+                <blockquote class="font-serif text-3xl md:text-4xl lg:text-5xl text-brand-dark leading-tight mb-12">
+                    "Ich muss mich nicht mehr bewerben —<br><span class="text-brand-gold">die Firmen bewerben sich bei mir."</span>
+                </blockquote>
+                <div class="flex items-center justify-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand-gold/30 to-brand-dark/20 flex items-center justify-center">
+                        <span class="font-serif text-brand-dark text-sm font-bold">S.K.</span>
+                    </div>
+                    <div class="text-left">
+                        <p class="font-semibold text-brand-dark text-sm">Stefan K.</p>
+                        <p class="text-gray-400 text-xs">Marketing Director · Technologiekonzern</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. SO FUNKTIONIERT'S — 3 Schritte -->
+        <section class="py-32 md:py-44 bg-gray-50">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-20 scroll-reveal">
+                    <h2 class="font-serif text-3xl md:text-5xl text-brand-dark">Drei Schritte. Kein Aufwand.</h2>
+                </div>
+                <div class="grid md:grid-cols-3 gap-16 md:gap-12 scroll-reveal-stagger">
+                    <div class="text-center">
+                        <div class="text-5xl font-serif text-brand-gold/30 mb-6">01</div>
+                        <h3 class="font-serif text-xl text-brand-dark mb-3">Fragebogen ausfüllen</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">20 Minuten. Online. Ihre Karriere-Highlights, Ziele und Positionierung.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-5xl font-serif text-brand-gold/30 mb-6">02</div>
+                        <h3 class="font-serif text-xl text-brand-dark mb-3">Ich schreibe</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">100 % Handarbeit. Ihre Stimme, Ihre Story — kein Template, keine KI.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-5xl font-serif text-brand-gold/30 mb-6">03</div>
+                        <h3 class="font-serif text-xl text-brand-dark mb-3">Sie positionieren sich</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">CV, LinkedIn, Coaching — alles abgestimmt. Bereit für den nächsten Schritt.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. PAKETE — ein Grid, klare Struktur -->
+        <section id="cv-packages" class="py-32 md:py-44 bg-white relative">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                <div class="text-center mb-14 scroll-reveal">
-                    <h2 class="font-serif text-3xl md:text-5xl text-brand-dark mb-4">Ihre Karriere verdient<br>Executive-Standard.</h2>
-                    <p class="text-gray-500 max-w-lg mx-auto">Drei Stufen. Alles inklusive. Persönlich vom Vorstand erstellt.</p>
+                <div class="text-center mb-20 scroll-reveal">
+                    <h2 class="font-serif text-3xl md:text-5xl text-brand-dark mb-5">Wählen Sie Ihr Paket.</h2>
+                    <p class="text-gray-400 max-w-md mx-auto">Persönlich erstellt. Steuerlich absetzbar.</p>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-6 items-stretch scroll-reveal-stagger">
@@ -521,21 +565,19 @@
                     <!-- STARTER -->
                     <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl hover:border-brand-gold/30 transition-all duration-300 flex flex-col">
                         <div class="mb-8">
-                            <span class="text-xs text-gray-400 uppercase tracking-widest">Starke Unterlagen. Schnell fertig.</span>
-                            <h3 class="font-serif text-2xl text-brand-dark mt-2">Starter</h3>
+                            <h3 class="font-serif text-2xl text-brand-dark">Starter</h3>
+                            <p class="text-sm text-gray-400 mt-1">Starke Unterlagen. Schnell fertig.</p>
                         </div>
 
                         <div class="mb-8">
-                            <div class="flex items-baseline gap-1">
-                                <span id="cv-young-price" class="text-5xl font-serif text-brand-dark">€490</span>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-1">zzgl. MwSt. · Lieferung in 5–7 Tagen</p>
+                            <span id="cv-young-price" class="text-5xl font-serif text-brand-dark">€490</span>
+                            <p class="text-xs text-gray-400 mt-2">zzgl. MwSt. · 5–7 Tage</p>
                         </div>
 
                         <div class="space-y-3 mb-8 flex-grow">
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-700">Ihr CV + maßgeschneidertes Anschreiben</span>
+                                <span class="text-gray-700">CV + Anschreiben</span>
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
@@ -543,7 +585,7 @@
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-700">LinkedIn-Profil Audit</span>
+                                <span class="text-gray-700">LinkedIn-Audit</span>
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
@@ -556,22 +598,20 @@
                         </button>
                     </div>
 
-                    <!-- PROFESSIONAL — empfohlen -->
+                    <!-- PROFESSIONAL -->
                     <div class="bg-white border-2 border-brand-gold rounded-2xl p-8 hover:shadow-xl transition-all duration-300 flex flex-col relative">
                         <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
                             <span class="bg-brand-gold text-brand-dark px-4 py-1.5 text-xs font-bold tracking-wide rounded-full shadow-lg">Meist gewählt</span>
                         </div>
 
                         <div class="mb-8 pt-2">
-                            <span class="text-xs text-brand-gold uppercase tracking-widest font-medium">Wenn es jetzt zählt.</span>
-                            <h3 class="font-serif text-2xl text-brand-dark mt-2">Professional</h3>
+                            <h3 class="font-serif text-2xl text-brand-dark">Professional</h3>
+                            <p class="text-sm text-brand-gold mt-1">Wenn es jetzt zählt.</p>
                         </div>
 
                         <div class="mb-8">
-                            <div class="flex items-baseline gap-1">
-                                <span id="cv-senior-price" class="text-5xl font-serif text-brand-dark">€1.490</span>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-1">zzgl. MwSt. · Lieferung in 7–10 Tagen</p>
+                            <span id="cv-senior-price" class="text-5xl font-serif text-brand-dark">€1.490</span>
+                            <p class="text-xs text-gray-400 mt-2">zzgl. MwSt. · 7–10 Tage</p>
                         </div>
 
                         <div class="space-y-3 mb-8 flex-grow">
@@ -581,19 +621,15 @@
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-700">LinkedIn: von Grund auf neu aufgebaut</span>
+                                <span class="text-gray-700">LinkedIn komplett neu aufgebaut</span>
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-700">60 Minuten persönliches Coaching</span>
+                                <span class="text-gray-700">60 Min. persönliches Coaching</span>
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-700">Interview-Training mit Feedback</span>
-                            </div>
-                            <div class="flex items-start gap-3 text-sm">
-                                <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-700">1 Arbeitszeugnis inklusive</span>
+                                <span class="text-gray-700">Interview-Training</span>
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
@@ -613,15 +649,13 @@
                         </div>
 
                         <div class="mb-8 pt-2">
-                            <span class="text-xs text-brand-gold uppercase tracking-widest font-medium">Von Vorstand zu Vorstand.</span>
-                            <h3 class="font-serif text-2xl text-white mt-2">Executive</h3>
+                            <h3 class="font-serif text-2xl text-white">Executive</h3>
+                            <p class="text-sm text-brand-gold mt-1">Von Vorstand zu Vorstand.</p>
                         </div>
 
                         <div class="mb-8">
-                            <div class="flex items-baseline gap-1">
-                                <span id="cv-executive-price" class="text-5xl font-serif text-white">€2.990</span>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">zzgl. MwSt. · Lieferung in 10–14 Tagen</p>
+                            <span id="cv-executive-price" class="text-5xl font-serif text-white">€2.990</span>
+                            <p class="text-xs text-gray-500 mt-2">zzgl. MwSt. · 10–14 Tage</p>
                         </div>
 
                         <div class="space-y-3 mb-8 flex-grow">
@@ -639,31 +673,22 @@
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-300">Zweisprachig: Deutsch + Englisch</span>
+                                <span class="text-gray-300">Zweisprachig DE + EN</span>
                             </div>
                             <div class="flex items-start gap-3 text-sm">
                                 <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-300">Google-Präsenz-Audit</span>
-                            </div>
-                            <div class="flex items-start gap-3 text-sm">
-                                <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-300">2 Arbeitszeugnisse inklusive</span>
-                            </div>
-                            <div class="flex items-start gap-3 text-sm">
-                                <i class="fas fa-check text-brand-gold mt-0.5"></i>
-                                <span class="text-gray-300">30 Tage Sparring per E-Mail</span>
+                                <span class="text-gray-300">30 Tage E-Mail-Sparring</span>
                             </div>
                         </div>
 
                         <button onclick="app.openConciergeModal()" class="w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-white transition-all duration-300 rounded-full">
-                            Executive-Mandat anfragen
+                            Executive anfragen
                         </button>
                     </div>
 
                 </div>
 
-                <!-- Steuerhinweis -->
-                <p class="text-center text-xs text-gray-400 mt-8">Steuerlich absetzbar als Werbungskosten. Sie erhalten eine Rechnung. 100% diskret — NDA auf Wunsch.</p>
+                <p class="text-center text-xs text-gray-400 mt-10">Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch.</p>
 
                 <!-- Hidden elements for backwards compatibility -->
                 <div id="mentoring-packages-grid" class="hidden"></div>
@@ -673,78 +698,62 @@
             </div>
         </section>
 
-        <!-- Testimonial -->
-        <section class="py-20 md:py-28 bg-gray-50" id="testimonials">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center scroll-reveal">
-                <span class="text-brand-gold text-6xl md:text-8xl font-serif leading-none">"</span>
-                <blockquote class="font-serif text-2xl md:text-3xl lg:text-[2.5rem] text-brand-dark leading-snug mb-8 -mt-4">
-                    Ich muss mich nicht mehr bewerben —<br><span class="text-brand-gold">die Firmen bewerben sich bei mir.</span>
-                </blockquote>
-                <div class="flex items-center justify-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand-gold/30 to-brand-dark/20 flex items-center justify-center">
-                        <span class="font-serif text-brand-dark text-sm font-bold">S.K.</span>
-                    </div>
-                    <div class="text-left">
-                        <p class="font-semibold text-brand-dark text-sm">Stefan K.</p>
-                        <p class="text-gray-400 text-xs">Marketing Director · Technologiekonzern, München</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- FAQ — nur die 3 wichtigsten -->
-        <section id="faq" class="py-20 md:py-24 bg-white">
+        <!-- 4. FAQ -->
+        <section id="faq" class="py-32 md:py-44 bg-gray-50">
             <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-10 scroll-reveal">
-                    <h2 class="font-serif text-3xl md:text-4xl text-brand-dark">Drei Fragen, die alle stellen.</h2>
+                <div class="text-center mb-16 scroll-reveal">
+                    <h2 class="font-serif text-3xl md:text-5xl text-brand-dark">Häufige Fragen.</h2>
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-4">
 
-                    <div class="border border-gray-200 rounded-lg overflow-hidden" onclick="app.toggleFaq('faq-zeitaufwand')">
-                        <button class="w-full px-6 py-5 text-left flex justify-between items-center hover:bg-gray-50 transition">
+                    <div class="border border-gray-200 rounded-xl overflow-hidden bg-white" onclick="app.toggleFaq('faq-zeitaufwand')">
+                        <button class="w-full px-8 py-6 text-left flex justify-between items-center hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark">Wie viel Zeit brauche ich?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
                         </button>
                         <div id="faq-zeitaufwand" class="faq-content">
-                            <div class="px-6 pb-6 pt-4 text-gray-600 border-t border-gray-100">
-                                <p><strong class="text-brand-dark text-lg">30 Minuten.</strong> Sie füllen einen Fragebogen aus (20 Min.), geben Feedback (10 Min.) — fertig. Kein langes Briefing. Ich weiß, wie voll ein Kalender auf Führungsebene ist.</p>
+                            <div class="px-8 pb-6 pt-2 text-gray-600">
+                                <p><strong class="text-brand-dark">30 Minuten.</strong> Fragebogen ausfüllen, Feedback geben — fertig.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="border border-gray-200 rounded-lg overflow-hidden" onclick="app.toggleFaq('faq-ki-mensch')">
-                        <button class="w-full px-6 py-5 text-left flex justify-between items-center hover:bg-gray-50 transition">
+                    <div class="border border-gray-200 rounded-xl overflow-hidden bg-white" onclick="app.toggleFaq('faq-ki-mensch')">
+                        <button class="w-full px-8 py-6 text-left flex justify-between items-center hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark">Schreibt das eine KI?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
                         </button>
                         <div id="faq-ki-mensch" class="faq-content">
-                            <div class="px-6 pb-6 pt-4 text-gray-600 border-t border-gray-100">
-                                <p><strong class="text-brand-dark text-lg">Nein. 100% Handarbeit.</strong> Jeder Text wird persönlich geschrieben — mit Ihrer Stimme, nicht mit austauschbaren Floskeln. KI nutze ich nur für ATS-Checks und Rechtschreibung.</p>
+                            <div class="px-8 pb-6 pt-2 text-gray-600">
+                                <p><strong class="text-brand-dark">Nein. 100 % Handarbeit.</strong> Ihre Stimme, nicht austauschbare Floskeln.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-brand-gold/5 border-2 border-brand-gold/20 rounded-lg overflow-hidden" onclick="app.toggleFaq('faq-unzufrieden')">
-                        <button class="w-full px-6 py-5 text-left flex justify-between items-center hover:bg-brand-gold/10 transition">
+                    <div class="border border-gray-200 rounded-xl overflow-hidden bg-white" onclick="app.toggleFaq('faq-unzufrieden')">
+                        <button class="w-full px-8 py-6 text-left flex justify-between items-center hover:bg-gray-50 transition">
                             <span class="font-bold text-brand-dark">Was, wenn das Ergebnis nicht passt?</span>
                             <i class="fas fa-chevron-down text-brand-gold transition-transform duration-300"></i>
                         </button>
                         <div id="faq-unzufrieden" class="faq-content">
-                            <div class="px-6 pb-6 pt-4 text-gray-600 border-t border-brand-gold/10">
-                                <p><strong class="text-brand-dark text-lg">Dann arbeite ich weiter, bis Sie es sind.</strong> Unbegrenzte Korrekturen bei Professional und Executive. Mein Geschäft lebt von Empfehlungen — ich kann es mir nicht leisten, dass Sie unzufrieden sind.</p>
+                            <div class="px-8 pb-6 pt-2 text-gray-600">
+                                <p><strong class="text-brand-dark">Dann arbeite ich weiter, bis Sie zufrieden sind.</strong> Unbegrenzte Korrekturen bei Professional und Executive.</p>
                             </div>
                         </div>
                     </div>
 
                 </div>
+            </div>
+        </section>
 
-                <!-- CTA -->
-                <div class="mt-14 text-center scroll-reveal">
-                    <button onclick="app.openConciergeModal()" class="bg-brand-gold text-brand-dark px-12 py-4 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-brand-dark hover:text-white transition shadow-lg shadow-brand-gold/20">
-                        Lassen Sie uns sprechen
-                    </button>
-                    <p class="text-gray-400 text-xs mt-4">15 Minuten. Vertraulich. Auf Augenhöhe.</p>
-                </div>
+        <!-- 5. FINALER CTA — clean, einfach -->
+        <section class="py-32 md:py-44 bg-[#0B1120]">
+            <div class="max-w-2xl mx-auto px-4 text-center scroll-reveal">
+                <h2 class="font-serif text-3xl md:text-5xl text-white mb-6">Bereit?</h2>
+                <p class="text-white/50 text-lg mb-12">15 Minuten. Vertraulich. Auf Augenhöhe.</p>
+                <button onclick="app.openConciergeModal()" class="bg-brand-gold text-brand-dark px-12 py-4 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors">
+                    Kostenlose Erstberatung
+                </button>
             </div>
         </section>
 
