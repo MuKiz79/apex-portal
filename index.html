@@ -457,7 +457,7 @@
                 <!-- Foto mit Parallax -->
                 <div class="relative md:w-[45%] min-h-[40vh] md:min-h-full overflow-hidden">
                     <div id="hero-founder-fallback" class="absolute inset-0 bg-gradient-to-br from-[#1a2030] via-[#0f1520] to-[#0a0e18]"></div>
-                    <img id="hero-founder-image" src="" alt="Muammer Kizilaslan" class="absolute inset-0 w-full h-full object-cover object-top parallax-hero hero-photo" loading="eager" onload="if(this.src && this.naturalWidth){var fb=document.getElementById('hero-founder-fallback');if(fb)fb.style.opacity='0';}">
+                    <img id="hero-founder-image" src="" alt="Muammer Kizilaslan" class="absolute -top-[10%] left-0 w-full h-[120%] object-cover object-top parallax-hero hero-photo" loading="eager" onload="if(this.src && this.naturalWidth){var fb=document.getElementById('hero-founder-fallback');if(fb)fb.style.opacity='0';}">
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0B1120] hidden md:block"></div>
                     <div class="absolute inset-0 bg-gradient-to-t from-[#0B1120] via-transparent to-transparent md:hidden"></div>
                 </div>
@@ -6737,7 +6737,7 @@
                         const rect = heroSection.getBoundingClientRect();
                         if (rect.bottom > 0) {
                             const offset = window.scrollY * 0.15;
-                            heroImg.style.transform = 'translateY(' + offset + 'px) scale(1.05)';
+                            heroImg.style.transform = 'translateY(' + offset + 'px)';
                         }
                     }, { passive: true });
                 }
