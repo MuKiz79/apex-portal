@@ -6,8 +6,19 @@ import { auth, db, storage, navigateTo } from './core.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendEmailVerification, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, reload, applyActionCode } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { collection, getDocs, addDoc, doc, setDoc, updateDoc, query, where, orderBy, getDoc, deleteDoc, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, getMetadata, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
-import { validateEmail, validatePassword, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
+import { validateEmail, validatePassword, getPasswordStrengthLabel, getFirebaseErrorMessage, showToast, sanitizeHTML, validateEmailRealtime, validatePasswordMatch, saveCartToLocalStorage, loadCartFromLocalStorage } from './core.js';
+import { initI18n, setLocale as i18nSetLocale, t, getLocale } from './i18n.js';
+export { initI18n, i18nSetLocale, t, getLocale };
 import { sampleArticles } from './data.js';
+
+// ========== MODULE SPLIT (Phase 4A) ==========
+// Extrahierte Module: js/constants.js, js/state.js, js/i18n.js
+// Die Konstanten und State-Objekte sind in eigene Module ausgelagert.
+// app.js behält vorerst lokale Kopien für reibungslosen Übergang.
+// Nächste Schritte: auth.js, cart.js, dashboard.js, admin.js, etc. einzeln extrahieren.
+// Migration-Anleitung: Importe auskommentieren → lokale Kopie löschen → testen
+// import { IS_PRODUCTION, ORDER_STATUS, ADMIN_EMAILS, FILE_LIMITS, ALLOWED_FILE_TYPES, PAGINATION, PACKAGES, BUNDLES, formatPrice, logger } from './constants.js';
+// import { paginationState, currentMentorData, setCurrentMentorData } from './state.js';
 
 // ========== CONSTANTS ==========
 
@@ -47,7 +58,8 @@ const PAGINATION = {
     USERS_PER_PAGE: 20,
     ORDERS_PER_PAGE: 15,
     CALLS_PER_PAGE: 15,
-    DOCS_PER_PAGE: 20
+    DOCS_PER_PAGE: 20,
+    COACHES_PER_PAGE: 12
 };
 
 // ========== PACKAGE CONFIGURATION (Single Source of Truth) ==========
@@ -55,58 +67,63 @@ const PAGINATION = {
 export const PACKAGES = {
     // === CV PAKETE ===
     highPotential: {
-        id: 'high-potential',
-        name: 'High-Potential CV',
-        subtitle: 'Young Professionals',
-        targetGroup: 'Berufseinsteiger · Young Professionals',
-        price: 249,
-        description: 'Für Talente am Anfang ihrer Karriere.',
-        features: [
-            'Kompakter Premium-CV (2 Seiten)',
-            'ATS-optimiert',
-            'Template-Anschreiben'
-        ],
-        extras: '1 Feedbackrunde · Abnahmegarantie',
-        delivery: '3-5 Werktage',
-        revisions: 1,
-        strategyCall: null,
-        faqDescription: 'Kompaktes Einstiegspaket für Young Professionals. Enthält professionellen CV mit ATS-Optimierung und Template-Anschreiben.'
-    },
-    seniorProfessional: {
-        id: 'senior-professional',
-        name: 'Senior Professional',
-        subtitle: 'Manager · Senior Experts',
-        targetGroup: 'Manager · Senior Experts',
+        id: 'starter',
+        name: 'Starter',
+        subtitle: 'Starke Unterlagen. Schnell fertig.',
+        targetGroup: 'Professionals & Experten',
         price: 490,
-        description: 'Für Experten, die ihre Strategie schärfen wollen.',
+        description: 'Ihr CV + maßgeschneidertes Anschreiben, Strategie-Gespräch und LinkedIn Audit.',
         features: [
+            'Ihr CV + maßgeschneidertes Anschreiben',
             '30 Min. Strategie-Gespräch',
-            'Premium-CV + Anschreiben',
             'LinkedIn-Profil Audit'
         ],
-        extras: '2 Feedbackrunden · Abnahmegarantie',
+        extras: '2 Feedbackrunden',
         delivery: '5-7 Werktage',
         revisions: 2,
         strategyCall: 30,
-        faqDescription: 'Erweitert um USP-Erarbeitung, LinkedIn Profil-Audit, individuelles Anschreiben und Interview-Guide. Für erfahrene Professionals.'
+        faqDescription: 'Premium-CV mit Strategie-Gespräch und LinkedIn Audit. Für Professionals, die exzellente Unterlagen brauchen.'
     },
-    executiveCSuite: {
-        id: 'executive-csuite',
-        name: 'Executive & C-Level',
-        subtitle: 'Director · VP · C-Level',
-        targetGroup: 'Director · VP · C-Level',
-        price: 990,
-        description: 'Für Führungskräfte mit Board-Ambitionen.',
+    seniorProfessional: {
+        id: 'professional',
+        name: 'Professional',
+        subtitle: 'Wenn es jetzt zählt.',
+        targetGroup: 'Führungskräfte & Senior Experts',
+        price: 1490,
+        description: 'Alles aus Starter plus Coaching, Interview-Prep und Arbeitszeugnis.',
         features: [
-            '60 Min. Executive-Strategie',
-            'Board CV + Executive Bio',
-            'LinkedIn Premium-Optimierung'
+            'Alles aus Starter',
+            'LinkedIn: von Grund auf neu aufgebaut',
+            '60 Minuten persönliches Coaching',
+            'Interview-Training mit Feedback',
+            '1 Arbeitszeugnis inklusive'
         ],
-        extras: 'Unbegrenzte Korrekturen · 30 Tage Support',
+        extras: 'Unbegrenzte Korrekturen',
         delivery: '7-10 Werktage',
         revisions: 'Unbegrenzt',
         strategyCall: 60,
-        faqDescription: 'Das Premium-Paket für C-Level. Inkl. Executive Bio, Board-Ready One-Pager, LinkedIn Rebranding und Headhunter-Intros.'
+        faqDescription: 'Das Komplett-Paket: CV, LinkedIn, Coaching, Interview-Prep und Arbeitszeugnis. Für den nächsten Karriereschritt.'
+    },
+    executiveCSuite: {
+        id: 'executive',
+        name: 'Executive',
+        subtitle: 'Von Vorstand zu Vorstand.',
+        targetGroup: 'Director · VP · C-Level',
+        price: 2990,
+        description: 'Full-Service-Mandat mit Board CV, 3 Coaching-Sessions und 30 Tage Sparring.',
+        features: [
+            'Alles aus Professional',
+            'Executive Bio + Board CV',
+            '3 Coaching-Sessions',
+            'Zweisprachig: Deutsch + Englisch',
+            'Google-Präsenz-Audit',
+            '2 Arbeitszeugnisse'
+        ],
+        extras: '30 Tage Sparring per E-Mail',
+        delivery: '10-14 Werktage',
+        revisions: 'Unbegrenzt',
+        strategyCall: 60,
+        faqDescription: 'Das Full-Service-Mandat: Board CV, Executive Bio, 3 Coaching-Sessions, Google-Audit, 2 Arbeitszeugnisse und 30 Tage E-Mail-Sparring.'
     },
 
     // === MENTORING PAKETE ===
@@ -191,7 +208,8 @@ const paginationState = {
     users: { page: 1, total: 0, data: [], filteredData: [], searchTerm: '', filter: 'all' },
     orders: { page: 1, total: 0, data: [] },
     calls: { page: 1, total: 0, data: [] },
-    docs: { page: 1, total: 0, data: [] }
+    docs: { page: 1, total: 0, data: [] },
+    coaches: { page: 1, total: 0, data: [] }
 };
 
 // Production Logger - suppresses logs in production
@@ -272,6 +290,9 @@ export function changePage(type, page) {
             break;
         case 'calls':
             renderStrategyCallsList();
+            break;
+        case 'coaches':
+            renderAdminCoachesList();
             break;
     }
 }
@@ -559,9 +580,10 @@ export async function confirmNewPassword() {
     successDiv?.classList.add('hidden');
 
     // Validate passwords
-    if (!newPassword || newPassword.length < 6) {
+    const pwCheck = validatePassword(newPassword);
+    if (!pwCheck.valid) {
         if (errorDiv) {
-            errorDiv.textContent = 'Das Passwort muss mindestens 6 Zeichen lang sein.';
+            errorDiv.textContent = pwCheck.message || 'Passwort erfüllt nicht die Anforderungen.';
             errorDiv.classList.remove('hidden');
         }
         return;
@@ -705,7 +727,7 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
             const password = getVal('login-password');
 
             if (!validateEmail(email)) throw new Error('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
-            if (!validatePassword(password)) throw new Error('Das Passwort muss mindestens 6 Zeichen lang sein.');
+            if (!password || password.length < 1) throw new Error('Bitte geben Sie Ihr Passwort ein.');
 
             if(!auth) {
                 state.user = { email, uid: "demo-user" };
@@ -778,7 +800,8 @@ export async function handleAuth(isLoginMode, state, navigateTo) {
             }
             if (!validateEmail(email)) throw new Error('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
             if(pass !== passConfirm) throw new Error('Die Passwörter stimmen nicht überein.');
-            if (!validatePassword(pass)) throw new Error('Das Passwort muss mindestens 6 Zeichen lang sein.');
+            const pwResult = validatePassword(pass);
+            if (!pwResult.valid) throw new Error(pwResult.message || 'Passwort erfüllt nicht die Anforderungen.');
 
             if(!auth) {
                 // Demo Mode
@@ -907,7 +930,8 @@ export async function updateAuthUI(state) {
         if(dashUsername) dashUsername.textContent = displayName;
         if(userNameDisplay) userNameDisplay.textContent = displayName.substring(0, 12) + (displayName.length > 12 ? '...' : '');
 
-        // Show admin section only for admins
+        // Show admin section only for admins (Custom Claims + Fallback)
+        await checkAdminClaim();
         if (adminSection) {
             if (isAdmin(state.user.email)) {
                 adminSection.classList.remove('hidden');
@@ -1153,30 +1177,22 @@ export function updatePasswordStrength(password) {
         return;
     }
 
-    let strength = 0;
-    if (password.length >= 6) strength++;
-    if (password.length >= 10) strength++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-    if (/\d/.test(password)) strength++;
-    if (/[@$!%*?&#]/.test(password)) strength++;
+    const result = validatePassword(password);
+    const { label, color } = getPasswordStrengthLabel(result.score);
 
-    let strengthText = '';
-    let strengthClass = '';
+    const colorMap = {
+        red: { bar: 'password-weak', text: 'text-red-500' },
+        yellow: { bar: 'password-medium', text: 'text-yellow-500' },
+        blue: { bar: 'password-good', text: 'text-blue-500' },
+        green: { bar: 'password-strong', text: 'text-green-500' }
+    };
+    const cls = colorMap[color];
 
-    if (strength <= 2) {
-        strengthText = 'Schwach';
-        strengthClass = 'password-weak text-red-500';
-    } else if (strength <= 4) {
-        strengthText = 'Mittel';
-        strengthClass = 'password-medium text-yellow-500';
-    } else {
-        strengthText = 'Stark';
-        strengthClass = 'password-strong text-green-500';
-    }
+    const displayText = result.valid ? label : (result.message || label);
 
-    bar.className = `password-strength-bar h-full ${strengthClass.split(' ')[0]}`;
-    text.className = `text-xs mt-1 ${strengthClass}`;
-    text.textContent = strengthText;
+    bar.className = `password-strength-bar h-full ${cls.bar}`;
+    text.className = `text-xs mt-1 ${cls.text}`;
+    text.textContent = displayText;
 }
 
 export function validateEmailField(email) {
@@ -1418,7 +1434,7 @@ export async function submitConciergeForm(event) {
 
         // Close modal and show success
         closeConciergeModal();
-        showToast('Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.');
+        showToast('Vielen Dank! Ich melde mich innerhalb von 24 Stunden bei Ihnen.');
 
         // Reset form
         document.getElementById('concierge-name').value = '';
@@ -1950,7 +1966,7 @@ export async function loadUserOrders(state) {
                         <i class="fas fa-shopping-bag text-2xl text-gray-400" aria-hidden="true"></i>
                     </div>
                     <h3 class="font-bold text-gray-700 mb-2">Noch keine Bestellungen</h3>
-                    <p class="text-sm text-gray-500 mb-4">Entdecken Sie unsere Premium-Services</p>
+                    <p class="text-sm text-gray-500 mb-4">Entdecken Sie meine Premium-Services</p>
                     <button onclick="app.navigateToSection('home', 'cv-packages')" class="btn-primary">
                         <i class="fas fa-arrow-right mr-2"></i>Pakete ansehen
                     </button>
@@ -2189,7 +2205,7 @@ export function renderOrders(orders) {
                     <i class="fas fa-shopping-bag text-2xl text-gray-400" aria-hidden="true"></i>
                 </div>
                 <h3 class="font-bold text-gray-700 mb-2">Noch keine Bestellungen</h3>
-                <p class="text-sm text-gray-500 mb-4">Entdecken Sie unsere Premium-Services</p>
+                <p class="text-sm text-gray-500 mb-4">Entdecken Sie meine Premium-Services</p>
                 <button onclick="app.navigateToSection('home', 'cv-packages')" class="btn-primary">
                     <i class="fas fa-arrow-right mr-2"></i>Pakete ansehen
                 </button>
@@ -2541,7 +2557,7 @@ function renderSingleOrder(order, isExpanded = false) {
                                 <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
                                 <div class="text-xs text-amber-800">
                                     <p class="font-semibold mb-1">Hinweis zu Terminzeiten</p>
-                                    <p>Unsere Mentoren sind erfahrene Executives und daher in der Regel <strong>ab 18:00 Uhr</strong> verfügbar. Bitte beachten Sie dies bei Ihrer Terminauswahl.</p>
+                                    <p>Als aktiver Executive bin ich in der Regel <strong>ab 18:00 Uhr</strong> verfügbar. Bitte beachten Sie dies bei Ihrer Terminauswahl.</p>
                                 </div>
                             </div>
                         </div>
@@ -2745,8 +2761,8 @@ function formatFileSize(bytes) {
 const CV_CUSTOMER_STATUS = {
     'new': { label: 'Bestellung erhalten', color: 'bg-blue-100 text-blue-800', icon: 'fa-check-circle', description: 'Ihre Bestellung wurde bestätigt.' },
     'questionnaire_sent': { label: 'Fragebogen bereit', color: 'bg-yellow-100 text-yellow-800', icon: 'fa-edit', description: 'Bitte füllen Sie den Fragebogen aus.' },
-    'data_received': { label: 'Daten erhalten', color: 'bg-indigo-100 text-indigo-800', icon: 'fa-check-double', description: 'Wir haben Ihre Daten erhalten und arbeiten an Ihrem CV.' },
-    'generating': { label: 'CV wird erstellt', color: 'bg-purple-100 text-purple-800', icon: 'fa-cog fa-spin', description: 'Ihr CV wird gerade von unseren Experten erstellt.' },
+    'data_received': { label: 'Daten erhalten', color: 'bg-indigo-100 text-indigo-800', icon: 'fa-check-double', description: 'Ihre Daten sind eingegangen. Ich arbeite an Ihrem CV.' },
+    'generating': { label: 'CV wird erstellt', color: 'bg-purple-100 text-purple-800', icon: 'fa-cog fa-spin', description: 'Ihr CV wird gerade erstellt.' },
     'ready': { label: 'CV fertig', color: 'bg-green-100 text-green-800', icon: 'fa-file-alt', description: 'Ihr CV ist fertig und bereit zum Download!' },
     'delivered': { label: 'Zugestellt', color: 'bg-gray-100 text-gray-800', icon: 'fa-check-double', description: 'Ihr CV wurde Ihnen zugestellt.' }
 };
@@ -2811,8 +2827,8 @@ function getWorkflowForCvStatus(cvStatus, existingWorkflow) {
 // Beschreibung für den nächsten Schritt
 function getNextStepDescription(currentStep) {
     const descriptions = {
-        1: 'Bitte füllen Sie den Fragebogen aus, damit wir Ihren CV erstellen können.',
-        2: 'Ihre Daten wurden empfangen. Wir arbeiten an Ihrem CV.',
+        1: 'Bitte füllen Sie den Fragebogen aus, damit ich Ihren CV erstellen kann.',
+        2: 'Ihre Daten wurden empfangen. Ich arbeite an Ihrem CV.',
         3: 'Ihr CV wird gerade finalisiert.',
         4: 'Ihr CV ist fertig!'
     };
@@ -2966,7 +2982,7 @@ function renderWorkflowSteps(order) {
                 <div class="mt-4 bg-white/70 rounded-lg p-3 border border-brand-gold/20">
                     <p class="text-xs text-gray-600 flex items-start gap-2">
                         <i class="fas fa-info-circle text-brand-gold mt-0.5"></i>
-                        <span>Wir arbeiten an Ihrem CV. Sie erhalten eine E-Mail, sobald der Entwurf zur Überprüfung bereit ist.</span>
+                        <span>Ich arbeite an Ihrem CV. Sie erhalten eine E-Mail, sobald der Entwurf zur Überprüfung bereit ist.</span>
                     </p>
                 </div>
             ` : ''}
@@ -3240,7 +3256,7 @@ function getMentoringStatusMessage(order, currentStep, hasCoach, hasProposals, h
         return 'Ihr Coach wurde zugewiesen. Sie erhalten in Kürze Terminvorschläge per E-Mail.';
     }
 
-    return 'Wir weisen Ihnen einen passenden Coach zu. Sie werden per E-Mail benachrichtigt.';
+    return 'Ich melde mich bei Ihnen zur Terminvereinbarung. Sie werden per E-Mail benachrichtigt.';
 }
 
 // Render Multi-Session Workflow für 3er-Paket
@@ -3556,7 +3572,7 @@ function getQuickCheckStatusMessage(order, hasUploadedDocs, hasGutachten, isExpr
         return 'Ihr schriftliches Gutachten ist fertig! Sie können es hier herunterladen oder finden es in Ihrer E-Mail.';
     }
     if (hasUploadedDocs) {
-        return `Dokumente erhalten! Wir erstellen Ihr detailliertes schriftliches Gutachten. Sie erhalten es per E-Mail und können es hier im Dashboard herunterladen (${lieferzeit}).`;
+        return `Dokumente erhalten! Ich erstelle Ihr detailliertes schriftliches Gutachten. Sie erhalten es per E-Mail und können es hier im Dashboard herunterladen (${lieferzeit}).`;
     }
     return `Laden Sie Ihren aktuellen Lebenslauf hoch. Sie erhalten ein detailliertes schriftliches Gutachten per E-Mail und hier im Dashboard (${lieferzeit}).`;
 }
@@ -3599,7 +3615,7 @@ async function showQuestionnaireView(orderId, cvProjectId) {
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-brand-dark to-brand-dark/90 text-white p-6">
                     <h1 class="text-2xl font-serif mb-2">CV-Fragebogen</h1>
-                    <p class="text-gray-300 text-sm">Erzählen Sie uns von Ihrer Karriere - wir erstellen Ihren perfekten CV</p>
+                    <p class="text-gray-300 text-sm">Erzählen Sie mir von Ihrer Karriere - ich erstelle Ihren perfekten CV</p>
                 </div>
 
                 <form id="questionnaire-form" class="p-6 space-y-6">
@@ -3756,7 +3772,7 @@ async function showQuestionnaireView(orderId, cvProjectId) {
                             Fragebogen absenden
                         </button>
                         <p class="text-xs text-gray-500 text-center mt-3">
-                            Nach dem Absenden beginnen wir mit der Erstellung Ihres CVs
+                            Nach dem Absenden beginne ich mit der Erstellung Ihres CVs
                         </p>
                     </div>
                 </form>
@@ -4486,7 +4502,7 @@ function getOrderStatusInfo(status) {
             text: 'In Bearbeitung',
             class: 'processing',
             icon: 'fas fa-cog fa-spin',
-            description: 'Unsere Experten arbeiten an Ihrem Auftrag.'
+            description: 'Ich arbeite an Ihrem Auftrag.'
         },
         'review': {
             text: 'Qualitätsprüfung',
@@ -4786,7 +4802,7 @@ function renderProposalCalendarModal() {
                     <div class="mb-4">
                         <label class="text-sm font-medium text-gray-700 mb-2 block">Nachricht (optional)</label>
                         <textarea id="proposal-message" rows="2" placeholder="z.B. Vielen Dank für Ihre Bestellung..."
-                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none">Vielen Dank für Ihre Bestellung! Bitte wählen Sie einen der folgenden Termine für unser persönliches Gespräch. Wir freuen uns auf Sie!</textarea>
+                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-gold resize-none">Vielen Dank für Ihre Bestellung! Bitte wählen Sie einen der folgenden Termine für unser persönliches Gespräch. Ich freue mich auf Sie!</textarea>
                     </div>
                 ` : `
                     <!-- No Availability Warning -->
@@ -5278,7 +5294,7 @@ export async function confirmDeclineFromModal(state) {
                 logger.warn('Failed to send admin notification:', emailErr);
             }
 
-            showToast('Wir melden uns mit neuen Terminvorschlägen.');
+            showToast('Ich melde mich mit neuen Terminvorschlägen.');
             await loadUserOrders(state);
         }
     } catch (e) {
@@ -5390,7 +5406,7 @@ export async function openMentorAppointmentModal(orderId, coachId) {
                         <div class="flex items-start gap-2">
                             <i class="fas fa-lightbulb text-amber-600 mt-0.5"></i>
                             <p class="text-xs text-amber-800">
-                                <strong>Tipp:</strong> Als Executive sind unsere Mentoren meist <strong>ab 18:00 Uhr</strong> verfügbar.
+                                <strong>Tipp:</strong> Als aktiver Executive bin ich meist <strong>ab 18:00 Uhr</strong> verfügbar.
                                 Die Termine werden wöchentlich aktualisiert.
                             </p>
                         </div>
@@ -5512,8 +5528,8 @@ function showBookingConfirmationModal(orderId, datetime, skipComplianceCheck = f
                 <div>
                     <h4 class="font-semibold text-amber-800 text-sm mb-1">Compliance-Check erforderlich</h4>
                     <p class="text-amber-700 text-xs leading-relaxed">
-                        Vor der finalen Terminbestätigung führen wir einen kurzen Compliance-Check durch,
-                        um sicherzustellen, dass wir Ihnen den bestmöglichen Service bieten können.
+                        Vor der finalen Terminbestätigung führe ich einen kurzen Compliance-Check durch,
+                        um sicherzustellen, dass ich Ihnen den bestmöglichen Service bieten kann.
                         Sie erhalten innerhalb von 24 Stunden eine Bestätigung per E-Mail.
                     </p>
                 </div>
@@ -5671,7 +5687,7 @@ export function bookSessionWithComplianceCheck(productName, price, coachName) {
                             <div>
                                 <h4 class="font-semibold text-amber-800 text-sm mb-1">Compliance-Check erforderlich</h4>
                                 <p class="text-amber-700 text-xs leading-relaxed">
-                                    Nach Ihrer Bestellung führen wir einen Compliance-Check durch, um Interessenkonflikte
+                                    Nach Ihrer Bestellung führe ich einen Compliance-Check durch, um Interessenkonflikte
                                     auszuschließen (z.B. gleiche Branche, Wettbewerber). Bei erfolgreicher Prüfung wird
                                     <strong>${coachName || 'Ihr Wunschkandidat'}</strong> Ihr Mentor. Andernfalls wählen wir
                                     einen gleichwertigen Mentor für Sie aus.
@@ -6038,7 +6054,7 @@ export async function submitAlternativeProposal() {
         });
 
         closeMentorAppointmentModal();
-        showToast('✅ Terminvorschläge gesendet! Wir melden uns.');
+        showToast('Terminvorschläge gesendet! Ich melde mich.');
 
         // Reload orders
         if (window.app?.state?.user) {
@@ -7160,11 +7176,14 @@ export async function loadAboutImage() {
         }
 
         const imgElement = document.getElementById('about-founder-image');
-        if (!imgElement) return;
+        const heroImgElement = document.getElementById('hero-founder-image');
+        if (!imgElement && !heroImgElement) return;
 
         // Zeige Loading-Zustand
-        imgElement.style.opacity = '0.5';
-        imgElement.style.transition = 'opacity 0.3s ease-in-out';
+        if (imgElement) {
+            imgElement.style.opacity = '0.5';
+            imgElement.style.transition = 'opacity 0.3s ease-in-out';
+        }
 
         const docRef = doc(db, 'settings', 'about');
         const docSnap = await getDoc(docRef);
@@ -7177,20 +7196,31 @@ export async function loadAboutImage() {
                 // Preload das Bild im Hintergrund
                 const preloadImg = new Image();
                 preloadImg.onload = () => {
-                    imgElement.src = imageUrl;
-                    imgElement.style.opacity = '1';
+                    if (imgElement) {
+                        imgElement.src = imageUrl;
+                        imgElement.style.opacity = '1';
+                    }
+                    if (heroImgElement) {
+                        heroImgElement.src = imageUrl;
+                        heroImgElement.style.opacity = '1';
+                        const fallback = document.getElementById('hero-founder-fallback');
+                        if (fallback) fallback.style.opacity = '0';
+                    }
+                    // Also set mentor profile image if exists
+                    const mentorImg = document.getElementById('mentor-profile-image');
+                    if (mentorImg) mentorImg.src = imageUrl;
                     logger.log('✅ About image loaded from Firestore');
                 };
                 preloadImg.onerror = () => {
-                    imgElement.style.opacity = '1';
+                    if (imgElement) imgElement.style.opacity = '1';
                     logger.warn('Failed to preload about image');
                 };
                 preloadImg.src = imageUrl;
             } else {
-                imgElement.style.opacity = '1';
+                if (imgElement) imgElement.style.opacity = '1';
             }
         } else {
-            imgElement.style.opacity = '1';
+            if (imgElement) imgElement.style.opacity = '1';
             logger.log('No about image in Firestore, using default');
         }
     } catch (error) {
@@ -7314,7 +7344,7 @@ export async function submitWaitlist(event) {
             interviewNotes: ''
         });
 
-        showToast('✅ Erfolgreich auf die Warteliste gesetzt! Wir melden uns innerhalb von 5 Werktagen.');
+        showToast('Erfolgreich auf die Warteliste gesetzt! Ich melde mich innerhalb von 5 Werktagen.');
 
         // Clear form
         event.target.reset();
@@ -8087,7 +8117,7 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-600 mb-1">Passwort *</label>
-                                <input type="password" id="checkout-password" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="Mindestens 6 Zeichen">
+                                <input type="password" id="checkout-password" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-gold focus:border-brand-gold text-sm" placeholder="Mindestens 8 Zeichen">
                             </div>
                             <div id="checkout-register-error" class="hidden text-red-500 text-xs"></div>
                         </div>
@@ -8210,8 +8240,9 @@ function showCheckoutConfirmationModal(cart, total, hasUser) {
                     return;
                 }
 
-                if (password.length < 6) {
-                    errorDiv.textContent = 'Passwort muss mindestens 6 Zeichen haben.';
+                const checkoutPwCheck = validatePassword(password);
+                if (!checkoutPwCheck.valid) {
+                    errorDiv.textContent = checkoutPwCheck.message || 'Passwort erfüllt nicht die Anforderungen.';
                     errorDiv.classList.remove('hidden');
                     return;
                 }
@@ -8529,33 +8560,57 @@ export async function loadAdminCoaches() {
             window.app.state.coaches = coaches;
         }
 
-        if (coaches.length === 0) {
-            container.innerHTML = `
-                <div class="bg-white p-12 rounded-xl border border-dashed border-gray-200 text-center col-span-full">
-                    <i class="fas fa-user-tie text-gray-300 text-4xl mb-4"></i>
-                    <p class="text-gray-500 mb-4">Noch keine Mentoren angelegt</p>
-                    <button onclick="app.openAddCoachModal()" class="px-4 py-2 bg-brand-gold text-brand-dark font-bold rounded-lg hover:bg-yellow-500 transition text-sm">
-                        <i class="fas fa-plus mr-2"></i>Ersten Mentor anlegen
-                    </button>
-                </div>
-            `;
-            return;
-        }
+        // Pagination State aktualisieren
+        paginationState.coaches.data = coaches;
+        paginationState.coaches.total = coaches.length;
+        paginationState.coaches.page = 1;
 
-        // Update statistics
-        const totalCoaches = coaches.length;
-        const visibleCoaches = coaches.filter(c => c.visible !== false).length;
-        const hiddenCoaches = coaches.filter(c => c.visible === false).length;
+        renderAdminCoachesList();
+    } catch (e) {
+        logger.error('Error loading admin coaches:', e);
+        container.innerHTML = '<div class="bg-white p-8 rounded-xl border border-red-100 text-center text-red-500 col-span-full"><i class="fas fa-exclamation-circle text-2xl mb-2"></i><p class="text-sm">Fehler beim Laden der Mentoren</p></div>';
+    }
+}
 
-        const statTotal = document.getElementById('admin-stat-coaches-total');
-        const statVisible = document.getElementById('admin-stat-coaches-visible');
-        const statHidden = document.getElementById('admin-stat-coaches-hidden');
+function renderAdminCoachesList() {
+    const container = document.getElementById('admin-coaches-list');
+    if (!container) return;
 
-        if (statTotal) statTotal.textContent = totalCoaches;
-        if (statVisible) statVisible.textContent = visibleCoaches;
-        if (statHidden) statHidden.textContent = hiddenCoaches;
+    const coaches = paginationState.coaches.data;
 
-        container.innerHTML = coaches.map(coach => `
+    if (coaches.length === 0) {
+        container.innerHTML = `
+            <div class="bg-white p-12 rounded-xl border border-dashed border-gray-200 text-center col-span-full">
+                <i class="fas fa-user-tie text-gray-300 text-4xl mb-4"></i>
+                <p class="text-gray-500 mb-4">Noch keine Mentoren angelegt</p>
+                <button onclick="app.openAddCoachModal()" class="px-4 py-2 bg-brand-gold text-brand-dark font-bold rounded-lg hover:bg-yellow-500 transition text-sm">
+                    <i class="fas fa-plus mr-2"></i>Ersten Mentor anlegen
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    // Update statistics
+    const totalCoaches = coaches.length;
+    const visibleCoaches = coaches.filter(c => c.visible !== false).length;
+    const hiddenCoaches = coaches.filter(c => c.visible === false).length;
+
+    const statTotal = document.getElementById('admin-stat-coaches-total');
+    const statVisible = document.getElementById('admin-stat-coaches-visible');
+    const statHidden = document.getElementById('admin-stat-coaches-hidden');
+
+    if (statTotal) statTotal.textContent = totalCoaches;
+    if (statVisible) statVisible.textContent = visibleCoaches;
+    if (statHidden) statHidden.textContent = hiddenCoaches;
+
+    // Paginierung
+    const perPage = PAGINATION.COACHES_PER_PAGE;
+    const currentPage = paginationState.coaches.page;
+    const startIndex = (currentPage - 1) * perPage;
+    const paginatedCoaches = coaches.slice(startIndex, startIndex + perPage);
+
+    container.innerHTML = paginatedCoaches.map(coach => `
             <div class="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition group">
                 <!-- Header mit Bild -->
                 <div class="relative h-32 bg-gradient-to-br from-brand-dark to-gray-800">
@@ -8614,9 +8669,17 @@ export async function loadAdminCoaches() {
                 </div>
             </div>
         `).join('');
-    } catch (e) {
-        logger.error('Error loading admin coaches:', e);
-        container.innerHTML = '<div class="bg-white p-8 rounded-xl border border-red-100 text-center text-red-500 col-span-full"><i class="fas fa-exclamation-circle text-2xl mb-2"></i><p class="text-sm">Fehler beim Laden der Mentoren</p></div>';
+
+    // Pagination Controls hinzufügen
+    const paginationHtml = renderPagination('coaches');
+    if (paginationHtml) {
+        container.insertAdjacentHTML('afterend', '');
+        const existingPagination = document.getElementById('coaches-pagination');
+        if (existingPagination) existingPagination.remove();
+        container.insertAdjacentHTML('afterend', `<div id="coaches-pagination">${paginationHtml}</div>`);
+    } else {
+        const existingPagination = document.getElementById('coaches-pagination');
+        if (existingPagination) existingPagination.remove();
     }
 }
 
@@ -9544,8 +9607,9 @@ export async function changePassword(state) {
         return;
     }
 
-    if (newPassword.length < 6) {
-        showToast('❌ Das neue Passwort muss mindestens 6 Zeichen lang sein.', 'error');
+    const dashPwCheck = validatePassword(newPassword);
+    if (!dashPwCheck.valid) {
+        showToast(`❌ ${dashPwCheck.message || 'Passwort erfüllt nicht die Anforderungen.'}`, 'error');
         return;
     }
 
@@ -9583,7 +9647,30 @@ export async function changePassword(state) {
 
 // ========== ADMIN FUNCTIONS ==========
 
+// Admin-Status wird über Custom Claims geprüft (gesetzt via Cloud Function setAdminRole)
+// ADMIN_EMAILS dient als Fallback während der Migration
+let _cachedAdminClaim = null;
+
+export async function checkAdminClaim() {
+    if (!auth?.currentUser) {
+        _cachedAdminClaim = false;
+        return false;
+    }
+    try {
+        const idTokenResult = await auth.currentUser.getIdTokenResult();
+        _cachedAdminClaim = idTokenResult.claims.admin === true;
+        return _cachedAdminClaim;
+    } catch (e) {
+        console.error('Admin claim check failed:', e);
+        _cachedAdminClaim = false;
+        return false;
+    }
+}
+
 export function isAdmin(email) {
+    // Custom Claim hat Priorität
+    if (_cachedAdminClaim === true) return true;
+    // Fallback auf E-Mail-Liste (wird nach Migration entfernt)
     return ADMIN_EMAILS.includes(email?.toLowerCase());
 }
 
@@ -16239,7 +16326,7 @@ function showSmartSubmitSuccess() {
                 </div>
                 <h2 class="font-serif text-2xl text-brand-dark mb-3">Vielen Dank!</h2>
                 <p class="text-gray-500 mb-6">
-                    Ihr Fragebogen wurde erfolgreich übermittelt. Unser Team wird sich umgehend an die Erstellung Ihres optimierten Lebenslaufs machen.
+                    Ihr Fragebogen wurde erfolgreich übermittelt. Ich mache mich umgehend an die Erstellung Ihres optimierten Lebenslaufs.
                 </p>
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
                     <h4 class="font-medium text-blue-800 mb-2 flex items-center gap-2">
@@ -16247,7 +16334,7 @@ function showSmartSubmitSuccess() {
                         Was passiert als Nächstes?
                     </h4>
                     <ul class="text-sm text-blue-700 space-y-1">
-                        <li>• Wir prüfen Ihre eingereichten Dokumente</li>
+                        <li>• Ich prüfe Ihre eingereichten Dokumente</li>
                         <li>• Ein Experte erstellt und optimiert Ihren CV</li>
                         <li>• Sie erhalten Ihren fertigen Lebenslauf per E-Mail</li>
                     </ul>
@@ -16765,7 +16852,7 @@ export async function submitCvQuestionnaire() {
                     </div>
                     <h1 class="font-serif text-2xl text-brand-dark mb-4">Vielen Dank!</h1>
                     <p class="text-gray-600 mb-6">
-                        Ihr Fragebogen wurde erfolgreich übermittelt. Unser Team wird sich umgehend an die Erstellung Ihres optimierten Lebenslaufs machen.
+                        Ihr Fragebogen wurde erfolgreich übermittelt. Ich mache mich umgehend an die Erstellung Ihres optimierten Lebenslaufs.
                     </p>
                     <p class="text-sm text-gray-500 mb-8">
                         Sie erhalten eine Benachrichtigung per E-Mail, sobald Ihr Lebenslauf fertig ist.
@@ -16834,13 +16921,13 @@ export async function submitCvFeedback(orderId) {
                 ]
             },
             nextStep: 'cv_revision',
-            nextStepDescription: 'Wir überarbeiten Ihren CV basierend auf Ihrem Feedback'
+            nextStepDescription: 'Ich überarbeite Ihren CV basierend auf Ihrem Feedback'
         });
 
         // Textarea leeren
         if (feedbackEl) feedbackEl.value = '';
 
-        showToast('Feedback erfolgreich gesendet! Wir überarbeiten Ihren CV.');
+        showToast('Feedback erfolgreich gesendet! Ich überarbeite Ihren CV.');
 
         // Dashboard neu laden
         if (state?.user) {
@@ -16880,7 +16967,7 @@ export async function approveCvDraft(orderId) {
                 ]
             },
             nextStep: 'finalization',
-            nextStepDescription: 'Wir erstellen Ihre finale CV-Version'
+            nextStepDescription: 'Ich erstelle Ihre finale CV-Version'
         });
 
         showToast('CV erfolgreich freigegeben! Ihre finale Version wird erstellt.');

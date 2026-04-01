@@ -1,0 +1,26 @@
+{
+  "name": "apex-portal",
+  "version": "1.0.0",
+  "description": "Professionelle Karriereberatung, CV-Erstellung und Executive Coaching für Führungskräfte.",
+  "main": "sw.js",
+  "scripts": {
+    "test": "jest --verbose",
+    "test:functions": "cd functions && jest --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MuKiz79/apex-portal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MuKiz79/apex-portal/issues"
+  },
+  "homepage": "https://github.com/MuKiz79/apex-portal#readme",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "tailwindcss": "^4.1.18"
+  }
+}

@@ -63,6 +63,51 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
 
+// ========== RATE LIMITING (Firestore-basiert) ==========
+async function checkRateLimit(identifier, action, maxRequests, windowMs) {
+    const db = admin.firestore();
+    const docRef = db.collection('rateLimits').doc(`${action}_${identifier.replace(/[\/\.]/g, '_')}`);
+
+    try {
+        const result = await db.runTransaction(async (transaction) => {
+            const docSnap = await transaction.get(docRef);
+            const now = Date.now();
+
+            if (!docSnap.exists) {
+                transaction.set(docRef, { count: 1, windowStart: now, expiresAt: new Date(now + windowMs) });
+                return { allowed: true, remaining: maxRequests - 1 };
+            }
+
+            const data = docSnap.data();
+            const windowStart = data.windowStart || 0;
+
+            // Fenster abgelaufen → Reset
+            if (now - windowStart > windowMs) {
+                transaction.set(docRef, { count: 1, windowStart: now, expiresAt: new Date(now + windowMs) });
+                return { allowed: true, remaining: maxRequests - 1 };
+            }
+
+            // Innerhalb des Fensters
+            if (data.count >= maxRequests) {
+                return { allowed: false, remaining: 0 };
+            }
+
+            transaction.update(docRef, { count: data.count + 1 });
+            return { allowed: true, remaining: maxRequests - data.count - 1 };
+        });
+
+        return result;
+    } catch (error) {
+        console.error('Rate limit check failed:', error);
+        // Bei Fehler: Zugriff erlauben (fail-open), damit der Service nicht ausfällt
+        return { allowed: true, remaining: maxRequests };
+    }
+}
+
+function getClientIp(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+}
+
 // ========== PRODUKTKATALOG - Single Source of Truth für Preise ==========
 const PRODUCT_CATALOG = {
     // CV Pakete
@@ -252,6 +297,13 @@ exports.createCheckoutSession = onRequest({
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // Rate Limiting: 10 Checkout-Versuche pro Stunde pro IP
+    const ip = getClientIp(req);
+    const rateCheck = await checkRateLimit(ip, 'checkout', 10, 60 * 60 * 1000);
+    if (!rateCheck.allowed) {
+        return res.status(429).json({ error: 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.' });
+    }
+
     try {
         const { items, userEmail, userId, consents, service, successUrl, cancelUrl } = req.body;
 
@@ -346,6 +398,7 @@ exports.createCheckoutSession = onRequest({
             phone_number_collection: {
                 enabled: true
             },
+            customer_creation: 'always', // Erstellt immer einen Stripe Customer und sammelt E-Mail
             locale: 'de'
         });
 
@@ -377,11 +430,17 @@ exports.stripeWebhook = onRequest({
 
     try {
         const stripe = require('stripe')(stripeSecretKey.value());
-        const webhookSecret = stripeWebhookSecret.value();
+        const webhookSecret = stripeWebhookSecret.value()?.trim();
         console.log('🔑 Webhook secret starts with:', webhookSecret ? webhookSecret.substring(0, 10) + '...' : 'NOT SET');
 
+        // Für Firebase Functions Gen2: rawBody kann Buffer oder String sein
+        const payload = req.rawBody || req.body;
+        const payloadString = typeof payload === 'string' ? payload : (Buffer.isBuffer(payload) ? payload : JSON.stringify(payload));
+
+        console.log('📦 Payload type:', typeof payload, 'isBuffer:', Buffer.isBuffer(payload));
+
         event = stripe.webhooks.constructEvent(
-            req.rawBody,
+            payloadString,
             sig,
             webhookSecret
         );
@@ -427,7 +486,8 @@ exports.stripeWebhook = onRequest({
             // Dies stellt sicher, dass Bestellungen dem richtigen Account zugeordnet werden,
             // auch wenn der Kunde bei Stripe eine andere E-Mail eingibt
             const metadataEmail = session.metadata?.userEmail;
-            const stripeEmail = session.customer_email;
+            // E-Mail kann in customer_email ODER customer_details.email sein (je nach Checkout-Konfiguration)
+            const stripeEmail = session.customer_email || session.customer_details?.email;
             const customerEmail = (metadataEmail && metadataEmail.trim()) ? metadataEmail : stripeEmail;
             const customerName = session.customer_details?.name || 'Karriaro User';
             const createAccount = session.metadata.createAccount === 'true';
@@ -1425,6 +1485,12 @@ exports.sendAppointmentProposalEmail = onRequest({
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // Rate Limiting: 20 E-Mails pro Stunde pro IP
+    const rlCheck = await checkRateLimit(getClientIp(req), 'email', 20, 60 * 60 * 1000);
+    if (!rlCheck.allowed) {
+        return res.status(429).json({ error: 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.' });
+    }
+
     try {
         const { orderId, userId, customerEmail, proposals, message } = req.body;
 
@@ -1823,6 +1889,12 @@ exports.setEmailVerified = onRequest({
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Rate Limiting: 5 pro Stunde pro IP (Admin-Funktion)
+    const rlCheck = await checkRateLimit(getClientIp(req), 'setEmailVerified', 5, 60 * 60 * 1000);
+    if (!rlCheck.allowed) {
+        return res.status(429).json({ error: 'Zu viele Anfragen.' });
     }
 
     try {
@@ -6204,3 +6276,90 @@ exports.createManualInvoice = onRequest({
         res.status(500).json({ error: error.message });
     }
 });
+
+// ========== ADMIN ROLE MANAGEMENT (Custom Claims) ==========
+
+// Superadmin-Emails die Admin-Rollen vergeben dürfen (Bootstrap)
+const SUPERADMIN_EMAILS = ['muammer.kizilaslan@gmail.com'];
+
+exports.setAdminRole = onCall(async (request) => {
+    // Prüfe ob Aufrufer authentifiziert ist
+    if (!request.auth) {
+        throw new Error('Nicht authentifiziert.');
+    }
+
+    // Prüfe ob Aufrufer Superadmin ist (per E-Mail oder bestehender Custom Claim)
+    const callerEmail = request.auth.token.email;
+    const callerIsAdmin = request.auth.token.admin === true || SUPERADMIN_EMAILS.includes(callerEmail);
+
+    if (!callerIsAdmin) {
+        throw new Error('Keine Berechtigung. Nur Admins können Rollen vergeben.');
+    }
+
+    const { targetUid } = request.data;
+    if (!targetUid) {
+        throw new Error('targetUid ist erforderlich.');
+    }
+
+    // Custom Claim setzen
+    await admin.auth().setCustomUserClaims(targetUid, { admin: true });
+
+    // Auch in Firestore User-Dokument setzen (für UI-Queries)
+    const db = admin.firestore();
+    const userDoc = db.collection('users').doc(targetUid);
+    const userSnap = await userDoc.get();
+    if (userSnap.exists) {
+        await userDoc.update({ role: 'admin' });
+    }
+
+    const targetUser = await admin.auth().getUser(targetUid);
+    console.log(`✅ Admin-Rolle gesetzt für: ${targetUser.email} (${targetUid})`);
+
+    return { success: true, message: `Admin-Rolle gesetzt für ${targetUser.email}` };
+});
+
+exports.removeAdminRole = onCall(async (request) => {
+    if (!request.auth) {
+        throw new Error('Nicht authentifiziert.');
+    }
+
+    const callerEmail = request.auth.token.email;
+    const callerIsAdmin = request.auth.token.admin === true || SUPERADMIN_EMAILS.includes(callerEmail);
+
+    if (!callerIsAdmin) {
+        throw new Error('Keine Berechtigung.');
+    }
+
+    const { targetUid } = request.data;
+    if (!targetUid) {
+        throw new Error('targetUid ist erforderlich.');
+    }
+
+    // Custom Claim entfernen
+    await admin.auth().setCustomUserClaims(targetUid, { admin: false });
+
+    // Firestore aktualisieren
+    const db = admin.firestore();
+    const userDoc = db.collection('users').doc(targetUid);
+    const userSnap = await userDoc.get();
+    if (userSnap.exists) {
+        await userDoc.update({ role: 'user' });
+    }
+
+    const targetUser = await admin.auth().getUser(targetUid);
+    console.log(`✅ Admin-Rolle entfernt für: ${targetUser.email} (${targetUid})`);
+
+    return { success: true, message: `Admin-Rolle entfernt für ${targetUser.email}` };
+});
+
+// ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
+if (process.env.NODE_ENV === 'test') {
+    exports._test = {
+        PRODUCT_CATALOG,
+        validateItemPrice,
+        validateAndCorrectPrices,
+        checkRateLimit,
+        getClientIp,
+        SUPERADMIN_EMAILS
+    };
+}

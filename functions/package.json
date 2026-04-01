@@ -4,7 +4,8 @@
   "description": "Firebase Cloud Functions for APEX Executive",
   "main": "index.js",
   "scripts": {
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions",
+    "test": "jest --verbose"
   },
   "engines": {
     "node": "20"
@@ -21,6 +22,9 @@
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.15.0",
     "stripe": "^14.10.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   },
   "private": true
 }

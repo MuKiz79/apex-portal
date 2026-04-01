@@ -1,0 +1,16 @@
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Karriaro Icon Only - Horizont-Öffnung -->
+  <g>
+    <!-- Linker Halbbogen -->
+    <path d="M4 25 A21 21 0 0 1 25 4" stroke="#C9B99A" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Rechter Halbbogen -->
+    <path d="M46 25 A21 21 0 0 1 25 46" stroke="#C9B99A" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+    <!-- Zentraler Aufwärtspfeil -->
+    <path d="M25 42 L25 10" stroke="#C9B99A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M16 20 L25 8 L34 20" stroke="#C9B99A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <!-- Horizont-Linie -->
+    <line x1="12" y1="25" x2="38" y2="25" stroke="#C9B99A" stroke-width="1.5" stroke-opacity="0.4"/>
+  </g>
+</svg>

@@ -11,18 +11,39 @@ import './App.css';
 import { getExecutiveCoverTemplate } from './templates/executiveCover';
 import { getSchwarzBeigeModernTemplate } from './templates/schwarzBeigeModern';
 
-// Firebase Config - same as main app
+// Firebase Config - MUSS identisch sein mit js/core.js
 const firebaseConfig = {
-  apiKey: "AIzaSyBL_6RUpxzfSj_X1z3Asd8pINjH5Gla7i0",
+  apiKey: "AIzaSyBZ970mA7-2pJzhbxyFjjmzO97YKZhrSmU",
   authDomain: "apex-executive.firebaseapp.com",
   projectId: "apex-executive",
   storageBucket: "apex-executive.firebasestorage.app",
-  messagingSenderId: "1090135207697",
-  appId: "1:1090135207697:web:e2a93a98d88c03feef67a2"
+  messagingSenderId: "525553082138",
+  appId: "1:525553082138:web:84d1437b2e150f5fb316a3",
+  measurementId: "G-8K4T9MXEZ8"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// Auth-Token vom Hauptfenster empfangen (iframe-Kommunikation)
+if (window.parent !== window) {
+  window.addEventListener('message', async (event) => {
+    // Origin-Check für Sicherheit
+    const allowedOrigins = ['https://karriaro.de', 'https://apex-executive.web.app', 'http://localhost:5000'];
+    if (!allowedOrigins.includes(event.origin)) return;
+
+    if (event.data?.type === 'AUTH_TOKEN') {
+      try {
+        const { getAuth, signInWithCustomToken } = await import('firebase/auth');
+        const auth = getAuth(app);
+        await signInWithCustomToken(auth, event.data.token);
+        console.log('[Template Designer] Auth-Token empfangen und authentifiziert');
+      } catch (e) {
+        console.warn('[Template Designer] Auth-Token konnte nicht verarbeitet werden:', e);
+      }
+    }
+  });
+}
 
 // Schwarz Beige Modern CV Template - Muammer Kizilaslan
 const getDefaultTemplate = (): Template => ({

@@ -1,79 +1,125 @@
-// Karriaro Service Worker v3
-const CACHE_VERSION = 'v3';
-const CACHE_NAME = `karriaro-${CACHE_VERSION}`;
+// Karriaro Service Worker v7 - Offline-Caching mit Stale-While-Revalidate
+const CACHE_VERSION = 'karriaro-v7';
+const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
+const CDN_CACHE = `${CACHE_VERSION}-cdn`;
 
-// Install - don't pre-cache, just activate immediately
-self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...');
-  self.skipWaiting();
-});
+// App Shell: Kernressourcen die vorab gecached werden
+const APP_SHELL_URLS = [
+    '/',
+    '/index.html',
+    '/js/core.js',
+    '/js/app.js',
+    '/js/data.js',
+    '/css/output.css',
+    '/manifest.json'
+];
 
-// Activate - clean old caches and take control
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...');
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => (name.startsWith('apex-') || name.startsWith('karriaro-')) && name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Fetch - Network first, cache as fallback
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Only handle GET requests
-  if (request.method !== 'GET') return;
-
-  // Skip external APIs - let them go directly to network
-  const skipHosts = [
-    'firebaseio.com',
-    'googleapis.com',
+// Patterns die NICHT gecached werden (dynamische API-Calls)
+const NETWORK_ONLY_PATTERNS = [
     'firestore.googleapis.com',
     'identitytoolkit.googleapis.com',
     'securetoken.googleapis.com',
-    'stripe.com',
-    'js.stripe.com',
-    'cdn.tailwindcss.com',
+    'api.stripe.com',
+    'checkout.stripe.com',
+    'api.daily.co',
+    'cloudfunctions.net',
+    'us-central1-apex-executive'
+];
+
+// CDN-Ressourcen mit langem Cache
+const CDN_PATTERNS = [
+    'gstatic.com/firebasejs',
+    'cdn.jsdelivr.net',
     'cdnjs.cloudflare.com',
-    'googletagmanager.com',
-    'google-analytics.com'
-  ];
+    'fonts.googleapis.com',
+    'fonts.gstatic.com'
+];
 
-  if (skipHosts.some(host => url.hostname.includes(host))) {
-    return;
-  }
+// Install: App Shell precachen
+self.addEventListener('install', (event) => {
+    console.log('[SW] v7 - Installing with offline caching');
+    event.waitUntil(
+        caches.open(APP_SHELL_CACHE).then((cache) => {
+            return cache.addAll(APP_SHELL_URLS).catch((err) => {
+                console.warn('[SW] Einige Shell-Ressourcen konnten nicht gecached werden:', err);
+            });
+        })
+    );
+    self.skipWaiting();
+});
 
-  // Network first strategy for everything else
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Only cache successful responses
-        if (response.ok && response.type === 'basic') {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // Network failed, try cache
-        return caches.match(request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // For navigation requests, return cached index.html
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          return new Response('Offline', { status: 503 });
-        });
-      })
-  );
+// Activate: Alte Caches aufräumen
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames
+                    .filter((name) => !name.startsWith(CACHE_VERSION))
+                    .map((name) => {
+                        console.log('[SW] Lösche alten Cache:', name);
+                        return caches.delete(name);
+                    })
+            );
+        }).then(() => self.clients.claim())
+    );
+});
+
+// Fetch: Strategie basierend auf Request-Typ
+self.addEventListener('fetch', (event) => {
+    const url = event.request.url;
+
+    // Network-Only: API-Calls, Auth, Payments
+    if (NETWORK_ONLY_PATTERNS.some(pattern => url.includes(pattern))) {
+        return; // Browser handled den Request normal
+    }
+
+    // CDN-Ressourcen: Cache-First mit 7-Tage Expiry
+    if (CDN_PATTERNS.some(pattern => url.includes(pattern))) {
+        event.respondWith(
+            caches.open(CDN_CACHE).then((cache) => {
+                return cache.match(event.request).then((cached) => {
+                    if (cached) return cached;
+                    return fetch(event.request).then((response) => {
+                        if (response.ok) {
+                            cache.put(event.request, response.clone());
+                        }
+                        return response;
+                    });
+                });
+            }).catch(() => fetch(event.request))
+        );
+        return;
+    }
+
+    // Navigation-Requests: Network-First mit App-Shell-Fallback
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                return caches.match('/index.html');
+            })
+        );
+        return;
+    }
+
+    // Statische Assets (JS, CSS, Images): Stale-While-Revalidate
+    if (event.request.destination === 'script' ||
+        event.request.destination === 'style' ||
+        event.request.destination === 'image' ||
+        event.request.destination === 'font') {
+        event.respondWith(
+            caches.open(APP_SHELL_CACHE).then((cache) => {
+                return cache.match(event.request).then((cached) => {
+                    const fetchPromise = fetch(event.request).then((response) => {
+                        if (response.ok) {
+                            cache.put(event.request, response.clone());
+                        }
+                        return response;
+                    }).catch(() => cached);
+
+                    return cached || fetchPromise;
+                });
+            })
+        );
+        return;
+    }
 });

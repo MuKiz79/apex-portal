@@ -13,7 +13,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'muammer.kizilaslan@gmail.com';
+      return isSignedIn() && request.auth.token.admin == true;
     }
 
     // ========== USER DATA ==========
@@ -168,6 +168,13 @@ service cloud.firestore {
       allow read: if isAdmin();
       // Only system (Cloud Functions) can write - no direct client writes
       allow write: if false;
+    }
+
+    // ========== RATE LIMITS (nur Cloud Functions) ==========
+
+    match /rateLimits/{docId} {
+      // Kein Client-Zugriff - nur Admin SDK (Cloud Functions) kann lesen/schreiben
+      allow read, write: if false;
     }
 
     // ========== CATCH-ALL: DENY ==========

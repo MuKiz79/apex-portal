@@ -1,0 +1,19 @@
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Karriaro Logo - Horizont-Öffnung (für hellen Hintergrund) -->
+  <g>
+    <!-- Linker Halbbogen -->
+    <path d="M4 25 A17 17 0 0 1 21 8" stroke="#0A0E1A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Rechter Halbbogen -->
+    <path d="M38 25 A17 17 0 0 1 21 42" stroke="#0A0E1A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Zentraler Aufwärtspfeil -->
+    <path d="M21 38 L21 12" stroke="#C9B99A" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M14 20 L21 10 L28 20" stroke="#C9B99A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <!-- Horizont-Linie -->
+    <line x1="10" y1="25" x2="32" y2="25" stroke="#0A0E1A" stroke-width="1" stroke-opacity="0.3"/>
+  </g>
+
+  <!-- Text: KARRIARO -->
+  <text x="48" y="32" font-family="Georgia, 'Playfair Display', serif" font-size="22" font-weight="400" fill="#0A0E1A" letter-spacing="3">KARRIARO</text>
+</svg>

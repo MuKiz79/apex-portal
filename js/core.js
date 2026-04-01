@@ -128,7 +128,32 @@ export const validateEmail = (email) => {
 
 // Validate Password Strength
 export const validatePassword = (password) => {
-    return password && password.length >= 6;
+    if (!password || password.length < 8) return { valid: false, score: 0, message: 'Mindestens 8 Zeichen erforderlich.' };
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+
+    if (!hasLower || !hasUpper) return { valid: false, score, message: 'Groß- und Kleinbuchstaben erforderlich.' };
+    if (!hasDigit) return { valid: false, score, message: 'Mindestens eine Zahl erforderlich.' };
+    if (!hasSpecial) return { valid: false, score, message: 'Mindestens ein Sonderzeichen erforderlich.' };
+
+    return { valid: true, score, message: '' };
+};
+
+export const getPasswordStrengthLabel = (score) => {
+    if (score <= 1) return { label: 'Schwach', color: 'red' };
+    if (score <= 2) return { label: 'Mittel', color: 'yellow' };
+    if (score <= 3) return { label: 'Gut', color: 'blue' };
+    return { label: 'Sehr stark', color: 'green' };
 };
 
 // Sanitize HTML to prevent XSS
@@ -152,7 +177,7 @@ export const getFirebaseErrorMessage = (errorCode) => {
         // Registration Errors
         'auth/email-already-in-use': 'Ein Konto mit dieser E-Mail-Adresse existiert bereits.',
         'auth/operation-not-allowed': 'Diese Anmeldemethode ist derzeit nicht verfügbar.',
-        'auth/weak-password': 'Das Passwort ist zu schwach. Bitte wählen Sie mindestens 6 Zeichen.',
+        'auth/weak-password': 'Das Passwort ist zu schwach. Mindestens 8 Zeichen mit Groß-/Kleinbuchstaben, Zahl und Sonderzeichen.',
 
         // Rate Limiting
         'auth/too-many-requests': 'Zu viele Anmeldeversuche. Bitte warten Sie einige Minuten und versuchen Sie es erneut.',
@@ -244,6 +269,23 @@ export const loadCartFromLocalStorage = () => {
 };
 // Navigation Functions
 
+// SEO Meta-Daten pro View
+const VIEW_META = {
+    home: { title: 'Karriaro – Premium CV & Executive Mentoring', description: 'Handgefertigte Bewerbungsunterlagen und Executive Mentoring für Führungskräfte. CV-Manufaktur mit persönlicher Beratung.' },
+    about: { title: 'Über mich – Karriaro', description: 'Muammer Kizilaslan – VP IT & Digital, ehem. CDO & Vorstand. Persönliche Karriereberatung aus der Perspektive eines aktiven C-Level Executives.' },
+    journal: { title: 'Karriere-Insights – Karriaro Blog', description: 'Aktuelle Artikel zu Karriereentwicklung, Bewerbungsstrategien und Executive Coaching.' },
+    'inner-circle': { title: 'Inner Circle – Karriaro', description: 'Der exklusive Inner Circle für Führungskräfte. Netzwerk, Opportunities und persönliche Weiterentwicklung.' },
+    'package-details': { title: 'CV-Pakete im Detail – Karriaro', description: 'Meine CV-Pakete im Überblick: High-Potential, Senior Professional und Executive C-Suite.' },
+    dashboard: { title: 'Mein Dashboard – Karriaro', description: 'Ihr persönlicher Bereich: Bestellungen, Dokumente, Termine und Profil.' },
+    impressum: { title: 'Impressum – Karriaro', description: 'Impressum und rechtliche Angaben der Karriaro Plattform.' },
+    datenschutz: { title: 'Datenschutz – Karriaro', description: 'Datenschutzerklärung der Karriaro Plattform gemäß DSGVO.' },
+    agb: { title: 'AGB – Karriaro', description: 'Allgemeine Geschäftsbedingungen der Karriaro Plattform.' },
+    login: { title: 'Anmelden – Karriaro', description: 'Melden Sie sich bei Karriaro an oder erstellen Sie ein neues Konto.' },
+    admin: { title: 'Admin – Karriaro', description: '' }
+};
+
+let _navigatingFromHash = false;
+
 export function navigateTo(viewId) {
     // Hide all views
     document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
@@ -251,6 +293,23 @@ export function navigateTo(viewId) {
     // Show target view
     const target = document.getElementById('view-' + viewId);
     if(target) target.classList.remove('hidden');
+
+    // Hash-Routing: URL aktualisieren (ohne hashchange-Loop)
+    const currentHash = window.location.hash.replace('#', '');
+    if (currentHash !== viewId && !_navigatingFromHash) {
+        history.pushState(null, '', '#' + viewId);
+    }
+    _navigatingFromHash = false;
+
+    // Dynamische Meta-Tags für SEO
+    const meta = VIEW_META[viewId];
+    if (meta) {
+        document.title = meta.title;
+        const descTag = document.querySelector('meta[name="description"]');
+        if (descTag && meta.description) descTag.setAttribute('content', meta.description);
+        const canonicalTag = document.querySelector('link[rel="canonical"]');
+        if (canonicalTag) canonicalTag.setAttribute('href', `https://karriaro.de/#${viewId}`);
+    }
 
     // Update nav visibility
     const navLinks = document.getElementById('nav-links');
@@ -265,6 +324,26 @@ export function navigateTo(viewId) {
     }
 
     window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// Hash-Change-Listener für Browser-Navigation (Back/Forward)
+if (typeof window !== 'undefined') {
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            _navigatingFromHash = true;
+            navigateTo(hash);
+        }
+    });
+
+    // Initialen Hash bei Seitenlade auslesen
+    window.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            _navigatingFromHash = true;
+            navigateTo(hash);
+        }
+    });
 }
 
 export function scrollToSection(id) {

@@ -1,0 +1,23 @@
+# Karriaro robots.txt
+# Stand: Seite noch nicht für Suchmaschinen freigegeben
+#
+# GO-LIVE ANLEITUNG:
+# 1. Ersetze "Disallow: /" mit "Allow: /"
+# 2. Entferne die Kommentare unten
+# 3. Deploy neu
+
+User-agent: *
+Disallow: /
+
+# === NACH GO-LIVE AKTIVIEREN ===
+# User-agent: *
+# Allow: /
+#
+# # Sensible Bereiche blockieren
+# Disallow: /admin
+# Disallow: /dashboard
+# Disallow: /api/
+# Disallow: /*.json$
+#
+# # Sitemap
+# Sitemap: https://karriaro.de/sitemap.xml
