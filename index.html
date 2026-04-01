@@ -334,6 +334,9 @@
 </head>
 <body class="bg-brand-light text-brand-dark font-sans antialiased relative flex flex-col min-h-screen">
 
+    <!-- Scroll Progress Bar -->
+    <div id="scroll-progress"></div>
+
     <!-- Skip to Main Content (Accessibility) -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-brand-gold text-brand-dark px-4 py-2 rounded-lg z-[100] font-bold">
         Zum Hauptinhalt springen
@@ -451,20 +454,22 @@
         <!-- SCROLL 1: HERO — Headline + Foto, sonst nichts -->
         <header id="two-paths" class="bg-[#0B1120] text-white relative overflow-hidden h-[calc(100vh-5rem)]">
             <div class="flex flex-col md:flex-row h-full">
-                <!-- Foto -->
-                <div class="relative md:w-[45%] min-h-[40vh] md:min-h-full">
+                <!-- Foto mit Parallax -->
+                <div class="relative md:w-[45%] min-h-[40vh] md:min-h-full overflow-hidden">
                     <div id="hero-founder-fallback" class="absolute inset-0 bg-gradient-to-br from-[#1a2030] via-[#0f1520] to-[#0a0e18]"></div>
-                    <img id="hero-founder-image" src="" alt="Muammer Kizilaslan" class="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-700 opacity-0" loading="eager" onload="if(this.src && this.naturalWidth){this.style.opacity='1';var fb=document.getElementById('hero-founder-fallback');if(fb)fb.style.opacity='0';}">
+                    <img id="hero-founder-image" src="" alt="Muammer Kizilaslan" class="absolute inset-0 w-full h-full object-cover object-top parallax-hero hero-photo" loading="eager" onload="if(this.src && this.naturalWidth){var fb=document.getElementById('hero-founder-fallback');if(fb)fb.style.opacity='0';}">
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0B1120] hidden md:block"></div>
                     <div class="absolute inset-0 bg-gradient-to-t from-[#0B1120] via-transparent to-transparent md:hidden"></div>
                 </div>
-                <!-- Headline -->
+                <!-- Headline mit zeilenweiser Animation -->
                 <div class="relative md:w-[55%] flex items-center justify-center">
                     <div class="px-8 md:px-16 lg:px-20 py-12 md:py-0">
                         <h1 class="font-serif text-5xl md:text-6xl lg:text-8xl leading-[1.05] mb-8">
-                            Bewerben Sie<br>sich nicht.<br><span class="text-brand-gold">Positionieren<br>Sie sich.</span>
+                            <span class="hero-line block">Bewerben Sie</span>
+                            <span class="hero-line block">sich nicht.</span>
+                            <span class="hero-line block text-brand-gold">Positionieren<br>Sie sich.</span>
                         </h1>
-                        <p class="text-white/40 text-lg md:text-xl font-light max-w-sm">
+                        <p class="hero-line text-white/40 text-lg md:text-xl font-light max-w-sm">
                             Premium-Karriereunterlagen & Executive Coaching
                         </p>
                     </div>
@@ -546,7 +551,7 @@
                         <span id="cv-senior-price" class="text-5xl font-serif text-brand-dark mb-2">€1.490</span>
                         <p class="text-xs text-gray-400 mb-10">zzgl. MwSt.</p>
                         <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">Alles aus Starter. Plus: LinkedIn komplett neu, 60 Min. Coaching, Interview-Training, unbegrenzte Korrekturen. 7–10 Tage.</p>
-                        <button onclick="app.openPackageConfigModal('Professional', 1490)" class="w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full">
+                        <button onclick="app.openPackageConfigModal('Professional', 1490)" class="btn-magnetic w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full">
                             Professional wählen
                         </button>
                     </div>
@@ -610,7 +615,7 @@
         <section class="min-h-[70vh] flex items-center justify-center bg-[#0B1120]">
             <div class="text-center scroll-reveal">
                 <h2 class="font-serif text-5xl md:text-7xl text-white mb-12">Bereit?</h2>
-                <button onclick="app.openConciergeModal()" class="bg-brand-gold text-brand-dark px-14 py-5 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors">
+                <button onclick="app.openConciergeModal()" class="btn-magnetic bg-brand-gold text-brand-dark px-14 py-5 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors">
                     Kostenlose Erstberatung
                 </button>
             </div>
@@ -6695,9 +6700,10 @@
             });
         }
     </script>
-    <!-- Scroll Reveal Observer -->
+    <!-- Premium Interactions -->
     <script>
         (function() {
+            // --- Scroll Reveal Observer ---
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -6705,11 +6711,48 @@
                         observer.unobserve(entry.target);
                     }
                 });
-            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+            }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
 
             document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-stagger').forEach(el => {
                     observer.observe(el);
+                });
+
+                // --- Scroll Progress Bar ---
+                const progressBar = document.getElementById('scroll-progress');
+                if (progressBar) {
+                    window.addEventListener('scroll', () => {
+                        const scrollTop = window.scrollY;
+                        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+                        progressBar.style.width = progress + '%';
+                    }, { passive: true });
+                }
+
+                // --- Parallax Hero Photo ---
+                const heroImg = document.getElementById('hero-founder-image');
+                const heroSection = document.getElementById('two-paths');
+                if (heroImg && heroSection) {
+                    window.addEventListener('scroll', () => {
+                        const rect = heroSection.getBoundingClientRect();
+                        if (rect.bottom > 0) {
+                            const offset = window.scrollY * 0.15;
+                            heroImg.style.transform = 'translateY(' + offset + 'px) scale(1.05)';
+                        }
+                    }, { passive: true });
+                }
+
+                // --- Magnetic Buttons ---
+                document.querySelectorAll('.btn-magnetic').forEach(btn => {
+                    btn.addEventListener('mousemove', (e) => {
+                        const rect = btn.getBoundingClientRect();
+                        const x = e.clientX - rect.left - rect.width / 2;
+                        const y = e.clientY - rect.top - rect.height / 2;
+                        btn.style.transform = 'translate(' + (x * 0.15) + 'px, ' + (y * 0.3) + 'px)';
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.transform = 'translate(0, 0)';
+                    });
                 });
             });
         })();
