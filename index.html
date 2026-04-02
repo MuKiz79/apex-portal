@@ -561,27 +561,27 @@
                     <h2 class="font-serif text-4xl md:text-6xl text-brand-dark">Wählen Sie Ihr Paket.</h2>
                 </div>
 
-                <div class="grid md:grid-cols-[1fr_1.3fr_1fr] gap-0 items-start scroll-reveal-stagger">
+                <div class="grid md:grid-cols-3 gap-0 scroll-reveal-stagger">
 
-                    <!-- STARTER — kleiner -->
-                    <div class="p-8 md:p-10 flex flex-col md:border-r border-gray-100">
-                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Einsteiger</span>
-                        <h3 class="font-serif text-xl text-brand-dark mb-2">Starter</h3>
-                        <p class="text-gray-400 text-xs mb-6">Starke Unterlagen. Schnell fertig.</p>
-                        <span id="cv-young-price" class="text-4xl font-serif text-brand-dark mb-2">€490</span>
-                        <p class="text-xs text-gray-400 mb-8">zzgl. MwSt.</p>
-                        <p class="text-gray-500 text-xs leading-relaxed mb-8 flex-grow">CV + Anschreiben, 30 Min. Strategie-Gespräch, LinkedIn-Audit, 2 Feedbackrunden. 5–7 Tage.</p>
-                        <button onclick="app.openPackageConfigModal('Starter', 490)" class="w-full text-brand-dark py-3 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300">
+                    <!-- STARTER -->
+                    <div class="p-10 md:p-12 flex flex-col md:border-r border-gray-100">
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">Einsteiger</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-2">Starter</h3>
+                        <p class="text-gray-400 text-sm mb-8">Starke Unterlagen. Schnell fertig.</p>
+                        <span id="cv-young-price" class="text-5xl font-serif text-brand-dark mb-2">€490</span>
+                        <p class="text-xs text-gray-400 mb-10">zzgl. MwSt.</p>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">CV + Anschreiben, 30 Min. Strategie-Gespräch, LinkedIn-Audit, 2 Feedbackrunden. 5–7 Tage.</p>
+                        <button onclick="app.openPackageConfigModal('Starter', 490)" class="w-full text-brand-dark py-4 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300">
                             Starter wählen &rarr;
                         </button>
                     </div>
 
-                    <!-- PROFESSIONAL — hervorgehoben, größer -->
-                    <div class="p-10 md:p-14 flex flex-col md:border-r border-gray-100 relative">
-                        <span class="text-brand-gold text-xs font-bold uppercase tracking-widest mb-4">Meist gewählt</span>
-                        <h3 class="font-serif text-3xl text-brand-dark mb-3">Professional</h3>
+                    <!-- PROFESSIONAL -->
+                    <div class="p-10 md:p-12 flex flex-col md:border-r border-gray-100">
+                        <span class="text-brand-gold text-xs font-bold uppercase tracking-widest mb-6">Meist gewählt</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-2">Professional</h3>
                         <p class="text-gray-400 text-sm mb-8">Wenn es jetzt zählt.</p>
-                        <span id="cv-senior-price" class="text-6xl font-serif text-brand-dark mb-2">€990</span>
+                        <span id="cv-senior-price" class="text-5xl font-serif text-brand-dark mb-2">€990</span>
                         <p class="text-xs text-gray-400 mb-10">zzgl. MwSt.</p>
                         <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">Alles aus Starter. Plus: LinkedIn komplett neu, 60 Min. Coaching, Interview-Training, unbegrenzte Korrekturen. 7–10 Tage.</p>
                         <button onclick="app.openPackageConfigModal('Professional', 990)" class="btn-magnetic w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full">
@@ -589,15 +589,15 @@
                         </button>
                     </div>
 
-                    <!-- EXECUTIVE — kleiner -->
-                    <div class="p-8 md:p-10 flex flex-col">
-                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Full Service</span>
-                        <h3 class="font-serif text-xl text-brand-dark mb-2">Executive</h3>
-                        <p class="text-gray-400 text-xs mb-6">Das volle Programm.</p>
-                        <span id="cv-executive-price" class="text-4xl font-serif text-brand-dark mb-2">€2.990</span>
-                        <p class="text-xs text-gray-400 mb-8">zzgl. MwSt.</p>
-                        <p class="text-gray-500 text-xs leading-relaxed mb-8 flex-grow">Alles aus Professional. Plus: Executive Bio, Board CV, 3 Coaching-Sessions, zweisprachig DE + EN, 30 Tage E-Mail-Sparring. 10–14 Tage.</p>
-                        <button onclick="app.openConciergeModal()" class="w-full text-brand-dark py-3 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300">
+                    <!-- EXECUTIVE -->
+                    <div class="p-10 md:p-12 flex flex-col">
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">Full Service</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-2">Executive</h3>
+                        <p class="text-gray-400 text-sm mb-8">Das volle Programm.</p>
+                        <span id="cv-executive-price" class="text-5xl font-serif text-brand-dark mb-2">€2.990</span>
+                        <p class="text-xs text-gray-400 mb-10">zzgl. MwSt.</p>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">Alles aus Professional. Plus: Executive Bio, Board CV, 3 Coaching-Sessions, zweisprachig DE + EN, 30 Tage E-Mail-Sparring. 10–14 Tage.</p>
+                        <button onclick="app.openConciergeModal()" class="w-full text-brand-dark py-4 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300">
                             Executive anfragen &rarr;
                         </button>
                     </div>
