@@ -576,7 +576,7 @@
                     <h2 class="font-serif text-4xl md:text-6xl text-brand-dark" data-i18n="pricing.headline">Wählen Sie Ihr Paket.</h2>
                 </div>
 
-                <div class="grid md:grid-cols-3 gap-0 scroll-reveal-stagger">
+                <div class="grid md:grid-cols-2 gap-0 max-w-3xl mx-auto scroll-reveal-stagger">
 
                     <!-- STARTER -->
                     <div class="p-10 md:p-12 flex flex-col md:border-r border-gray-100">
@@ -604,19 +604,6 @@
                         </button>
                     </div>
 
-                    <!-- KARRIERE-COACHING -->
-                    <div class="p-10 md:p-12 flex flex-col">
-                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6" data-i18n="pricing.coaching_label">1:1 mit dem VP</span>
-                        <h3 class="font-serif text-2xl text-brand-dark mb-2" data-i18n="pricing.coaching_name">Karriere-Coaching</h3>
-                        <p class="text-gray-400 text-sm mb-8" data-i18n="pricing.coaching_sub">60 Min. auf Augenhöhe.</p>
-                        <span class="text-5xl font-serif text-brand-dark mb-2">€750</span>
-                        <p class="text-xs text-gray-400 mb-10" data-i18n="pricing.coaching_vat">zzgl. MwSt. · 3er-Paket €1.990</p>
-                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow" data-i18n="pricing.coaching_desc">60 Min. 1:1 Video-Session mit einem aktiven VP. Karriere-Strategie, Positionierung, Verhandlung oder die ersten 100 Tage. 7 Tage Follow-up per E-Mail.</p>
-                        <button onclick="app.openConciergeModal()" class="w-full text-brand-dark py-4 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300" data-i18n="pricing.coaching_cta">
-                            Session buchen &rarr;
-                        </button>
-                    </div>
-
                 </div>
 
                 <p class="text-center text-xs text-gray-300 mt-16" data-i18n="pricing.tax_note">Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch.</p>
@@ -626,6 +613,28 @@
                 <div id="coach-grid" class="hidden"></div>
                 <select id="industry-filter" class="hidden"><option value="all">Alle</option></select>
 
+            </div>
+        </section>
+
+        <!-- KARRIERE-COACHING — eigene Sektion -->
+        <section class="min-h-[60vh] flex items-center bg-[#0B1120]">
+            <div class="max-w-3xl mx-auto px-8 w-full py-24">
+                <div class="md:flex md:items-center md:gap-16">
+                    <div class="md:w-3/5 scroll-reveal">
+                        <h2 class="font-serif text-3xl md:text-5xl text-white leading-snug mb-6" data-i18n-html="pricing.coaching_headline_html">
+                            Kein Coach.<br><span class="text-brand-gold">Ein Sparringspartner.</span>
+                        </h2>
+                        <p class="text-white/50 text-lg" data-i18n="pricing.coaching_desc">60 Min. 1:1 Video-Session. Karriere-Strategie, Positionierung, Verhandlung oder die ersten 100 Tage — mit der Perspektive eines aktiven VP.</p>
+                    </div>
+                    <div class="md:w-2/5 mt-10 md:mt-0 scroll-reveal">
+                        <span class="font-serif text-5xl text-white">€490</span>
+                        <p class="text-white/40 text-xs mt-2 mb-4" data-i18n="pricing.coaching_vat">zzgl. MwSt.</p>
+                        <p class="text-white/30 text-xs mb-10" data-i18n="pricing.coaching_pack">3er-Paket €1.290</p>
+                        <button onclick="app.openConciergeModal()" class="btn-magnetic w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-white transition-all duration-300 rounded-full" data-i18n="pricing.coaching_cta">
+                            Session buchen
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
