@@ -89,7 +89,7 @@ export const PACKAGES = {
         name: 'Professional',
         subtitle: 'Wenn es jetzt zählt.',
         targetGroup: 'Führungskräfte & Senior Experts',
-        price: 1490,
+        price: 990,
         description: 'Alles aus Starter plus Coaching, Interview-Prep und Arbeitszeugnis.',
         features: [
             'Alles aus Starter',
