@@ -46,19 +46,20 @@
         "s2_text": "Unter meiner Leitung entsteht Ihre Positionierung. Kein Template.",
         "s3_number": "03",
         "s3_title": "Sie starten",
-        "s3_text": "CV, LinkedIn, Coaching — alles bereit."
+        "s3_text": "CV, LinkedIn, Coaching — alles bereit.",
+        "cta": "Kostenlose Erstberatung"
     },
     "pricing": {
         "headline": "Wählen Sie Ihr Paket.",
         "starter_label": "Einsteiger",
         "starter_name": "Starter",
-        "starter_sub": "Starke Unterlagen. Schnell fertig.",
+        "starter_sub": "Sie wissen, wohin.",
         "starter_vat": "zzgl. MwSt.",
         "starter_desc": "CV + Anschreiben, 30 Min. Briefing-Call, 1 Revision. 5–7 Tage.",
         "starter_cta": "Starter wählen",
         "pro_label": "Meist gewählt",
         "pro_name": "Professional",
-        "pro_sub": "Wenn es jetzt zählt.",
+        "pro_sub": "Sie brauchen Richtung und Begleitung.",
         "pro_vat": "zzgl. MwSt.",
         "pro_desc": "Alles aus Starter. Plus: LinkedIn-Audit, 60 Min. Coaching inkl. Interview-Training, 3 Revisionen. 7–10 Tage.",
         "pro_cta": "Professional wählen",
@@ -73,13 +74,13 @@
         "coaching_vat": "zzgl. MwSt.",
         "coaching_pack": "3er-Paket €1.290",
         "coaching_cta": "Session buchen",
+        "coaching_testimonial": "\"Nach einer Session wusste ich genau, wie ich mich positionieren muss. Drei Wochen später hatte ich das Angebot.\" — T.R., Director Operations",
         "tax_note": "Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch."
     },
     "website": {
         "headline_html": "Ihr CV öffnet Türen.<br><span class=\"text-brand-gold\">Ihre Website hält sie offen.</span>",
-        "text": "Entscheider googeln Sie, bevor sie anrufen. Ab €1.990 einmalig.",
-        "example_html": "Sehen Sie, wie das aussieht — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-brand-dark transition underline underline-offset-4\">am Beispiel unseres Gründers</a>.",
-        "cta": "Website anfragen"
+        "text": "Entscheider googeln Sie, bevor sie anrufen.",
+        "cta": "Mehr erfahren"
     },
     "faq": {
         "headline": "Häufige Fragen.",
@@ -87,8 +88,8 @@
         "a1_html": "<strong class=\"text-gray-600\">30 Minuten.</strong> Fragebogen ausfüllen, Feedback geben — fertig.",
         "q2": "Schreibt das eine KI?",
         "a2_html": "<strong class=\"text-gray-600\">Nein.</strong> 100 % Handarbeit. Ihre Stimme, keine Floskeln.",
-        "q3": "Was, wenn es nicht passt?",
-        "a3_html": "<strong class=\"text-gray-600\">Dann arbeiten wir weiter.</strong> Revisionen bis Sie zufrieden sind bei Professional und Executive."
+        "q3": "Wie vertraulich ist das?",
+        "a3_html": "<strong class=\"text-gray-600\">Absolut.</strong> NDA auf Wunsch, keine öffentlichen Referenzen ohne Ihr Einverständnis. Ihre Karriere bleibt Ihre Sache."
     },
     "cta": {
         "headline": "Bereit?",

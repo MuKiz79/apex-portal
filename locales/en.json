@@ -46,19 +46,20 @@
         "s2_text": "Your positioning is created under my leadership. No templates.",
         "s3_number": "03",
         "s3_title": "You launch",
-        "s3_text": "CV, LinkedIn, Coaching — all ready."
+        "s3_text": "CV, LinkedIn, Coaching — all ready.",
+        "cta": "Free Consultation"
     },
     "pricing": {
         "headline": "Choose your package.",
         "starter_label": "Entry",
         "starter_name": "Starter",
-        "starter_sub": "Strong documents. Fast delivery.",
+        "starter_sub": "You know where you're going.",
         "starter_vat": "excl. VAT",
         "starter_desc": "CV + Cover Letter, 30 min. Briefing Call, 1 Revision. 5–7 days.",
         "starter_cta": "Choose Starter",
         "pro_label": "Most chosen",
         "pro_name": "Professional",
-        "pro_sub": "When it counts.",
+        "pro_sub": "You need direction and guidance.",
         "pro_vat": "excl. VAT",
         "pro_desc": "Everything from Starter. Plus: LinkedIn Audit, 60 min. Coaching incl. Interview Training, 3 Revisions. 7–10 days.",
         "pro_cta": "Choose Professional",
@@ -73,13 +74,13 @@
         "coaching_vat": "excl. VAT",
         "coaching_pack": "3-pack €1,290",
         "coaching_cta": "Book Session",
+        "coaching_testimonial": "\"After one session I knew exactly how to position myself. Three weeks later I had the offer.\" — T.R., Director Operations",
         "tax_note": "Tax-deductible as business expenses. NDA on request."
     },
     "website": {
         "headline_html": "Your CV opens doors.<br><span class=\"text-brand-gold\">Your website keeps them open.</span>",
-        "text": "Decision-makers google you before they call. From €1,990 one-time.",
-        "example_html": "See what it looks like — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-brand-dark transition underline underline-offset-4\">our founder's example</a>.",
-        "cta": "Request Website"
+        "text": "Decision-makers google you before they call.",
+        "cta": "Learn more"
     },
     "faq": {
         "headline": "Frequently asked.",
@@ -87,8 +88,8 @@
         "a1_html": "<strong class=\"text-gray-600\">30 minutes.</strong> Fill out a questionnaire, give feedback — done.",
         "q2": "Does AI write this?",
         "a2_html": "<strong class=\"text-gray-600\">No.</strong> 100% handcrafted. Your voice, no clichés.",
-        "q3": "What if it doesn't fit?",
-        "a3_html": "<strong class=\"text-gray-600\">Then we keep working.</strong> Revisions until you're satisfied with Professional and Executive."
+        "q3": "How confidential is this?",
+        "a3_html": "<strong class=\"text-gray-600\">Completely.</strong> NDA on request, no public references without your consent. Your career stays your business."
     },
     "cta": {
         "headline": "Ready?",

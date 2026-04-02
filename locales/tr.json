@@ -46,19 +46,20 @@
         "s2_text": "Konumlandırmanız benim liderliğimde oluşturulur. Şablon yok.",
         "s3_number": "03",
         "s3_title": "Başlıyorsunuz",
-        "s3_text": "CV, LinkedIn, Coaching — her şey hazır."
+        "s3_text": "CV, LinkedIn, Coaching — her şey hazır.",
+        "cta": "Ücretsiz İlk Görüşme"
     },
     "pricing": {
         "headline": "Paketinizi seçin.",
         "starter_label": "Başlangıç",
         "starter_name": "Starter",
-        "starter_sub": "Güçlü belgeler. Hızlı teslimat.",
+        "starter_sub": "Nereye gittiğinizi biliyorsunuz.",
         "starter_vat": "KDV hariç",
         "starter_desc": "CV + Ön Yazı, 30 dk. Bilgilendirme Görüşmesi, 1 Revizyon. 5–7 gün.",
         "starter_cta": "Starter seçin",
         "pro_label": "En çok tercih edilen",
         "pro_name": "Professional",
-        "pro_sub": "Şimdi önemli olan zaman.",
+        "pro_sub": "Yön ve rehberlik gerekiyor.",
         "pro_vat": "KDV hariç",
         "pro_desc": "Starter'daki her şey. Artı: LinkedIn Denetimi, 60 dk. Coaching dahil Mülakat Eğitimi, 3 Revizyon. 7–10 gün.",
         "pro_cta": "Professional seçin",
@@ -73,13 +74,13 @@
         "coaching_vat": "KDV hariç",
         "coaching_pack": "3'lü paket €1.290",
         "coaching_cta": "Seans ayırtın",
+        "coaching_testimonial": "\"Bir seanstan sonra kendimi nasıl konumlandırmam gerektiğini tam olarak biliyordum. Üç hafta sonra teklif geldi.\" — T.R., Director Operations",
         "tax_note": "Reklam gideri olarak vergiden düşülebilir. Talep üzerine NDA."
     },
     "website": {
         "headline_html": "CV'niz kapıları açar.<br><span class=\"text-brand-gold\">Web siteniz onları açık tutar.</span>",
-        "text": "Karar vericiler sizi aramadan önce arar. Tek seferlik €1.990'dan başlayan fiyatlarla.",
-        "example_html": "Nasıl göründüğünü görün — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-brand-dark transition underline underline-offset-4\">kurucumuzun örneği</a>.",
-        "cta": "Web sitesi talep edin"
+        "text": "Karar vericiler sizi aramadan önce arar.",
+        "cta": "Daha fazla bilgi"
     },
     "faq": {
         "headline": "Sıkça sorulanlar.",
@@ -87,8 +88,8 @@
         "a1_html": "<strong class=\"text-gray-600\">30 dakika.</strong> Anketi doldurun, geri bildirim verin — bitti.",
         "q2": "Bunu yapay zeka mı yazıyor?",
         "a2_html": "<strong class=\"text-gray-600\">Hayır.</strong> %100 el yapımı. Sizin sesiniz, kalıp ifadeler değil.",
-        "q3": "Ya sonuç uymuyorsa?",
-        "a3_html": "<strong class=\"text-gray-600\">O zaman çalışmaya devam ederiz.</strong> Professional ve Executive paketlerde memnun kalana kadar revizyon."
+        "q3": "Bu ne kadar gizli?",
+        "a3_html": "<strong class=\"text-gray-600\">Tamamen.</strong> Talep üzerine NDA, onayınız olmadan kamuya açık referans yok. Kariyeriniz sizin meseleniz."
     },
     "cta": {
         "headline": "Hazır mısınız?",
