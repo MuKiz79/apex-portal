@@ -18,12 +18,12 @@
         "subline": "Executive Coaching & Premium Career Documents"
     },
     "testimonial": {
-        "quote_html": "\"I no longer have to<br>apply —<br><span class=\"text-brand-gold\">companies apply<br>to me.\"</span>",
-        "author": "Stefan K. · Marketing Director"
+        "quote_html": "\"One session gave me<br>more clarity than<br><span class=\"text-brand-gold\">ten years at the<br>same company.\"</span>",
+        "author": "T.R. · Director Operations"
     },
     "problem": {
-        "headline_html": "Most career documents<br>at leadership level are<br><span class=\"text-brand-gold\">below standard.</span>",
-        "text_html": "Recruiters give your CV <strong class=\"text-white\">7 seconds</strong>. We make every single one count."
+        "headline_html": "Most executives<br>are invisible —<br><span class=\"text-brand-gold\">to the right<br>decision-makers.</span>",
+        "text_html": "Wrong profile, wrong documents, no strategy. We change that — with <strong class=\"text-white\">coaching and positioning</strong> that works at leadership level."
     },
     "stats": {
         "number": "200+",
@@ -39,18 +39,18 @@
     },
     "steps": {
         "s1_number": "01",
-        "s1_title": "Questionnaire",
-        "s1_text": "20 minutes. Online. Your career, your goals.",
+        "s1_title": "Conversation",
+        "s1_text": "We clarify your situation, your goals and the best path.",
         "s2_number": "02",
-        "s2_title": "We work",
-        "s2_text": "Your positioning is created under my leadership. No templates.",
+        "s2_title": "Strategy",
+        "s2_text": "Coaching, positioning or documents — under my leadership.",
         "s3_number": "03",
-        "s3_title": "You launch",
-        "s3_text": "CV, LinkedIn, Coaching — all ready.",
+        "s3_title": "Result",
+        "s3_text": "You're positioned. Visible. Ready for the next step.",
         "cta": "Request Appointment"
     },
     "pricing": {
-        "headline": "Choose your package.",
+        "headline": "Career documents.",
         "starter_label": "Entry",
         "starter_name": "Starter",
         "starter_sub": "You know where you're going.",

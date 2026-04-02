@@ -18,12 +18,12 @@
         "subline": "Executive Coaching & Premium Kariyer Belgeleri"
     },
     "testimonial": {
-        "quote_html": "\"Artık başvurmama<br>gerek yok —<br><span class=\"text-brand-gold\">şirketler bana<br>başvuruyor.\"</span>",
-        "author": "Stefan K. · Pazarlama Direktörü"
+        "quote_html": "\"Bir seans bana<br>on yılda kazanamadığım<br><span class=\"text-brand-gold\">netliği<br>kazandırdı.\"</span>",
+        "author": "T.R. · Director Operations"
     },
     "problem": {
-        "headline_html": "Üst düzey yöneticilerin<br>kariyer belgeleri çoğunlukla<br><span class=\"text-brand-gold\">seviyenin altında.</span>",
-        "text_html": "İşe alım uzmanları CV'nize <strong class=\"text-white\">7 saniye</strong> ayırır. Her saniyenin değerli olmasını sağlıyoruz."
+        "headline_html": "Çoğu üst düzey yönetici<br>görünmez —<br><span class=\"text-brand-gold\">doğru karar vericiler<br>için.</span>",
+        "text_html": "Yanlış profil, yanlış belgeler, strateji yok. Bunu değiştiriyoruz — yönetim seviyesinde işe yarayan <strong class=\"text-white\">koçluk ve konumlandırma</strong> ile."
     },
     "stats": {
         "number": "200+",
@@ -39,18 +39,18 @@
     },
     "steps": {
         "s1_number": "01",
-        "s1_title": "Anket",
-        "s1_text": "20 dakika. Online. Kariyeriniz, hedefleriniz.",
+        "s1_title": "Görüşme",
+        "s1_text": "Durumunuzu, hedeflerinizi ve en iyi yolu netleştiriyoruz.",
         "s2_number": "02",
-        "s2_title": "Birlikte çalışıyoruz",
-        "s2_text": "Konumlandırmanız benim liderliğimde oluşturulur. Şablon yok.",
+        "s2_title": "Strateji",
+        "s2_text": "Koçluk, konumlandırma veya belgeler — liderliğimde.",
         "s3_number": "03",
-        "s3_title": "Başlıyorsunuz",
-        "s3_text": "CV, LinkedIn, Coaching — her şey hazır.",
+        "s3_title": "Sonuç",
+        "s3_text": "Konumlandınız. Görünürsünüz. Bir sonraki adıma hazırsınız.",
         "cta": "Randevu talep edin"
     },
     "pricing": {
-        "headline": "Paketinizi seçin.",
+        "headline": "Kariyer belgeleri.",
         "starter_label": "Başlangıç",
         "starter_name": "Starter",
         "starter_sub": "Nereye gittiğinizi biliyorsunuz.",

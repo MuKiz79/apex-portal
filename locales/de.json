@@ -18,12 +18,12 @@
         "subline": "Executive Coaching & Premium-Karriereunterlagen"
     },
     "testimonial": {
-        "quote_html": "\"Ich muss mich nicht<br>mehr bewerben —<br><span class=\"text-brand-gold\">die Firmen bewerben<br>sich bei mir.\"</span>",
-        "author": "Stefan K. · Marketing Director"
+        "quote_html": "\"Eine Session hat mir<br>mehr Klarheit gegeben als<br><span class=\"text-brand-gold\">zehn Jahre im<br>selben Unternehmen.\"</span>",
+        "author": "T.R. · Director Operations"
     },
     "problem": {
-        "headline_html": "Die meisten Karriereunterlagen<br>auf Führungsebene sind<br><span class=\"text-brand-gold\">unter Niveau.</span>",
-        "text_html": "Recruiter geben Ihrem CV <strong class=\"text-white\">7 Sekunden</strong>. Wir sorgen dafür, dass jede einzelne zählt."
+        "headline_html": "Die meisten Führungskräfte<br>sind unsichtbar —<br><span class=\"text-brand-gold\">für die richtigen<br>Entscheider.</span>",
+        "text_html": "Falsches Profil, falsche Unterlagen, keine Strategie. Wir ändern das — mit <strong class=\"text-white\">Coaching und Positionierung</strong>, die auf Führungsebene funktioniert."
     },
     "stats": {
         "number": "200+",
@@ -39,18 +39,18 @@
     },
     "steps": {
         "s1_number": "01",
-        "s1_title": "Fragebogen",
-        "s1_text": "20 Minuten. Online. Ihre Karriere, Ihre Ziele.",
+        "s1_title": "Gespräch",
+        "s1_text": "Wir klären Ihre Situation, Ihre Ziele und den besten Weg.",
         "s2_number": "02",
-        "s2_title": "Wir arbeiten",
-        "s2_text": "Unter meiner Leitung entsteht Ihre Positionierung. Kein Template.",
+        "s2_title": "Strategie",
+        "s2_text": "Coaching, Positionierung oder Unterlagen — unter meiner Leitung.",
         "s3_number": "03",
-        "s3_title": "Sie starten",
-        "s3_text": "CV, LinkedIn, Coaching — alles bereit.",
+        "s3_title": "Ergebnis",
+        "s3_text": "Sie sind positioniert. Sichtbar. Bereit für den nächsten Schritt.",
         "cta": "Termin anfragen"
     },
     "pricing": {
-        "headline": "Wählen Sie Ihr Paket.",
+        "headline": "Karriereunterlagen.",
         "starter_label": "Einsteiger",
         "starter_name": "Starter",
         "starter_sub": "Sie wissen, wohin.",
