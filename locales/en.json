@@ -68,6 +68,12 @@
         "exec_vat": "excl. VAT",
         "exec_desc": "Everything from Professional. Plus: Executive Bio, Board CV, 3 Coaching Sessions, bilingual DE + EN, 30 days Email Sparring, 5 Revisions. 10–14 days.",
         "exec_cta": "Request Executive",
+        "coaching_label": "1:1 with the VP",
+        "coaching_name": "Career Coaching",
+        "coaching_sub": "60 min. eye to eye.",
+        "coaching_vat": "excl. VAT · 3-pack €1,990",
+        "coaching_desc": "60 min. 1:1 video session with an active VP. Career strategy, positioning, negotiation or your first 100 days. 7 days email follow-up.",
+        "coaching_cta": "Book Session",
         "tax_note": "Tax-deductible as business expenses. NDA on request."
     },
     "website": {

@@ -68,6 +68,12 @@
         "exec_vat": "KDV hariç",
         "exec_desc": "Professional'daki her şey. Artı: Executive Bio, Board CV, 3 Coaching Seansı, iki dilli DE + EN, 30 gün E-Posta Sparring, 5 Revizyon. 10–14 gün.",
         "exec_cta": "Executive talep edin",
+        "coaching_label": "VP ile 1:1",
+        "coaching_name": "Kariyer Koçluğu",
+        "coaching_sub": "60 dk. eşit düzeyde.",
+        "coaching_vat": "KDV hariç · 3'lü paket €1.990",
+        "coaching_desc": "Aktif bir VP ile 60 dk. 1:1 video görüşme. Kariyer stratejisi, konumlandırma, müzakere veya ilk 100 gün. 7 gün e-posta takibi.",
+        "coaching_cta": "Seans ayırtın",
         "tax_note": "Reklam gideri olarak vergiden düşülebilir. Talep üzerine NDA."
     },
     "website": {
