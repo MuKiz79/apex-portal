@@ -470,6 +470,11 @@
                     </div>
                 </div>
             </div>
+            <!-- Scroll-Hinweis -->
+            <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-pulse">
+                <span class="text-white/30 text-xs uppercase tracking-widest">Scroll</span>
+                <div class="w-px h-8 bg-gradient-to-b from-white/30 to-transparent"></div>
+            </div>
         </header>
 
         <!-- Sticky Nav (hidden by default) -->
@@ -508,7 +513,7 @@
         <!-- SCROLL 4: EINE ZAHL — nicht vier (Fix #1) -->
         <section class="min-h-[70vh] flex items-center justify-center bg-white">
             <div class="text-center scroll-reveal">
-                <span class="font-serif text-8xl md:text-[10rem] text-brand-dark leading-none" data-i18n="stats.number">200+</span>
+                <span id="stats-counter" class="font-serif text-8xl md:text-[10rem] text-brand-dark leading-none" data-target="200">0+</span>
                 <p class="text-gray-400 text-lg mt-6" data-i18n="stats.text">Führungskräfte vertrauen uns ihre Karriere an.</p>
             </div>
         </section>
@@ -6173,6 +6178,42 @@
                         btn.style.transform = 'translate(0, 0)';
                     });
                 });
+
+                // --- Counter Animation (200+) ---
+                const counter = document.getElementById('stats-counter');
+                if (counter) {
+                    const counterObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting && !counter.dataset.counted) {
+                                counter.dataset.counted = 'true';
+                                const target = parseInt(counter.dataset.target);
+                                const duration = 2000;
+                                const start = performance.now();
+                                const animate = (now) => {
+                                    const elapsed = now - start;
+                                    const progress = Math.min(elapsed / duration, 1);
+                                    const eased = 1 - Math.pow(1 - progress, 4);
+                                    const current = Math.floor(eased * target);
+                                    counter.textContent = current + '+';
+                                    if (progress < 1) requestAnimationFrame(animate);
+                                };
+                                requestAnimationFrame(animate);
+                            }
+                        });
+                    }, { threshold: 0.3 });
+                    counterObserver.observe(counter);
+                }
+
+                // --- Hide scroll hint on scroll ---
+                const scrollHint = document.querySelector('.animate-pulse');
+                if (scrollHint) {
+                    window.addEventListener('scroll', () => {
+                        if (window.scrollY > 100) {
+                            scrollHint.style.opacity = '0';
+                            scrollHint.style.transition = 'opacity 0.5s';
+                        }
+                    }, { passive: true, once: true });
+                }
             });
         })();
     </script>
