@@ -9,7 +9,86 @@
         "logout": "Sign Out",
         "cv_packages": "CV Services",
         "mentoring": "Executive Mentoring",
-        "contact": "Contact"
+        "contact": "Contact",
+        "packages": "Packages",
+        "faq": "FAQ"
+    },
+    "hero": {
+        "headline_html": "<span class=\"hero-line block\">Don't apply.</span><span class=\"hero-line block text-brand-gold\">Position<br>yourself.</span>",
+        "subline": "Premium Career Documents & Executive Coaching"
+    },
+    "testimonial": {
+        "quote_html": "\"I no longer have to<br>apply —<br><span class=\"text-brand-gold\">companies apply<br>to me.\"</span>",
+        "author": "Stefan K. · Marketing Director"
+    },
+    "problem": {
+        "headline_html": "Most career documents<br>at leadership level are<br><span class=\"text-brand-gold\">below standard.</span>",
+        "text_html": "Recruiters give your CV <strong class=\"text-white\">7 seconds</strong>. We make every single one count."
+    },
+    "stats": {
+        "number": "200+",
+        "text": "Executives trust us with their careers."
+    },
+    "credentials": {
+        "headline_html": "Not a copywriter.<br>Not an agency.<br><span class=\"text-brand-gold\">A leader.</span>",
+        "text": "VP IT & Digital at Hansgrohe. Former CDO & Board Member at Borusan Mannesmann, 13+ years at BSH. Three countries, three corporations — both sides of the table."
+    },
+    "mission": {
+        "statement": "Karriaro is my mission: giving leaders the visibility they deserve.",
+        "quality": "Every document is created under my leadership and personally approved by me."
+    },
+    "steps": {
+        "s1_number": "01",
+        "s1_title": "Questionnaire",
+        "s1_text": "20 minutes. Online. Your career, your goals.",
+        "s2_number": "02",
+        "s2_title": "We work",
+        "s2_text": "Your positioning is created under my leadership. No templates.",
+        "s3_number": "03",
+        "s3_title": "You launch",
+        "s3_text": "CV, LinkedIn, Coaching — all ready."
+    },
+    "pricing": {
+        "headline": "Choose your package.",
+        "starter_label": "Entry",
+        "starter_name": "Starter",
+        "starter_sub": "Strong documents. Fast delivery.",
+        "starter_vat": "excl. VAT",
+        "starter_desc": "CV + Cover Letter, 30 min. Briefing Call, 1 Revision. 5–7 days.",
+        "starter_cta": "Choose Starter",
+        "pro_label": "Most chosen",
+        "pro_name": "Professional",
+        "pro_sub": "When it counts.",
+        "pro_vat": "excl. VAT",
+        "pro_desc": "Everything from Starter. Plus: LinkedIn Audit, 60 min. Coaching incl. Interview Training, 3 Revisions. 7–10 days.",
+        "pro_cta": "Choose Professional",
+        "exec_label": "Full Service",
+        "exec_name": "Executive",
+        "exec_sub": "The complete program.",
+        "exec_vat": "excl. VAT",
+        "exec_desc": "Everything from Professional. Plus: Executive Bio, Board CV, 3 Coaching Sessions, bilingual DE + EN, 30 days Email Sparring, 5 Revisions. 10–14 days.",
+        "exec_cta": "Request Executive",
+        "tax_note": "Tax-deductible as business expenses. NDA on request."
+    },
+    "website": {
+        "headline_html": "Your CV opens doors.<br><span class=\"text-brand-gold\">Your website keeps them open.</span>",
+        "text": "Decision-makers google you before they call. From €1,990 one-time.",
+        "example_html": "See what it looks like — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-brand-dark transition underline underline-offset-4\">our founder's example</a>.",
+        "cta": "Request Website"
+    },
+    "faq": {
+        "headline": "Frequently asked.",
+        "q1": "How much time do I need?",
+        "a1_html": "<strong class=\"text-gray-600\">30 minutes.</strong> Fill out a questionnaire, give feedback — done.",
+        "q2": "Does AI write this?",
+        "a2_html": "<strong class=\"text-gray-600\">No.</strong> 100% handcrafted. Your voice, no clichés.",
+        "q3": "What if it doesn't fit?",
+        "a3_html": "<strong class=\"text-gray-600\">Then we keep working.</strong> Revisions until you're satisfied with Professional and Executive."
+    },
+    "cta": {
+        "headline": "Ready?",
+        "subline": "15 minutes. Confidential. Eye to eye.",
+        "button": "Free Consultation"
     },
     "auth": {
         "login": "Sign In",

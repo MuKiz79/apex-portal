@@ -8,10 +8,10 @@ let loadedLocales = {};
 // Locale aus localStorage laden oder Browser-Sprache erkennen
 function detectLocale() {
     const saved = localStorage.getItem('karriaro-locale');
-    if (saved && ['de', 'en'].includes(saved)) return saved;
+    if (saved && ['de', 'en', 'tr'].includes(saved)) return saved;
 
     const browserLang = navigator.language?.split('-')[0];
-    return ['de', 'en'].includes(browserLang) ? browserLang : 'de';
+    return ['de', 'en', 'tr'].includes(browserLang) ? browserLang : 'de';
 }
 
 // Locale-Datei laden
@@ -56,7 +56,7 @@ export function t(key, params = {}) {
 
 // Sprache wechseln und DOM aktualisieren
 export async function setLocale(locale) {
-    if (!['de', 'en'].includes(locale)) return;
+    if (!['de', 'en', 'tr'].includes(locale)) return;
 
     currentLocale = locale;
     localStorage.setItem('karriaro-locale', locale);
@@ -97,6 +97,15 @@ function applyTranslations() {
         const translated = t(key);
         if (translated !== key) {
             el.setAttribute('title', translated);
+        }
+    });
+
+    // HTML-Inhalte (für Elemente mit verschachteltem HTML)
+    document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+        const key = el.getAttribute('data-i18n-html');
+        const translated = t(key);
+        if (translated !== key) {
+            el.innerHTML = translated;
         }
     });
 }

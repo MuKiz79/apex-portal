@@ -392,6 +392,8 @@
                         <button onclick="app.setLocale('de')" id="lang-de" class="text-xs font-bold px-2 py-1 rounded transition text-white hover:bg-white/10" title="Deutsch">DE</button>
                         <span class="text-gray-600 text-xs">|</span>
                         <button onclick="app.setLocale('en')" id="lang-en" class="text-xs font-bold px-2 py-1 rounded transition text-gray-500 hover:bg-white/10" title="English">EN</button>
+                        <span class="text-gray-600 text-xs">|</span>
+                        <button onclick="app.setLocale('tr')" id="lang-tr" class="text-xs font-bold px-2 py-1 rounded transition text-gray-500 hover:bg-white/10" title="Türkçe">TR</button>
                     </div>
 
                     <!-- Mobile Menu Trigger -->
@@ -464,12 +466,12 @@
                 <!-- Headline mit zeilenweiser Animation -->
                 <div class="relative md:w-[55%] flex items-center justify-center">
                     <div class="px-8 md:px-16 lg:px-20 py-12 md:py-0">
-                        <h1 class="font-serif text-5xl md:text-6xl lg:text-8xl leading-[1.05] mb-8">
+                        <h1 class="font-serif text-5xl md:text-6xl lg:text-8xl leading-[1.05] mb-8" data-i18n-html="hero.headline_html">
                             <span class="hero-line block">Bewerben Sie</span>
                             <span class="hero-line block">sich nicht.</span>
                             <span class="hero-line block text-brand-gold">Positionieren<br>Sie sich.</span>
                         </h1>
-                        <p class="hero-line text-white/40 text-lg md:text-xl font-light max-w-sm">
+                        <p class="hero-line text-white/40 text-lg md:text-xl font-light max-w-sm" data-i18n="hero.subline">
                             Premium-Karriereunterlagen & Executive Coaching
                         </p>
                     </div>
@@ -491,20 +493,20 @@
         <!-- SCROLL 2: TESTIMONIAL — nur das Zitat -->
         <section class="min-h-[80vh] flex items-center justify-center bg-white" id="testimonials">
             <div class="max-w-4xl mx-auto px-8 text-center scroll-reveal">
-                <blockquote class="font-serif text-4xl md:text-5xl lg:text-6xl text-brand-dark leading-tight tracking-tight">
+                <blockquote class="font-serif text-4xl md:text-5xl lg:text-6xl text-brand-dark leading-tight tracking-tight" data-i18n-html="testimonial.quote_html">
                     "Ich muss mich nicht<br>mehr bewerben —<br><span class="text-brand-gold">die Firmen bewerben<br>sich bei mir."</span>
                 </blockquote>
-                <p class="text-gray-400 text-sm mt-12">Stefan K. · Marketing Director</p>
+                <p class="text-gray-400 text-sm mt-12" data-i18n="testimonial.author">Stefan K. · Marketing Director</p>
             </div>
         </section>
 
         <!-- SCROLL 3: DAS PROBLEM — ein Satz reicht (Fix #7) -->
         <section class="min-h-[80vh] flex items-center bg-[#0B1120]">
             <div class="max-w-3xl mx-auto px-8 w-full py-24">
-                <h2 class="font-serif text-4xl md:text-5xl text-white leading-tight mb-10 scroll-reveal">
+                <h2 class="font-serif text-4xl md:text-5xl text-white leading-tight mb-10 scroll-reveal" data-i18n-html="problem.headline_html">
                     Die meisten Karriereunterlagen<br>auf Führungsebene sind<br><span class="text-brand-gold">unter Niveau.</span>
                 </h2>
-                <p class="text-white/50 text-lg leading-relaxed scroll-reveal">
+                <p class="text-white/50 text-lg leading-relaxed scroll-reveal" data-i18n-html="problem.text_html">
                     Recruiter geben Ihrem CV <strong class="text-white">7 Sekunden</strong>. Wir sorgen dafür, dass jede einzelne zählt.
                 </p>
             </div>
@@ -513,18 +515,18 @@
         <!-- SCROLL 4: EINE ZAHL — nicht vier (Fix #1) -->
         <section class="min-h-[70vh] flex items-center justify-center bg-white">
             <div class="text-center scroll-reveal">
-                <span class="font-serif text-8xl md:text-[10rem] text-brand-dark leading-none">200+</span>
-                <p class="text-gray-400 text-lg mt-6">Führungskräfte vertrauen uns ihre Karriere an.</p>
+                <span class="font-serif text-8xl md:text-[10rem] text-brand-dark leading-none" data-i18n="stats.number">200+</span>
+                <p class="text-gray-400 text-lg mt-6" data-i18n="stats.text">Führungskräfte vertrauen uns ihre Karriere an.</p>
             </div>
         </section>
 
         <!-- SCROLL 5: CREDENTIALS — zwei Zeilen (Fix #3) -->
         <section class="min-h-[60vh] flex items-center bg-[#fafafa]">
             <div class="max-w-3xl mx-auto px-8 w-full py-24 scroll-reveal">
-                <h2 class="font-serif text-4xl md:text-6xl text-brand-dark leading-snug mb-8">
+                <h2 class="font-serif text-4xl md:text-6xl text-brand-dark leading-snug mb-8" data-i18n-html="credentials.headline_html">
                     Nicht ein Texter.<br>Nicht eine Agentur.<br><span class="text-brand-gold">Eine Führungskraft.</span>
                 </h2>
-                <p class="text-gray-400 text-lg">
+                <p class="text-gray-400 text-lg" data-i18n="credentials.text">
                     VP IT & Digital bei Hansgrohe. Zuvor CDO & Vorstand bei Borusan Mannesmann, über 13 Jahre BSH. Drei Länder, drei Konzerne — beide Seiten des Tisches.
                 </p>
             </div>
@@ -533,10 +535,10 @@
         <!-- MISSION — persönliches Statement -->
         <section class="min-h-[50vh] flex items-center justify-center bg-[#0B1120]">
             <div class="max-w-2xl mx-auto px-8 text-center scroll-reveal">
-                <p class="font-serif text-2xl md:text-3xl text-white/80 leading-relaxed italic">
+                <p class="font-serif text-2xl md:text-3xl text-white/80 leading-relaxed italic" data-i18n="mission.statement">
                     Karriaro ist meine Mission: Führungskräften die Sichtbarkeit zu geben, die sie verdienen.
                 </p>
-                <p class="text-white/40 text-sm mt-8">
+                <p class="text-white/40 text-sm mt-8" data-i18n="mission.quality">
                     Jedes Dokument entsteht unter meiner Leitung und wird persönlich von mir freigegeben.
                 </p>
             </div>
@@ -547,19 +549,19 @@
             <div class="max-w-4xl mx-auto px-8 w-full scroll-reveal">
                 <div class="grid md:grid-cols-3 gap-20">
                     <div>
-                        <span class="font-serif text-7xl text-brand-gold/20">01</span>
-                        <h3 class="font-serif text-2xl text-brand-dark mt-4 mb-3">Fragebogen</h3>
-                        <p class="text-gray-400 leading-relaxed">20 Minuten. Online. Ihre Karriere, Ihre Ziele.</p>
+                        <span class="font-serif text-7xl text-brand-gold/20" data-i18n="steps.s1_number">01</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mt-4 mb-3" data-i18n="steps.s1_title">Fragebogen</h3>
+                        <p class="text-gray-400 leading-relaxed" data-i18n="steps.s1_text">20 Minuten. Online. Ihre Karriere, Ihre Ziele.</p>
                     </div>
                     <div>
-                        <span class="font-serif text-7xl text-brand-gold/20">02</span>
-                        <h3 class="font-serif text-2xl text-brand-dark mt-4 mb-3">Wir arbeiten</h3>
-                        <p class="text-gray-400 leading-relaxed">Unter meiner Leitung entsteht Ihre Positionierung. Kein Template.</p>
+                        <span class="font-serif text-7xl text-brand-gold/20" data-i18n="steps.s2_number">02</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mt-4 mb-3" data-i18n="steps.s2_title">Wir arbeiten</h3>
+                        <p class="text-gray-400 leading-relaxed" data-i18n="steps.s2_text">Unter meiner Leitung entsteht Ihre Positionierung. Kein Template.</p>
                     </div>
                     <div>
-                        <span class="font-serif text-7xl text-brand-gold/20">03</span>
-                        <h3 class="font-serif text-2xl text-brand-dark mt-4 mb-3">Sie starten</h3>
-                        <p class="text-gray-400 leading-relaxed">CV, LinkedIn, Coaching — alles bereit.</p>
+                        <span class="font-serif text-7xl text-brand-gold/20" data-i18n="steps.s3_number">03</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mt-4 mb-3" data-i18n="steps.s3_title">Sie starten</h3>
+                        <p class="text-gray-400 leading-relaxed" data-i18n="steps.s3_text">CV, LinkedIn, Coaching — alles bereit.</p>
                     </div>
                 </div>
             </div>
@@ -570,53 +572,53 @@
             <div class="max-w-5xl mx-auto px-8 w-full py-24">
 
                 <div class="text-center mb-24 scroll-reveal">
-                    <h2 class="font-serif text-4xl md:text-6xl text-brand-dark">Wählen Sie Ihr Paket.</h2>
+                    <h2 class="font-serif text-4xl md:text-6xl text-brand-dark" data-i18n="pricing.headline">Wählen Sie Ihr Paket.</h2>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-0 scroll-reveal-stagger">
 
                     <!-- STARTER -->
                     <div class="p-10 md:p-12 flex flex-col md:border-r border-gray-100">
-                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">Einsteiger</span>
-                        <h3 class="font-serif text-2xl text-brand-dark mb-2">Starter</h3>
-                        <p class="text-gray-400 text-sm mb-8">Starke Unterlagen. Schnell fertig.</p>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6" data-i18n="pricing.starter_label">Einsteiger</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-2" data-i18n="pricing.starter_name">Starter</h3>
+                        <p class="text-gray-400 text-sm mb-8" data-i18n="pricing.starter_sub">Starke Unterlagen. Schnell fertig.</p>
                         <span id="cv-young-price" class="text-5xl font-serif text-brand-dark mb-2">€490</span>
-                        <p class="text-xs text-gray-400 mb-10">zzgl. MwSt.</p>
-                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">CV + Anschreiben, 30 Min. Briefing-Call, 1 Revision. 5–7 Tage.</p>
-                        <button onclick="app.openPackageConfigModal('Starter', 490)" class="w-full text-brand-dark py-4 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300">
+                        <p class="text-xs text-gray-400 mb-10" data-i18n="pricing.starter_vat">zzgl. MwSt.</p>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow" data-i18n="pricing.starter_desc">CV + Anschreiben, 30 Min. Briefing-Call, 1 Revision. 5–7 Tage.</p>
+                        <button onclick="app.openPackageConfigModal('Starter', 490)" class="w-full text-brand-dark py-4 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300" data-i18n="pricing.starter_cta">
                             Starter wählen &rarr;
                         </button>
                     </div>
 
                     <!-- PROFESSIONAL -->
                     <div class="p-10 md:p-12 flex flex-col md:border-r border-gray-100">
-                        <span class="text-brand-gold text-xs font-bold uppercase tracking-widest mb-6">Meist gewählt</span>
-                        <h3 class="font-serif text-2xl text-brand-dark mb-2">Professional</h3>
-                        <p class="text-gray-400 text-sm mb-8">Wenn es jetzt zählt.</p>
+                        <span class="text-brand-gold text-xs font-bold uppercase tracking-widest mb-6" data-i18n="pricing.pro_label">Meist gewählt</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-2" data-i18n="pricing.pro_name">Professional</h3>
+                        <p class="text-gray-400 text-sm mb-8" data-i18n="pricing.pro_sub">Wenn es jetzt zählt.</p>
                         <span id="cv-senior-price" class="text-5xl font-serif text-brand-dark mb-2">€990</span>
-                        <p class="text-xs text-gray-400 mb-10">zzgl. MwSt.</p>
-                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">Alles aus Starter. Plus: LinkedIn-Audit, 60 Min. Coaching inkl. Interview-Training, 3 Revisionen. 7–10 Tage.</p>
-                        <button onclick="app.openPackageConfigModal('Professional', 990)" class="btn-magnetic w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full">
+                        <p class="text-xs text-gray-400 mb-10" data-i18n="pricing.pro_vat">zzgl. MwSt.</p>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow" data-i18n="pricing.pro_desc">Alles aus Starter. Plus: LinkedIn-Audit, 60 Min. Coaching inkl. Interview-Training, 3 Revisionen. 7–10 Tage.</p>
+                        <button onclick="app.openPackageConfigModal('Professional', 990)" class="btn-magnetic w-full bg-brand-gold text-brand-dark py-4 text-sm font-bold tracking-wide hover:bg-brand-dark hover:text-white transition-all duration-300 rounded-full" data-i18n="pricing.pro_cta">
                             Professional wählen
                         </button>
                     </div>
 
                     <!-- EXECUTIVE -->
                     <div class="p-10 md:p-12 flex flex-col">
-                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">Full Service</span>
-                        <h3 class="font-serif text-2xl text-brand-dark mb-2">Executive</h3>
-                        <p class="text-gray-400 text-sm mb-8">Das volle Programm.</p>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6" data-i18n="pricing.exec_label">Full Service</span>
+                        <h3 class="font-serif text-2xl text-brand-dark mb-2" data-i18n="pricing.exec_name">Executive</h3>
+                        <p class="text-gray-400 text-sm mb-8" data-i18n="pricing.exec_sub">Das volle Programm.</p>
                         <span id="cv-executive-price" class="text-5xl font-serif text-brand-dark mb-2">€2.990</span>
-                        <p class="text-xs text-gray-400 mb-10">zzgl. MwSt.</p>
-                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">Alles aus Professional. Plus: Executive Bio, Board CV, 3 Coaching-Sessions, zweisprachig DE + EN, 30 Tage E-Mail-Sparring, 5 Revisionen. 10–14 Tage.</p>
-                        <button onclick="app.openConciergeModal()" class="w-full text-brand-dark py-4 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300">
+                        <p class="text-xs text-gray-400 mb-10" data-i18n="pricing.exec_vat">zzgl. MwSt.</p>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow" data-i18n="pricing.exec_desc">Alles aus Professional. Plus: Executive Bio, Board CV, 3 Coaching-Sessions, zweisprachig DE + EN, 30 Tage E-Mail-Sparring, 5 Revisionen. 10–14 Tage.</p>
+                        <button onclick="app.openConciergeModal()" class="w-full text-brand-dark py-4 text-sm font-semibold tracking-wide hover:text-brand-gold transition-all duration-300" data-i18n="pricing.exec_cta">
                             Executive anfragen &rarr;
                         </button>
                     </div>
 
                 </div>
 
-                <p class="text-center text-xs text-gray-300 mt-16">Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch.</p>
+                <p class="text-center text-xs text-gray-300 mt-16" data-i18n="pricing.tax_note">Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch.</p>
 
                 <!-- Hidden elements for backwards compatibility -->
                 <div id="mentoring-packages-grid" class="hidden"></div>
@@ -629,12 +631,12 @@
         <!-- WEB PRESENCE — mit Live-Beispiel -->
         <section class="py-24 bg-[#fafafa]">
             <div class="max-w-3xl mx-auto px-8 text-center scroll-reveal">
-                <h2 class="font-serif text-3xl md:text-4xl text-brand-dark leading-snug mb-6">
+                <h2 class="font-serif text-3xl md:text-4xl text-brand-dark leading-snug mb-6" data-i18n-html="website.headline_html">
                     Ihr CV öffnet Türen.<br><span class="text-brand-gold">Ihre Website hält sie offen.</span>
                 </h2>
-                <p class="text-gray-400 text-lg mb-4">Entscheider googeln Sie, bevor sie anrufen. Ab €1.990 einmalig.</p>
-                <p class="text-gray-400 text-sm mb-10">Sehen Sie, wie das aussieht — <a href="https://muammerkizilaslan.com" target="_blank" rel="noopener" class="text-brand-gold hover:text-brand-dark transition underline underline-offset-4">am Beispiel unseres Gründers</a>.</p>
-                <button onclick="app.openConciergeModal()" class="text-brand-gold font-semibold text-sm hover:text-brand-dark transition">
+                <p class="text-gray-400 text-lg mb-4" data-i18n="website.text">Entscheider googeln Sie, bevor sie anrufen. Ab €1.990 einmalig.</p>
+                <p class="text-gray-400 text-sm mb-10" data-i18n-html="website.example_html">Sehen Sie, wie das aussieht — <a href="https://muammerkizilaslan.com" target="_blank" rel="noopener" class="text-brand-gold hover:text-brand-dark transition underline underline-offset-4">am Beispiel unseres Gründers</a>.</p>
+                <button onclick="app.openConciergeModal()" class="text-brand-gold font-semibold text-sm hover:text-brand-dark transition" data-i18n="website.cta">
                     Website anfragen &rarr;
                 </button>
             </div>
@@ -643,22 +645,22 @@
         <!-- FAQ — Antworten direkt sichtbar (Fix #5) -->
         <section id="faq" class="min-h-[80vh] flex items-center bg-white">
             <div class="max-w-2xl mx-auto px-8 w-full py-24">
-                <h2 class="font-serif text-4xl md:text-5xl text-brand-dark mb-20 scroll-reveal">Häufige Fragen.</h2>
+                <h2 class="font-serif text-4xl md:text-5xl text-brand-dark mb-20 scroll-reveal" data-i18n="faq.headline">Häufige Fragen.</h2>
 
                 <div class="space-y-14">
                     <div class="scroll-reveal">
-                        <h3 class="font-serif text-xl text-brand-dark mb-3">Wie viel Zeit brauche ich?</h3>
-                        <p class="text-gray-400 leading-relaxed"><strong class="text-gray-600">30 Minuten.</strong> Fragebogen ausfüllen, Feedback geben — fertig.</p>
+                        <h3 class="font-serif text-xl text-brand-dark mb-3" data-i18n="faq.q1">Wie viel Zeit brauche ich?</h3>
+                        <p class="text-gray-400 leading-relaxed" data-i18n-html="faq.a1_html"><strong class="text-gray-600">30 Minuten.</strong> Fragebogen ausfüllen, Feedback geben — fertig.</p>
                     </div>
 
                     <div class="scroll-reveal">
-                        <h3 class="font-serif text-xl text-brand-dark mb-3">Schreibt das eine KI?</h3>
-                        <p class="text-gray-400 leading-relaxed"><strong class="text-gray-600">Nein.</strong> 100 % Handarbeit. Ihre Stimme, keine Floskeln.</p>
+                        <h3 class="font-serif text-xl text-brand-dark mb-3" data-i18n="faq.q2">Schreibt das eine KI?</h3>
+                        <p class="text-gray-400 leading-relaxed" data-i18n-html="faq.a2_html"><strong class="text-gray-600">Nein.</strong> 100 % Handarbeit. Ihre Stimme, keine Floskeln.</p>
                     </div>
 
                     <div class="scroll-reveal">
-                        <h3 class="font-serif text-xl text-brand-dark mb-3">Was, wenn es nicht passt?</h3>
-                        <p class="text-gray-400 leading-relaxed"><strong class="text-gray-600">Dann arbeiten wir weiter.</strong> Unbegrenzte Korrekturen bei Professional und Executive.</p>
+                        <h3 class="font-serif text-xl text-brand-dark mb-3" data-i18n="faq.q3">Was, wenn es nicht passt?</h3>
+                        <p class="text-gray-400 leading-relaxed" data-i18n-html="faq.a3_html"><strong class="text-gray-600">Dann arbeiten wir weiter.</strong> Revisionen bis Sie zufrieden sind bei Professional und Executive.</p>
                     </div>
                 </div>
                 <!-- Hidden FAQ elements for JS compatibility -->
@@ -669,8 +671,8 @@
         <!-- SCROLL 6: FINALER CTA — ein Wort, ein Button -->
         <section class="min-h-[70vh] flex items-center justify-center bg-[#0B1120]">
             <div class="text-center scroll-reveal">
-                <h2 class="font-serif text-5xl md:text-7xl text-white mb-12">Bereit?</h2>
-                <button onclick="app.openConciergeModal()" class="btn-magnetic bg-brand-gold text-brand-dark px-14 py-5 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors">
+                <h2 class="font-serif text-5xl md:text-7xl text-white mb-12" data-i18n="cta.headline">Bereit?</h2>
+                <button onclick="app.openConciergeModal()" class="btn-magnetic bg-brand-gold text-brand-dark px-14 py-5 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors" data-i18n="cta.button">
                     Kostenlose Erstberatung
                 </button>
             </div>
@@ -5168,9 +5170,9 @@
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <span class="text-xs text-gray-600">&copy; 2025 Karriaro</span>
                 <div class="flex gap-6 text-xs text-gray-500">
-                    <button onclick="app.navigateTo('impressum')" class="hover:text-gray-400 transition">Impressum</button>
-                    <button onclick="app.navigateTo('datenschutz')" class="hover:text-gray-400 transition">Datenschutz</button>
-                    <button onclick="app.navigateTo('agb')" class="hover:text-gray-400 transition">AGB</button>
+                    <button onclick="app.navigateTo('impressum')" class="hover:text-gray-400 transition" data-i18n="legal.impressum">Impressum</button>
+                    <button onclick="app.navigateTo('datenschutz')" class="hover:text-gray-400 transition" data-i18n="legal.privacy">Datenschutz</button>
+                    <button onclick="app.navigateTo('agb')" class="hover:text-gray-400 transition" data-i18n="legal.terms">AGB</button>
                 </div>
             </div>
         </div>
@@ -5937,16 +5939,12 @@
             setLocale: async (locale) => {
                 await App.i18nSetLocale(locale);
                 // Aktiven Button hervorheben
-                const deBtn = document.getElementById('lang-de');
-                const enBtn = document.getElementById('lang-en');
-                if (deBtn && enBtn) {
-                    deBtn.className = locale === 'de'
-                        ? 'text-xs font-bold px-2 py-1 rounded transition text-white hover:bg-white/10'
-                        : 'text-xs font-bold px-2 py-1 rounded transition text-gray-500 hover:bg-white/10';
-                    enBtn.className = locale === 'en'
-                        ? 'text-xs font-bold px-2 py-1 rounded transition text-white hover:bg-white/10'
-                        : 'text-xs font-bold px-2 py-1 rounded transition text-gray-500 hover:bg-white/10';
-                }
+                const active = 'text-xs font-bold px-2 py-1 rounded transition text-white hover:bg-white/10';
+                const inactive = 'text-xs font-bold px-2 py-1 rounded transition text-gray-500 hover:bg-white/10';
+                ['de', 'en', 'tr'].forEach(lang => {
+                    const btn = document.getElementById('lang-' + lang);
+                    if (btn) btn.className = locale === lang ? active : inactive;
+                });
             },
             t: (key, params) => App.t(key, params),
 

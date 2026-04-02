@@ -1,0 +1,272 @@
+{
+    "nav": {
+        "home": "Ana Sayfa",
+        "about": "Hakkımda",
+        "journal": "Günlük",
+        "inner_circle": "Inner Circle",
+        "login": "Giriş Yap",
+        "dashboard": "Panel",
+        "logout": "Çıkış Yap",
+        "cv_packages": "CV Hizmetleri",
+        "mentoring": "Executive Mentoring",
+        "contact": "İletişim",
+        "packages": "Paketler",
+        "faq": "SSS"
+    },
+    "hero": {
+        "headline_html": "<span class=\"hero-line block\">Başvurmayın.</span><span class=\"hero-line block text-brand-gold\">Kendinizi<br>konumlandırın.</span>",
+        "subline": "Premium Kariyer Belgeleri & Executive Coaching"
+    },
+    "testimonial": {
+        "quote_html": "\"Artık başvurmama<br>gerek yok —<br><span class=\"text-brand-gold\">şirketler bana<br>başvuruyor.\"</span>",
+        "author": "Stefan K. · Pazarlama Direktörü"
+    },
+    "problem": {
+        "headline_html": "Üst düzey yöneticilerin<br>kariyer belgeleri çoğunlukla<br><span class=\"text-brand-gold\">seviyenin altında.</span>",
+        "text_html": "İşe alım uzmanları CV'nize <strong class=\"text-white\">7 saniye</strong> ayırır. Her saniyenin değerli olmasını sağlıyoruz."
+    },
+    "stats": {
+        "number": "200+",
+        "text": "Yönetici kariyerini bize emanet ediyor."
+    },
+    "credentials": {
+        "headline_html": "Bir metin yazarı değil.<br>Bir ajans değil.<br><span class=\"text-brand-gold\">Bir üst düzey yönetici.</span>",
+        "text": "Hansgrohe'de VP IT & Digital. Daha önce Borusan Mannesmann'da CDO & Yönetim Kurulu Üyesi, 13 yılı aşkın BSH deneyimi. Üç ülke, üç kurum — masanın her iki tarafı."
+    },
+    "mission": {
+        "statement": "Karriaro benim misyonum: Yöneticilere hak ettikleri görünürlüğü kazandırmak.",
+        "quality": "Her belge benim liderliğimde hazırlanır ve kişisel onayımdan geçer."
+    },
+    "steps": {
+        "s1_number": "01",
+        "s1_title": "Anket",
+        "s1_text": "20 dakika. Online. Kariyeriniz, hedefleriniz.",
+        "s2_number": "02",
+        "s2_title": "Birlikte çalışıyoruz",
+        "s2_text": "Konumlandırmanız benim liderliğimde oluşturulur. Şablon yok.",
+        "s3_number": "03",
+        "s3_title": "Başlıyorsunuz",
+        "s3_text": "CV, LinkedIn, Coaching — her şey hazır."
+    },
+    "pricing": {
+        "headline": "Paketinizi seçin.",
+        "starter_label": "Başlangıç",
+        "starter_name": "Starter",
+        "starter_sub": "Güçlü belgeler. Hızlı teslimat.",
+        "starter_vat": "KDV hariç",
+        "starter_desc": "CV + Ön Yazı, 30 dk. Bilgilendirme Görüşmesi, 1 Revizyon. 5–7 gün.",
+        "starter_cta": "Starter seçin",
+        "pro_label": "En çok tercih edilen",
+        "pro_name": "Professional",
+        "pro_sub": "Şimdi önemli olan zaman.",
+        "pro_vat": "KDV hariç",
+        "pro_desc": "Starter'daki her şey. Artı: LinkedIn Denetimi, 60 dk. Coaching dahil Mülakat Eğitimi, 3 Revizyon. 7–10 gün.",
+        "pro_cta": "Professional seçin",
+        "exec_label": "Full Servis",
+        "exec_name": "Executive",
+        "exec_sub": "Tam program.",
+        "exec_vat": "KDV hariç",
+        "exec_desc": "Professional'daki her şey. Artı: Executive Bio, Board CV, 3 Coaching Seansı, iki dilli DE + EN, 30 gün E-Posta Sparring, 5 Revizyon. 10–14 gün.",
+        "exec_cta": "Executive talep edin",
+        "tax_note": "Reklam gideri olarak vergiden düşülebilir. Talep üzerine NDA."
+    },
+    "website": {
+        "headline_html": "CV'niz kapıları açar.<br><span class=\"text-brand-gold\">Web siteniz onları açık tutar.</span>",
+        "text": "Karar vericiler sizi aramadan önce arar. Tek seferlik €1.990'dan başlayan fiyatlarla.",
+        "example_html": "Nasıl göründüğünü görün — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-brand-dark transition underline underline-offset-4\">kurucumuzun örneği</a>.",
+        "cta": "Web sitesi talep edin"
+    },
+    "faq": {
+        "headline": "Sıkça sorulanlar.",
+        "q1": "Ne kadar zaman ayırmam gerekir?",
+        "a1_html": "<strong class=\"text-gray-600\">30 dakika.</strong> Anketi doldurun, geri bildirim verin — bitti.",
+        "q2": "Bunu yapay zeka mı yazıyor?",
+        "a2_html": "<strong class=\"text-gray-600\">Hayır.</strong> %100 el yapımı. Sizin sesiniz, kalıp ifadeler değil.",
+        "q3": "Ya sonuç uymuyorsa?",
+        "a3_html": "<strong class=\"text-gray-600\">O zaman çalışmaya devam ederiz.</strong> Professional ve Executive paketlerde memnun kalana kadar revizyon."
+    },
+    "cta": {
+        "headline": "Hazır mısınız?",
+        "subline": "15 dakika. Gizli. Eşit düzeyde.",
+        "button": "Ücretsiz İlk Görüşme"
+    },
+    "auth": {
+        "login": "Giriş Yap",
+        "register": "Kayıt Ol",
+        "email": "E-Posta Adresi",
+        "password": "Şifre",
+        "password_confirm": "Şifreyi Onayla",
+        "password_placeholder": "En az 8 karakter",
+        "password_repeat": "Şifreyi tekrarla",
+        "firstname": "Ad",
+        "lastname": "Soyad",
+        "salutation": "Hitap",
+        "forgot_password": "Şifremi unuttum?",
+        "reset_password": "Şifreyi Sıfırla",
+        "new_password": "Yeni Şifre",
+        "save_password": "Şifreyi Kaydet",
+        "login_success": "Başarıyla giriş yapıldı",
+        "register_success": "Kayıt başarılı! Lütfen e-postanızı doğrulayın.",
+        "logout_success": "Başarıyla çıkış yapıldı",
+        "session_expired": "Güvenlik nedeniyle otomatik olarak çıkış yapıldı.",
+        "email_verification": "Lütfen önce e-posta adresinizi doğrulayın.",
+        "check_inbox": "Doğrulama e-postası için gelen kutunuzu (spam klasörü dahil) kontrol edin.",
+        "no_email_received": "E-posta almadınız mı?",
+        "resend_link": "Aktivasyon linkini tekrar gönder"
+    },
+    "password_strength": {
+        "weak": "Zayıf",
+        "medium": "Orta",
+        "good": "İyi",
+        "strong": "Çok güçlü",
+        "min_length": "En az 8 karakter gerekli.",
+        "need_upper_lower": "Büyük ve küçük harf gerekli.",
+        "need_digit": "En az bir rakam gerekli.",
+        "need_special": "En az bir özel karakter gerekli."
+    },
+    "validation": {
+        "required_fields": "Lütfen tüm zorunlu alanları (*) doldurun.",
+        "invalid_email": "Lütfen geçerli bir e-posta adresi girin.",
+        "valid_email": "Geçerli e-posta adresi",
+        "passwords_match": "Şifreler eşleşiyor",
+        "passwords_no_match": "Şifreler eşleşmiyor.",
+        "enter_password": "Lütfen şifrenizi girin."
+    },
+    "dashboard": {
+        "title": "Panelim",
+        "orders": "Siparişler",
+        "documents": "Belgeler",
+        "appointments": "Randevular",
+        "profile": "Profil",
+        "inner_circle": "Inner Circle",
+        "no_orders": "Henüz sipariş yok",
+        "no_documents": "Henüz belge yok",
+        "no_appointments": "Henüz randevu yok"
+    },
+    "orders": {
+        "status_new": "Yeni",
+        "status_in_progress": "İşleniyor",
+        "status_review": "İnceleme",
+        "status_completed": "Tamamlandı",
+        "status_cancelled": "İptal Edildi",
+        "order_number": "Sipariş Numarası",
+        "order_date": "Sipariş Tarihi",
+        "total": "Toplam",
+        "details": "Detayları Göster"
+    },
+    "cart": {
+        "title": "Sepet",
+        "empty": "Sepetiniz boş",
+        "subtotal": "Ara Toplam",
+        "discount": "Üye İndirimi (%10)",
+        "total": "Toplam",
+        "checkout": "Ödemeye Geç",
+        "remove": "Kaldır",
+        "added": "Sepete eklendi"
+    },
+    "packages": {
+        "quick_check": "CV Hızlı Kontrol",
+        "young_professional": "Young Professional CV",
+        "senior_professional": "Senior Professional CV",
+        "executive": "Executive C-Suite CV",
+        "view_details": "Detayları Gör",
+        "order_now": "Şimdi Sipariş Ver",
+        "most_popular": "En Popüler"
+    },
+    "mentoring": {
+        "single": "Tek Seans",
+        "three_pack": "3'lü Paket",
+        "retainer": "Executive Retainer",
+        "book_session": "Seans Rezerve Et",
+        "select_date": "Tarih Seçin",
+        "select_time": "Saat Seçin",
+        "available": "Müsait",
+        "booked": "Rezerve Edildi",
+        "unavailable": "Müsait Değil"
+    },
+    "admin": {
+        "title": "Yönetici Paneli",
+        "orders": "Siparişler",
+        "users": "Kullanıcılar",
+        "coaches": "Mentorlar",
+        "strategy_calls": "Strateji Görüşmeleri",
+        "documents": "Belgeler",
+        "settings": "Ayarlar",
+        "total": "Toplam",
+        "visible": "Görünür",
+        "hidden": "Gizli",
+        "edit": "Düzenle",
+        "delete": "Sil",
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "add_coach": "Mentor Ekle",
+        "search": "Ara...",
+        "export_csv": "CSV Dışa Aktar",
+        "page_of": "Sayfa {{current}} / {{total}}",
+        "entries": "kayıt"
+    },
+    "profile": {
+        "title": "Profili Düzenle",
+        "phone": "Telefon Numarası",
+        "position": "Pozisyon",
+        "company": "Şirket",
+        "save": "Profili Kaydet",
+        "saved": "Profil kaydedildi",
+        "change_password": "Şifreyi Değiştir",
+        "current_password": "Mevcut Şifre",
+        "new_password": "Yeni Şifre",
+        "profile_picture": "Profil Fotoğrafı",
+        "upload_picture": "Fotoğraf Yükle",
+        "delete_account": "Hesabı Sil"
+    },
+    "common": {
+        "loading": "Yükleniyor...",
+        "error": "Bir hata oluştu",
+        "success": "Başarılı",
+        "back": "Geri",
+        "next": "İleri",
+        "close": "Kapat",
+        "confirm": "Onayla",
+        "yes": "Evet",
+        "no": "Hayır",
+        "or": "veya",
+        "and": "ve",
+        "euro": "€",
+        "per_month": "/ay",
+        "incl_vat": "KDV dahil",
+        "free": "Ücretsiz",
+        "new": "Yeni",
+        "popular": "Popüler"
+    },
+    "errors": {
+        "network": "Bağlantı hatası. Lütfen internet bağlantınızı kontrol edin.",
+        "too_many_requests": "Çok fazla istek. Lütfen birkaç dakika bekleyin.",
+        "unauthorized": "Yetkisiz. Lütfen tekrar giriş yapın.",
+        "not_found": "İstenen sayfa bulunamadı.",
+        "server": "Teknik bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        "upload_too_large": "Dosya çok büyük.",
+        "upload_wrong_type": "Bu dosya türü desteklenmiyor."
+    },
+    "cookie": {
+        "title": "Çerez Ayarları",
+        "description": "Deneyiminizi iyileştirmek için çerezler kullanıyoruz.",
+        "accept_all": "Tümünü Kabul Et",
+        "decline": "Yalnızca Gerekli",
+        "settings": "Ayarlar",
+        "necessary": "Gerekli",
+        "functional": "İşlevsel",
+        "analytics": "Analitik",
+        "marketing": "Pazarlama",
+        "save": "Ayarları Kaydet"
+    },
+    "legal": {
+        "impressum": "Yasal Bildirim",
+        "privacy": "Gizlilik Politikası",
+        "terms": "Kullanım Koşulları",
+        "accessibility": "Erişilebilirlik"
+    },
+    "footer": {
+        "rights": "Tüm hakları saklıdır.",
+        "made_with": "Almanya'da el yapımı"
+    }
+}

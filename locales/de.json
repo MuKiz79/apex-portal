@@ -9,7 +9,86 @@
         "logout": "Abmelden",
         "cv_packages": "CV-Manufaktur",
         "mentoring": "Executive Mentoring",
-        "contact": "Kontakt"
+        "contact": "Kontakt",
+        "packages": "Pakete",
+        "faq": "FAQ"
+    },
+    "hero": {
+        "headline_html": "<span class=\"hero-line block\">Bewerben Sie</span><span class=\"hero-line block\">sich nicht.</span><span class=\"hero-line block text-brand-gold\">Positionieren<br>Sie sich.</span>",
+        "subline": "Premium-Karriereunterlagen & Executive Coaching"
+    },
+    "testimonial": {
+        "quote_html": "\"Ich muss mich nicht<br>mehr bewerben —<br><span class=\"text-brand-gold\">die Firmen bewerben<br>sich bei mir.\"</span>",
+        "author": "Stefan K. · Marketing Director"
+    },
+    "problem": {
+        "headline_html": "Die meisten Karriereunterlagen<br>auf Führungsebene sind<br><span class=\"text-brand-gold\">unter Niveau.</span>",
+        "text_html": "Recruiter geben Ihrem CV <strong class=\"text-white\">7 Sekunden</strong>. Wir sorgen dafür, dass jede einzelne zählt."
+    },
+    "stats": {
+        "number": "200+",
+        "text": "Führungskräfte vertrauen uns ihre Karriere an."
+    },
+    "credentials": {
+        "headline_html": "Nicht ein Texter.<br>Nicht eine Agentur.<br><span class=\"text-brand-gold\">Eine Führungskraft.</span>",
+        "text": "VP IT & Digital bei Hansgrohe. Zuvor CDO & Vorstand bei Borusan Mannesmann, über 13 Jahre BSH. Drei Länder, drei Konzerne — beide Seiten des Tisches."
+    },
+    "mission": {
+        "statement": "Karriaro ist meine Mission: Führungskräften die Sichtbarkeit zu geben, die sie verdienen.",
+        "quality": "Jedes Dokument entsteht unter meiner Leitung und wird persönlich von mir freigegeben."
+    },
+    "steps": {
+        "s1_number": "01",
+        "s1_title": "Fragebogen",
+        "s1_text": "20 Minuten. Online. Ihre Karriere, Ihre Ziele.",
+        "s2_number": "02",
+        "s2_title": "Wir arbeiten",
+        "s2_text": "Unter meiner Leitung entsteht Ihre Positionierung. Kein Template.",
+        "s3_number": "03",
+        "s3_title": "Sie starten",
+        "s3_text": "CV, LinkedIn, Coaching — alles bereit."
+    },
+    "pricing": {
+        "headline": "Wählen Sie Ihr Paket.",
+        "starter_label": "Einsteiger",
+        "starter_name": "Starter",
+        "starter_sub": "Starke Unterlagen. Schnell fertig.",
+        "starter_vat": "zzgl. MwSt.",
+        "starter_desc": "CV + Anschreiben, 30 Min. Briefing-Call, 1 Revision. 5–7 Tage.",
+        "starter_cta": "Starter wählen",
+        "pro_label": "Meist gewählt",
+        "pro_name": "Professional",
+        "pro_sub": "Wenn es jetzt zählt.",
+        "pro_vat": "zzgl. MwSt.",
+        "pro_desc": "Alles aus Starter. Plus: LinkedIn-Audit, 60 Min. Coaching inkl. Interview-Training, 3 Revisionen. 7–10 Tage.",
+        "pro_cta": "Professional wählen",
+        "exec_label": "Full Service",
+        "exec_name": "Executive",
+        "exec_sub": "Das volle Programm.",
+        "exec_vat": "zzgl. MwSt.",
+        "exec_desc": "Alles aus Professional. Plus: Executive Bio, Board CV, 3 Coaching-Sessions, zweisprachig DE + EN, 30 Tage E-Mail-Sparring, 5 Revisionen. 10–14 Tage.",
+        "exec_cta": "Executive anfragen",
+        "tax_note": "Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch."
+    },
+    "website": {
+        "headline_html": "Ihr CV öffnet Türen.<br><span class=\"text-brand-gold\">Ihre Website hält sie offen.</span>",
+        "text": "Entscheider googeln Sie, bevor sie anrufen. Ab €1.990 einmalig.",
+        "example_html": "Sehen Sie, wie das aussieht — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-brand-dark transition underline underline-offset-4\">am Beispiel unseres Gründers</a>.",
+        "cta": "Website anfragen"
+    },
+    "faq": {
+        "headline": "Häufige Fragen.",
+        "q1": "Wie viel Zeit brauche ich?",
+        "a1_html": "<strong class=\"text-gray-600\">30 Minuten.</strong> Fragebogen ausfüllen, Feedback geben — fertig.",
+        "q2": "Schreibt das eine KI?",
+        "a2_html": "<strong class=\"text-gray-600\">Nein.</strong> 100 % Handarbeit. Ihre Stimme, keine Floskeln.",
+        "q3": "Was, wenn es nicht passt?",
+        "a3_html": "<strong class=\"text-gray-600\">Dann arbeiten wir weiter.</strong> Revisionen bis Sie zufrieden sind bei Professional und Executive."
+    },
+    "cta": {
+        "headline": "Bereit?",
+        "subline": "15 Minuten. Vertraulich. Auf Augenhöhe.",
+        "button": "Kostenlose Erstberatung"
     },
     "auth": {
         "login": "Anmelden",
