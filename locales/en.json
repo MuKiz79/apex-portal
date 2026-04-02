@@ -47,7 +47,7 @@
         "s3_number": "03",
         "s3_title": "You launch",
         "s3_text": "CV, LinkedIn, Coaching — all ready.",
-        "cta": "Free Consultation"
+        "cta": "Request Appointment"
     },
     "pricing": {
         "headline": "Choose your package.",
@@ -94,7 +94,7 @@
     "cta": {
         "headline": "Ready?",
         "subline": "15 minutes. Confidential. Eye to eye.",
-        "button": "Free Consultation"
+        "button": "Request Appointment"
     },
     "auth": {
         "login": "Sign In",

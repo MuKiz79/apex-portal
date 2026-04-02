@@ -47,7 +47,7 @@
         "s3_number": "03",
         "s3_title": "Başlıyorsunuz",
         "s3_text": "CV, LinkedIn, Coaching — her şey hazır.",
-        "cta": "Ücretsiz İlk Görüşme"
+        "cta": "Randevu talep edin"
     },
     "pricing": {
         "headline": "Paketinizi seçin.",
@@ -94,7 +94,7 @@
     "cta": {
         "headline": "Hazır mısınız?",
         "subline": "15 dakika. Gizli. Eşit düzeyde.",
-        "button": "Ücretsiz İlk Görüşme"
+        "button": "Randevu talep edin"
     },
     "auth": {
         "login": "Giriş Yap",

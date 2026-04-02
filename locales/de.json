@@ -47,7 +47,7 @@
         "s3_number": "03",
         "s3_title": "Sie starten",
         "s3_text": "CV, LinkedIn, Coaching — alles bereit.",
-        "cta": "Kostenlose Erstberatung"
+        "cta": "Termin anfragen"
     },
     "pricing": {
         "headline": "Wählen Sie Ihr Paket.",
@@ -94,7 +94,7 @@
     "cta": {
         "headline": "Bereit?",
         "subline": "15 Minuten. Vertraulich. Auf Augenhöhe.",
-        "button": "Kostenlose Erstberatung"
+        "button": "Termin anfragen"
     },
     "auth": {
         "login": "Anmelden",
