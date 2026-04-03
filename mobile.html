@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Karriaro — Executive Coaching & Premium-Karriereunterlagen</title>
+    <meta name="description" content="Executive Coaching & Premium-Karriereunterlagen für Führungskräfte. Von einer aktiven Führungskraft, die beide Seiten des Tisches kennt.">
+    <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B1120">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CDN for mobile -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-dark': '#0B1120',
+                        'brand-gold': '#C6A87C',
+                    },
+                    fontFamily: {
+                        serif: ['"DM Serif Display"', 'Georgia', 'serif'],
+                        sans: ['"Inter"', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { overscroll-behavior-y: none; }
+        html { scroll-behavior: smooth; scroll-snap-type: y proximity; }
+        .snap-section { scroll-snap-align: start; }
+
+        /* Hero animation */
+        .hero-line {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: heroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .hero-line:nth-child(1) { animation-delay: 0.2s; }
+        .hero-line:nth-child(2) { animation-delay: 0.35s; }
+        .hero-line:nth-child(3) { animation-delay: 0.5s; }
+        .hero-line:nth-child(4) { animation-delay: 0.7s; }
+        @keyframes heroIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scroll reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Counter */
+        .counter-animate {
+            transition: all 0.1s;
+        }
+
+        /* Smooth nav */
+        .mobile-nav {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 font-sans antialiased">
+
+    <!-- MOBILE NAV — fixed bottom -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-brand-dark/95 backdrop-blur-md border-t border-white/10 px-6 pb-8 pt-3 mobile-nav">
+        <div class="flex justify-between items-center">
+            <a href="#top" class="flex flex-col items-center gap-1">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-gold"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                <span class="text-[10px] text-white/60 font-medium">Start</span>
+            </a>
+            <a href="#coaching" class="flex flex-col items-center gap-1">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/60"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                <span class="text-[10px] text-white/60 font-medium">Coaching</span>
+            </a>
+            <a href="#pakete" class="flex flex-col items-center gap-1">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/60"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v3"/></svg>
+                <span class="text-[10px] text-white/60 font-medium">Pakete</span>
+            </a>
+            <a href="javascript:void(0)" onclick="openContact()" class="flex flex-col items-center gap-1">
+                <div class="w-10 h-10 bg-brand-gold rounded-full flex items-center justify-center -mt-4 shadow-lg shadow-brand-gold/30">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B1120" stroke-width="2.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <span class="text-[10px] text-brand-gold font-bold">Kontakt</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section id="top" class="min-h-screen bg-brand-dark text-white relative overflow-hidden snap-section">
+        <!-- Photo -->
+        <div class="relative h-[55vh] overflow-hidden">
+            <img src="/images/founder.jpg" alt="Muammer Kizilaslan" class="w-full h-full object-cover object-top">
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-brand-dark"></div>
+        </div>
+        <!-- Text -->
+        <div class="px-6 -mt-16 relative z-10 pb-24">
+            <h1 class="font-serif text-4xl leading-[1.1] mb-4">
+                <span class="hero-line block">Bewerben Sie</span>
+                <span class="hero-line block">sich nicht.</span>
+                <span class="hero-line block text-brand-gold">Positionieren Sie sich.</span>
+            </h1>
+            <p class="hero-line text-white/40 text-base font-light mb-8">
+                Executive Coaching & Premium-Karriereunterlagen
+            </p>
+            <a href="javascript:void(0)" onclick="openContact()" class="hero-line inline-block bg-brand-gold text-brand-dark px-8 py-4 rounded-full font-bold text-sm uppercase tracking-wide">
+                Termin anfragen
+            </a>
+        </div>
+    </section>
+
+    <!-- TESTIMONIAL -->
+    <section class="min-h-[70vh] flex items-center justify-center bg-white px-6 py-20 snap-section">
+        <div class="text-center reveal">
+            <blockquote class="font-serif text-3xl text-gray-900 leading-tight">
+                "Nach einer Session wusste ich, was mein nächster Schritt ist — <span class="text-brand-gold">und warum."</span>
+            </blockquote>
+            <p class="text-gray-400 text-sm mt-8">T.R. · Director Operations</p>
+        </div>
+    </section>
+
+    <!-- PROBLEM -->
+    <section class="min-h-[60vh] flex items-center bg-brand-dark px-6 py-20 snap-section">
+        <div class="reveal">
+            <h2 class="font-serif text-3xl text-white leading-tight mb-6">
+                Die meisten Führungskräfte sind unsichtbar — <span class="text-brand-gold">für die richtigen Entscheider.</span>
+            </h2>
+            <p class="text-white/50 text-base leading-relaxed">
+                Falsches Profil, falsche Unterlagen, keine Strategie. Wir ändern das — mit <strong class="text-white">Coaching und Positionierung</strong>, die auf Führungsebene funktioniert.
+            </p>
+        </div>
+    </section>
+
+    <!-- 200+ -->
+    <section class="min-h-[50vh] flex items-center justify-center bg-white px-6 py-20 snap-section">
+        <div class="text-center reveal">
+            <span id="counter" class="font-serif text-7xl text-gray-900 leading-none counter-animate" data-target="200">0+</span>
+            <p class="text-gray-400 text-base mt-4">Führungskräfte vertrauen uns ihre Karriere an.</p>
+        </div>
+    </section>
+
+    <!-- CREDENTIALS -->
+    <section class="min-h-[60vh] flex items-center bg-gray-50 px-6 py-20 snap-section">
+        <div class="reveal">
+            <h2 class="font-serif text-3xl text-gray-900 leading-snug mb-6">
+                Nicht ein Texter.<br>Nicht eine Agentur.<br><span class="text-brand-gold">Eine Führungskraft.</span>
+            </h2>
+            <p class="text-gray-400 text-base leading-relaxed">
+                VP IT & Digital bei Hansgrohe. Zuvor CDO & Vorstand bei Borusan Mannesmann, über 13 Jahre Bosch/Siemens. Drei Länder, drei Konzerne — beide Seiten des Tisches. Jedes Projekt entsteht unter meiner Leitung und wird persönlich von mir freigegeben.
+            </p>
+        </div>
+    </section>
+
+    <!-- STEPS -->
+    <section class="bg-white px-6 py-20 snap-section">
+        <div class="space-y-12 reveal">
+            <div>
+                <span class="font-serif text-5xl text-brand-gold/20">01</span>
+                <h3 class="font-serif text-xl text-gray-900 mt-2 mb-2">Gespräch</h3>
+                <p class="text-gray-400 text-sm">Wir klären Ihre Situation, Ihre Ziele und den besten Weg.</p>
+            </div>
+            <div>
+                <span class="font-serif text-5xl text-brand-gold/20">02</span>
+                <h3 class="font-serif text-xl text-gray-900 mt-2 mb-2">Strategie</h3>
+                <p class="text-gray-400 text-sm">Coaching, Positionierung oder Unterlagen — unter meiner Leitung.</p>
+            </div>
+            <div>
+                <span class="font-serif text-5xl text-brand-gold/20">03</span>
+                <h3 class="font-serif text-xl text-gray-900 mt-2 mb-2">Ergebnis</h3>
+                <p class="text-gray-400 text-sm">Sie sind positioniert. Sichtbar. Bereit für den nächsten Schritt.</p>
+            </div>
+        </div>
+        <div class="mt-12 text-center">
+            <a href="javascript:void(0)" onclick="openContact()" class="text-brand-gold font-semibold text-sm">Termin anfragen →</a>
+        </div>
+    </section>
+
+    <!-- COACHING -->
+    <section id="coaching" class="min-h-[80vh] flex items-center bg-brand-dark px-6 py-20 snap-section">
+        <div class="w-full text-center reveal">
+            <h2 class="font-serif text-3xl text-white leading-snug mb-4">
+                Kein Coach.<br><span class="text-brand-gold">Ein Sparringspartner.</span>
+            </h2>
+            <p class="text-white/50 text-base leading-relaxed mb-10">
+                60 Min. 1:1 Video-Session. Karriere-Strategie, Positionierung, Verhandlung oder die ersten 100 Tage.
+            </p>
+            <span class="font-serif text-5xl text-white">€490</span>
+            <p class="text-white/40 text-xs mt-2 mb-1">Endpreis · keine MwSt. (§19 UStG)</p>
+            <p class="text-white/30 text-xs mb-10">3er-Paket €1.290</p>
+            <a href="javascript:void(0)" onclick="openContact()" class="inline-block bg-brand-gold text-brand-dark px-12 py-4 rounded-full font-bold text-sm uppercase tracking-wide">
+                Session buchen
+            </a>
+            <p class="text-white/30 text-xs mt-10 italic font-serif px-4">
+                "Nach einer Session wusste ich genau, wie ich mich positionieren muss. Drei Wochen später hatte ich das Angebot." — T.R., Director Operations
+            </p>
+        </div>
+    </section>
+
+    <!-- PAKETE -->
+    <section id="pakete" class="bg-white px-6 py-20 snap-section">
+        <div class="text-center mb-12 reveal">
+            <h2 class="font-serif text-3xl text-gray-900">Karriereunterlagen.</h2>
+        </div>
+
+        <!-- Starter -->
+        <div class="mb-8 pb-8 border-b border-gray-100 reveal">
+            <span class="text-gray-400 text-xs font-bold uppercase tracking-widest">Einsteiger</span>
+            <h3 class="font-serif text-2xl text-gray-900 mt-2 mb-1">Starter</h3>
+            <p class="text-gray-400 text-sm mb-4">Sie wissen, wohin.</p>
+            <span class="font-serif text-4xl text-gray-900">€490</span>
+            <p class="text-xs text-gray-400 mt-1 mb-4">Endpreis · keine MwSt. (§19 UStG)</p>
+            <p class="text-gray-500 text-sm leading-relaxed mb-6">CV + Anschreiben, 30 Min. Briefing-Call, 1 Revision. 5–7 Tage.</p>
+            <a href="javascript:void(0)" onclick="openContact()" class="text-brand-gold font-semibold text-sm">Starter wählen →</a>
+        </div>
+
+        <!-- Professional -->
+        <div class="mb-8 reveal">
+            <span class="text-brand-gold text-xs font-bold uppercase tracking-widest">Meist gewählt</span>
+            <h3 class="font-serif text-2xl text-gray-900 mt-2 mb-1">Professional</h3>
+            <p class="text-gray-400 text-sm mb-4">Sie brauchen Richtung und Begleitung.</p>
+            <span class="font-serif text-4xl text-gray-900">€990</span>
+            <p class="text-xs text-gray-400 mt-1 mb-4">Endpreis · keine MwSt. (§19 UStG)</p>
+            <p class="text-gray-500 text-sm leading-relaxed mb-6">Alles aus Starter. Plus: LinkedIn-Audit, 60 Min. Coaching inkl. Interview-Training, 3 Revisionen. 7–10 Tage.</p>
+            <a href="javascript:void(0)" onclick="openContact()" class="inline-block bg-brand-gold text-brand-dark px-10 py-4 rounded-full font-bold text-sm uppercase tracking-wide w-full text-center">
+                Professional wählen
+            </a>
+        </div>
+
+        <p class="text-center text-xs text-gray-300 mt-8">Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch.</p>
+    </section>
+
+    <!-- WEBSITE -->
+    <section class="min-h-[70vh] flex items-center bg-brand-dark px-6 py-20 snap-section">
+        <div class="w-full text-center reveal">
+            <h2 class="font-serif text-3xl text-white leading-snug mb-6">
+                Ihr CV öffnet Türen.<br><span class="text-brand-gold">Ihre Website hält sie offen.</span>
+            </h2>
+            <p class="text-white/50 text-base leading-relaxed mb-10">
+                Entscheider googeln Sie, bevor sie anrufen. Eine persönliche Executive-Website zeigt, wer Sie sind — bevor Sie ein Wort sagen.
+            </p>
+            <span class="font-serif text-5xl text-white">€1.990</span>
+            <p class="text-white/40 text-xs mt-2 mb-10">einmalig · zzgl. Hosting & Domain</p>
+            <a href="javascript:void(0)" onclick="openContact()" class="inline-block bg-brand-gold text-brand-dark px-12 py-4 rounded-full font-bold text-sm uppercase tracking-wide">
+                Website anfragen
+            </a>
+            <p class="text-white/30 text-xs mt-10 italic font-serif">
+                Sehen Sie, wie das aussieht — <a href="https://muammerkizilaslan.com" target="_blank" rel="noopener" class="text-brand-gold underline underline-offset-4">am Beispiel unseres Gründers</a>.
+            </p>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="bg-white px-6 py-20 snap-section">
+        <h2 class="font-serif text-3xl text-gray-900 mb-12 reveal">Häufige Fragen.</h2>
+        <div class="space-y-10">
+            <div class="reveal">
+                <h3 class="font-serif text-lg text-gray-900 mb-2">Wie läuft das ab?</h3>
+                <p class="text-gray-400 text-sm leading-relaxed"><strong class="text-gray-600">Erstgespräch, Strategie, Umsetzung.</strong> Sie investieren 30 Minuten, wir kümmern uns um den Rest.</p>
+            </div>
+            <div class="reveal">
+                <h3 class="font-serif text-lg text-gray-900 mb-2">Was unterscheidet Karriaro?</h3>
+                <p class="text-gray-400 text-sm leading-relaxed"><strong class="text-gray-600">Kein Freelancer, keine Agentur.</strong> Eine aktive Führungskraft, die Ihre Unterlagen persönlich freigibt.</p>
+            </div>
+            <div class="reveal">
+                <h3 class="font-serif text-lg text-gray-900 mb-2">Wie vertraulich ist das?</h3>
+                <p class="text-gray-400 text-sm leading-relaxed"><strong class="text-gray-600">Absolut.</strong> NDA auf Wunsch, keine öffentlichen Referenzen ohne Ihr Einverständnis. Ihre Karriere bleibt Ihre Sache.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="min-h-[60vh] flex items-center justify-center bg-brand-dark px-6 py-20 snap-section">
+        <div class="text-center reveal">
+            <h2 class="font-serif text-4xl text-white mb-8">Bereit?</h2>
+            <a href="javascript:void(0)" onclick="openContact()" class="inline-block bg-brand-gold text-brand-dark px-12 py-5 rounded-full font-bold text-sm uppercase tracking-wider">
+                Termin anfragen
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-brand-dark border-t border-white/10 px-6 py-6 pb-24">
+        <div class="flex justify-between items-center text-xs text-gray-600">
+            <span>© 2026 Karriaro</span>
+            <div class="flex gap-4">
+                <a href="https://karriaro.de/#view-impressum" class="hover:text-gray-400">Impressum</a>
+                <a href="https://karriaro.de/#view-datenschutz" class="hover:text-gray-400">Datenschutz</a>
+                <a href="https://karriaro.de/#view-agb" class="hover:text-gray-400">AGB</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- CONTACT OVERLAY -->
+    <div id="contact-overlay" class="fixed inset-0 z-[60] bg-brand-dark/95 backdrop-blur-md transform translate-y-full transition-transform duration-300" style="pointer-events: none;">
+        <div class="flex flex-col h-full px-6 pt-12 pb-24">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="font-serif text-2xl text-white">Kontakt</h2>
+                <button onclick="closeContact()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex-1 flex flex-col justify-center space-y-6">
+                <a href="mailto:info@karriaro.de" class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 active:bg-white/10 transition">
+                    <div class="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C6A87C" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-white font-bold">E-Mail</p>
+                        <p class="text-white/50 text-sm">info@karriaro.de</p>
+                    </div>
+                </a>
+
+                <a href="https://muammerkizilaslan.com" target="_blank" rel="noopener" class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 active:bg-white/10 transition">
+                    <div class="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C6A87C" stroke-width="2"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-white font-bold">Profil</p>
+                        <p class="text-white/50 text-sm">muammerkizilaslan.com</p>
+                    </div>
+                </a>
+            </div>
+
+            <p class="text-white/30 text-xs text-center">100 % vertraulich · NDA auf Wunsch</p>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // Scroll reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Counter
+        const counter = document.getElementById('counter');
+        if (counter) {
+            const counterObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !counter.dataset.counted) {
+                        counter.dataset.counted = 'true';
+                        const target = parseInt(counter.dataset.target);
+                        const duration = 3500;
+                        const start = performance.now();
+                        const animate = (now) => {
+                            const elapsed = now - start;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const eased = 1 - Math.pow(1 - progress, 4);
+                            counter.textContent = Math.floor(eased * target) + '+';
+                            if (progress < 1) requestAnimationFrame(animate);
+                        };
+                        requestAnimationFrame(animate);
+                    }
+                });
+            }, { threshold: 0.3 });
+            counterObserver.observe(counter);
+        }
+
+        // Contact overlay
+        function openContact() {
+            const overlay = document.getElementById('contact-overlay');
+            overlay.style.pointerEvents = 'auto';
+            overlay.style.transform = 'translateY(0)';
+        }
+        function closeContact() {
+            const overlay = document.getElementById('contact-overlay');
+            overlay.style.transform = 'translateY(100%)';
+            setTimeout(() => { overlay.style.pointerEvents = 'none'; }, 300);
+        }
+
+        // Hide nav on scroll down, show on scroll up
+        let lastScroll = 0;
+        const nav = document.querySelector('.mobile-nav');
+        window.addEventListener('scroll', () => {
+            const current = window.scrollY;
+            if (current > lastScroll && current > 200) {
+                nav.style.transform = 'translateY(100%)';
+            } else {
+                nav.style.transform = 'translateY(0)';
+            }
+            lastScroll = current;
+        }, { passive: true });
+    </script>
+</body>
+</html>

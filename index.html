@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Mobile redirect -->
+    <script>
+        if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) && !window.location.pathname.includes('mobile')) {
+            window.location.replace('/mobile.html');
+        }
+    </script>
     <meta name="description" content="Karriaro - CV-Manufaktur & Executive Mentoring. Professionelle Bewerbungsunterlagen und Karriereberatung für Führungskräfte, Manager und ambitionierte Professionals.">
     <meta name="keywords" content="Karriereberatung, CV Erstellung, Lebenslauf schreiben lassen, Executive Coaching, Mentoring, Führungskräfte, Executive Mentoring, Bewerbungsservice, professioneller Lebenslauf">
     <title>Karriaro | CV-Manufaktur & Executive Mentoring</title>
