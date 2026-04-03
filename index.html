@@ -1954,14 +1954,14 @@
     </div>
 
     <div id="view-about" class="hidden fade-in min-h-screen bg-white">
-        <iframe id="about-iframe" class="w-full border-0" style="height: calc(100vh - 5rem);" title="Über Muammer Kizilaslan" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"></iframe>
         <script>
-            // Load iframe only when view becomes visible to avoid lazy-loading issues
+            // Redirect to external profile page
             const aboutObserver = new MutationObserver(() => {
                 const aboutView = document.getElementById('view-about');
-                const iframe = document.getElementById('about-iframe');
-                if (aboutView && !aboutView.classList.contains('hidden') && iframe && !iframe.src) {
-                    iframe.src = 'https://muammerkizilaslan.com';
+                if (aboutView && !aboutView.classList.contains('hidden')) {
+                    window.open('https://muammerkizilaslan.com', '_blank');
+                    aboutView.classList.add('hidden');
+                    document.getElementById('view-home')?.classList.remove('hidden');
                 }
             });
             aboutObserver.observe(document.getElementById('view-about'), { attributes: true, attributeFilter: ['class'] });
