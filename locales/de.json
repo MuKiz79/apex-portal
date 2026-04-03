@@ -78,9 +78,10 @@
         "tax_note": "Steuerlich absetzbar als Werbungskosten. NDA auf Wunsch."
     },
     "website": {
-        "headline_html": "Ihr CV öffnet Türen.<br><span class=\"text-brand-gold\">Ihre Website hält sie offen.</span>",
-        "text": "Entscheider googeln Sie, bevor sie anrufen.",
-        "cta": "Mehr erfahren"
+        "headline_html": "Ihr CV öffnet Türen.<br><span class=\"text-brand-gold\">Ihre Website<br>hält sie offen.</span>",
+        "text": "Entscheider googeln Sie, bevor sie anrufen. Eine persönliche Executive-Website zeigt, wer Sie sind — bevor Sie ein Wort sagen.",
+        "example": "Sehen Sie, wie das aussieht — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-white transition underline underline-offset-4\">am Beispiel unseres Gründers</a>.",
+        "cta": "Website anfragen"
     },
     "faq": {
         "headline": "Häufige Fragen.",

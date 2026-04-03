@@ -78,9 +78,10 @@
         "tax_note": "Reklam gideri olarak vergiden düşülebilir. Talep üzerine NDA."
     },
     "website": {
-        "headline_html": "CV'niz kapıları açar.<br><span class=\"text-brand-gold\">Web siteniz onları açık tutar.</span>",
-        "text": "Karar vericiler sizi aramadan önce arar.",
-        "cta": "Daha fazla bilgi"
+        "headline_html": "CV'niz kapıları açar.<br><span class=\"text-brand-gold\">Web siteniz<br>onları açık tutar.</span>",
+        "text": "Karar vericiler sizi aramadan önce arar. Kişisel bir executive web sitesi, siz daha konuşmadan kim olduğunuzu gösterir.",
+        "example": "Nasıl göründüğünü görün — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-white transition underline underline-offset-4\">kurucumuzun örneği</a>.",
+        "cta": "Web sitesi talep edin"
     },
     "faq": {
         "headline": "Sıkça sorulanlar.",

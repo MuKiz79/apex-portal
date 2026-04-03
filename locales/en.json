@@ -78,9 +78,10 @@
         "tax_note": "Tax-deductible as business expenses. NDA on request."
     },
     "website": {
-        "headline_html": "Your CV opens doors.<br><span class=\"text-brand-gold\">Your website keeps them open.</span>",
-        "text": "Decision-makers google you before they call.",
-        "cta": "Learn more"
+        "headline_html": "Your CV opens doors.<br><span class=\"text-brand-gold\">Your website<br>keeps them open.</span>",
+        "text": "Decision-makers google you before they call. A personal executive website shows who you are — before you say a word.",
+        "example": "See what it looks like — <a href=\"https://muammerkizilaslan.com\" target=\"_blank\" rel=\"noopener\" class=\"text-brand-gold hover:text-white transition underline underline-offset-4\">our founder's example</a>.",
+        "cta": "Request Website"
     },
     "faq": {
         "headline": "Frequently asked.",
