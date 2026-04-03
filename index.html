@@ -1954,7 +1954,18 @@
     </div>
 
     <div id="view-about" class="hidden fade-in min-h-screen bg-white">
-        <iframe src="https://muammerkizilaslan.com" class="w-full border-0" style="min-height: calc(100vh - 5rem);" loading="lazy" title="Über Muammer Kizilaslan"></iframe>
+        <iframe id="about-iframe" class="w-full border-0" style="height: calc(100vh - 5rem);" title="Über Muammer Kizilaslan" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"></iframe>
+        <script>
+            // Load iframe only when view becomes visible to avoid lazy-loading issues
+            const aboutObserver = new MutationObserver(() => {
+                const aboutView = document.getElementById('view-about');
+                const iframe = document.getElementById('about-iframe');
+                if (aboutView && !aboutView.classList.contains('hidden') && iframe && !iframe.src) {
+                    iframe.src = 'https://muammerkizilaslan.com';
+                }
+            });
+            aboutObserver.observe(document.getElementById('view-about'), { attributes: true, attributeFilter: ['class'] });
+        </script>
     </div>
 
     <div id="view-package-details" class="hidden fade-in min-h-screen bg-white">
