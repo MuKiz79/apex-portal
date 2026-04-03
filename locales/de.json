@@ -85,10 +85,10 @@
     },
     "faq": {
         "headline": "Häufige Fragen.",
-        "q1": "Wie viel Zeit brauche ich?",
-        "a1_html": "<strong class=\"text-gray-600\">30 Minuten.</strong> Fragebogen ausfüllen, Feedback geben — fertig.",
-        "q2": "Schreibt das eine KI?",
-        "a2_html": "<strong class=\"text-gray-600\">Nein.</strong> 100 % Handarbeit. Ihre Stimme, keine Floskeln.",
+        "q1": "Wie läuft das ab?",
+        "a1_html": "<strong class=\"text-gray-600\">Erstgespräch, Strategie, Umsetzung.</strong> Sie investieren 30 Minuten, wir kümmern uns um den Rest.",
+        "q2": "Was unterscheidet Karriaro?",
+        "a2_html": "<strong class=\"text-gray-600\">Kein Freelancer, keine Agentur.</strong> Eine aktive Führungskraft, die Ihre Unterlagen persönlich freigibt.",
         "q3": "Wie vertraulich ist das?",
         "a3_html": "<strong class=\"text-gray-600\">Absolut.</strong> NDA auf Wunsch, keine öffentlichen Referenzen ohne Ihr Einverständnis. Ihre Karriere bleibt Ihre Sache."
     },

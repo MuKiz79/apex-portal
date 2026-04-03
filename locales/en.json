@@ -85,10 +85,10 @@
     },
     "faq": {
         "headline": "Frequently asked.",
-        "q1": "How much time do I need?",
-        "a1_html": "<strong class=\"text-gray-600\">30 minutes.</strong> Fill out a questionnaire, give feedback — done.",
-        "q2": "Does AI write this?",
-        "a2_html": "<strong class=\"text-gray-600\">No.</strong> 100% handcrafted. Your voice, no clichés.",
+        "q1": "How does it work?",
+        "a1_html": "<strong class=\"text-gray-600\">Initial call, strategy, execution.</strong> You invest 30 minutes, we take care of the rest.",
+        "q2": "What sets Karriaro apart?",
+        "a2_html": "<strong class=\"text-gray-600\">No freelancer, no agency.</strong> An active executive who personally approves your documents.",
         "q3": "How confidential is this?",
         "a3_html": "<strong class=\"text-gray-600\">Completely.</strong> NDA on request, no public references without your consent. Your career stays your business."
     },

@@ -85,10 +85,10 @@
     },
     "faq": {
         "headline": "Sıkça sorulanlar.",
-        "q1": "Ne kadar zaman ayırmam gerekir?",
-        "a1_html": "<strong class=\"text-gray-600\">30 dakika.</strong> Anketi doldurun, geri bildirim verin — bitti.",
-        "q2": "Bunu yapay zeka mı yazıyor?",
-        "a2_html": "<strong class=\"text-gray-600\">Hayır.</strong> %100 el yapımı. Sizin sesiniz, kalıp ifadeler değil.",
+        "q1": "Süreç nasıl işliyor?",
+        "a1_html": "<strong class=\"text-gray-600\">İlk görüşme, strateji, uygulama.</strong> 30 dakika ayırın, gerisini biz halledelim.",
+        "q2": "Karriaro'yu farklı kılan ne?",
+        "a2_html": "<strong class=\"text-gray-600\">Freelancer değil, ajans değil.</strong> Belgelerinizi kişisel olarak onaylayan aktif bir üst düzey yönetici.",
         "q3": "Bu ne kadar gizli?",
         "a3_html": "<strong class=\"text-gray-600\">Tamamen.</strong> Talep üzerine NDA, onayınız olmadan kamuya açık referans yok. Kariyeriniz sizin meseleniz."
     },
