@@ -6352,6 +6352,78 @@ exports.removeAdminRole = onCall(async (request) => {
     return { success: true, message: `Admin-Rolle entfernt für ${targetUser.email}` };
 });
 
+// ========== LEAD INTELLIGENCE (Karriaro Webdesign) ==========
+// Places API Proxy fuer das Lead-Intelligence-Tool auf karriaro-webdesign.de
+
+const placesApiKey = defineSecret('PLACES_API_KEY');
+const LEAD_ALLOWED_ORIGINS = ['https://karriaro-webdesign.de', 'http://localhost:3000', 'http://localhost:5000', 'http://localhost:8080'];
+const LEAD_RATE_LIMIT = new Map();
+
+function leadCors(req, res) {
+    const origin = req.headers.origin || '';
+    if (LEAD_ALLOWED_ORIGINS.includes(origin)) res.set('Access-Control-Allow-Origin', origin);
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return true; }
+    return false;
+}
+
+function leadRateLimit(req, res) {
+    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const now = Date.now();
+    const entry = LEAD_RATE_LIMIT.get(ip) || { count: 0, reset: now + 60000 };
+    if (now > entry.reset) { entry.count = 0; entry.reset = now + 60000; }
+    entry.count++;
+    LEAD_RATE_LIMIT.set(ip, entry);
+    if (entry.count > 30) { res.status(429).json({ error: 'Rate limit: max 30/min' }); return true; }
+    return false;
+}
+
+// Places Text Search — "Friseur Hamburg" oder "beispiel.de"
+exports.searchPlaces = onRequest({ secrets: [placesApiKey] }, async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { query, maxResults = 10 } = req.body || {};
+    if (!query) return res.status(400).json({ error: 'query required' });
+    try {
+        const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': placesApiKey.value(),
+                'X-Goog-FieldMask': 'places.displayName,places.rating,places.userRatingCount,places.websiteUri,places.formattedAddress,places.primaryTypeDisplayName,places.regularOpeningHours,places.photos,places.businessStatus,places.location,places.primaryType'
+            },
+            body: JSON.stringify({ textQuery: query, languageCode: 'de', maxResultCount: Math.min(maxResults, 20) })
+        });
+        res.json(await r.json());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Places Nearby Search — Konkurrenten im Umkreis
+exports.nearbyPlaces = onRequest({ secrets: [placesApiKey] }, async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { lat, lng, type, radiusMeters = 5000, maxResults = 5 } = req.body || {};
+    if (!lat || !lng || !type) return res.status(400).json({ error: 'lat, lng, type required' });
+    try {
+        const r = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': placesApiKey.value(),
+                'X-Goog-FieldMask': 'places.displayName,places.rating,places.userRatingCount,places.websiteUri,places.formattedAddress,places.primaryTypeDisplayName,places.businessStatus'
+            },
+            body: JSON.stringify({
+                includedPrimaryTypes: [type],
+                maxResultCount: Math.min(maxResults, 10),
+                locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters } },
+                languageCode: 'de'
+            })
+        });
+        res.json(await r.json());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
 if (process.env.NODE_ENV === 'test') {
     exports._test = {
