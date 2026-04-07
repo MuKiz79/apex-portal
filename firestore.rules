@@ -177,6 +177,19 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ========== LEAD INTELLIGENCE CRM ==========
+
+    match /leads/{leadId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /leadSettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // ========== CATCH-ALL: DENY ==========
 
     match /{document=**} {
