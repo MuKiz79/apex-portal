@@ -6424,6 +6424,143 @@ exports.nearbyPlaces = onRequest({ secrets: [placesApiKey] }, async (req, res) =
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ========== LEAD INTELLIGENCE: ADVANCED CLOUD FUNCTIONS ==========
+
+// A1: LLM Content-Analyse — Fetcht HTML und analysiert mit Claude
+exports.analyzeContent = onRequest({ secrets: [claudeApiKey] }, async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { url } = req.body || {};
+    if (!url) return res.status(400).json({ error: 'url required' });
+    try {
+        // Fetch HTML
+        const htmlRes = await fetch(url, { headers: { 'User-Agent': 'Karriaro-LeadBot/1.0' }, signal: AbortSignal.timeout(10000) });
+        const html = await htmlRes.text();
+        // Extrahiere Text (grob: entferne Tags)
+        const text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 3000);
+
+        // Claude Analyse
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': claudeApiKey.value(), 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+                model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+                messages: [{ role: 'user', content: `Analysiere diesen Website-Text eines lokalen Unternehmens. Antworte NUR als JSON: {"tonality":"premium|standard|discount","freshness":"aktuell|veraltet|unklar","hasUSP":true/false,"uspText":"...","hasCTA":true/false,"languageQuality":"gut|mittel|schlecht","copyrightYear":2024,"summary":"1 Satz"}\n\nText: ${text}` }]
+            })
+        });
+        const claude = await claudeRes.json();
+        const analysis = JSON.parse(claude.content?.[0]?.text || '{}');
+        res.json(analysis);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// A2: Screenshot-Analyse via Claude Vision
+exports.analyzeScreenshot = onRequest({ secrets: [claudeApiKey] }, async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { screenshotBase64 } = req.body || {};
+    if (!screenshotBase64) return res.status(400).json({ error: 'screenshotBase64 required' });
+    try {
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': claudeApiKey.value(), 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+                model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+                messages: [{ role: 'user', content: [
+                    { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: screenshotBase64.replace(/^data:image\/\w+;base64,/, '') } },
+                    { type: 'text', text: 'Bewerte dieses Website-Screenshot eines lokalen Unternehmens. Antworte NUR als JSON: {"designQuality":1-10,"isModern":true/false,"hasStockPhotos":true/false,"colorHarmony":1-10,"whitespace":"gut|mittel|schlecht","typography":"gut|mittel|schlecht","hasCTA":true/false,"designEra":"2010s|2015s|2020s|aktuell","overallImpression":"1 Satz"}' }
+                ] }]
+            })
+        });
+        const claude = await claudeRes.json();
+        const analysis = JSON.parse(claude.content?.[0]?.text || '{}');
+        res.json(analysis);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// A4: Sentiment-Analyse (vereinfacht, ohne externe API)
+// Nutzt Claude fuer Review-Text-Analyse
+exports.analyzeReviews = onRequest({ secrets: [claudeApiKey, placesApiKey] }, async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { placeQuery } = req.body || {};
+    if (!placeQuery) return res.status(400).json({ error: 'placeQuery required' });
+    try {
+        // Finde Place mit Reviews
+        const placeRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': placesApiKey.value(), 'X-Goog-FieldMask': 'places.reviews,places.displayName' },
+            body: JSON.stringify({ textQuery: placeQuery, languageCode: 'de', maxResultCount: 1 })
+        });
+        const placeData = await placeRes.json();
+        const reviews = placeData.places?.[0]?.reviews || [];
+        if (reviews.length === 0) return res.json({ sentiment: 'neutral', websiteComplaints: 0, summary: 'Keine Reviews gefunden' });
+
+        const reviewTexts = reviews.slice(0, 5).map(r => r.text?.text || '').filter(t => t).join('\n---\n');
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': claudeApiKey.value(), 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+                model: 'claude-haiku-4-5-20251001', max_tokens: 300,
+                messages: [{ role: 'user', content: `Analysiere diese Google-Bewertungen. Antworte NUR als JSON: {"sentiment":"positiv|neutral|negativ","websiteComplaints":0-5,"websiteIssues":["..."],"overallSatisfaction":1-10,"summary":"1 Satz"}\n\nReviews:\n${reviewTexts}` }]
+            })
+        });
+        const analysis = JSON.parse((await claudeRes.json()).content?.[0]?.text || '{}');
+        res.json(analysis);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// D15: Domain-Alter via RDAP (WHOIS-Nachfolger, kostenlos)
+exports.domainAge = onRequest(async (req, res) => {
+    if (leadCors(req, res)) return;
+    const { domain } = req.body || {};
+    if (!domain) return res.status(400).json({ error: 'domain required' });
+    try {
+        // RDAP fuer .de Domains
+        const tld = domain.split('.').pop();
+        const rdapUrls = { 'de': 'https://rdap.denic.de/domain/', 'com': 'https://rdap.verisign.com/com/v1/domain/', 'net': 'https://rdap.verisign.com/net/v1/domain/', 'org': 'https://rdap.org/domain/' };
+        const rdapBase = rdapUrls[tld] || `https://rdap.org/domain/`;
+        const r = await fetch(`${rdapBase}${domain}`, { signal: AbortSignal.timeout(5000) });
+        if (!r.ok) return res.json({ age: null, registrationDate: null, error: 'RDAP lookup failed' });
+        const data = await r.json();
+        const events = data.events || [];
+        const registration = events.find(e => e.eventAction === 'registration');
+        const regDate = registration?.eventDate ? new Date(registration.eventDate) : null;
+        const ageYears = regDate ? Math.round((Date.now() - regDate.getTime()) / (365.25*24*60*60*1000) * 10) / 10 : null;
+        res.json({ age: ageYears, registrationDate: regDate?.toISOString()?.slice(0,10) || null });
+    } catch (e) { res.json({ age: null, error: e.message }); }
+});
+
+// D16: Domain Authority (OpenPageRank, kostenlos)
+exports.domainAuthority = onRequest(async (req, res) => {
+    if (leadCors(req, res)) return;
+    const { domain } = req.body || {};
+    if (!domain) return res.status(400).json({ error: 'domain required' });
+    try {
+        const r = await fetch(`https://openpagerank.com/api/v1.0/getPageRank?domains[]=${domain}`, {
+            headers: { 'API-OPR': 'kostenloser-key-nicht-noetig' }, signal: AbortSignal.timeout(5000)
+        });
+        const data = await r.json();
+        const result = data.response?.[0];
+        res.json({ pageRank: result?.page_rank_decimal || null, rank: result?.rank || null, domain });
+    } catch (e) { res.json({ pageRank: null, error: e.message }); }
+});
+
+// B6: Google Trends (Proxy — Google Trends hat keine offizielle API)
+// Vereinfacht: Nutze Google Suggest als Proxy fuer Suchvolumen
+exports.searchVolume = onRequest(async (req, res) => {
+    if (leadCors(req, res)) return;
+    const { query } = req.body || {};
+    if (!query) return res.status(400).json({ error: 'query required' });
+    try {
+        // Google Suggest gibt ~10 Vorschlaege — Anzahl = Proxy fuer Suchvolumen
+        const r = await fetch(`https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(query)}&hl=de`, { signal: AbortSignal.timeout(5000) });
+        const data = await r.json();
+        const suggestions = data[1] || [];
+        res.json({ query, suggestions: suggestions.length, topSuggestions: suggestions.slice(0, 5), hasVolume: suggestions.length > 3 });
+    } catch (e) { res.json({ suggestions: 0, error: e.message }); }
+});
+
 // ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
 if (process.env.NODE_ENV === 'test') {
     exports._test = {
