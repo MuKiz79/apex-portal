@@ -6561,6 +6561,71 @@ exports.searchVolume = onRequest(async (req, res) => {
     } catch (e) { res.json({ suggestions: 0, error: e.message }); }
 });
 
+// KI-Branchenanalyse: Was ist Standard, was fehlt?
+exports.analyzeBranchStandards = onRequest({ secrets: [claudeApiKey] }, async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { url, branche, websiteText, features } = req.body || {};
+    if (!url) return res.status(400).json({ error: 'url required' });
+
+    try {
+        // Fetch HTML wenn kein Text mitgegeben
+        let text = websiteText;
+        if (!text) {
+            const htmlRes = await fetch(url, { headers: { 'User-Agent': 'Karriaro-LeadBot/1.0' }, signal: AbortSignal.timeout(10000) });
+            text = await htmlRes.text();
+            text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 4000);
+        }
+
+        const prompt = `Du bist ein Experte für Webdesign und digitale Geschäftsmodelle lokaler Unternehmen in Deutschland.
+
+Analysiere diese Website eines ${branche || 'lokalen Unternehmens'}.
+
+AUFGABE 1: Was ist 2026 STANDARD auf einer ${branche || 'Unternehmens'}-Website in Deutschland? Liste die 8-12 wichtigsten Features auf die Kunden erwarten.
+
+AUFGABE 2: Prüfe den folgenden Website-Text und erkenne welche dieser Standard-Features VORHANDEN und welche NICHT VORHANDEN sind.
+
+AUFGABE 3: Für jedes fehlende Feature: Erkläre in 1 Satz warum es wichtig ist und was das Unternehmen dadurch verliert — so dass ein Laie es sofort versteht.
+
+AUFGABE 4: Gib eine Gesamtbewertung: Wie modern ist diese Website im Vergleich zum Branchenstandard 2026? (1-10)
+
+Antworte NUR als JSON:
+{
+  "branche": "erkannte Branche",
+  "standardFeatures": [
+    {"name": "Feature-Name", "why": "Warum wichtig (1 Satz)", "isStandard2026": true}
+  ],
+  "found": ["Feature1", "Feature2"],
+  "missing": [
+    {"name": "Feature-Name", "why": "Warum wichtig", "impact": "Was verliert das Unternehmen dadurch"}
+  ],
+  "modernityScore": 5,
+  "modernityLabel": "Veraltet / Durchschnitt / Modern / Vorbildlich",
+  "topPitchArgument": "Das stärkste einzelne Argument warum eine neue Website nötig ist (1-2 Sätze)",
+  "summary": "Gesamtbewertung in 2-3 Sätzen"
+}
+
+${features ? 'Bereits erkannte Features auf der Website: ' + features.join(', ') : ''}
+
+Website-Text:
+${text}`;
+
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': claudeApiKey.value(), 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
+        });
+        const claude = await claudeRes.json();
+        const responseText = claude.content?.[0]?.text || '{}';
+
+        // Versuche JSON zu extrahieren (Claude gibt manchmal Markdown-Wrapper)
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { error: 'Kein JSON in Antwort' };
+
+        res.json(analysis);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
 if (process.env.NODE_ENV === 'test') {
     exports._test = {
