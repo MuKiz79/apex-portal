@@ -6769,6 +6769,116 @@ exports.analyzeSocialProfiles = onRequest(async (req, res) => {
     }
 });
 
+// ========== EMAIL DELIVERABILITY CHECK (#11) ==========
+// Prüft SPF, DKIM, DMARC einer Domain
+exports.checkEmailDeliverability = onRequest(async (req, res) => {
+    if (leadCors(req, res)) return;
+    const { domain } = req.body || {};
+    if (!domain) return res.status(400).json({ error: 'domain required' });
+
+    try {
+        const dns = require('dns').promises;
+        const cleanDomain = domain.replace(/^www\./, '');
+
+        const results = { domain: cleanDomain, spf: false, dkim: false, dmarc: false, issues: [] };
+
+        // SPF Check
+        try {
+            const txt = await dns.resolveTxt(cleanDomain);
+            const spfRecord = txt.flat().find(r => r.startsWith('v=spf1'));
+            results.spf = !!spfRecord;
+            if (!spfRecord) results.issues.push('Kein SPF-Record — E-Mails landen möglicherweise im Spam');
+        } catch { results.issues.push('SPF-Record nicht abrufbar'); }
+
+        // DMARC Check
+        try {
+            const dmarc = await dns.resolveTxt(`_dmarc.${cleanDomain}`);
+            const dmarcRecord = dmarc.flat().find(r => r.startsWith('v=DMARC1'));
+            results.dmarc = !!dmarcRecord;
+            if (!dmarcRecord) results.issues.push('Kein DMARC-Record — kein Schutz gegen E-Mail-Spoofing');
+        } catch { results.issues.push('DMARC nicht konfiguriert'); }
+
+        // DKIM (Probe für gängige Selektoren)
+        const selectors = ['google', 'default', 'selector1', 'k1', 'mail'];
+        for (const sel of selectors) {
+            try {
+                const dkim = await dns.resolveTxt(`${sel}._domainkey.${cleanDomain}`);
+                if (dkim.flat().some(r => r.includes('v=DKIM1'))) {
+                    results.dkim = true;
+                    break;
+                }
+            } catch { /* selector not found */ }
+        }
+        if (!results.dkim) results.issues.push('Kein DKIM gefunden — E-Mail-Authentifizierung unvollständig');
+
+        // Score
+        const score = (results.spf ? 33 : 0) + (results.dkim ? 34 : 0) + (results.dmarc ? 33 : 0);
+        results.score = score;
+        results.label = score >= 90 ? 'E-Mail gut konfiguriert' : score >= 50 ? 'E-Mail teilweise konfiguriert' : 'E-Mail schlecht konfiguriert — Spam-Risiko';
+        results.pitchArg = score < 70
+            ? `Ihre E-Mails von ${cleanDomain} haben ${results.issues.length} Konfigurationsprobleme. Kunden-E-Mails könnten im Spam landen, ohne dass Sie es merken.`
+            : null;
+
+        res.json(results);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ========== AUTO MOCKUP GENERATOR (#13) ==========
+// Generiert einen Redesign-Vorschlag per KI
+exports.generateMockupSuggestion = onRequest({ secrets: [claudeApiKey] }, async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { domain, branche, currentIssues, screenshotBase64 } = req.body || {};
+    if (!domain) return res.status(400).json({ error: 'domain required' });
+
+    try {
+        const messages = [];
+        const content = [];
+
+        // Screenshot als Referenz (wenn verfügbar)
+        if (screenshotBase64) {
+            content.push({
+                type: 'image',
+                source: { type: 'base64', media_type: 'image/jpeg', data: screenshotBase64.replace(/^data:image\/[^;]+;base64,/, '') }
+            });
+        }
+
+        content.push({
+            type: 'text',
+            text: `Du bist ein preisgekrönter Webdesigner. Erstelle einen konkreten Redesign-Vorschlag für ${domain} (${branche || 'lokales Unternehmen'}).
+
+${currentIssues ? 'Aktuelle Probleme: ' + currentIssues : ''}
+
+Erstelle einen KONKRETEN Vorschlag als JSON:
+{
+  "headline": "Vorschlag-Überschrift (1 Satz)",
+  "designDirection": "Modern minimalistisch / Warm und einladend / Premium elegant / etc.",
+  "colorPalette": ["#hex1", "#hex2", "#hex3"],
+  "keyFeatures": ["Feature 1", "Feature 2", "Feature 3", "Feature 4", "Feature 5"],
+  "heroSection": "Beschreibung des Hero-Bereichs (1-2 Sätze)",
+  "callToAction": "Empfohlener Haupt-CTA",
+  "mobileFirst": "Wie die mobile Version aussehen sollte (1-2 Sätze)",
+  "estimatedImpact": "Erwartete Verbesserung in einem Satz",
+  "oneLinePitch": "Ein Satz den man dem Kunden sagen kann"
+}`
+        });
+
+        messages.push({ role: 'user', content });
+
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': claudeApiKey.value(), 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages })
+        });
+        const claude = await claudeRes.json();
+        const responseText = claude.content?.[0]?.text || '{}';
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const mockup = jsonMatch ? JSON.parse(jsonMatch[0]) : { error: 'Kein JSON' };
+
+        res.json(mockup);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
 if (process.env.NODE_ENV === 'test') {
     exports._test = {
