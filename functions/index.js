@@ -6626,6 +6626,149 @@ ${text}`;
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ========== SOCIAL PROFILE ANALYZER (Lead Intelligence Signal 6-8, 11-12) ==========
+// Analysiert öffentliche Social-Media-Profile: Follower, Posts, Aktivität
+exports.analyzeSocialProfiles = onRequest(async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { profileUrls, websiteUrl } = req.body || {};
+    if (!profileUrls && !websiteUrl) return res.status(400).json({ error: 'profileUrls or websiteUrl required' });
+
+    const result = { instagram: null, facebook: null, linkedin: null, tiktok: null };
+
+    try {
+        // Wenn nur websiteUrl → erst Social-Links aus HTML extrahieren
+        let urls = profileUrls || {};
+        if (websiteUrl && Object.keys(urls).length === 0) {
+            try {
+                const htmlRes = await fetch(websiteUrl, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Karriaro-Bot/1.0)' },
+                    signal: AbortSignal.timeout(8000)
+                });
+                const html = await htmlRes.text();
+                // Social Links aus HTML extrahieren
+                const igMatch = html.match(/href=["'](https?:\/\/(?:www\.)?instagram\.com\/[a-zA-Z0-9._]+)\/?["']/i);
+                const fbMatch = html.match(/href=["'](https?:\/\/(?:www\.)?facebook\.com\/[a-zA-Z0-9._-]+)\/?["']/i);
+                const liMatch = html.match(/href=["'](https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[a-zA-Z0-9._-]+)\/?["']/i);
+                const ttMatch = html.match(/href=["'](https?:\/\/(?:www\.)?tiktok\.com\/@[a-zA-Z0-9._-]+)\/?["']/i);
+                if (igMatch) urls.instagram = igMatch[1];
+                if (fbMatch) urls.facebook = fbMatch[1];
+                if (liMatch) urls.linkedin = liMatch[1];
+                if (ttMatch) urls.tiktok = ttMatch[1];
+            } catch (e) { /* Website nicht erreichbar */ }
+        }
+
+        // Signal 6+7: Instagram (öffentliche Profildaten)
+        if (urls.instagram) {
+            try {
+                const username = urls.instagram.match(/instagram\.com\/([a-zA-Z0-9._]+)/)?.[1];
+                if (username) {
+                    // Versuche öffentliche Profildaten via ?__a=1 oder HTML-Scraping
+                    const igRes = await fetch(`https://www.instagram.com/${username}/`, {
+                        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+                        signal: AbortSignal.timeout(8000)
+                    });
+                    const igHtml = await igRes.text();
+
+                    // Follower aus meta-Tags extrahieren
+                    const followerMatch = igHtml.match(/(\d[\d,.]*[KkMm]?)\s*Follower/i) ||
+                                         igHtml.match(/"edge_followed_by":\{"count":(\d+)/);
+                    const postMatch = igHtml.match(/(\d[\d,.]*)\s*Posts?/i) ||
+                                     igHtml.match(/"edge_owner_to_timeline_media":\{"count":(\d+)/);
+                    const descMatch = igHtml.match(/content="([^"]*)" property="og:description"/);
+
+                    let followers = null;
+                    if (followerMatch) {
+                        let f = followerMatch[1].replace(/,/g, '');
+                        if (/k/i.test(f)) followers = Math.round(parseFloat(f) * 1000);
+                        else if (/m/i.test(f)) followers = Math.round(parseFloat(f) * 1000000);
+                        else followers = parseInt(f);
+                    }
+
+                    let posts = null;
+                    if (postMatch) posts = parseInt(postMatch[1].replace(/,/g, ''));
+
+                    // Bio/Beschreibung aus og:description
+                    let bio = null;
+                    if (descMatch) {
+                        bio = descMatch[1].replace(/&amp;/g, '&').replace(/&quot;/g, '"').slice(0, 200);
+                    }
+
+                    result.instagram = {
+                        url: urls.instagram,
+                        username,
+                        followers,
+                        posts,
+                        bio,
+                        isActive: posts > 10,
+                        estimatedPostsPerMonth: posts && followers ? Math.round(posts / Math.max(1, (Date.now() - new Date('2020-01-01').getTime()) / (30 * 24 * 60 * 60 * 1000))) : null
+                    };
+                }
+            } catch (e) { result.instagram = { url: urls.instagram, error: 'Profil nicht erreichbar' }; }
+        }
+
+        // Signal 8: Facebook Page (öffentliche Daten)
+        if (urls.facebook) {
+            try {
+                const fbRes = await fetch(urls.facebook, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+                    signal: AbortSignal.timeout(8000)
+                });
+                const fbHtml = await fbRes.text();
+
+                // Likes/Followers aus HTML
+                const likesMatch = fbHtml.match(/([\d,.]+)\s*(?:Likes?|Gefällt|people like)/i);
+                const followMatch = fbHtml.match(/([\d,.]+)\s*(?:Followers?|Abonnenten|people follow)/i);
+
+                result.facebook = {
+                    url: urls.facebook,
+                    likes: likesMatch ? parseInt(likesMatch[1].replace(/[,.\s]/g, '')) : null,
+                    followers: followMatch ? parseInt(followMatch[1].replace(/[,.\s]/g, '')) : null,
+                    detected: true
+                };
+            } catch (e) { result.facebook = { url: urls.facebook, error: 'Seite nicht erreichbar' }; }
+        }
+
+        // Signal 11: LinkedIn Company Page
+        if (urls.linkedin) {
+            result.linkedin = {
+                url: urls.linkedin,
+                detected: true,
+                isCompanyPage: /\/company\//.test(urls.linkedin)
+            };
+            // LinkedIn erlaubt kein öffentliches Scraping — nur URL + Typ erkennen
+        }
+
+        // Signal 12: TikTok
+        if (urls.tiktok) {
+            try {
+                const ttRes = await fetch(urls.tiktok, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+                    signal: AbortSignal.timeout(8000)
+                });
+                const ttHtml = await ttRes.text();
+                const ttFollowers = ttHtml.match(/"followerCount":(\d+)/) || ttHtml.match(/([\d,.]+[KkMm]?)\s*Follower/);
+                const ttLikes = ttHtml.match(/"heartCount":(\d+)/) || ttHtml.match(/([\d,.]+[KkMm]?)\s*Likes/);
+
+                result.tiktok = {
+                    url: urls.tiktok,
+                    followers: ttFollowers ? parseInt(ttFollowers[1].replace(/[,.\s]/g, '')) : null,
+                    likes: ttLikes ? parseInt(ttLikes[1].replace(/[,.\s]/g, '')) : null,
+                    detected: true
+                };
+            } catch (e) { result.tiktok = { url: urls.tiktok, error: 'Nicht erreichbar' }; }
+        }
+
+        // Extrahierte Social-URLs zurückgeben (Signal 5)
+        result.extractedUrls = urls;
+        result.platformCount = Object.values(result).filter(v => v && (v.detected || v.username)).length;
+
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
 if (process.env.NODE_ENV === 'test') {
     exports._test = {
