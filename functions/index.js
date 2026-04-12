@@ -6970,6 +6970,134 @@ exports.enrichContact = onRequest(async (req, res) => {
     }
 });
 
+// ========== PERSONALIZED LEAD PAGE (#7) ==========
+// Generiert eine personalisierte Analyse-Seite für einen Lead
+exports.leadPage = onRequest(async (req, res) => {
+    // GET: Zeige die Seite
+    const cors = getCorsHeaders(req);
+    // Erlaube alle Origins für die Landingpage
+    res.set({ ...cors, 'Access-Control-Allow-Origin': '*' });
+    if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+
+    const { domain } = req.query || {};
+    if (!domain) {
+        res.status(400).send('domain parameter required');
+        return;
+    }
+
+    // Lade Lead-Daten aus Firestore (wenn vorhanden)
+    let leadData = null;
+    try {
+        const db = admin.firestore();
+        const snap = await db.collection('leadPages').doc(domain.replace(/[^a-zA-Z0-9]/g, '_')).get();
+        if (snap.exists) leadData = snap.data();
+    } catch (e) { /* no data */ }
+
+    if (!leadData) {
+        res.status(404).send('Keine Analyse für diese Domain gefunden.');
+        return;
+    }
+
+    // Generiere HTML-Seite
+    const scoreColor = leadData.score >= 55 ? '#30d158' : leadData.score >= 30 ? '#ff9f0a' : '#ff453a';
+    const html = `<!DOCTYPE html><html lang="de"><head>
+        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Website-Analyse für ${leadData.name || domain} | Karriaro Webdesign</title>
+        <meta name="robots" content="noindex">
+        <style>
+            *{margin:0;padding:0;box-sizing:border-box}
+            body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fbfbfd;color:#1d1d1f;line-height:1.6}
+            .container{max-width:640px;margin:0 auto;padding:40px 24px}
+            h1{font-size:1.8rem;font-weight:700;margin-bottom:8px}
+            .sub{color:#86868b;margin-bottom:32px}
+            .score-ring{width:120px;height:120px;margin:0 auto 16px}
+            .card{background:#fff;border:1px solid #e5e5ea;border-radius:16px;padding:24px;margin-bottom:16px}
+            .metric{font-size:2.5rem;font-weight:800;text-align:center;color:${scoreColor}}
+            .label{font-size:12px;color:#86868b;text-transform:uppercase;letter-spacing:0.08em;text-align:center}
+            .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e5ea;font-size:14px}
+            .row:last-child{border:none}
+            .good{color:#30d158}.bad{color:#ff453a}.warn{color:#ff9f0a}
+            .cta{display:block;text-align:center;padding:16px;background:#0071e3;color:#fff;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;margin-top:24px}
+            .cta:hover{background:#0077ed}
+            .footer{text-align:center;color:#86868b;font-size:12px;margin-top:32px}
+        </style></head><body>
+        <div class="container">
+            <h1>Website-Analyse</h1>
+            <div class="sub">${leadData.name || domain} · ${leadData.branche || ''}</div>
+            <div class="card" style="text-align:center">
+                <div class="metric">${leadData.score || '?'}</div>
+                <div class="label">Lead-Score von 100</div>
+            </div>
+            <div class="card">
+                <div class="row"><span>Performance</span><span class="${(leadData.perf||0) >= 75 ? 'good' : 'bad'}">${leadData.perf || '?'}/100</span></div>
+                <div class="row"><span>SEO</span><span class="${(leadData.seo||0) >= 75 ? 'good' : 'bad'}">${leadData.seo || '?'}/100</span></div>
+                <div class="row"><span>Barrierefreiheit</span><span class="${(leadData.a11y||0) >= 80 ? 'good' : 'bad'}">${leadData.a11y || '?'}/100</span></div>
+                ${leadData.cms ? `<div class="row"><span>Technologie</span><span>${leadData.cms}</span></div>` : ''}
+                ${leadData.bfsgRisk ? `<div class="row"><span>BFSG-Status</span><span class="${leadData.bfsgRisk === 'niedrig' ? 'good' : 'bad'}">${leadData.bfsgLabel || leadData.bfsgRisk}</span></div>` : ''}
+            </div>
+            ${leadData.problems ? `<div class="card"><h3 style="font-size:14px;font-weight:700;margin-bottom:12px">Was wir gefunden haben</h3>${leadData.problems.map(p => `<div style="padding:6px 0;font-size:13px;color:#86868b">• ${p}</div>`).join('')}</div>` : ''}
+            ${leadData.mockupHeadline ? `<div class="card"><h3 style="font-size:14px;font-weight:700;margin-bottom:8px">Unser Vorschlag</h3><div style="font-size:13px;color:#86868b">${leadData.mockupHeadline}</div></div>` : ''}
+            <a href="https://karriaro-webdesign.de/#kontakt" class="cta">Kostenlos beraten lassen</a>
+            <div class="footer">Analyse erstellt von Karriaro Webdesign · karriaro-webdesign.de</div>
+        </div></body></html>`;
+
+    res.set('Content-Type', 'text/html').send(html);
+});
+
+// ========== SAVE LEAD PAGE DATA ==========
+// Speichert Daten für die personalisierte Lead-Seite
+exports.saveLeadPage = onRequest(async (req, res) => {
+    if (leadCors(req, res)) return;
+    const data = req.body || {};
+    if (!data.domain) return res.status(400).json({ error: 'domain required' });
+
+    try {
+        const db = admin.firestore();
+        const id = data.domain.replace(/[^a-zA-Z0-9]/g, '_');
+        await db.collection('leadPages').doc(id).set({
+            ...data,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        res.json({ success: true, url: `https://us-central1-apex-executive.cloudfunctions.net/leadPage?domain=${encodeURIComponent(data.domain)}` });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ========== CALENDAR EVENT GENERATOR (#9) ==========
+// Generiert eine .ics Datei für Google Calendar / Outlook
+exports.calendarEvent = onRequest(async (req, res) => {
+    const cors = getCorsHeaders(req);
+    res.set({ ...cors, 'Access-Control-Allow-Origin': '*' });
+    if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+
+    const { title, domain, score, date, time } = req.query || {};
+    if (!title || !domain) return res.status(400).send('title and domain required');
+
+    const startDate = date || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const startTime = time || '10:00';
+    const dtStart = startDate.replace(/-/g, '') + 'T' + startTime.replace(':', '') + '00';
+    // 30 Minuten Termin
+    const endHour = parseInt(startTime.split(':')[0]);
+    const endMin = parseInt(startTime.split(':')[1]) + 30;
+    const dtEnd = startDate.replace(/-/g, '') + 'T' + String(endHour + Math.floor(endMin / 60)).padStart(2, '0') + String(endMin % 60).padStart(2, '0') + '00';
+
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Karriaro//Lead Intelligence//DE
+BEGIN:VEVENT
+DTSTART:${dtStart}
+DTEND:${dtEnd}
+SUMMARY:${title}
+DESCRIPTION:Lead: ${domain}\\nScore: ${score || '?'}\\n\\nVorbereitung:\\n- Website nochmal ansehen\\n- Pitch-Vorlage bereithalten\\n- Kostenlosen Entwurf vorbereiten
+LOCATION:Telefon / Video
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR`;
+
+    res.set('Content-Type', 'text/calendar; charset=utf-8');
+    res.set('Content-Disposition', `attachment; filename="lead-${domain}.ics"`);
+    res.send(ics);
+});
+
 // ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
 if (process.env.NODE_ENV === 'test') {
     exports._test = {
