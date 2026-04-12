@@ -6879,6 +6879,97 @@ Erstelle einen KONKRETEN Vorschlag als JSON:
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ========== CONTACT ENRICHMENT ==========
+// Versucht Kontaktdaten aus Impressum/Website zu extrahieren
+exports.enrichContact = onRequest(async (req, res) => {
+    if (leadCors(req, res)) return;
+    if (leadRateLimit(req, res)) return;
+    const { url } = req.body || {};
+    if (!url) return res.status(400).json({ error: 'url required' });
+
+    try {
+        // Lade die Website
+        const htmlRes = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Karriaro-Bot/1.0)' },
+            signal: AbortSignal.timeout(10000)
+        });
+        let html = await htmlRes.text();
+
+        // Versuche auch /impressum zu laden
+        let impressumHtml = '';
+        try {
+            const domain = new URL(url).origin;
+            const impRes = await fetch(domain + '/impressum', {
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Karriaro-Bot/1.0)' },
+                signal: AbortSignal.timeout(5000)
+            });
+            if (impRes.ok) impressumHtml = await impRes.text();
+        } catch (e) { /* no impressum page */ }
+
+        const combined = html + ' ' + impressumHtml;
+        // Entferne HTML-Tags für Pattern-Matching
+        const text = combined.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ');
+
+        const result = {
+            emails: [],
+            phones: [],
+            address: null,
+            owner: null,
+            social: {}
+        };
+
+        // E-Mail-Adressen extrahieren (keine generischen wie info@, noreply@)
+        const emailMatches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+        const genericPrefixes = ['info', 'kontakt', 'contact', 'office', 'mail', 'hello', 'noreply', 'no-reply', 'webmaster', 'admin', 'support'];
+        result.emails = [...new Set(emailMatches)]
+            .filter(e => !genericPrefixes.some(g => e.toLowerCase().startsWith(g + '@')))
+            .slice(0, 5);
+        result.genericEmails = [...new Set(emailMatches)]
+            .filter(e => genericPrefixes.some(g => e.toLowerCase().startsWith(g + '@')))
+            .slice(0, 3);
+        result.allEmails = [...new Set(emailMatches)].slice(0, 8);
+
+        // Telefonnummern
+        const phoneMatches = text.match(/(?:\+49|0049|0)\s*[\d\s/.-]{8,15}/g) || [];
+        result.phones = [...new Set(phoneMatches.map(p => p.replace(/\s+/g, ' ').trim()))].slice(0, 3);
+
+        // Inhabername aus Impressum-Pattern
+        const namePatterns = [
+            /(?:Inhaber|Geschäftsführer|Geschäftsführerin|Verantwortlich|Betreiber)[:\s]+([A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ][a-zäöüß]+)/,
+            /(?:Vertretungsberechtig|Angaben gemäß)[^:]*:\s*([A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ][a-zäöüß]+)/
+        ];
+        for (const pat of namePatterns) {
+            const m = text.match(pat);
+            if (m) { result.owner = m[1].trim(); break; }
+        }
+
+        // Social Media Links aus HTML
+        const igMatch = combined.match(/href=["'](https?:\/\/(?:www\.)?instagram\.com\/[a-zA-Z0-9._]+)\/?["']/i);
+        const fbMatch = combined.match(/href=["'](https?:\/\/(?:www\.)?facebook\.com\/[a-zA-Z0-9._-]+)\/?["']/i);
+        const liMatch = combined.match(/href=["'](https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[a-zA-Z0-9._-]+)\/?["']/i);
+        if (igMatch) result.social.instagram = igMatch[1];
+        if (fbMatch) result.social.facebook = fbMatch[1];
+        if (liMatch) result.social.linkedin = liMatch[1];
+
+        // Bewertung der Kontaktdaten-Qualität
+        result.quality = result.emails.length > 0 ? 'persönlich' :
+            result.genericEmails.length > 0 ? 'generisch' : 'keine';
+        result.hasPersonalEmail = result.emails.length > 0;
+        result.contactScore = (result.emails.length > 0 ? 40 : 0) +
+            (result.genericEmails.length > 0 ? 20 : 0) +
+            (result.phones.length > 0 ? 20 : 0) +
+            (result.owner ? 10 : 0) +
+            (Object.keys(result.social).length > 0 ? 10 : 0);
+
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ========== TEST EXPORTS (nur für Unit-Tests verfügbar) ==========
 if (process.env.NODE_ENV === 'test') {
     exports._test = {
