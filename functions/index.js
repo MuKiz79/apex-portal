@@ -6391,7 +6391,7 @@ exports.searchPlaces = onRequest({ secrets: [placesApiKey] }, async (req, res) =
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': placesApiKey.value(),
-                'X-Goog-FieldMask': 'places.displayName,places.rating,places.userRatingCount,places.websiteUri,places.formattedAddress,places.primaryTypeDisplayName,places.regularOpeningHours,places.photos,places.businessStatus,places.location,places.primaryType'
+                'X-Goog-FieldMask': 'places.displayName,places.rating,places.userRatingCount,places.websiteUri,places.formattedAddress,places.primaryTypeDisplayName,places.regularOpeningHours,places.photos,places.businessStatus,places.location,places.primaryType,places.reviews,places.internationalPhoneNumber'
             },
             body: JSON.stringify({ textQuery: query, languageCode: 'de', maxResultCount: Math.min(maxResults, 20) })
         });
@@ -6411,11 +6411,11 @@ exports.nearbyPlaces = onRequest({ secrets: [placesApiKey] }, async (req, res) =
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': placesApiKey.value(),
-                'X-Goog-FieldMask': 'places.displayName,places.rating,places.userRatingCount,places.websiteUri,places.formattedAddress,places.primaryTypeDisplayName,places.businessStatus'
+                'X-Goog-FieldMask': 'places.displayName,places.rating,places.userRatingCount,places.websiteUri,places.formattedAddress,places.primaryTypeDisplayName,places.businessStatus,places.location,places.primaryType,places.photos,places.regularOpeningHours,places.reviews'
             },
             body: JSON.stringify({
-                includedPrimaryTypes: [type],
-                maxResultCount: Math.min(maxResults, 10),
+                includedPrimaryTypes: Array.isArray(type) ? type : [type],
+                maxResultCount: Math.min(maxResults, 20),
                 locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters } },
                 languageCode: 'de'
             })
