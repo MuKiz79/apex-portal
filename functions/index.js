@@ -6932,9 +6932,20 @@ exports.enrichContact = onRequest(async (req, res) => {
             .slice(0, 3);
         result.allEmails = [...new Set(emailMatches)].slice(0, 8);
 
-        // Telefonnummern
+        // Telefonnummern — mit Datum-Filter, sonst matched z.B. "07.05.2024" als Phone
+        // (DD.MM.YYYY hat genau die richtige Laenge fuers alte Phone-Regex).
         const phoneMatches = text.match(/(?:\+49|0049|0)\s*[\d\s/.-]{8,15}/g) || [];
-        result.phones = [...new Set(phoneMatches.map(p => p.replace(/\s+/g, ' ').trim()))].slice(0, 3);
+        const dateLike = /^\d{1,2}\.\d{1,2}\.\d{2,4}$/;          // 7.05.2024 / 07.05.24
+        const dateLikeFlexible = /\b\d{1,2}\.\d{1,2}\.\d{2,4}\b/; // 07.05.2024 in Mitte
+        const minDigits = 7; // deutsche Festnetz-/Mobile-Nummer hat min. 7 Ziffern nach Vorwahl
+        result.phones = [...new Set(phoneMatches.map(p => p.replace(/\s+/g, ' ').trim()))]
+            .filter(p => {
+                const trimmed = p.trim();
+                if (dateLike.test(trimmed) || dateLikeFlexible.test(trimmed)) return false;
+                const digitCount = (trimmed.match(/\d/g) || []).length;
+                return digitCount >= minDigits;
+            })
+            .slice(0, 3);
 
         // Inhabername aus Impressum-Pattern
         const namePatterns = [
